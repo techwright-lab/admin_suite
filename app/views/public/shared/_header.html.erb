@@ -1,0 +1,60 @@
+<%# Public navigation header %>
+<header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" data-controller="public-header">
+  <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex h-20 items-center justify-between">
+      <%# Logo %>
+      <div class="flex items-center">
+        <%= link_to root_path, class: "flex items-center gap-3 group" do %>
+          <%# G-spark logo mark %>
+          <div class="relative">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg group-hover:shadow-primary-500/30 transition-shadow duration-300">
+              <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <%# Subtle glow effect %>
+            <div class="absolute inset-0 rounded-xl bg-primary-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <span class="text-xl font-bold text-white tracking-tight">Gleania</span>
+        <% end %>
+      </div>
+
+      <%# Desktop Navigation %>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200">Features</a>
+        <a href="#how-it-works" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200">How it Works</a>
+        <a href="#pricing" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200">Pricing</a>
+      </div>
+
+      <%# Auth buttons %>
+      <div class="flex items-center gap-4">
+        <% if authenticated? %>
+          <%= link_to "Dashboard", dashboard_path, class: "btn-primary-glow text-sm px-5 py-2.5" %>
+        <% else %>
+          <%= link_to "Sign In", new_session_path, class: "hidden sm:inline-flex text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200" %>
+          <%= link_to "Get Started", new_registration_path, class: "btn-primary-glow text-sm px-5 py-2.5" %>
+        <% end %>
+
+        <%# Mobile menu button %>
+        <button type="button" class="md:hidden p-2 text-gray-400 hover:text-white transition-colors" data-action="click->public-header#toggleMenu">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <%# Mobile menu %>
+    <div class="hidden md:hidden pb-4" data-public-header-target="mobileMenu">
+      <div class="flex flex-col gap-4 pt-4 border-t border-white/10">
+        <a href="#features" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200">Features</a>
+        <a href="#how-it-works" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200">How it Works</a>
+        <a href="#pricing" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200">Pricing</a>
+        <% unless authenticated? %>
+          <%= link_to "Sign In", new_session_path, class: "text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200" %>
+        <% end %>
+      </div>
+    </div>
+  </nav>
+</header>
+

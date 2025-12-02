@@ -1,0 +1,30 @@
+# Rate Limiting Configuration for Respectful Scraping
+#
+# Define rate limits per domain to avoid overwhelming job boards.
+# Values are in seconds between requests.
+
+# Default rate limit for unknown domains (5 seconds between requests)
+default: 5
+
+# Domain-specific rate limits (in seconds)
+# More restrictive limits for major job boards to be respectful
+domains:
+  # Major job boards - conservative limits
+  "linkedin.com": 10
+  "indeed.com": 8
+  "glassdoor.com": 8
+  "monster.com": 8
+  
+  # ATS platforms - moderate limits
+  "greenhouse.io": 5
+  "lever.co": 5
+  "workable.com": 5
+  "jobvite.com": 5
+  "icims.com": 5
+  "smartrecruiters.com": 5
+  "bamboohr.com": 5
+  
+  # Company career pages - more lenient
+  # (Most company sites can handle more frequent requests)
+  default_company: 3
+

@@ -1,0 +1,135 @@
+<% content_for :title, "Edit Profile" %>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+  <!-- Back Link -->
+      <div class="mb-6">
+        <%= link_to profile_path, class: "inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" do %>
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Back to insights
+        <% end %>
+      </div>
+
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Edit Your Profile
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">
+          Update your professional information and preferences
+        </p>
+      </div>
+
+      <!-- Form -->
+      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+        <%= form_with(model: @user, url: profile_path, method: :patch, class: "space-y-6") do |f| %>
+          <% if @user.errors.any? %>
+            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <h3 class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">
+                <%= pluralize(@user.errors.count, "error") %> prohibited this profile from being saved:
+              </h3>
+              <ul class="list-disc list-inside text-sm text-red-700 dark:text-red-400">
+                <% @user.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <!-- Basic Info -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <%= f.label :name, "Name", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+                <%= f.text_field :name,
+                    class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+              </div>
+
+              <div>
+                <%= f.label :current_role, "Current Role", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+                <%= f.text_field :current_role,
+                    placeholder: "e.g., Software Engineer",
+                    class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <%= f.label :bio, "Bio", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+              <%= f.text_area :bio,
+                  rows: 4,
+                  placeholder: "Tell us about yourself...",
+                  class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors resize-none" %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.label :years_of_experience, "Years of Experience", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+              <%= f.number_field :years_of_experience,
+                  min: 0,
+                  placeholder: "5",
+                  class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+            </div>
+
+            <div class="mt-6">
+              <%= f.label :target_roles, "Target Roles (one per line)", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+              <%= f.text_area :target_roles,
+                  rows: 3,
+                  placeholder: "Senior Software Engineer\nEngineering Manager\nTech Lead",
+                  class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors resize-none" %>
+            </div>
+          </div>
+
+          <!-- Social Links -->
+          <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Social Links</h3>
+            
+            <div class="space-y-4">
+              <div>
+                <%= f.label :linkedin_url, "LinkedIn", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+                <%= f.url_field :linkedin_url,
+                    placeholder: "https://linkedin.com/in/yourname",
+                    class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+              </div>
+
+              <div>
+                <%= f.label :github_url, "GitHub", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+                <%= f.url_field :github_url,
+                    placeholder: "https://github.com/yourname",
+                    class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+              </div>
+
+              <div>
+                <%= f.label :gitlab_url, "GitLab", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+                <%= f.url_field :gitlab_url,
+                    placeholder: "https://gitlab.com/yourname",
+                    class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+              </div>
+
+              <div>
+                <%= f.label :twitter_url, "Twitter/X", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+                <%= f.url_field :twitter_url,
+                    placeholder: "https://twitter.com/yourname",
+                    class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+              </div>
+
+              <div>
+                <%= f.label :portfolio_url, "Portfolio Website", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+                <%= f.url_field :portfolio_url,
+                    placeholder: "https://yourwebsite.com",
+                    class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors" %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <%= link_to "Cancel", profile_path, class: "px-6 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 rounded-lg font-medium transition-colors" %>
+            <%= f.submit "Save Changes", 
+                data: { disable_with: "Saving..." },
+                class: "px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl" %>
+          </div>
+        <% end %>
+      </div>
+</div>

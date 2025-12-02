@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<html class="dark">
+  <head>
+    <title>
+      <%= content_for(:title) || "Gleania - Turn Every Interview Into Insight" %>
+    </title>
+
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Gleania">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta
+      name="description"
+      content="<%= content_for(:description) || 'Gleania helps you track interviews, gather feedback, and grow your skills with AI-powered reflection.' %>"
+    >
+
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%# Google Fonts - Plus Jakarta Sans %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap"
+      rel="stylesheet"
+    >
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+
+    <%# Cloudflare Turnstile %>
+    <% if turnstile_configured? %>
+      <script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        async
+        defer
+      ></script>
+    <% end %>
+  </head>
+
+  <body class="bg-dark-950 text-gray-100 antialiased">
+    <%# Public Header/Navigation %>
+    <%= render "public/shared/header" %>
+
+    <%# Flash messages %>
+    <%= render "shared/flash" %>
+
+    <%# Main content %>
+    <main><%= yield %></main>
+
+    <%# Footer %>
+    <%= render "public/shared/footer" %>
+  </body>
+</html>

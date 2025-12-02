@@ -1,0 +1,135 @@
+<%# Interview Round Form %>
+
+<%= form_with(model: [@application, @round], local: true, class: "space-y-4") do |form| %>
+  <%# Error Messages %>
+  <% if @round.errors.any? %>
+    <div class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-red-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+            <%= pluralize(@round.errors.count, "error") %> prohibited this
+            round from being saved:
+          </h3>
+          <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+            <ul class="list-disc list-inside space-y-1">
+              <% @round.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <%# Stage %>
+    <div>
+      <%= form.label :stage, class: "form-label" do %>
+        Stage <span class="text-red-500">*</span>
+      <% end %>
+      <%= form.select :stage, 
+          InterviewRound::STAGES.map { |s| [s.to_s.titleize, s] },
+          {},
+          required: true,
+          class: "form-select" %>
+    </div>
+
+    <%# Custom Stage Name %>
+    <div>
+      <%= form.label :stage_name, "Custom Stage Name (Optional)", class: "form-label" %>
+      <%= form.text_field :stage_name,
+          placeholder: "e.g., Technical Phone Screen",
+          class: "form-input" %>
+      <p class="form-help-text text-xs">
+        Leave blank to use default stage name
+      </p>
+    </div>
+
+    <%# Scheduled Date/Time %>
+    <div>
+      <%= form.label :scheduled_at, "Scheduled Date & Time", class: "form-label" %>
+      <%= form.datetime_local_field :scheduled_at,
+          class: "form-input" %>
+    </div>
+
+    <%# Duration %>
+    <div>
+      <%= form.label :duration_minutes, "Duration (minutes)", class: "form-label" %>
+      <%= form.number_field :duration_minutes,
+          placeholder: "60",
+          min: 1,
+          class: "form-input" %>
+    </div>
+
+    <%# Interviewer Name %>
+    <div>
+      <%= form.label :interviewer_name, "Interviewer Name", class: "form-label" %>
+      <%= form.text_field :interviewer_name,
+          placeholder: "Jane Smith",
+          class: "form-input" %>
+    </div>
+
+    <%# Interviewer Role %>
+    <div>
+      <%= form.label :interviewer_role, "Interviewer Role", class: "form-label" %>
+      <%= form.text_field :interviewer_role,
+          placeholder: "Senior Engineer",
+          class: "form-input" %>
+    </div>
+
+    <%# Completed Date/Time %>
+    <div>
+      <%= form.label :completed_at, "Completed Date & Time", class: "form-label" %>
+      <%= form.datetime_local_field :completed_at,
+          class: "form-input" %>
+      <p class="form-help-text text-xs">Leave blank if not yet completed</p>
+    </div>
+
+    <%# Result %>
+    <div>
+      <%= form.label :result, class: "form-label" %>
+      <%= form.select :result, 
+          InterviewRound::RESULTS.map { |r| [r.to_s.titleize, r] },
+          {},
+          class: "form-select" %>
+    </div>
+
+    <%# Notes %>
+    <div class="md:col-span-2">
+      <%= form.label :notes, class: "form-label" %>
+      <%= form.text_area :notes,
+          rows: 4,
+          placeholder: "Add notes about this interview round...",
+          class: "form-textarea" %>
+    </div>
+  </div>
+
+  <%# Form Actions %>
+  <div
+    class="
+      flex items-center justify-end gap-3 pt-4 border-t border-gray-200
+      dark:border-gray-700
+    "
+  >
+    <%= link_to "Cancel", 
+        interview_application_path(@application),
+        class: "px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" %>
+
+    <%= form.submit @round.new_record? ? "Add Interview Round" : "Update Interview Round",
+        class: "px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" %>
+  </div>
+<% end %>

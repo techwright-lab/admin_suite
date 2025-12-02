@@ -1,13 +1,158 @@
 <!DOCTYPE html>
+
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <style>
-      /* Email styles need to be inline */
+      /* Reset styles */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #374151;
+        background-color: #f9fafb;
+      }
+      
+      /* Container */
+      .email-wrapper {
+        width: 100%;
+        background-color: #f9fafb;
+        padding: 40px 20px;
+      }
+      
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Header */
+      .email-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 32px 40px;
+        text-align: center;
+      }
+      
+      .email-logo {
+        font-size: 28px;
+        font-weight: bold;
+        color: #ffffff;
+        margin: 0;
+        letter-spacing: -0.5px;
+      }
+      
+      /* Content */
+      .email-content {
+        padding: 40px;
+      }
+      
+      .email-content h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 16px 0;
+      }
+      
+      .email-content p {
+        margin: 0 0 16px 0;
+        color: #374151;
+      }
+      
+      /* Button */
+      .email-button {
+        display: inline-block;
+        padding: 14px 32px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 24px 0;
+        text-align: center;
+      }
+      
+      .email-button:hover {
+        opacity: 0.9;
+      }
+      
+      /* Footer */
+      .email-footer {
+        background-color: #f9fafb;
+        padding: 32px 40px;
+        text-align: center;
+        border-top: 1px solid #e5e7eb;
+      }
+      
+      .email-footer p {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #6b7280;
+      }
+      
+      .email-footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
+      
+      /* Utility */
+      .text-muted {
+        color: #6b7280;
+        font-size: 14px;
+      }
+      
+      .text-center {
+        text-align: center;
+      }
+      
+      /* Responsive */
+      @media only screen and (max-width: 600px) {
+        .email-content {
+          padding: 24px;
+        }
+        
+        .email-header {
+          padding: 24px;
+        }
+        
+        .email-footer {
+          padding: 24px;
+        }
+      }
     </style>
   </head>
 
   <body>
-    <%= yield %>
+    <div class="email-wrapper">
+      <div class="email-container">
+        <!-- Header -->
+        <div class="email-header">
+          <h1 class="email-logo">Gleania</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="email-content"><%= yield %></div>
+
+        <!-- Footer -->
+        <div class="email-footer">
+          <p><strong>Gleania</strong> - Your Interview Tracking Companion</p>
+
+          <p class="text-muted">
+            Questions? Reply to this email or visit our
+            <%= link_to "help center", root_url %>
+          </p>
+
+          <p class="text-muted">
+            © <%= Time.current.year %> Gleania. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

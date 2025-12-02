@@ -1,0 +1,344 @@
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+  <!-- Back Button -->
+  <div class="mb-6">
+    <%= link_to job_listings_path, 
+          class: "inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" do %>
+      <svg
+        class="w-5 h-5 mr-1"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+      Back to Job Listings
+    <% end %>
+  </div>
+
+  <!-- Header Card -->
+  <div
+    class="
+      bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200
+      dark:border-gray-700 p-6 mb-6
+    "
+  >
+    <div class="flex items-start justify-between">
+      <div class="flex items-start gap-4">
+        <!-- Company Logo -->
+        <div
+          class="
+            flex-shrink-0 w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg
+            flex items-center justify-center
+          "
+        >
+          <% if @job_listing.company.logo_url.present? %>
+            <%= image_tag @job_listing.company.logo_url, 
+                  alt: @job_listing.company.name,
+                  class: "w-16 h-16 rounded-lg object-cover" %>
+          <% else %>
+            <span class="text-2xl font-bold text-gray-600 dark:text-gray-400">
+              <%= @job_listing.company.name[0].upcase %>
+            </span>
+          <% end %>
+        </div>
+
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            <%= @job_listing.display_title %>
+          </h1>
+
+          <p class="mt-1 text-lg text-gray-600 dark:text-gray-400">
+            <%= @job_listing.company.name %>
+          </p>
+
+          <!-- Badges -->
+          <div class="flex items-center gap-2 mt-3">
+            <span
+              class="
+                inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                <%= case @job_listing.status.to_sym
+                when :active then 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                when :closed then 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                when :draft then 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                end %>
+              "
+            >
+              <%= @job_listing.status.to_s.titleize %>
+            </span>
+
+            <span
+              class="
+                inline-flex items-center px-2.5 py-0.5 rounded-full text-xs
+                font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20
+                dark:text-blue-400
+              "
+            >
+              <%= @job_listing.remote_type_display %>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2">
+        <%= link_to edit_job_listing_path(@job_listing),
+              class: "inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700" do %>
+          <svg
+            class="w-4 h-4 mr-1.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
+          </svg>
+          Edit
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Quick Info -->
+    <div
+      class="
+        mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t
+        border-gray-200 dark:border-gray-700
+      "
+    >
+      <% if @job_listing.location.present? %>
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Location</p>
+
+          <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
+            <%= @job_listing.location %>
+          </p>
+        </div>
+      <% end %>
+
+      <% if @job_listing.salary_range.present? %>
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Salary Range</p>
+
+          <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
+            <%= @job_listing.salary_range %>
+          </p>
+        </div>
+      <% end %>
+
+      <% if @job_listing.equity_info.present? %>
+        <div>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Equity</p>
+
+          <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
+            <%= @job_listing.equity_info %>
+          </p>
+        </div>
+      <% end %>
+
+      <div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Applications</p>
+
+        <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
+          <%= pluralize(@job_listing.interview_applications.count, "application") %>
+        </p>
+      </div>
+    </div>
+
+    <!-- External Link -->
+    <% if @job_listing.url.present? %>
+      <div class="mt-4">
+        <%= link_to @job_listing.url, 
+              target: "_blank",
+              class: "inline-flex items-center text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700" do %>
+          <svg
+            class="w-4 h-4 mr-1.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
+          </svg>
+          View Original Posting
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Extraction Status Indicator -->
+  <%= render "job_listings/extraction_status", job_listing: @job_listing %>
+
+  <!-- Job Details -->
+  <div class="space-y-6">
+    <!-- Description -->
+    <% if @job_listing.description.present? %>
+      <div
+        class="
+          bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+          border-gray-200 dark:border-gray-700 p-6
+        "
+      >
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Description
+        </h2>
+
+        <div class="prose dark:prose-invert max-w-none">
+          <%= format_job_text(@job_listing.description) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Requirements -->
+    <% if @job_listing.requirements.present? %>
+      <div
+        class="
+          bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+          border-gray-200 dark:border-gray-700 p-6
+        "
+      >
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Requirements
+        </h2>
+
+        <div class="prose dark:prose-invert max-w-none">
+          <%= format_list_text(@job_listing.requirements) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Responsibilities -->
+    <% if @job_listing.responsibilities.present? %>
+      <div
+        class="
+          bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+          border-gray-200 dark:border-gray-700 p-6
+        "
+      >
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Responsibilities
+        </h2>
+
+        <div class="prose dark:prose-invert max-w-none">
+          <%= format_list_text(@job_listing.responsibilities) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Benefits & Perks -->
+    <% if @job_listing.benefits.present? || @job_listing.perks.present? %>
+      <div
+        class="
+          bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+          border-gray-200 dark:border-gray-700 p-6
+        "
+      >
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Benefits & Perks
+        </h2>
+
+        <% if @job_listing.benefits.present? %>
+          <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-2">
+              Benefits
+            </h3>
+
+            <div class="prose dark:prose-invert max-w-none">
+              <%= format_list_text(@job_listing.benefits) %>
+            </div>
+          </div>
+        <% end %>
+
+        <% if @job_listing.perks.present? %>
+          <div>
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-2">
+              Perks
+            </h3>
+
+            <div class="prose dark:prose-invert max-w-none">
+              <%= format_list_text(@job_listing.perks) %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Custom Sections -->
+    <% if @job_listing.has_custom_sections? %>
+      <% @job_listing.custom_sections.each do |key, value| %>
+        <div
+          class="
+            bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+            border-gray-200 dark:border-gray-700 p-6
+          "
+        >
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <%= key.to_s.titleize %>
+          </h2>
+
+          <div class="prose dark:prose-invert max-w-none">
+            <%= format_job_text(value) %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <!-- Related Applications -->
+    <% if @job_listing.interview_applications.any? %>
+      <div
+        class="
+          bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+          border-gray-200 dark:border-gray-700 p-6
+        "
+      >
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Related Applications
+        </h2>
+
+        <div class="space-y-3">
+          <% @job_listing.interview_applications.each do |application| %>
+            <%= link_to interview_application_path(application),
+                  class: "flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" do %>
+              <div>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  <%= application.job_role.title %>
+                </p>
+
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Applied
+                  <%= time_ago_in_words(application.applied_at || application.created_at) %>
+                  ago
+                </p>
+              </div>
+
+              <span
+                class="
+                  inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                  <%= case application.status.to_sym
+                  when :active then 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                  when :accepted then 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                  when :rejected then 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                  when :archived then 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  end %>
+                "
+              >
+                <%= application.status.to_s.titleize %>
+              </span>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

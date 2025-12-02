@@ -1,0 +1,94 @@
+<!-- Job Role Creation Modal -->
+<div id="job-role-modal" 
+     data-controller="modal autocomplete-modal"
+     data-autocomplete-modal-create-url-value="<%= job_roles_path %>"
+     data-action="click->modal#closeBackground keyup@window->modal#closeWithKeyboard"
+     class="hidden fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+       data-modal-target="content">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        Create New Job Role
+      </h2>
+      <button type="button"
+              data-action="click->modal#hide"
+              class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Error Container -->
+    <div data-autocomplete-modal-target="errors" class="hidden px-6 pt-6"></div>
+
+    <!-- Modal Body -->
+    <form data-autocomplete-modal-target="form"
+          data-action="submit->autocomplete-modal#submit"
+          class="p-6 space-y-4">
+      
+      <!-- Job Title -->
+      <div>
+        <label for="job_role_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Job Title <span class="text-red-500">*</span>
+        </label>
+        <input type="text"
+               id="job_role_title"
+               name="job_role[title]"
+               required
+               class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+               placeholder="e.g., Senior Software Engineer">
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="job_role_category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Category
+        </label>
+        <select id="job_role_category"
+                name="job_role[category]"
+                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500">
+          <option value="">Select category...</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Product">Product</option>
+          <option value="Design">Design</option>
+          <option value="Data">Data</option>
+          <option value="Management">Management</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Sales">Sales</option>
+          <option value="Operations">Operations</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="job_role_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Description
+        </label>
+        <textarea id="job_role_description"
+                  name="job_role[description]"
+                  rows="3"
+                  class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  placeholder="Brief description of the role..."></textarea>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button type="button"
+                data-action="click->autocomplete-modal#close"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+          Cancel
+        </button>
+        <button type="submit"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+          Create Job Role
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

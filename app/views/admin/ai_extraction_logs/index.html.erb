@@ -1,0 +1,182 @@
+<% content_for :title, "AI Extraction Logs - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">AI Extraction Logs</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Debug AI extraction calls with full request/response payloads
+    </p>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Filters Sidebar -->
+    <div class="lg:w-64 flex-shrink-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Filters</h3>
+        
+        <%= form_with url: admin_ai_extraction_logs_path, method: :get, local: true, class: "space-y-4" do |f| %>
+          <!-- Provider Filter -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Provider</label>
+            <select name="provider" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All Providers</option>
+              <% @stats[:by_provider].keys.each do |provider| %>
+                <option value="<%= provider %>" <%= "selected" if @filters[:provider] == provider %>><%= provider.titleize %></option>
+              <% end %>
+            </select>
+          </div>
+
+          <!-- Status Filter -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
+            <select name="status" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All Statuses</option>
+              <option value="success" <%= "selected" if @filters[:status] == "success" %>>Success</option>
+              <option value="error" <%= "selected" if @filters[:status] == "error" %>>Error</option>
+              <option value="timeout" <%= "selected" if @filters[:status] == "timeout" %>>Timeout</option>
+              <option value="rate_limited" <%= "selected" if @filters[:status] == "rate_limited" %>>Rate Limited</option>
+            </select>
+          </div>
+
+          <!-- Date Range -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Date From</label>
+            <input type="date" name="date_from" value="<%= @filters[:date_from] %>" 
+                   class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Date To</label>
+            <input type="date" name="date_to" value="<%= @filters[:date_to] %>" 
+                   class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-2 pt-2">
+            <button type="submit" class="flex-1 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors">
+              Apply
+            </button>
+            <%= link_to "Clear", admin_ai_extraction_logs_path, class: "flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg text-center transition-colors" %>
+          </div>
+        <% end %>
+
+        <!-- Quick Stats -->
+        <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">7-Day Stats</h4>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Total Calls</dt>
+              <dd class="font-medium text-slate-900 dark:text-white"><%= @stats[:total] %></dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Avg Latency</dt>
+              <dd class="font-medium text-slate-900 dark:text-white"><%= (@stats[:avg_latency] / 1000.0).round(2) %>s</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Avg Confidence</dt>
+              <dd class="font-medium text-slate-900 dark:text-white"><%= @stats[:avg_confidence] %>%</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-900">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Provider</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Latency</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tokens</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cost</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Confidence</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+              <% @logs.each do |log| %>
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <div><%= log.created_at.strftime("%b %d, %H:%M") %></div>
+                    <div class="text-xs text-slate-400 dark:text-slate-500"><%= time_ago_in_words(log.created_at) %> ago</div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <div class="text-sm font-medium text-slate-900 dark:text-white"><%= log.provider.titleize %></div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400"><%= truncate(log.model, length: 20) %></div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <% status_colors = { "success" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", "error" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", "timeout" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400", "rate_limited" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" } %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= status_colors[log.status] || 'bg-slate-100 text-slate-800' %>">
+                      <%= log.status.titleize %>
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <%= log.formatted_latency %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <% if log.total_tokens %>
+                      <%= number_with_delimiter(log.total_tokens) %>
+                    <% else %>
+                      -
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <%= log.formatted_cost %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <% if log.confidence_score %>
+                      <% conf_pct = (log.confidence_score * 100).round(0) %>
+                      <div class="flex items-center gap-2">
+                        <div class="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden" style="width: 60px;">
+                          <div class="h-full <%= conf_pct >= 85 ? 'bg-green-500' : conf_pct >= 70 ? 'bg-amber-500' : 'bg-red-500' %>" style="width: <%= conf_pct %>%;"></div>
+                        </div>
+                        <span class="text-sm text-slate-500 dark:text-slate-400"><%= conf_pct %>%</span>
+                      </div>
+                    <% else %>
+                      <span class="text-slate-400">-</span>
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm">
+                    <%= link_to "View", admin_ai_extraction_log_path(log), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium" %>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @logs.empty? %>
+                <tr>
+                  <td colspan="8" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                    No AI extraction logs found
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if @total_pages > 1 %>
+          <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-slate-500 dark:text-slate-400">
+                Showing <%= ((@page - 1) * 25) + 1 %> to <%= [(@page * 25), @total_count].min %> of <%= @total_count %> results
+              </div>
+              <div class="flex gap-2">
+                <% if @page > 1 %>
+                  <%= link_to "Previous", url_for(params.permit!.merge(page: @page - 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300" %>
+                <% end %>
+                <% if @page < @total_pages %>
+                  <%= link_to "Next", url_for(params.permit!.merge(page: @page + 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300" %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+

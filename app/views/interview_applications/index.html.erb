@@ -1,0 +1,67 @@
+<div class="w-full px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+          Interview Applications
+        </h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Track and manage your job applications
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- View Switcher -->
+        <%= render "shared/view_switcher", current_view: @current_view %>
+
+        <!-- Add Application Button (Opens Modal) -->
+        <button
+          type="button"
+          onclick="document.getElementById('new-application-modal').dispatchEvent(new CustomEvent('modal:show'))"
+          class="
+            inline-flex items-center px-4 py-2 bg-primary-600
+            hover:bg-primary-700 text-white font-medium rounded-lg
+            transition-colors duration-200 shadow-sm hover:shadow
+          "
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Add Application
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Applications View -->
+  <% if @applications.any? || @current_view == "table" %>
+    <% if @current_view == "kanban" %>
+      <%= render "kanban_view" %>
+    <% else %>
+      <%= render "table_view" %>
+    <% end %>
+  <% else %>
+    <%= render "empty_state" %>
+  <% end %>
+</div>
+
+<!-- New Application Modal -->
+
+<%= render "interview_applications/new_application_modal" %>
+
+<!-- Include Creation Modals -->
+
+<%# = render "shared/company_create_modal" %>
+
+<%# = render "shared/job_role_create_modal" %>

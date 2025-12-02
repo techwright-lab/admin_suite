@@ -1,0 +1,127 @@
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" data-controller="autosave" data-autosave-delay-value="1500">
+  <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">General Settings</h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Customize your display preferences and regional settings
+        </p>
+      </div>
+      <span data-autosave-target="status" class="ml-4"></span>
+    </div>
+  </div>
+
+  <%= form_with model: preference, url: update_general_settings_path, method: :patch, class: "p-6 space-y-6", data: { autosave_target: "form" } do |f| %>
+    <!-- Theme -->
+    <div data-controller="radio-cards">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        Theme
+      </label>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <% UserPreference::THEMES.each do |theme_option| %>
+          <label data-radio-cards-target="card" class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors <%= preference.theme == theme_option ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-600' %>">
+            <%= f.radio_button :theme, theme_option, class: "sr-only peer", data: { action: "change->autosave#save change->radio-cards#update", radio_cards_target: "radio" } %>
+            <div class="flex items-center gap-3">
+              <% case theme_option %>
+              <% when "light" %>
+                <div class="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>
+                  </svg>
+                </div>
+              <% when "dark" %>
+                <div class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-600 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+              <% when "system" %>
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-white to-gray-800 border border-gray-300 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+              <% end %>
+              <div>
+                <span class="block text-sm font-medium text-gray-900 dark:text-white capitalize"><%= theme_option %></span>
+                <span class="block text-xs text-gray-500 dark:text-gray-400">
+                  <%= case theme_option
+                      when "light" then "Always use light mode"
+                      when "dark" then "Always use dark mode"
+                      when "system" then "Match system setting"
+                      end %>
+                </span>
+              </div>
+            </div>
+            <svg data-radio-cards-target="check" class="absolute top-3 right-3 w-5 h-5 text-primary-500 <%= preference.theme == theme_option ? '' : 'hidden' %>" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </label>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Preferred View -->
+    <div data-controller="radio-cards">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        Default View for Applications
+      </label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <% UserPreference::VIEWS.each do |view_option| %>
+          <label data-radio-cards-target="card" class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors <%= preference.preferred_view == view_option ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-600' %>">
+            <%= f.radio_button :preferred_view, view_option, class: "sr-only peer", data: { action: "change->autosave#save change->radio-cards#update", radio_cards_target: "radio" } %>
+            <div class="flex items-center gap-3">
+              <% if view_option == "kanban" %>
+                <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                  </svg>
+                </div>
+              <% else %>
+                <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                  </svg>
+                </div>
+              <% end %>
+              <div>
+                <span class="block text-sm font-medium text-gray-900 dark:text-white capitalize"><%= view_option %> View</span>
+                <span class="block text-xs text-gray-500 dark:text-gray-400">
+                  <%= view_option == "kanban" ? "Visual board with drag & drop" : "Traditional list with details" %>
+                </span>
+              </div>
+            </div>
+            <svg data-radio-cards-target="check" class="absolute top-3 right-3 w-5 h-5 text-primary-500 <%= preference.preferred_view == view_option ? '' : 'hidden' %>" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </label>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Timezone -->
+    <div>
+      <label for="user_preference_timezone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Timezone
+      </label>
+      <%= f.time_zone_select :timezone,
+          ActiveSupport::TimeZone.all,
+          { default: preference.timezone },
+          { class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent", data: { action: "change->autosave#save" } } %>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        Used for displaying dates and times, and scheduling interview reminders
+      </p>
+    </div>
+
+    <!-- Submit -->
+    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+      <%= f.button type: "submit", class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500", data: { disable_with: "Saving..." } do %>
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Save Changes
+      <% end %>
+    </div>
+  <% end %>
+</div>
+

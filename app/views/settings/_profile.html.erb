@@ -1,0 +1,277 @@
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" data-controller="autosave" data-autosave-delay-value="2000">
+  <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+          <svg class="w-5 h-5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Profile Information</h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Update your personal and professional information
+          </p>
+        </div>
+      </div>
+      <span data-autosave-target="status" class="ml-4"></span>
+    </div>
+  </div>
+
+  <%= form_with model: user, url: update_profile_settings_path, method: :patch, class: "p-6 space-y-8", data: { autosave_target: "form" } do |f| %>
+    <% if user.errors.any? %>
+      <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-red-800 dark:text-red-300 mb-2">
+          <%= pluralize(user.errors.count, "error") %> prohibited your profile from being saved:
+        </h3>
+        <ul class="list-disc list-inside text-sm text-red-700 dark:text-red-400">
+          <% user.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <!-- Basic Information -->
+    <div>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Basic Information</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="user_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Full Name
+          </label>
+          <%= f.text_field :name,
+              class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "John Doe",
+              data: { action: "input->autosave#save" } %>
+        </div>
+
+        <div>
+          <label for="user_email_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Email Address
+          </label>
+          <div class="relative">
+            <%= f.email_field :email_address,
+                disabled: true,
+                class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed" %>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Email cannot be changed">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+            </div>
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Email address is your account identifier and cannot be changed
+            <% if user.email_verified? %>
+              <span class="text-green-600 dark:text-green-400 flex items-center gap-1 mt-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                Verified
+              </span>
+            <% else %>
+              <span class="text-yellow-600 dark:text-yellow-400 flex items-center gap-1 mt-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                Not verified
+              </span>
+            <% end %>
+          </p>
+        </div>
+
+        <div>
+          <label for="user_years_of_experience" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Years of Experience
+          </label>
+          <%= f.number_field :years_of_experience,
+              min: 0,
+              max: 50,
+              class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "5",
+              data: { action: "input->autosave#save" } %>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <label for="user_bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Bio
+        </label>
+        <%= f.text_area :bio,
+            rows: 4,
+            class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none",
+            placeholder: "Tell us about yourself, your experience, and career goals...",
+            data: { action: "input->autosave#save" } %>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Brief description for your profile. This helps personalize your interview insights.
+        </p>
+      </div>
+    </div>
+
+    <!-- Current Position -->
+    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Current Position</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="user_current_job_role_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Current Role
+          </label>
+          <%= f.collection_select :current_job_role_id, 
+              job_roles, 
+              :id, 
+              :title, 
+              { include_blank: "Select your current role" },
+              { class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent", data: { action: "change->autosave#save" } } %>
+        </div>
+
+        <div>
+          <label for="user_current_company_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Current Company
+          </label>
+          <%= f.collection_select :current_company_id, 
+              companies, 
+              :id, 
+              :name, 
+              { include_blank: "Select your current company" },
+              { class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent", data: { action: "change->autosave#save" } } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Target Positions -->
+    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Target Positions</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Select the roles and companies you're targeting. This helps us provide better insights.
+      </p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Target Roles
+          </label>
+          <div class="max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
+            <% job_roles.each do |role| %>
+              <label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 px-2 rounded">
+                <%= check_box_tag "user[target_job_role_ids][]", role.id, user.target_job_role_ids.include?(role.id), class: "rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500", data: { action: "change->autosave#save" } %>
+                <span class="text-sm text-gray-700 dark:text-gray-300"><%= role.title %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Target Companies
+          </label>
+          <div class="max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
+            <% companies.each do |company| %>
+              <label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 px-2 rounded">
+                <%= check_box_tag "user[target_company_ids][]", company.id, user.target_company_ids.include?(company.id), class: "rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500", data: { action: "change->autosave#save" } %>
+                <span class="text-sm text-gray-700 dark:text-gray-300"><%= company.name %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Links -->
+    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Social Links</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Add your professional profiles and portfolio links.
+      </p>
+      
+      <div class="space-y-4">
+        <!-- LinkedIn -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-[#0A66C2]/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-[#0A66C2]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+          </div>
+          <%= f.url_field :linkedin_url,
+              class: "flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "https://linkedin.com/in/yourname",
+              data: { action: "input->autosave#save" } %>
+        </div>
+
+        <!-- GitHub -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gray-900/10 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+          </div>
+          <%= f.url_field :github_url,
+              class: "flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "https://github.com/yourname",
+              data: { action: "input->autosave#save" } %>
+        </div>
+
+        <!-- GitLab -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-[#FC6D26]/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-[#FC6D26]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="m23.6004 9.5927-.0337-.0862L20.3.9814a.851.851 0 0 0-.3362-.405.8748.8748 0 0 0-.9997.0539.8748.8748 0 0 0-.29.4399l-2.2055 6.748H7.5375l-2.2057-6.748a.8573.8573 0 0 0-.29-.4412.8748.8748 0 0 0-.9997-.0539.8585.8585 0 0 0-.3362.4049L.4332 9.5015l-.0325.0862a6.0657 6.0657 0 0 0 2.0119 7.0105l.0113.0087.0275.0207 4.9758 3.7253 2.4618 1.8622 1.4994 1.1321a1.0085 1.0085 0 0 0 1.2197 0l1.4994-1.1321 2.4617-1.8622 5.0046-3.7466.0125-.01a6.0682 6.0682 0 0 0 2.0094-7.003z"/>
+            </svg>
+          </div>
+          <%= f.url_field :gitlab_url,
+              class: "flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "https://gitlab.com/yourname",
+              data: { action: "input->autosave#save" } %>
+        </div>
+
+        <!-- Twitter/X -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gray-900/10 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </div>
+          <%= f.url_field :twitter_url,
+              class: "flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "https://twitter.com/yourname",
+              data: { action: "input->autosave#save" } %>
+        </div>
+
+        <!-- Portfolio -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+            </svg>
+          </div>
+          <%= f.url_field :portfolio_url,
+              class: "flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "https://yourportfolio.com",
+              data: { action: "input->autosave#save" } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="pt-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+      <%= link_to profile_path, class: "text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" do %>
+        <span class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+          View Profile Insights
+        </span>
+      <% end %>
+      
+      <%= f.button type: "submit", class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500", data: { disable_with: "Saving..." } do %>
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Save Profile
+      <% end %>
+    </div>
+  <% end %>
+</div>
+

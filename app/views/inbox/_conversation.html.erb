@@ -1,0 +1,135 @@
+<%# locals: (thread_emails:, current_email:) %>
+
+<div class="flex flex-col h-full">
+  <!-- Conversation Messages -->
+  <div class="flex-1 p-3 space-y-2 overflow-y-auto">
+    <% thread_emails.each_with_index do |email, index| %>
+      <%
+        # Strip HTML and clean up body content
+        clean_body = strip_tags(email.body_preview.to_s).squish
+        is_long = clean_body.length > 250
+      %>
+      <div id="<%= dom_id(email) %>" 
+           class="conversation-message <%= email.id == current_email.id ? 'ring-2 ring-primary-500 ring-offset-1 dark:ring-offset-gray-900' : '' %>"
+           data-controller="<%= is_long ? 'expandable' : '' %>">
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <!-- Message Header -->
+          <div class="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2">
+              <!-- Avatar -->
+              <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium
+                          <%= email.email_type == 'offer' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              email.email_type == 'rejection' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              email.email_type == 'interview_invite' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                              'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' %>">
+                <%= email.sender_display[0].upcase %>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 text-sm">
+                  <span class="font-medium text-gray-900 dark:text-white truncate">
+                    <%= email.sender_display %>
+                  </span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500 truncate hidden sm:inline">
+                    &lt;<%= email.from_email %>&gt;
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <time datetime="<%= email.email_date&.iso8601 %>">
+                    <%= email.email_date&.strftime("%b %d, %Y at %I:%M %p") || "Unknown date" %>
+                  </time>
+                  <% if email.email_type.present? %>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <%= email.type_badge_classes %>">
+                      <%= email.email_type.titleize %>
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+
+              <!-- Expand/collapse toggle for long emails -->
+              <% if is_long %>
+                <button type="button" 
+                        class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+                        data-action="click->expandable#toggle"
+                        data-expandable-target="button">
+                  <svg class="w-4 h-4 transition-transform" data-expandable-target="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+              <% end %>
+            </div>
+
+            <!-- Subject (for first message only) -->
+            <% if index == 0 %>
+              <p class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                <%= email.subject %>
+              </p>
+            <% end %>
+          </div>
+
+          <!-- Message Body -->
+          <div class="px-3 py-2">
+            <% if clean_body.present? %>
+              <% if is_long %>
+                <!-- Collapsed view -->
+                <div data-expandable-target="collapsed">
+                  <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    <%= clean_body.truncate(250) %>
+                  </p>
+                  <button type="button" 
+                          class="mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          data-action="click->expandable#toggle">
+                    Show more...
+                  </button>
+                </div>
+                <!-- Expanded view -->
+                <div class="hidden" data-expandable-target="expanded">
+                  <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                    <%= clean_body %>
+                  </p>
+                  <button type="button" 
+                          class="mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          data-action="click->expandable#toggle">
+                    Show less
+                  </button>
+                </div>
+              <% else %>
+                <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                  <%= clean_body %>
+                </p>
+              <% end %>
+            <% elsif email.snippet.present? %>
+              <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                <%= strip_tags(email.snippet) %>
+              </p>
+            <% else %>
+              <p class="text-gray-400 dark:text-gray-500 italic text-xs">
+                No email content available
+              </p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thread connector line -->
+      <% if index < thread_emails.size - 1 %>
+        <div class="flex justify-center">
+          <div class="w-px h-2 bg-gray-300 dark:bg-gray-600"></div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- Thread info footer -->
+  <% if thread_emails.size > 1 %>
+    <div class="flex-shrink-0 px-3 py-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+      <p class="text-xs text-center text-gray-500 dark:text-gray-400">
+        Conversation with <%= thread_emails.size %> messages
+        <% if thread_emails.first.email_date && thread_emails.last.email_date %>
+          · <%= distance_of_time_in_words(thread_emails.first.email_date, thread_emails.last.email_date) %> span
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+</div>

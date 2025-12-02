@@ -1,0 +1,235 @@
+<div class="w-full px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+          Interview Pipeline
+        </h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Drag and drop to update application stages
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- View Switcher -->
+        <%= render "shared/view_switcher", current_view: "kanban" %>
+
+        <!-- Add Application Button (Opens Modal) -->
+        <button
+          type="button"
+          onclick="document.getElementById('new-application-modal').dispatchEvent(new CustomEvent('modal:show'))"
+          class="
+            inline-flex items-center px-4 py-2 bg-primary-600
+            hover:bg-primary-700 text-white font-medium rounded-lg
+            transition-colors duration-200 shadow-sm hover:shadow
+          "
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Add Application
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <% if @applications.any? %>
+    <%= render "kanban_view" %>
+  <% else %>
+    <%= render "empty_state" %>
+  <% end %>
+</div>
+
+<!-- New Application Modal -->
+
+<div
+  id="new-application-modal"
+  data-controller="modal"
+  class="hidden fixed inset-0 z-50 overflow-y-auto"
+  aria-labelledby="modal-title"
+  role="dialog"
+  aria-modal="true"
+>
+  <!-- Backdrop -->
+  <div
+    class="
+      fixed inset-0 bg-black/30 dark:bg-black/50 transition-opacity
+      backdrop-blur-sm
+    "
+    data-action="click->modal#hide"
+  ></div>
+
+  <!-- Modal Content -->
+  <div class="flex min-h-full items-center justify-center p-4">
+    <div
+      data-modal-target="content"
+      class="
+        relative transform overflow-hidden rounded-xl bg-white
+        dark:bg-gray-800 shadow-xl transition-all w-full max-w-2xl
+      "
+    >
+      <!-- Header -->
+      <div
+        class="
+          bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200
+          dark:border-gray-700
+        "
+      >
+        <div class="flex items-center justify-between">
+          <h3
+            class="text-lg font-semibold text-gray-900 dark:text-white"
+            id="modal-title"
+          >
+            New Application
+          </h3>
+          <button
+            type="button"
+            data-action="click->modal#hide"
+            class="
+              text-gray-400 hover:text-gray-500 dark:hover:text-gray-300
+              focus:outline-none
+            "
+          >
+            <span class="sr-only">Close</span>
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div
+        class="
+          bg-white dark:bg-gray-800 px-6 py-6 max-h-[calc(100vh-200px)]
+          overflow-y-auto
+        "
+      >
+        <%= form_with(
+              model: InterviewApplication.new,
+              url: interview_applications_path,
+              local: true,
+              class: "space-y-5"
+            ) do |form| %>
+          <!-- Company Autocomplete -->
+          <div>
+            <%= render "shared/autocomplete",
+              form: form,
+              field_name: :company_id,
+              label: "Company",
+              placeholder: "Search or create company...",
+              autocomplete_url: autocomplete_companies_path,
+              create_url: companies_path,
+              modal_id: "company-modal",
+              value: nil,
+              display_value: nil,
+              required: true,
+              help_text: "Start typing to search, or create a new company if not found" %>
+          </div>
+
+          <!-- Job Role Autocomplete -->
+          <div>
+            <%= render "shared/autocomplete",
+              form: form,
+              field_name: :job_role_id,
+              label: "Job Role",
+              placeholder: "Search or create job role...",
+              autocomplete_url: autocomplete_job_roles_path,
+              create_url: job_roles_path,
+              modal_id: "job-role-modal",
+              value: nil,
+              display_value: nil,
+              required: true,
+              help_text: "The position you're applying for" %>
+          </div>
+
+          <!-- Job Listing URL (Optional) -->
+          <div>
+            <%= form.label :job_listing_url, "Job Listing URL (Optional)", class: "form-label" %>
+            <%= form.url_field :job_listing_url,
+                placeholder: "https://example.com/jobs/123",
+                class: "form-input" %>
+            <p class="form-help-text">
+              We'll automatically fetch job details from this URL
+            </p>
+          </div>
+
+          <!-- Applied Date (Optional) -->
+          <div>
+            <%= form.label :applied_at, "Applied Date (Optional)", class: "form-label" %>
+            <%= form.date_field :applied_at,
+                value: Date.today,
+                class: "form-input" %>
+            <p class="form-help-text">
+              Defaults to today if not specified
+            </p>
+          </div>
+
+          <!-- Notes (Optional) -->
+          <div>
+            <%= form.label :notes, "Notes (Optional)", class: "form-label" %>
+            <%= form.text_area :notes,
+                rows: 3,
+                placeholder: "Add any notes about this application...",
+                class: "form-textarea" %>
+          </div>
+
+          <!-- Form Actions -->
+          <div
+            class="
+              flex items-center justify-end gap-3 pt-4 border-t
+              border-gray-200 dark:border-gray-700
+            "
+          >
+            <button
+              type="button"
+              data-action="click->modal#hide"
+              class="
+                px-5 py-2.5 text-sm font-medium text-gray-700
+                dark:text-gray-300 bg-white dark:bg-gray-800 border
+                border-gray-300 dark:border-gray-600 rounded-lg
+                hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none
+                focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+                transition-colors
+              "
+            >
+              Cancel
+            </button>
+
+            <%= form.submit "Create Application",
+                data: { disable_with: "Creating..." },
+                class: "px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm hover:shadow transition-all" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include Creation Modals -->
+
+<%= render "shared/company_create_modal" %>
+
+<%= render "shared/job_role_create_modal" %>

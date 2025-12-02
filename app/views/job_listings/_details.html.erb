@@ -1,0 +1,305 @@
+<%# Job Listing Details Partial - User-facing view for interview applications %>
+
+<div
+  class="
+    bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200
+    dark:border-gray-700 p-6
+  "
+>
+  <div class="space-y-6">
+    <!-- Header Info -->
+    <div class="pb-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <%= job_listing.display_title %>
+      </h2>
+
+      <div
+        class="
+          flex flex-wrap items-center gap-3 text-sm text-gray-600
+          dark:text-gray-400
+        "
+      >
+        <% if job_listing.location.present? %>
+          <span class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-1 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+            </svg>
+
+            <%= job_listing.location_display %>
+          </span>
+        <% end %>
+
+        <% if job_listing.salary_range.present? %>
+          <span class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-1 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+
+            <%= job_listing.salary_range %>
+          </span>
+        <% end %>
+
+        <% if job_listing.url.present? %>
+          <a
+            href="<%= job_listing.url %>"
+            target="_blank"
+            rel="noopener"
+            class="
+              flex items-center text-primary-600 dark:text-primary-400
+              hover:text-primary-700
+            "
+          >
+            <svg
+              class="w-4 h-4 mr-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
+            </svg>
+            View Original
+          </a>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Show a subtle loading indicator if extraction is in progress %>
+    <% latest_attempt = job_listing.latest_scraping_attempt %>
+
+    <% if latest_attempt&.pending? || latest_attempt&.fetching? || latest_attempt&.extracting? %>
+      <div
+        class="
+          flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20
+          rounded-lg text-sm text-blue-700 dark:text-blue-300
+        "
+      >
+        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+
+        <span>Fetching additional job details...</span>
+      </div>
+    <% end %>
+
+    <!-- Description -->
+    <% if job_listing.description.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          Description
+        </h3>
+
+        <div class="prose prose-sm dark:prose-invert max-w-none">
+          <%= format_job_text(job_listing.description) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Responsibilities -->
+    <% if job_listing.responsibilities.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          Responsibilities
+        </h3>
+
+        <div class="prose prose-sm dark:prose-invert max-w-none">
+          <%= format_list_text(job_listing.responsibilities) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Requirements -->
+    <% if job_listing.requirements.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          Requirements
+        </h3>
+
+        <div class="prose prose-sm dark:prose-invert max-w-none">
+          <%= format_list_text(job_listing.requirements) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Benefits -->
+    <% if job_listing.benefits.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          Benefits
+        </h3>
+
+        <div class="prose prose-sm dark:prose-invert max-w-none">
+          <%= format_key_value_text(job_listing.benefits) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Perks -->
+    <% if job_listing.perks.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          Perks
+        </h3>
+
+        <div class="prose prose-sm dark:prose-invert max-w-none">
+          <%= format_list_text(job_listing.perks) %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Equity Info -->
+    <% if job_listing.equity_info.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          Equity
+        </h3>
+
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          <%= job_listing.equity_info %>
+        </p>
+      </div>
+    <% end %>
+
+    <!-- Custom Sections - Group related items together -->
+    <% if job_listing.has_custom_sections? %>
+      <%# Separate key-value sections from text sections %>
+      <% kv_sections = {}
+        text_sections = {}
+        
+        job_listing.custom_sections.each do |key, value|
+          next if value.blank?
+          
+          # Check if it's a simple value (no newlines, short)
+          if value.to_s.strip.length < 100 && !value.to_s.include?("\n")
+            kv_sections[key] = value
+          else
+            text_sections[key] = value
+          end
+        end %>
+      <%# Display key-value sections as a grouped info card %>
+      <% if kv_sections.any? %>
+        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            Additional Details
+          </h3>
+
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            <% kv_sections.each do |key, value| %>
+              <div class="flex flex-col">
+                <dt
+                  class="
+                    text-xs font-medium text-gray-500 dark:text-gray-400
+                    uppercase tracking-wide
+                  "
+                >
+                  <%= key.to_s.titleize %>
+                </dt>
+
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">
+                  <%= value %>
+                </dd>
+              </div>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+      <%# Display text sections as regular sections %>
+      <% text_sections.each do |key, value| %>
+        <div>
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            <%= key.to_s.titleize %>
+          </h3>
+
+          <div class="prose prose-sm dark:prose-invert max-w-none">
+            <%= format_job_text(value) %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%# Show a minimal notice if no content is available yet %>
+    <% unless job_listing.description.present? || job_listing.requirements.present? || job_listing.responsibilities.present? %>
+      <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <svg
+          class="mx-auto h-12 w-12 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+
+        <p class="mt-4 text-sm">Job details not available yet.</p>
+
+        <% if job_listing.url.present? %>
+          <a
+            href="<%= job_listing.url %>"
+            target="_blank"
+            rel="noopener"
+            class="
+              mt-2 inline-flex items-center text-sm text-primary-600
+              dark:text-primary-400 hover:text-primary-700
+            "
+          >
+            View original posting
+            <svg
+              class="w-4 h-4 ml-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
+            </svg>
+          </a>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

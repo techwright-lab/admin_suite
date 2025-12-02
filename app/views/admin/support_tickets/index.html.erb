@@ -1,0 +1,178 @@
+<% content_for :title, "Support Tickets - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Support Tickets</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Manage customer support inquiries and feedback
+    </p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-7 gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total</p>
+      <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:total] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Open</p>
+      <p class="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400"><%= @stats[:open] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">In Progress</p>
+      <p class="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400"><%= @stats[:in_progress] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Resolved</p>
+      <p class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400"><%= @stats[:resolved] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Closed</p>
+      <p class="mt-1 text-2xl font-bold text-slate-600 dark:text-slate-400"><%= @stats[:closed] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">From Users</p>
+      <p class="mt-1 text-2xl font-bold text-purple-600 dark:text-purple-400"><%= @stats[:from_users] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">From Guests</p>
+      <p class="mt-1 text-2xl font-bold text-indigo-600 dark:text-indigo-400"><%= @stats[:from_guests] %></p>
+    </div>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Filters -->
+    <div class="lg:w-56 flex-shrink-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Filters</h3>
+        
+        <%= form_with url: admin_support_tickets_path, method: :get, local: true, class: "space-y-4" do %>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Search</label>
+            <input type="text" name="search" value="<%= @filters[:search] %>" placeholder="Name, email, subject..."
+                   class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
+            <select name="status" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All Statuses</option>
+              <option value="open" <%= "selected" if @filters[:status] == "open" %>>Open</option>
+              <option value="in_progress" <%= "selected" if @filters[:status] == "in_progress" %>>In Progress</option>
+              <option value="resolved" <%= "selected" if @filters[:status] == "resolved" %>>Resolved</option>
+              <option value="closed" <%= "selected" if @filters[:status] == "closed" %>>Closed</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">User Type</label>
+            <select name="user_type" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All Users</option>
+              <option value="registered" <%= "selected" if @filters[:user_type] == "registered" %>>Registered Users</option>
+              <option value="guest" <%= "selected" if @filters[:user_type] == "guest" %>>Guest Users</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Sort By</label>
+            <select name="sort" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="recent" <%= "selected" if @filters[:sort] == "recent" || @filters[:sort].blank? %>>Most Recent</option>
+              <option value="oldest" <%= "selected" if @filters[:sort] == "oldest" %>>Oldest First</option>
+              <option value="name" <%= "selected" if @filters[:sort] == "name" %>>Name</option>
+              <option value="email" <%= "selected" if @filters[:sort] == "email" %>>Email</option>
+            </select>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="submit" class="flex-1 px-3 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
+              Apply
+            </button>
+            <%= link_to "Reset", admin_support_tickets_path, class: "flex-1 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 text-center" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Tickets List -->
+    <div class="flex-1">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+            Tickets (<%= @total_count %>)
+          </h2>
+        </div>
+
+        <% if @support_tickets.any? %>
+          <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            <% @support_tickets.each do |ticket| %>
+              <%= link_to admin_support_ticket_path(ticket), class: "block p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors" do %>
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <h3 class="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        <%= ticket.subject %>
+                      </h3>
+                      <% status_colors = {
+                        "open" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400",
+                        "in_progress" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+                        "resolved" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                        "closed" => "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                      } %>
+                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full <%= status_colors[ticket.status] || status_colors['open'] %>">
+                        <%= ticket.status.humanize %>
+                      </span>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                      <%= ticket.message_preview(150) %>
+                    </p>
+                    <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                      <span><%= ticket.name %></span>
+                      <span><%= ticket.email %></span>
+                      <% if ticket.from_user? %>
+                        <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                          Registered User
+                        </span>
+                      <% else %>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                          Guest
+                        </span>
+                      <% end %>
+                    </div>
+                  </div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 ml-4 flex-shrink-0">
+                    <%= ticket.created_at.strftime("%b %d, %Y") %>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+
+          <!-- Pagination -->
+          <% if @total_pages > 1 %>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                Page <%= @page %> of <%= @total_pages %>
+              </p>
+              <div class="flex gap-2">
+                <% if @page > 1 %>
+                  <%= link_to "Previous", admin_support_tickets_path(@filters.merge(page: @page - 1)), 
+                      class: "px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600" %>
+                <% end %>
+                <% if @page < @total_pages %>
+                  <%= link_to "Next", admin_support_tickets_path(@filters.merge(page: @page + 1)), 
+                      class: "px-3 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700" %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            No support tickets found
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+

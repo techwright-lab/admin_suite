@@ -1,0 +1,184 @@
+<div class="space-y-6">
+  <!-- Data Retention -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" data-controller="autosave" data-autosave-delay-value="1500">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Data Retention</h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Control how long we store your interview data
+          </p>
+        </div>
+        <span data-autosave-target="status" class="ml-4"></span>
+      </div>
+    </div>
+
+    <%= form_with model: preference, url: update_privacy_settings_path, method: :patch, class: "p-6 space-y-6", data: { autosave_target: "form" } do |f| %>
+      <div data-controller="radio-cards">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          Keep interview data for
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <% [[90, "90 Days"], [180, "6 Months"], [365, "1 Year"], [0, "Forever"]].each do |days, label| %>
+            <label data-radio-cards-target="card" class="relative flex flex-col items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors <%= preference.data_retention_days == days ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-600' %>">
+              <%= f.radio_button :data_retention_days, days, class: "sr-only peer", data: { action: "change->autosave#save change->radio-cards#update", radio_cards_target: "radio" } %>
+              <span class="text-sm font-medium text-gray-900 dark:text-white"><%= label %></span>
+              <svg data-radio-cards-target="check" class="absolute top-2 right-2 w-4 h-4 text-primary-500 <%= preference.data_retention_days == days ? '' : 'hidden' %>" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+            </label>
+          <% end %>
+        </div>
+        <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          After this period, your old interview data will be automatically deleted.
+          Select "Forever" to keep all data indefinitely.
+        </p>
+      </div>
+
+      <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <%= f.button type: "submit", class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500", data: { disable_with: "Saving..." } do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Save Changes
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Export Data -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Export Your Data</h2>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Download a copy of all your interview data
+      </p>
+    </div>
+
+    <div class="p-6">
+      <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white">Full Data Export</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Includes all applications, interviews, feedback, and profile data
+            </p>
+          </div>
+        </div>
+        <%= button_to export_data_settings_path,
+            method: :post,
+            class: "inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium rounded-lg text-sm text-gray-700 dark:text-gray-200 transition-colors" do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Request Export
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Account -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-red-200 dark:border-red-900">
+    <div class="p-6 border-b border-red-200 dark:border-red-900">
+      <h2 class="text-xl font-semibold text-red-600 dark:text-red-400">Danger Zone</h2>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Irreversible and destructive actions
+      </p>
+    </div>
+
+    <div class="p-6">
+      <div class="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+        <div>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-300">Delete Account</h3>
+          <p class="text-sm text-red-600 dark:text-red-400">
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+        </div>
+        <button
+          type="button"
+          data-controller="modal"
+          data-action="click->modal#open"
+          data-modal-target-value="delete-account-modal"
+          class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm transition-colors"
+        >
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+          Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div id="delete-account-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+    <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+      <div class="sm:flex sm:items-start">
+        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 sm:mx-0 sm:h-10 sm:w-10">
+          <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+          <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">
+            Delete Account
+          </h3>
+          <div class="mt-2">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Are you sure you want to delete your account? All of your data will be permanently removed.
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+      </div>
+      <%= form_with url: account_settings_path, method: :delete, class: "mt-5 sm:mt-4" do |f| %>
+        <div class="mb-4">
+          <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Enter your password to confirm
+          </label>
+          <input type="password" name="password" id="password" required
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            placeholder="Your password">
+        </div>
+        <div class="sm:flex sm:flex-row-reverse gap-3">
+          <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+            Delete My Account
+          </button>
+          <button type="button" onclick="document.getElementById('delete-account-modal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm">
+            Cancel
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Simple modal toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    const deleteBtn = document.querySelector('[data-modal-target-value="delete-account-modal"]');
+    const modal = document.getElementById('delete-account-modal');
+    
+    if (deleteBtn && modal) {
+      deleteBtn.addEventListener('click', function() {
+        modal.classList.remove('hidden');
+      });
+      
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.classList.add('hidden');
+        }
+      });
+    }
+  });
+</script>
+

@@ -1,0 +1,45 @@
+<% content_for :title, "Edit Self-Reflection - Gleania" %>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+          Edit Self-Reflection
+        </h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          For <%= @round.stage_display %> -
+          <%= @round.interview_application.job_role.title %> at
+          <%= @round.interview_application.company.name %>
+        </p>
+      </div>
+      <%= link_to interview_application_path(@round.interview_application),
+          class: "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" do %>
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div
+    class="
+      bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200
+      dark:border-gray-700 p-6
+    "
+  >
+    <%= render "form" %>
+  </div>
+</div>

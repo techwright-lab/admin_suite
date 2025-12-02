@@ -1,0 +1,74 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  
+  <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+            Job Listings
+          </h1>
+          <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Manage and track job postings you're interested in
+          </p>
+        </div>
+        
+        <%= link_to new_job_listing_path,
+            class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors duration-200" do %>
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Job Listing
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex flex-wrap gap-3">
+        <%= link_to "All", job_listings_path, 
+            class: "px-3 py-1.5 rounded-lg text-sm font-medium #{params[:status].nil? ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}" %>
+        
+        <%= link_to "Active", job_listings_path(status: :active), 
+            class: "px-3 py-1.5 rounded-lg text-sm font-medium #{params[:status] == 'active' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}" %>
+        
+        <%= link_to "Closed", job_listings_path(status: :closed), 
+            class: "px-3 py-1.5 rounded-lg text-sm font-medium #{params[:status] == 'closed' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}" %>
+        
+        <%= link_to "Remote", job_listings_path(remote: :remote), 
+            class: "px-3 py-1.5 rounded-lg text-sm font-medium #{params[:remote] == 'remote' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}" %>
+      </div>
+    </div>
+
+    <!-- Job Listings -->
+    <% if @job_listings.any? %>
+      <div class="grid grid-cols-1 gap-4">
+        <% @job_listings.each do |listing| %>
+          <%= render "job_listing_card", listing: listing %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+        <svg class="mx-auto h-24 w-24 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        
+        <h3 class="mt-6 text-lg font-medium text-gray-900 dark:text-white">
+          No job listings yet
+        </h3>
+        
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+          Start tracking job postings to keep all your application details organized.
+        </p>
+        
+        <div class="mt-8">
+          <%= link_to new_job_listing_path,
+              class: "inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors duration-200" do %>
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Your First Job Listing
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+</div>

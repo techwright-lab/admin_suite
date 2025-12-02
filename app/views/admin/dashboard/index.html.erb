@@ -1,0 +1,247 @@
+<% content_for :title, "Admin Dashboard - Gleania" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Overview of system health and extraction metrics
+    </p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Today's Extractions -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+          <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Today's Extractions</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:scraping_attempts_today] %></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Rate -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
+          <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">7-Day Success Rate</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:scraping_success_rate] %>%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+          <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pending</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:pending_extractions] %></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Failed / DLQ -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30">
+          <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Failed / DLQ</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-white">
+            <%= @stats[:failed_extractions] %> / <%= @stats[:dead_letter_count] %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Scraping & AI Section -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Scraping & AI</h2>
+      <div class="space-y-3">
+        <%= link_to admin_scraping_metrics_path, class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <div>
+              <p class="font-medium text-slate-900 dark:text-white">Scraping Metrics</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">View extraction performance and domain stats</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+
+        <%= link_to admin_ai_extraction_logs_path, class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <div>
+              <p class="font-medium text-slate-900 dark:text-white">AI Extraction Logs</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Debug AI calls with full request/response data</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- System Section -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">System</h2>
+      <div class="space-y-3">
+        <%= link_to internal_mission_control_jobs_path, target: "_blank", class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <div>
+              <p class="font-medium text-slate-900 dark:text-white">Background Jobs</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Monitor job queues with Mission Control</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        <% end %>
+
+        <%= link_to avo_path, target: "_blank", class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+            <div>
+              <p class="font-medium text-slate-900 dark:text-white">Data Admin (Avo)</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Manage database records directly</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gmail Sync Health -->
+  <% if @gmail_stats.present? %>
+    <div class="mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+          <svg class="w-5 h-5 text-red-500" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
+          </svg>
+          Gmail Sync Health
+        </h2>
+        <%= link_to "View Users", admin_users_path, class: "text-sm text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium" %>
+      </div>
+
+      <!-- Gmail Stats Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Connected Users</p>
+          <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+            <%= @gmail_stats[:connected_users] %><span class="text-sm font-normal text-slate-400">/<%= @gmail_stats[:total_users] %></span>
+          </p>
+        </div>
+        <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Sync Enabled</p>
+          <p class="text-2xl font-bold text-blue-600 dark:text-blue-400"><%= @gmail_stats[:sync_enabled_users] %></p>
+        </div>
+        <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Emails Today</p>
+          <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= @gmail_stats[:emails_today] %></p>
+        </div>
+        <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Needs Review</p>
+          <p class="text-2xl font-bold <%= @gmail_stats[:needs_review] > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white' %>">
+            <%= @gmail_stats[:needs_review] %>
+          </p>
+        </div>
+      </div>
+
+      <!-- Email Senders Summary -->
+      <div class="flex items-center justify-between p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+        <div>
+          <p class="text-sm font-medium text-amber-800 dark:text-amber-300">Email Senders</p>
+          <p class="text-xs text-amber-600 dark:text-amber-400">
+            <%= @gmail_stats[:email_senders] %> total, <span class="font-semibold"><%= @gmail_stats[:unassigned_senders] %> unassigned</span>
+          </p>
+        </div>
+        <%= link_to admin_email_senders_path(status: "unassigned"), class: "px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors" do %>
+          Review Unassigned
+        <% end %>
+      </div>
+
+      <!-- Recent Syncs -->
+      <% if @gmail_stats[:recent_syncs].present? %>
+        <div class="mt-4">
+          <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Recent Syncs</h3>
+          <div class="space-y-2">
+            <% @gmail_stats[:recent_syncs].each do |sync| %>
+              <div class="flex items-center justify-between text-sm p-2 rounded bg-slate-50 dark:bg-slate-700/50">
+                <div class="flex items-center gap-2">
+                  <% if sync[:sync_enabled] %>
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                  <% else %>
+                    <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                  <% end %>
+                  <span class="font-medium text-slate-900 dark:text-white"><%= sync[:user_name] %></span>
+                  <span class="text-slate-500 dark:text-slate-400 text-xs"><%= sync[:user_email] %></span>
+                </div>
+                <div class="text-right">
+                  <span class="text-slate-600 dark:text-slate-400"><%= sync[:email_count] %> emails</span>
+                  <span class="text-slate-400 dark:text-slate-500 text-xs ml-2"><%= time_ago_in_words(sync[:last_synced_at]) %> ago</span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- Job Listings Summary -->
+  <div class="mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Job Listings</h2>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Total Listings</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:total_job_listings] %></p>
+      </div>
+      <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Active Listings</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:active_job_listings] %></p>
+      </div>
+    </div>
+  </div>
+</div>
+

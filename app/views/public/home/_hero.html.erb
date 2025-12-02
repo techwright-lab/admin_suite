@@ -1,0 +1,147 @@
+<%# Hero Section - Instant understanding → emotional connection → CTA %>
+<section class="relative min-h-screen flex items-center overflow-hidden pt-20">
+  <%# Background with teal bloom %>
+  <div class="absolute inset-0 bg-dark-950">
+    <%# Gradient overlay %>
+    <div class="absolute inset-0 bg-gradient-to-br from-dark-900 via-dark-950 to-dark-900"></div>
+    
+    <%# Teal bloom near logo area %>
+    <div class="absolute top-20 left-1/4 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-secondary-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+    
+    <%# Subtle grid pattern %>
+    <div class="absolute inset-0 opacity-[0.02]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+  </div>
+
+  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <%# Left: Headline + CTA %>
+      <div class="text-center lg:text-left">
+        <%# Badge %>
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 mb-8 animate-fade-in-up">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+          </span>
+          <span class="text-sm font-medium text-primary-300">Now in Beta</span>
+        </div>
+
+        <%# Headline %>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-6 animate-fade-in-up animation-delay-100">
+          Turn every interview into
+          <span class="text-gradient-brand">insight.</span>
+        </h1>
+
+        <%# Subheadline %>
+        <p class="text-lg sm:text-xl text-gray-400 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-10 animate-fade-in-up animation-delay-200">
+          Gleania helps you track interviews, gather feedback, and grow your skills with AI-powered reflection.
+        </p>
+
+        <%# CTAs %>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up animation-delay-300">
+          <%= link_to new_registration_path, class: "btn-primary-glow group" do %>
+            <span>Start Reflecting</span>
+            <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+          <% end %>
+          <a href="#demo" class="btn-secondary-ghost">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Explore Demo</span>
+          </a>
+        </div>
+
+        <%# Social proof hint %>
+        <div class="mt-12 flex items-center gap-4 justify-center lg:justify-start animate-fade-in-up animation-delay-400">
+          <div class="flex -space-x-2">
+            <% 4.times do |i| %>
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 border-2 border-dark-950 flex items-center justify-center">
+                <span class="text-xs text-gray-300"><%= %w[J M A S][i] %></span>
+              </div>
+            <% end %>
+          </div>
+          <p class="text-sm text-gray-500">
+            <span class="text-gray-300 font-medium">500+</span> job seekers growing with Gleania
+          </p>
+        </div>
+      </div>
+
+      <%# Right: Floating UI mockup %>
+      <div class="relative animate-fade-in-up animation-delay-200">
+        <div class="relative">
+          <%# Main card - Interview Pipeline %>
+          <div class="card-glass shadow-glow-lg animate-float">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-sm font-semibold text-white">Interview Pipeline</h3>
+              <span class="text-xs text-primary-400 font-medium">4 Active</span>
+            </div>
+            
+            <%# Stage cards %>
+            <div class="space-y-3">
+              <% [
+                { stage: "Applied", company: "Stripe", role: "Senior Engineer", status: "success", days: "2d" },
+                { stage: "Interviewed", company: "Vercel", role: "Staff Engineer", status: "warning", days: "Today" },
+                { stage: "Feedback", company: "Linear", role: "Frontend Lead", status: "info", days: "1d" },
+                { stage: "Growth", company: "Notion", role: "Product Eng", status: "primary", days: "3d" }
+              ].each do |item| %>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary-500/30 transition-colors cursor-pointer">
+                  <div class="w-2 h-2 rounded-full <%= 
+                    case item[:status]
+                    when 'success' then 'bg-emerald-400'
+                    when 'warning' then 'bg-amber-400'
+                    when 'info' then 'bg-blue-400'
+                    else 'bg-primary-400'
+                    end
+                  %>"></div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate"><%= item[:company] %></p>
+                    <p class="text-xs text-gray-500 truncate"><%= item[:role] %></p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs text-gray-400"><%= item[:days] %></p>
+                    <p class="text-xs font-medium text-primary-400"><%= item[:stage] %></p>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Floating insight card %>
+          <div class="absolute -bottom-6 -right-6 w-72 card-dark shadow-lg animate-float animation-delay-200">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-primary-400 mb-1">AI Insight</p>
+                <p class="text-sm text-gray-300 leading-relaxed">You struggled with <span class="text-white font-medium">concurrency</span>; here's what to practice next.</p>
+              </div>
+            </div>
+          </div>
+
+          <%# G-spark decorative element %>
+          <div class="absolute -top-8 -left-8 w-16 h-16 animate-pulse-glow">
+            <div class="w-full h-full rounded-2xl bg-gradient-to-br from-primary-400/20 to-primary-600/20 flex items-center justify-center">
+              <svg class="w-8 h-8 text-primary-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Scroll indicator %>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+    </svg>
+  </div>
+</section>
+

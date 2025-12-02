@@ -1,0 +1,17 @@
+Verify your email address
+==========================
+
+Hi<%= " #{@user.name}" if @user.name.present? %>,
+
+Welcome to Gleania! We're excited to have you on board. To get started, please verify your email address by clicking the link below:
+
+<%= @verification_url %>
+
+This verification link will expire in 24 hours for security reasons.
+
+If you didn't create an account with Gleania, you can safely ignore this email.
+
+---
+Gleania - Your Interview Tracking Companion
+© <%= Time.current.year %> Gleania. All rights reserved.
+

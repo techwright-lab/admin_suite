@@ -1,0 +1,73 @@
+<%#
+  Reusable autocomplete component with inline creation
+
+  Usage:
+  <%= render "shared/autocomplete",
+    form: form,
+    field_name: :company_id,
+    label: "Company",
+    placeholder: "Search or create company...",
+    autocomplete_url: autocomplete_companies_path,
+    create_url: companies_path,
+    modal_id: "company-modal",
+    value: @application.company_id,
+    display_value: @application.company&.name,
+    required: true
+%>
+
+<% # Set defaults
+  required ||= false
+  display_value ||= nil
+  help_text ||= nil
+  wrapper_class ||= "mb-4"
+  input_class ||= "" %>
+
+<div class="<%= wrapper_class %>">
+  <div
+    data-controller="autocomplete"
+    data-autocomplete-url-value="<%= autocomplete_url %>"
+    data-autocomplete-create-url-value="<%= create_url %>"
+    data-autocomplete-modal-target-value="<%= modal_id %>"
+    class="relative"
+  >
+    <%= form.label field_name, class: "form-label" do %>
+      <%= label %>
+      <% if required %>
+        <span class="text-red-500">*</span>
+      <% end %>
+    <% end %>
+
+    <% if help_text.present? %>
+      <p class="form-help-text mb-2"><%= help_text %></p>
+    <% end %>
+
+    <!-- Display Input (what user sees and types in) -->
+    <input
+      type="text"
+      data-autocomplete-target="input"
+      data-action="input->autocomplete#search focus->autocomplete#handleFocus blur->autocomplete#hideDropdown"
+      value="<%= display_value %>"
+      placeholder="<%= placeholder %>"
+      autocomplete="off"
+      class="form-input <%= input_class %>"
+      <%= 'required' if required %>
+    >
+
+    <!-- Hidden Input (stores ID for form submission) -->
+    <%= form.hidden_field field_name, 
+        data: { autocomplete_target: "hiddenInput" },
+        value: value %>
+
+    <!-- Dropdown Results -->
+    <div
+      data-autocomplete-target="dropdown"
+      class="
+        hidden absolute z-50 mt-1 w-full bg-white dark:bg-gray-800
+        rounded-lg shadow-lg border border-gray-200 dark:border-gray-700
+        max-h-80 overflow-y-auto
+      "
+    >
+      <div data-autocomplete-target="results"></div>
+    </div>
+  </div>
+</div>

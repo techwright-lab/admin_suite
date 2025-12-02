@@ -1,0 +1,78 @@
+<%# locals: (email:, thread_emails:, application: nil) %>
+
+<div class="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800 lg:bg-gray-50 lg:dark:bg-gray-900">
+  <!-- Header with application context -->
+  <div class="flex-shrink-0 px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-start justify-between gap-2">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white truncate">
+          <%= email.clean_subject %>
+        </h2>
+        <div class="mt-0.5 flex items-center gap-2 text-sm flex-wrap">
+          <% if application.present? %>
+            <%= link_to interview_application_path(application), 
+                class: "inline-flex items-center gap-1.5 text-primary-600 dark:text-primary-400 hover:underline" do %>
+              <div class="w-5 h-5 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-xs font-medium">
+                <%= application.company.name[0].upcase %>
+              </div>
+              <span><%= application.company.name %></span>
+              <span class="text-gray-400">·</span>
+              <span class="text-gray-500 dark:text-gray-400"><%= application.job_role.title %></span>
+            <% end %>
+          <% elsif email.company.present? %>
+            <span class="text-gray-500 dark:text-gray-400">
+              From <%= email.company.name %>
+            </span>
+          <% end %>
+          <% if thread_emails.size > 1 %>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+              <%= thread_emails.size %> messages
+            </span>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2 ml-4">
+        <% unless email.matched? %>
+          <%= button_to ignore_inbox_path(email),
+              method: :patch,
+              class: "p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
+              title: "Mark as not interview-related",
+              data: { turbo_confirm: "Mark this email as not interview-related?" } do %>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+            </svg>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversation Thread -->
+  <div class="flex-1 overflow-y-auto">
+    <%= render "inbox/conversation", thread_emails: thread_emails, current_email: email %>
+  </div>
+
+  <!-- Match to Application (if not matched) -->
+  <% unless email.matched? %>
+    <div class="flex-shrink-0 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800">
+      <div class="flex items-center gap-3">
+        <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        <span class="text-xs font-medium text-amber-800 dark:text-amber-200 hidden sm:inline">
+          Not matched
+        </span>
+        <%= form_with url: match_application_inbox_path(email), method: :patch, class: "flex-1 flex items-center gap-2" do |f| %>
+          <%= f.select :application_id,
+              options_from_collection_for_select(Current.user.interview_applications.includes(:company, :job_role).where(status: :active).order("companies.name"), :id, ->(a) { "#{a.company.name} - #{a.job_role.title}" }),
+              { include_blank: "Select application..." },
+              class: "flex-1 text-xs rounded border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-amber-500 focus:border-amber-500 py-1" %>
+          <%= f.submit "Match", class: "px-2 py-1 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors cursor-pointer" %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
+

@@ -1,0 +1,85 @@
+<!-- Company Creation Modal -->
+<div id="company-modal" 
+     data-controller="modal autocomplete-modal"
+     data-autocomplete-modal-create-url-value="<%= companies_path %>"
+     data-action="click->modal#closeBackground keyup@window->modal#closeWithKeyboard"
+     class="hidden fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+       data-modal-target="content">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        Create New Company
+      </h2>
+      <button type="button"
+              data-action="click->modal#hide"
+              class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Error Container -->
+    <div data-autocomplete-modal-target="errors" class="hidden px-6 pt-6"></div>
+
+    <!-- Modal Body -->
+    <form data-autocomplete-modal-target="form"
+          data-action="submit->autocomplete-modal#submit"
+          class="p-6 space-y-4">
+      
+      <!-- Company Name -->
+      <div>
+        <label for="company_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Company Name <span class="text-red-500">*</span>
+        </label>
+        <input type="text"
+               id="company_name"
+               name="company[name]"
+               required
+               class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+               placeholder="e.g., Google">
+      </div>
+
+      <!-- Website -->
+      <div>
+        <label for="company_website" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Website
+        </label>
+        <input type="url"
+               id="company_website"
+               name="company[website]"
+               class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+               placeholder="https://example.com">
+      </div>
+
+      <!-- About -->
+      <div>
+        <label for="company_about" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          About
+        </label>
+        <textarea id="company_about"
+                  name="company[about]"
+                  rows="3"
+                  class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  placeholder="Brief description of the company..."></textarea>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button type="button"
+                data-action="click->autocomplete-modal#close"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+          Cancel
+        </button>
+        <button type="submit"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+          Create Company
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

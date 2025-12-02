@@ -1,0 +1,33 @@
+<h1>Welcome to Gleania! 🎉</h1>
+
+<p>Hi <%= @user.name.present? ? @user.name : 'there' %>,</p>
+
+<p>
+  Your email has been verified successfully! You're all set to start organizing your job search and tracking your interview applications.
+</p>
+
+<h2 style="font-size: 20px; font-weight: 600; color: #111827; margin: 24px 0 12px 0;">
+  Here's what you can do with Gleania:
+</h2>
+
+<ul style="color: #374151; line-height: 1.8;">
+  <li><strong>Track Applications:</strong> Keep all your job applications organized in one place</li>
+  <li><strong>Manage Interviews:</strong> Schedule and track your interview rounds</li>
+  <li><strong>Document Feedback:</strong> Record feedback and reflections after each interview</li>
+  <li><strong>Connect Gmail:</strong> Automatically sync job-related emails from your inbox</li>
+  <li><strong>AI Insights:</strong> Get AI-powered summaries and insights on your applications</li>
+</ul>
+
+<div style="text-align: center; margin: 32px 0;">
+  <%= link_to "Get Started", root_url, class: "email-button" %>
+</div>
+
+<p>
+  We're here to make your job search journey smoother and more organized. If you have any questions or need help getting started, don't hesitate to reach out!
+</p>
+
+<p>
+  Happy job hunting!<br>
+  <strong>The Gleania Team</strong>
+</p>
+

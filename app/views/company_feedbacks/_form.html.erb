@@ -1,0 +1,106 @@
+<%# Company Feedback Form %>
+
+<%= form_with(model: [@application, @feedback], url: interview_application_company_feedback_path(@application), local: true, class: "space-y-6") do |form| %>
+  <%# Error Messages %>
+  <% if @feedback.errors.any? %>
+    <div class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-red-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+            <%= pluralize(@feedback.errors.count, "error") %> prohibited this
+            feedback from being saved:
+          </h3>
+          <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+            <ul class="list-disc list-inside space-y-1">
+              <% @feedback.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="space-y-6">
+    <%# Received Date %>
+    <div>
+      <%= form.label :received_at, "Received Date", class: "form-label" %>
+      <%= form.datetime_local_field :received_at,
+          class: "form-input" %>
+      <p class="form-help-text text-xs">When did you receive this feedback?</p>
+    </div>
+
+    <%# Feedback Text %>
+    <div>
+      <%= form.label :feedback_text, "Feedback from Company", class: "form-label" %>
+      <%= form.text_area :feedback_text,
+          rows: 6,
+          placeholder: "Enter the feedback you received from the company...",
+          class: "form-textarea" %>
+    </div>
+
+    <%# Rejection Reason (Optional) %>
+    <div>
+      <%= form.label :rejection_reason, "Rejection Reason (if applicable)", class: "form-label" %>
+      <%= form.text_area :rejection_reason,
+          rows: 3,
+          placeholder: "If you were rejected, what reason did they give?",
+          class: "form-textarea" %>
+    </div>
+
+    <%# Next Steps %>
+    <div>
+      <%= form.label :next_steps, "Next Steps", class: "form-label" %>
+      <%= form.text_area :next_steps,
+          rows: 3,
+          placeholder: "What are the next steps? (e.g., Schedule final interview, Offer discussion, etc.)",
+          class: "form-textarea" %>
+    </div>
+
+    <%# Self Reflection %>
+    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        Your Reflection
+      </h3>
+
+      <%= form.label :self_reflection, "Personal Reflection", class: "form-label" %>
+      <%= form.text_area :self_reflection,
+          rows: 6,
+          placeholder: "How do you feel about this feedback? What did you learn? What would you do differently?",
+          class: "form-textarea" %>
+      <p class="form-help-text text-xs">
+        💡 Tip: Reflect on what went well, what could be improved, and key
+        learnings
+      </p>
+    </div>
+  </div>
+
+  <%# Form Actions %>
+  <div
+    class="
+      flex items-center justify-end gap-3 pt-6 border-t border-gray-200
+      dark:border-gray-700
+    "
+  >
+    <%= link_to "Cancel", 
+        interview_application_path(@application),
+        class: "px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" %>
+
+    <%= form.submit @feedback.new_record? ? "Save Feedback" : "Update Feedback",
+        class: "px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" %>
+  </div>
+<% end %>

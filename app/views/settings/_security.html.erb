@@ -1,0 +1,154 @@
+<div class="space-y-6">
+  <!-- Password Change -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Change Password</h2>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Update your password to keep your account secure
+      </p>
+    </div>
+
+    <%= form_with model: user, url: update_security_settings_path, method: :patch, class: "p-6 space-y-6" do |f| %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="user_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            New Password *
+          </label>
+          <%= f.password_field :password,
+              class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "Enter new password",
+              autocomplete: "new-password",
+              required: true %>
+        </div>
+
+        <div>
+          <label for="user_password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Confirm Password *
+          </label>
+          <%= f.password_field :password_confirmation,
+              class: "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "Confirm new password",
+              autocomplete: "new-password",
+              required: true %>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <%= f.button type: "submit", class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500", data: { disable_with: "Updating..." } do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+          Update Password
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Two-Factor Authentication -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Two-Factor Authentication</h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Add an extra layer of security to your account
+          </p>
+        </div>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+          Coming soon
+        </span>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div class="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+          <svg class="w-6 h-6 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Authenticator App</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Use an authenticator app like Google Authenticator or Authy
+          </p>
+        </div>
+        <button type="button" disabled class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 font-medium rounded-lg text-sm cursor-not-allowed">
+          Enable
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Sessions -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Active Sessions</h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Manage devices where you're currently signed in
+          </p>
+        </div>
+        <% if sessions && sessions.count > 1 %>
+          <%= button_to destroy_all_sessions_settings_path,
+              method: :delete,
+              class: "text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium",
+              data: { confirm: "Sign out from all other devices?", turbo_confirm: "Sign out from all other devices?" } do %>
+            Sign out all other devices
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+      <% if sessions.present? %>
+        <% sessions.each do |session_record| %>
+          <div class="p-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-lg <%= session_record.id == Current.session&.id ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700' %> flex items-center justify-center">
+                <svg class="w-5 h-5 <%= session_record.id == Current.session&.id ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <% if session_record.user_agent&.include?("Mobile") %>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  <% else %>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  <% end %>
+                </svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                    <%= session_record.user_agent&.truncate(50) || "Unknown Device" %>
+                  </h3>
+                  <% if session_record.id == Current.session&.id %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                      Current
+                    </span>
+                  <% end %>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  IP: <%= session_record.ip_address || "Unknown" %>
+                  <span class="mx-1">&bull;</span>
+                  Last active: <%= time_ago_in_words(session_record.updated_at) %> ago
+                </p>
+              </div>
+            </div>
+            <% if session_record.id != Current.session&.id %>
+              <%= button_to destroy_session_settings_path(session_id: session_record.id),
+                  method: :delete,
+                  class: "text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium",
+                  data: { confirm: "Revoke this session?", turbo_confirm: "Revoke this session?" } do %>
+                Revoke
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="p-6 text-center text-gray-500 dark:text-gray-400">
+          No active sessions found
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+

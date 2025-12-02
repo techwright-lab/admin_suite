@@ -1,0 +1,235 @@
+<% content_for :title, "AI Extraction Log ##{@log.id} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <%= link_to admin_ai_extraction_logs_path, class: "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300" do %>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      <% end %>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">AI Extraction Log</h1>
+      <% status_colors = { "success" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", "error" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", "timeout" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400", "rate_limited" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" } %>
+      <span class="px-3 py-1 text-sm font-semibold rounded-full <%= status_colors[@log.status] || 'bg-slate-100 text-slate-800' %>">
+        <%= @log.status.titleize %>
+      </span>
+    </div>
+    <p class="text-sm text-slate-500 dark:text-slate-400">
+      <%= @log.created_at.strftime("%B %d, %Y at %H:%M:%S UTC") %> (<%= time_ago_in_words(@log.created_at) %> ago)
+    </p>
+  </div>
+
+  <!-- Overview Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Provider</p>
+      <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-white"><%= @log.provider.titleize %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Model</p>
+      <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-white truncate" title="<%= @log.model %>"><%= @log.model %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Latency</p>
+      <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-white"><%= @log.formatted_latency %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Tokens</p>
+      <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-white"><%= @log.total_tokens ? number_with_delimiter(@log.total_tokens) : "N/A" %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Cost</p>
+      <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-white"><%= @log.formatted_cost %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Confidence</p>
+      <% if @log.confidence_score %>
+        <p class="mt-1 text-lg font-semibold <%= @log.confidence_score >= 0.85 ? 'text-green-600 dark:text-green-400' : @log.confidence_score >= 0.7 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400' %>">
+          <%= (@log.confidence_score * 100).round(1) %>%
+        </p>
+      <% else %>
+        <p class="mt-1 text-lg font-semibold text-slate-500">N/A</p>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Token Breakdown -->
+  <% if @log.input_tokens || @log.output_tokens %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Token Breakdown</h3>
+      <div class="flex gap-6">
+        <div>
+          <span class="text-xs text-slate-500 dark:text-slate-400">Input Tokens:</span>
+          <span class="ml-2 font-medium text-slate-900 dark:text-white"><%= @log.input_tokens ? number_with_delimiter(@log.input_tokens) : "N/A" %></span>
+        </div>
+        <div>
+          <span class="text-xs text-slate-500 dark:text-slate-400">Output Tokens:</span>
+          <span class="ml-2 font-medium text-slate-900 dark:text-white"><%= @log.output_tokens ? number_with_delimiter(@log.output_tokens) : "N/A" %></span>
+        </div>
+        <div>
+          <span class="text-xs text-slate-500 dark:text-slate-400">HTML Size:</span>
+          <span class="ml-2 font-medium text-slate-900 dark:text-white"><%= @log.html_content_size ? number_to_human_size(@log.html_content_size) : "N/A" %></span>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Error Details -->
+  <% if @log.error? || @log.timeout? || @log.rate_limited? %>
+    <div class="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4 mb-6">
+      <h3 class="text-sm font-semibold text-red-800 dark:text-red-400 mb-2">Error Details</h3>
+      <div class="space-y-2">
+        <% if @log.error_type.present? %>
+          <div>
+            <span class="text-xs text-red-600 dark:text-red-400">Error Type:</span>
+            <span class="ml-2 font-mono text-sm text-red-800 dark:text-red-300"><%= @log.error_type %></span>
+          </div>
+        <% end %>
+        <% if @log.error_message.present? %>
+          <div>
+            <span class="text-xs text-red-600 dark:text-red-400">Message:</span>
+            <pre class="mt-1 p-2 bg-red-100 dark:bg-red-900/40 rounded text-sm text-red-800 dark:text-red-300 overflow-x-auto"><%= @log.error_message %></pre>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Extracted Fields -->
+  <% if @log.extracted_field_names.any? %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Extracted Fields</h3>
+      <div class="flex flex-wrap gap-2">
+        <% @log.extracted_field_names.each do |field| %>
+          <span class="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 rounded">
+            <%= field %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Related Records -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <% if @log.job_listing %>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Job Listing</h3>
+        <div class="space-y-2 text-sm">
+          <div>
+            <span class="text-slate-500 dark:text-slate-400">Title:</span>
+            <span class="ml-2 text-slate-900 dark:text-white"><%= @log.job_listing.title || "N/A" %></span>
+          </div>
+          <div>
+            <span class="text-slate-500 dark:text-slate-400">URL:</span>
+            <a href="<%= @log.job_listing.url %>" target="_blank" class="ml-2 text-amber-600 dark:text-amber-400 hover:underline truncate block">
+              <%= truncate(@log.job_listing.url, length: 50) %>
+            </a>
+          </div>
+          <div class="pt-2">
+            <%= link_to "View in Avo", avo_path + "/resources/job_listings/#{@log.job_listing.id}", target: "_blank", class: "text-sm text-amber-600 dark:text-amber-400 hover:underline" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @log.scraping_attempt %>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Scraping Attempt</h3>
+        <div class="space-y-2 text-sm">
+          <div>
+            <span class="text-slate-500 dark:text-slate-400">Status:</span>
+            <span class="ml-2 text-slate-900 dark:text-white"><%= @log.scraping_attempt.status.titleize %></span>
+          </div>
+          <div>
+            <span class="text-slate-500 dark:text-slate-400">Domain:</span>
+            <span class="ml-2 text-slate-900 dark:text-white"><%= @log.scraping_attempt.domain %></span>
+          </div>
+          <div class="pt-2">
+            <%= link_to "View in Avo", avo_path + "/resources/scraping_attempts/#{@log.scraping_attempt.id}", target: "_blank", class: "text-sm text-amber-600 dark:text-amber-400 hover:underline" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Request Payload (Prompt) -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" data-controller="collapsible">
+    <button type="button" data-action="click->collapsible#toggle" class="w-full px-4 py-3 flex items-center justify-between text-left border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Request Payload (Prompt)</h3>
+      <svg data-collapsible-target="icon" class="w-5 h-5 text-slate-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+    <div data-collapsible-target="content" class="hidden">
+      <div class="p-4 max-h-96 overflow-auto">
+        <% if @log.request_payload.present? %>
+          <pre class="text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap"><%= JSON.pretty_generate(@log.request_payload) rescue @log.request_payload.to_s %></pre>
+        <% else %>
+          <p class="text-sm text-slate-500 dark:text-slate-400">No request payload recorded</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Response Payload -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" data-controller="collapsible">
+    <button type="button" data-action="click->collapsible#toggle" class="w-full px-4 py-3 flex items-center justify-between text-left border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Response Payload</h3>
+      <svg data-collapsible-target="icon" class="w-5 h-5 text-slate-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+    <div data-collapsible-target="content" class="hidden">
+      <div class="p-4 max-h-96 overflow-auto">
+        <% if @log.response_payload.present? %>
+          <pre class="text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap"><%= JSON.pretty_generate(@log.response_payload) rescue @log.response_payload.to_s %></pre>
+        <% else %>
+          <p class="text-sm text-slate-500 dark:text-slate-400">No response payload recorded</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related AI Logs -->
+  <% if @related_logs.any? %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Related AI Logs (Same Job Listing)</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+          <thead class="bg-slate-50 dark:bg-slate-900">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Time</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Provider</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Confidence</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            <% @related_logs.each do |log| %>
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <td class="px-4 py-2 text-sm text-slate-500 dark:text-slate-400"><%= log.created_at.strftime("%b %d, %H:%M") %></td>
+                <td class="px-4 py-2 text-sm text-slate-900 dark:text-white"><%= log.provider.titleize %></td>
+                <td class="px-4 py-2">
+                  <span class="px-2 text-xs font-semibold rounded-full <%= status_colors[log.status] || 'bg-slate-100 text-slate-800' %>">
+                    <%= log.status.titleize %>
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">
+                  <%= log.confidence_score ? "#{(log.confidence_score * 100).round(0)}%" : "-" %>
+                </td>
+                <td class="px-4 py-2">
+                  <%= link_to "View", admin_ai_extraction_log_path(log), class: "text-sm text-amber-600 dark:text-amber-400 hover:underline" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>
+

@@ -1,0 +1,129 @@
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" data-controller="autosave" data-autosave-delay-value="1500">
+  <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">AI Preferences</h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Configure how AI assists you with interview preparation and feedback
+          </p>
+        </div>
+      </div>
+      <span data-autosave-target="status" class="ml-4"></span>
+    </div>
+  </div>
+
+  <%= form_with model: preference, url: update_ai_preferences_settings_path, method: :patch, class: "p-6 space-y-6", data: { autosave_target: "form" } do |f| %>
+    <!-- AI Features -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white">AI Features</h3>
+
+      <!-- AI Summary -->
+      <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div>
+            <label for="user_preference_ai_summary_enabled" class="block text-sm font-medium text-gray-900 dark:text-white">
+              AI Job Summary
+            </label>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Automatically generate summaries from job descriptions
+            </p>
+          </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <%= f.check_box :ai_summary_enabled, class: "sr-only peer", data: { action: "change->autosave#save" } %>
+          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-500 peer-checked:bg-primary-600"></div>
+        </label>
+      </div>
+
+      <!-- AI Feedback Analysis -->
+      <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <div>
+            <label for="user_preference_ai_feedback_analysis" class="block text-sm font-medium text-gray-900 dark:text-white">
+              AI Feedback Analysis
+            </label>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Analyze your interview feedback to identify patterns and improvement areas
+            </p>
+          </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <%= f.check_box :ai_feedback_analysis, class: "sr-only peer", data: { action: "change->autosave#save" } %>
+          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-500 peer-checked:bg-primary-600"></div>
+        </label>
+      </div>
+
+      <!-- AI Interview Prep -->
+      <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </div>
+          <div>
+            <label for="user_preference_ai_interview_prep" class="block text-sm font-medium text-gray-900 dark:text-white">
+              AI Interview Preparation
+            </label>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Get AI-powered preparation tips based on job requirements and company
+            </p>
+          </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <%= f.check_box :ai_interview_prep, class: "sr-only peer", data: { action: "change->autosave#save" } %>
+          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-500 peer-checked:bg-primary-600"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- AI Insights Frequency -->
+    <div data-controller="radio-cards">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        AI Insights Frequency
+      </label>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        How often should we generate personalized insights about your interview performance?
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <% [["daily", "Daily", "Get fresh insights every day"], ["weekly", "Weekly", "A comprehensive weekly report"], ["on_demand", "On Demand", "Only when you ask for it"]].each do |value, label, description| %>
+          <label data-radio-cards-target="card" class="relative flex flex-col p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors <%= preference.ai_insights_frequency == value ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-600' %>">
+            <%= f.radio_button :ai_insights_frequency, value, class: "sr-only peer", data: { action: "change->autosave#save change->radio-cards#update", radio_cards_target: "radio" } %>
+            <span class="text-sm font-medium text-gray-900 dark:text-white"><%= label %></span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1"><%= description %></span>
+            <svg data-radio-cards-target="check" class="absolute top-3 right-3 w-5 h-5 text-primary-500 <%= preference.ai_insights_frequency == value ? '' : 'hidden' %>" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </label>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+      <%= f.button type: "submit", class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500", data: { disable_with: "Saving..." } do %>
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Save Changes
+      <% end %>
+    </div>
+  <% end %>
+</div>
+

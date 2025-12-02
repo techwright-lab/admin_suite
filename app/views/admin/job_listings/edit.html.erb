@@ -1,0 +1,116 @@
+<% content_for :title, "Edit Job Listing - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <%= link_to admin_job_listing_path(@job_listing), class: "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300" do %>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      <% end %>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Edit Job Listing</h1>
+    </div>
+    <p class="text-sm text-slate-500 dark:text-slate-400">
+      <%= @job_listing.display_title %> at <%= @job_listing.company.name %>
+    </p>
+  </div>
+
+  <!-- Form -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+    <%= form_with model: @job_listing, url: admin_job_listing_path(@job_listing), method: :patch, local: true, class: "space-y-6" do |f| %>
+      
+      <!-- Basic Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <%= f.label :title, "Title", class: "form-label" %>
+          <%= f.text_field :title, class: "form-input", placeholder: "e.g., Senior Software Engineer" %>
+        </div>
+        <div>
+          <%= f.label :status, "Status", class: "form-label" %>
+          <%= f.select :status, JobListing::STATUSES.map { |s| [s.to_s.titleize, s] }, {}, class: "form-select" %>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <%= f.label :location, "Location", class: "form-label" %>
+          <%= f.text_field :location, class: "form-input", placeholder: "e.g., San Francisco, CA" %>
+        </div>
+        <div>
+          <%= f.label :remote_type, "Remote Type", class: "form-label" %>
+          <%= f.select :remote_type, JobListing::REMOTE_TYPES.map { |r| [r.to_s.titleize.gsub("_", " "), r] }, {}, class: "form-select" %>
+        </div>
+      </div>
+
+      <!-- Salary -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <%= f.label :salary_min, "Salary Min", class: "form-label" %>
+          <%= f.number_field :salary_min, class: "form-input", placeholder: "100000" %>
+        </div>
+        <div>
+          <%= f.label :salary_max, "Salary Max", class: "form-label" %>
+          <%= f.number_field :salary_max, class: "form-input", placeholder: "150000" %>
+        </div>
+        <div>
+          <%= f.label :salary_currency, "Currency", class: "form-label" %>
+          <%= f.text_field :salary_currency, class: "form-input", placeholder: "USD" %>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <%= f.label :description, "Description", class: "form-label" %>
+        <p class="form-help-text mb-2">Use bullet points (- or *) for lists. Markdown formatting is supported.</p>
+        <%= f.text_area :description, rows: 10, class: "form-textarea", placeholder: "Job description..." %>
+      </div>
+
+      <!-- Requirements -->
+      <div>
+        <%= f.label :requirements, "Requirements", class: "form-label" %>
+        <p class="form-help-text mb-2">Each requirement on a new line. Use - or * for bullet points.</p>
+        <%= f.text_area :requirements, rows: 8, class: "form-textarea", placeholder: "- 5+ years experience\n- Bachelor's degree\n- Strong communication skills" %>
+      </div>
+
+      <!-- Responsibilities -->
+      <div>
+        <%= f.label :responsibilities, "Responsibilities", class: "form-label" %>
+        <p class="form-help-text mb-2">Each responsibility on a new line. Use - or * for bullet points.</p>
+        <%= f.text_area :responsibilities, rows: 8, class: "form-textarea", placeholder: "- Design and build scalable systems\n- Collaborate with cross-functional teams\n- Mentor junior engineers" %>
+      </div>
+
+      <!-- Benefits -->
+      <div>
+        <%= f.label :benefits, "Benefits", class: "form-label" %>
+        <p class="form-help-text mb-2">List benefits, one per line.</p>
+        <%= f.text_area :benefits, rows: 5, class: "form-textarea", placeholder: "- Health insurance\n- 401k matching\n- Unlimited PTO" %>
+      </div>
+
+      <!-- Perks -->
+      <div>
+        <%= f.label :perks, "Perks", class: "form-label" %>
+        <%= f.text_area :perks, rows: 5, class: "form-textarea", placeholder: "- Free lunch\n- Gym membership\n- Remote work flexibility" %>
+      </div>
+
+      <!-- Equity Info -->
+      <div>
+        <%= f.label :equity_info, "Equity Info", class: "form-label" %>
+        <%= f.text_field :equity_info, class: "form-input", placeholder: "e.g., 0.1% - 0.5% equity" %>
+      </div>
+
+      <!-- URL -->
+      <div>
+        <%= f.label :url, "Original URL", class: "form-label" %>
+        <%= f.url_field :url, class: "form-input", placeholder: "https://example.com/jobs/123" %>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700">
+        <%= link_to "Cancel", admin_job_listing_path(@job_listing), class: "px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors" %>
+        
+        <%= f.submit "Save Changes", data: { disable_with: "Saving..." }, class: "px-5 py-2.5 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 shadow-sm hover:shadow transition-all" %>
+      </div>
+    <% end %>
+  </div>
+</div>

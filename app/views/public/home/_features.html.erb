@@ -1,0 +1,275 @@
+<%# Feature Deep-Dive Section %>
+<section id="features" class="relative py-24 lg:py-32 overflow-hidden">
+  <%# Background %>
+  <div class="absolute inset-0 bg-dark-900"></div>
+
+  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <%# Section header %>
+    <div class="text-center max-w-3xl mx-auto mb-20">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 mb-6">
+        <span class="text-sm font-medium text-primary-300">Features</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
+        Everything you need to <span class="text-gradient-brand">level up</span>
+      </h2>
+    </div>
+
+    <%# Feature A: Interview Tracker %>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-32">
+      <div class="order-2 lg:order-1">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/10 text-primary-300 text-sm font-medium mb-4">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <span>Interview Tracker</span>
+        </div>
+        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-4">Never lose track of an application again</h3>
+        <p class="text-gray-400 leading-relaxed mb-6">
+          From application to offer, keep everything organized in one beautiful dashboard. Gleania automatically syncs with your email to detect interview invites and updates.
+        </p>
+        <ul class="space-y-3">
+          <% ["Stage cards with drag-and-drop", "Company timeline view", "Automatic email parsing", "Smart reminders"].each do |feature| %>
+            <li class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-3 h-3 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <span class="text-gray-300"><%= feature %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+      <div class="order-1 lg:order-2">
+        <div class="card-glass shadow-glow p-0 overflow-hidden">
+          <%# Mini Kanban visualization %>
+          <div class="p-6 border-b border-white/5">
+            <h4 class="text-sm font-medium text-white">Pipeline Overview</h4>
+          </div>
+          <div class="p-6 grid grid-cols-4 gap-3">
+            <% [
+              { stage: "Applied", count: 5, color: "primary" },
+              { stage: "Interview", count: 3, color: "secondary" },
+              { stage: "Final", count: 2, color: "accent" },
+              { stage: "Offer", count: 1, color: "emerald" }
+            ].each do |col| %>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-gray-400"><%= col[:stage] %></span>
+                  <span class="text-xs text-<%= col[:color] %>-400"><%= col[:count] %></span>
+                </div>
+                <% col[:count].times do |i| %>
+                  <div class="h-12 rounded-lg bg-<%= col[:color] %>-500/10 border border-<%= col[:color] %>-500/20 p-2">
+                    <div class="h-2 w-3/4 rounded bg-<%= col[:color] %>-500/30 mb-1"></div>
+                    <div class="h-1.5 w-1/2 rounded bg-gray-600"></div>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Feature B: AI Feedback Insight %>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-32">
+      <div>
+        <div class="card-glass shadow-glow">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary-400 to-secondary-600 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-white">AI Analysis</h4>
+              <p class="text-xs text-gray-500">Based on 12 interviews</p>
+            </div>
+          </div>
+          
+          <%# Insight blocks %>
+          <div class="space-y-4">
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-amber-300 mb-1">Repeated Issue Detected</p>
+                  <p class="text-sm text-gray-400">You've mentioned struggling with "time management" in 4 of your last 5 interviews.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-emerald-300 mb-1">Standout Area</p>
+                  <p class="text-sm text-gray-400">Your system design explanations are consistently praised by interviewers.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-500/10 text-secondary-300 text-sm font-medium mb-4">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+          <span>AI Feedback Insight</span>
+        </div>
+        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-4">Understand your interview patterns</h3>
+        <p class="text-gray-400 leading-relaxed mb-6">
+          Our AI analyzes your interview notes and feedback to identify recurring themes. See what's working, what needs improvement, and get personalized recommendations.
+        </p>
+        <ul class="space-y-3">
+          <% ["Detect repeated issues across interviews", "Highlight standout areas", "Summarize feedback themes", "Track improvement over time"].each do |feature| %>
+            <li class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full bg-secondary-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-3 h-3 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <span class="text-gray-300"><%= feature %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
+    <%# Feature C: Growth Dashboard %>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-32">
+      <div class="order-2 lg:order-1">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-500/10 text-accent-300 text-sm font-medium mb-4">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+          </svg>
+          <span>Growth Dashboard</span>
+        </div>
+        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-4">Visualize your career growth</h3>
+        <p class="text-gray-400 leading-relaxed mb-6">
+          See your skills evolve over time with beautiful visualizations. Track which areas you're improving in and where to focus next.
+        </p>
+        <ul class="space-y-3">
+          <% ["Skill heatmap visualization", "Progress timeline", "Comparison benchmarks", "Goal tracking"].each do |feature| %>
+            <li class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full bg-accent-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-3 h-3 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <span class="text-gray-300"><%= feature %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+      <div class="order-1 lg:order-2">
+        <div class="card-glass shadow-glow">
+          <h4 class="text-sm font-medium text-white mb-6">Skill Progress</h4>
+          <%# Simple heatmap/progress visualization %>
+          <div class="space-y-4">
+            <% [
+              { skill: "System Design", progress: 85, trend: "+12%" },
+              { skill: "Algorithms", progress: 70, trend: "+8%" },
+              { skill: "Communication", progress: 90, trend: "+5%" },
+              { skill: "Leadership", progress: 55, trend: "+15%" },
+            ].each do |item| %>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-300"><%= item[:skill] %></span>
+                  <span class="text-xs text-emerald-400"><%= item[:trend] %></span>
+                </div>
+                <div class="h-3 rounded-full bg-white/10 overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-accent-500 to-secondary-500 transition-all duration-1000" style="width: <%= item[:progress] %>%"></div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <%# Mini timeline %>
+          <div class="mt-8 pt-6 border-t border-white/5">
+            <h4 class="text-sm font-medium text-white mb-4">Recent Activity</h4>
+            <div class="flex items-center gap-2">
+              <% 12.times do |i| %>
+                <div class="flex-1 h-8 rounded bg-gradient-to-t from-primary-500/<%= [10, 20, 30, 40, 50, 30, 60, 40, 70, 50, 80, 60][i] %> to-transparent"></div>
+              <% end %>
+            </div>
+            <div class="flex justify-between mt-2">
+              <span class="text-xs text-gray-500">12 weeks ago</span>
+              <span class="text-xs text-gray-500">This week</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Feature D: CV Tailoring %>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <div>
+        <div class="card-glass shadow-glow">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-white">CV Optimization</h4>
+              <p class="text-xs text-gray-500">3 suggestions found</p>
+            </div>
+          </div>
+
+          <%# CV with highlights %>
+          <div class="p-4 rounded-xl bg-white/5 space-y-3">
+            <div class="h-3 w-3/4 rounded bg-gray-600"></div>
+            <div class="h-3 w-full rounded bg-gray-600"></div>
+            <div class="p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
+              <div class="h-2 w-full rounded bg-emerald-500/30 mb-1"></div>
+              <div class="h-2 w-2/3 rounded bg-emerald-500/30"></div>
+            </div>
+            <div class="h-3 w-5/6 rounded bg-gray-600"></div>
+            <div class="p-2 rounded bg-amber-500/10 border border-amber-500/20">
+              <div class="h-2 w-full rounded bg-amber-500/30 mb-1"></div>
+              <div class="h-2 w-1/2 rounded bg-amber-500/30"></div>
+            </div>
+            <div class="h-3 w-full rounded bg-gray-600"></div>
+          </div>
+
+          <p class="text-xs text-gray-500 mt-4">
+            <span class="text-emerald-400">Green</span> = Strength to highlight &bull; 
+            <span class="text-amber-400">Yellow</span> = Area to improve
+          </p>
+        </div>
+      </div>
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-sm font-medium mb-4">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span>CV Tailoring</span>
+        </div>
+        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-4">Optimize your CV with real data</h3>
+        <p class="text-gray-400 leading-relaxed mb-6">
+          Based on your interview experience and feedback patterns, Gleania suggests specific improvements to your CV. Highlight what works, fix what doesn't.
+        </p>
+        <ul class="space-y-3">
+          <% ["Based on actual interview feedback", "Highlight proven strengths", "Address recurring gaps", "Role-specific suggestions"].each do |feature| %>
+            <li class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <span class="text-gray-300"><%= feature %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+

@@ -1,0 +1,134 @@
+<% content_for :title, "Settings" %>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+    <p class="mt-2 text-gray-600 dark:text-gray-400">
+      Manage your account preferences, notifications, and integrations
+    </p>
+  </div>
+
+  <!-- Tabs Container -->
+  <div data-controller="tabs" data-tabs-default-tab-value="<%= @active_tab %>" data-tabs-persist-value="true">
+    <!-- Tab Navigation -->
+    <div class="border-b border-gray-200 dark:border-gray-700 mb-8">
+      <nav class="-mb-px flex flex-wrap gap-x-8" aria-label="Settings tabs">
+        <button
+          data-tabs-target="tab"
+          data-tab="profile"
+          data-action="click->tabs#switch"
+          class="<%= @active_tab == 'profile' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"
+          aria-selected="<%= @active_tab == 'profile' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          Profile
+        </button>
+
+        <button
+          data-tabs-target="tab"
+          data-tab="general"
+          data-action="click->tabs#switch"
+          class="<%= @active_tab == 'general' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"
+          aria-selected="<%= @active_tab == 'general' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          General
+        </button>
+
+        <button
+          data-tabs-target="tab"
+          data-tab="notifications"
+          data-action="click->tabs#switch"
+          class="<%= @active_tab == 'notifications' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"
+          aria-selected="<%= @active_tab == 'notifications' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          Notifications
+        </button>
+
+        <button
+          data-tabs-target="tab"
+          data-tab="ai_preferences"
+          data-action="click->tabs#switch"
+          class="<%= @active_tab == 'ai_preferences' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"
+          aria-selected="<%= @active_tab == 'ai_preferences' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+          AI Preferences
+        </button>
+
+        <button
+          data-tabs-target="tab"
+          data-tab="integrations"
+          data-action="click->tabs#switch"
+          class="<%= @active_tab == 'integrations' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"
+          aria-selected="<%= @active_tab == 'integrations' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+          </svg>
+          Integrations
+        </button>
+
+        <button
+          data-tabs-target="tab"
+          data-tab="security"
+          data-action="click->tabs#switch"
+          class="<%= @active_tab == 'security' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"
+          aria-selected="<%= @active_tab == 'security' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          Security
+        </button>
+
+        <button
+          data-tabs-target="tab"
+          data-tab="privacy"
+          data-action="click->tabs#switch"
+          class="<%= @active_tab == 'privacy' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600' %> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2"
+          aria-selected="<%= @active_tab == 'privacy' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          Privacy
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab Panels -->
+    <div data-tabs-target="panel" data-panel="profile" class="<%= @active_tab == 'profile' ? '' : 'hidden' %>">
+      <%= render "settings/profile", user: @user, companies: @companies, job_roles: @job_roles %>
+    </div>
+
+    <div data-tabs-target="panel" data-panel="general" class="<%= @active_tab == 'general' ? '' : 'hidden' %>">
+      <%= render "settings/general", preference: @preference %>
+    </div>
+
+    <div data-tabs-target="panel" data-panel="notifications" class="<%= @active_tab == 'notifications' ? '' : 'hidden' %>">
+      <%= render "settings/notifications", preference: @preference %>
+    </div>
+
+    <div data-tabs-target="panel" data-panel="ai_preferences" class="<%= @active_tab == 'ai_preferences' ? '' : 'hidden' %>">
+      <%= render "settings/ai_preferences", preference: @preference %>
+    </div>
+
+    <div data-tabs-target="panel" data-panel="integrations" class="<%= @active_tab == 'integrations' ? '' : 'hidden' %>">
+      <%= render "settings/integrations", user: @user %>
+    </div>
+
+    <div data-tabs-target="panel" data-panel="security" class="<%= @active_tab == 'security' ? '' : 'hidden' %>">
+      <%= render "settings/security", user: @user, sessions: @sessions %>
+    </div>
+
+    <div data-tabs-target="panel" data-panel="privacy" class="<%= @active_tab == 'privacy' ? '' : 'hidden' %>">
+      <%= render "settings/privacy", user: @user, preference: @preference %>
+    </div>
+  </div>
+</div>
+

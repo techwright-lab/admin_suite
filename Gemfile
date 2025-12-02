@@ -2,6 +2,8 @@ source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.1"
+
+gem "dotenv-rails", require: "dotenv/load"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
@@ -20,7 +22,11 @@ gem "tailwindcss-rails"
 gem "jbuilder"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
+
+# State machine management
+gem "aasm"
+gem "after_commit_everywhere", "~> 1.0"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -29,6 +35,7 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "solid_cache"
 gem "solid_queue"
 gem "solid_cable"
+gem "mission_control-jobs"
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
@@ -54,6 +61,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # FactoryBot for test data
+  gem "factory_bot_rails"
 end
 
 group :development do
@@ -65,4 +75,104 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # HTTP request stubbing and recording
+  gem "vcr"
+  gem "webmock"
+
+  # Database cleaning between tests
+  gem "database_cleaner-active_record"
 end
+
+# Admin Toolkit
+gem "avo", ">= 3"
+
+gem "stackprof"
+gem "sentry-ruby"
+gem "sentry-rails"
+
+# Analytics
+gem "mixpanel-ruby"
+gem "groupdate"
+gem "chartkick"
+
+# Microscope adds useful scopes targeting ActiveRecord `boolean`, `date` and `datetime` attributes.
+# https://github.com/mirego/microscope
+gem "microscope"
+
+# The bullet_train-action_models gem can use OpenAI during the CSV import process to
+# automatically match column names to database attributes.
+# https://github.com/alexrudall/ruby-openai
+gem "ruby-openai"
+
+# Anthropic Claude API client
+gem "anthropic"
+
+# HTTP client for making requests
+gem "httparty"
+
+# OAuth for third-party integrations (Gmail, etc.)
+gem "omniauth"
+gem "omniauth-google-oauth2"
+gem "omniauth-rails_csrf_protection"
+
+# Google API clients for Gmail and Calendar
+gem "google-apis-gmail_v1"
+gem "google-apis-calendar_v3"
+
+# Two-factor authentication
+gem "rotp"
+gem "rqrcode"
+
+# Robots.txt parser for respectful scraping
+gem "robots"
+
+# HTML parsing and cleaning
+gem "nokogiri"
+
+# awesome_print allows us to `ap` our objects for a clean presentation of them.
+# https://github.com/awesome-print/awesome_print
+gem "awesome_print"
+
+group :production, :staging do
+  # We suggest using Postmark for email deliverability.
+  gem "postmark-rails"
+  gem "logtail-rails"
+
+  # Use S3 for Active Storage by default.
+  gem "aws-sdk-s3", require: false
+
+  # terser is used to compress assets during precompilation
+  gem "terser"
+end
+
+# Protect the API routes via CORS
+gem "rack-cors"
+gem "rack-cache"
+
+# Easy and automatic inline CSS for mailers
+gem "premailer-rails"
+
+group :development do
+  # Open any sent emails in your browser instead of having to setup an SMTP trap.
+  gem "letter_opener"
+  gem "letter_opener_web", "~> 3.0"
+
+  # Ruby formatter. Try `standardrb --fix`.
+  gem "standard"
+
+  # Similar to standard for correcting format.
+  gem "rails_best_practices"
+
+  # Rails doesn't include this by default, but we depend on it.
+  gem "foreman"
+
+  # For colorizing text in command line scripts.
+  gem "colorize"
+
+  # derailed_benchmarks and stackprof are used to find opportunities for performance/memory improvements
+  # See the derailed_benchmarks docs for details: https://github.com/zombocom/derailed_benchmarks
+  gem "derailed_benchmarks"
+end
+
+gem "friendly_id"

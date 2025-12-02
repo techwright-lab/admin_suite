@@ -1,0 +1,208 @@
+<% content_for :title, "Users - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Users</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Manage users and view their Gmail sync status
+    </p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total Users</p>
+      <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:total] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Gmail Connected</p>
+      <p class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400"><%= @stats[:with_gmail] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Sync Enabled</p>
+      <p class="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400"><%= @stats[:sync_enabled] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Admins</p>
+      <p class="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400"><%= @stats[:admins] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total Emails Synced</p>
+      <p class="mt-1 text-2xl font-bold text-purple-600 dark:text-purple-400"><%= @stats[:total_synced_emails] %></p>
+    </div>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Filters -->
+    <div class="lg:w-56 flex-shrink-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Filters</h3>
+        
+        <%= form_with url: admin_users_path, method: :get, local: true, class: "space-y-4" do %>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Search</label>
+            <input type="text" name="search" value="<%= @filters[:search] %>" placeholder="Email or name..."
+                   class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Gmail Status</label>
+            <select name="gmail_status" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All</option>
+              <option value="connected" <%= "selected" if @filters[:gmail_status] == "connected" %>>Connected</option>
+              <option value="not_connected" <%= "selected" if @filters[:gmail_status] == "not_connected" %>>Not Connected</option>
+              <option value="sync_enabled" <%= "selected" if @filters[:gmail_status] == "sync_enabled" %>>Sync Enabled</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Role</label>
+            <select name="role" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All</option>
+              <option value="admin" <%= "selected" if @filters[:role] == "admin" %>>Admin</option>
+              <option value="user" <%= "selected" if @filters[:role] == "user" %>>User</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Sort By</label>
+            <select name="sort" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="recent" <%= "selected" if @filters[:sort] == "recent" %>>Recent</option>
+              <option value="name" <%= "selected" if @filters[:sort] == "name" %>>Name</option>
+              <option value="email_count" <%= "selected" if @filters[:sort] == "email_count" %>>Most Emails</option>
+            </select>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="submit" class="flex-1 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors">
+              Apply
+            </button>
+            <%= link_to "Clear", admin_users_path, class: "flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-center text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="flex-1 min-w-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-900">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">User</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Gmail</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Emails</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Last Sync</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Role</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+              <% @users.each do |user| %>
+                <% google_account = user.connected_accounts.find { |ca| ca.provider == "google_oauth2" } %>
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                        <span class="text-sm font-medium text-amber-700 dark:text-amber-400">
+                          <%= user.display_name[0].upcase %>
+                        </span>
+                      </div>
+                      <div class="ml-3">
+                        <p class="text-sm font-medium text-slate-900 dark:text-white">
+                          <%= user.display_name %>
+                        </p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                          <%= user.email_address %>
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <% if google_account.present? %>
+                      <div class="flex items-center gap-2">
+                        <% if google_account.sync_enabled? %>
+                          <span class="w-2 h-2 rounded-full bg-green-500" title="Sync enabled"></span>
+                          <span class="text-xs text-green-600 dark:text-green-400">Active</span>
+                        <% else %>
+                          <span class="w-2 h-2 rounded-full bg-amber-500" title="Sync disabled"></span>
+                          <span class="text-xs text-amber-600 dark:text-amber-400">Paused</span>
+                        <% end %>
+                      </div>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[150px]" title="<%= google_account.email %>">
+                        <%= google_account.email %>
+                      </p>
+                    <% else %>
+                      <span class="text-xs text-slate-500 dark:text-slate-400">Not connected</span>
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="text-sm text-slate-900 dark:text-white font-medium">
+                      <%= user.synced_emails.count %>
+                    </span>
+                    <% needs_review = user.synced_emails.needs_review.count %>
+                    <% if needs_review > 0 %>
+                      <span class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                        <%= needs_review %> review
+                      </span>
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                    <% if google_account&.last_synced_at.present? %>
+                      <%= time_ago_in_words(google_account.last_synced_at) %> ago
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <% if user.admin? %>
+                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
+                        Admin
+                      </span>
+                    <% else %>
+                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                        User
+                      </span>
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm">
+                    <%= link_to "View", admin_user_path(user), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium" %>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @users.empty? %>
+                <tr>
+                  <td colspan="6" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                    No users found
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if @total_pages > 1 %>
+          <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-slate-500 dark:text-slate-400">
+                Showing <%= ((@page - 1) * Admin::UsersController::PER_PAGE) + 1 %> to <%= [(@page * Admin::UsersController::PER_PAGE), @total_count].min %> of <%= @total_count %>
+              </div>
+              <div class="flex gap-2">
+                <% if @page > 1 %>
+                  <%= link_to "Previous", url_for(params.permit!.merge(page: @page - 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" %>
+                <% end %>
+                <% if @page < @total_pages %>
+                  <%= link_to "Next", url_for(params.permit!.merge(page: @page + 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+

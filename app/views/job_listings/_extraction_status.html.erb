@@ -1,0 +1,198 @@
+<%# Extraction Status Indicator
+    Shows the current state of job listing data extraction,
+    including preliminary data status and AI enhancement progress.
+%>
+
+<% 
+  latest_attempt = job_listing.latest_scraping_attempt
+  has_description = job_listing.description.present?
+  has_requirements = job_listing.requirements.present?
+  has_responsibilities = job_listing.responsibilities.present?
+  confidence = job_listing.extraction_confidence
+  extraction_status = job_listing.extraction_status
+  
+  # Determine overall status
+  if latest_attempt&.completed?
+    status_type = confidence >= 0.85 ? :complete : confidence >= 0.7 ? :good : :partial
+  elsif latest_attempt&.pending? || latest_attempt&.fetching? || latest_attempt&.extracting?
+    status_type = :in_progress
+  elsif latest_attempt&.failed? || latest_attempt&.dead_letter?
+    status_type = :failed
+  else
+    status_type = has_description ? :preliminary : :pending
+  end
+%>
+
+<% if status_type == :in_progress %>
+  <!-- Extraction In Progress -->
+  <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+    <div class="flex items-start gap-3">
+      <div class="flex-shrink-0">
+        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-300">
+          <% if latest_attempt&.fetching? %>
+            Fetching job details...
+          <% elsif latest_attempt&.extracting? %>
+            AI is extracting job details...
+          <% else %>
+            Processing job listing...
+          <% end %>
+        </h3>
+        <p class="mt-1 text-sm text-blue-700 dark:text-blue-400">
+          <% if has_description %>
+            Showing preliminary data. Full details will appear shortly.
+          <% else %>
+            This may take a moment. The page will update automatically.
+          <% end %>
+        </p>
+      </div>
+    </div>
+    
+    <% if has_description || has_requirements || has_responsibilities %>
+      <div class="mt-3 flex items-center gap-3 text-xs text-blue-600 dark:text-blue-400">
+        <span class="flex items-center gap-1">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Preliminary data available
+        </span>
+        <span>•</span>
+        <span>AI enhancement in progress</span>
+      </div>
+    <% end %>
+  </div>
+
+<% elsif status_type == :preliminary %>
+  <!-- Preliminary Data Only -->
+  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
+    <div class="flex items-start gap-3">
+      <div class="flex-shrink-0">
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-300">Preliminary Data</h3>
+        <p class="mt-1 text-sm text-amber-700 dark:text-amber-400">
+          This job listing shows data from initial HTML parsing. Some details may be incomplete or need formatting improvements. AI enhancement has not yet been completed.
+        </p>
+      </div>
+    </div>
+    
+    <!-- Data completeness indicator -->
+    <div class="mt-3 flex flex-wrap gap-2">
+      <% if has_description %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Description
+        </span>
+      <% else %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+          Description
+        </span>
+      <% end %>
+      
+      <% if has_requirements %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Requirements
+        </span>
+      <% else %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+          Requirements
+        </span>
+      <% end %>
+      
+      <% if has_responsibilities %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Responsibilities
+        </span>
+      <% else %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+          Responsibilities
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+<% elsif status_type == :partial %>
+  <!-- Partial Extraction (Low Confidence) -->
+  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
+    <div class="flex items-start gap-3">
+      <div class="flex-shrink-0">
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+          Extraction Completed - Some Details May Need Review
+        </h3>
+        <p class="mt-1 text-sm text-amber-700 dark:text-amber-400">
+          The AI extraction completed with <%= (confidence * 100).round(0) %>% confidence. Some details might be missing or need manual review.
+        </p>
+      </div>
+    </div>
+  </div>
+
+<% elsif status_type == :failed %>
+  <!-- Extraction Failed -->
+  <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
+    <div class="flex items-start gap-3">
+      <div class="flex-shrink-0">
+        <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-sm font-semibold text-red-800 dark:text-red-300">Extraction Failed</h3>
+        <p class="mt-1 text-sm text-red-700 dark:text-red-400">
+          We couldn't automatically extract all job details. 
+          <% if has_description %>
+            Showing available preliminary data.
+          <% else %>
+            Please visit the original job posting or enter details manually.
+          <% end %>
+        </p>
+        <% if latest_attempt&.error_message.present? %>
+          <p class="mt-2 text-xs text-red-600 dark:text-red-500">
+            Error: <%= truncate(latest_attempt.error_message, length: 100) %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+<% elsif status_type == :complete || status_type == :good %>
+  <!-- Successfully Extracted - No indicator needed, but show confidence for good extractions -->
+  <% if status_type == :good && confidence < 0.85 %>
+    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-4">
+      <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span>AI-enhanced extraction (<%= (confidence * 100).round(0) %>% confidence)</span>
+    </div>
+  <% end %>
+<% end %>
+

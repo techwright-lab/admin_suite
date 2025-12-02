@@ -1,0 +1,28 @@
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+  
+  <!-- Back Button -->
+    <div class="mb-6">
+      <%= link_to job_listings_path, 
+          class: "inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" do %>
+        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Job Listings
+      <% end %>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+        Add Job Listing
+      </h1>
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        Track a new job posting you're interested in
+      </p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <%= render "form" %>
+    </div>
+</div>

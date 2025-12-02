@@ -1,0 +1,86 @@
+<% content_for :title, "Reset Password - Gleania" %>
+
+<div class="space-y-6">
+  <!-- Header -->
+  <div>
+    <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
+      Reset your password
+    </h2>
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+      Enter your new password below.
+    </p>
+  </div>
+
+  <!-- Form -->
+  <%= form_with url: password_path(params[:token]), method: :put, class: "space-y-5" do |form| %>
+    <!-- New Password -->
+    <div>
+      <%= form.label :password, "New password", class: "form-label" %>
+      <%= form.password_field :password, 
+          required: true, 
+          autofocus: true, 
+          autocomplete: "new-password", 
+          placeholder: "Enter new password", 
+          minlength: 8,
+          maxlength: 72, 
+          class: "form-input" %>
+      <p class="form-help-text">
+        Must be at least 8 characters long.
+      </p>
+    </div>
+
+    <!-- Confirm Password -->
+    <div>
+      <%= form.label :password_confirmation, "Confirm new password", class: "form-label" %>
+      <%= form.password_field :password_confirmation, 
+          required: true, 
+          autocomplete: "new-password", 
+          placeholder: "Confirm new password", 
+          minlength: 8,
+          maxlength: 72, 
+          class: "form-input" %>
+    </div>
+
+    <!-- Password strength indicator (placeholder) -->
+    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Password strength</span>
+        <span class="text-sm text-gray-500 dark:text-gray-400">Medium</span>
+      </div>
+
+      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div class="bg-yellow-500 h-2 rounded-full" style="width: 60%"></div>
+      </div>
+
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        Use a mix of letters, numbers, and symbols for a stronger password.
+      </p>
+    </div>
+
+    <!-- Submit button -->
+    <div>
+      <%= form.submit "Reset password", 
+          class: "w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors" %>
+    </div>
+  <% end %>
+
+  <!-- Back to sign in -->
+  <div class="text-center">
+    <%= link_to new_session_path, class: "inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400" do %>
+      <svg
+        class="w-4 h-4 mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 19l-7-7m0 0l7-7m-7 7h18"
+        />
+      </svg>
+      Back to sign in
+    <% end %>
+  </div>
+</div>

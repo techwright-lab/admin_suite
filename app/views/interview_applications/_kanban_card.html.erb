@@ -1,0 +1,96 @@
+<%# Kanban Card Component %>
+
+<%= link_to interview_application_path(application), 
+    class: "block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow cursor-pointer" do %>
+  
+  <!-- Company & Role -->
+  <div class="flex items-start gap-3 mb-3">
+    <!-- Company Logo -->
+    <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+      <% if application.company.logo_url.present? %>
+        <%= image_tag application.company.logo_url, 
+            alt: application.company.name,
+            class: "w-10 h-10 rounded-lg object-cover" %>
+      <% else %>
+        <span class="text-sm font-bold text-gray-600 dark:text-gray-400">
+          <%= application.company.name[0].upcase %>
+        </span>
+      <% end %>
+    </div>
+
+    <div class="flex-1 min-w-0">
+      <h4 class="font-medium text-gray-900 dark:text-white text-sm truncate">
+        <%= application.job_role.title %>
+      </h4>
+      <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+        <%= application.company.name %>
+      </p>
+    </div>
+  </div>
+
+  <!-- Status Badge -->
+  <div class="mb-3">
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+      <%= case application.status&.to_sym
+          when :active then 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+          when :accepted then 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+          when :rejected then 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+          when :archived then 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+          else 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+          end %>">
+      <%= (application.status || 'active').to_s.titleize %>
+    </span>
+  </div>
+
+  <!-- Interview Rounds Progress -->
+  <% if application.has_rounds? %>
+    <div class="mb-3">
+      <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+        <span>Interview Progress</span>
+        <span><%= application.completed_rounds_count %>/<%= application.total_rounds_count %></span>
+      </div>
+      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+        <div class="bg-primary-600 h-1.5 rounded-full" 
+             style="width: <%= (application.completed_rounds_count.to_f / application.total_rounds_count * 100).round %>%"></div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Skills -->
+  <% if application.skill_tags.any? %>
+    <div class="flex flex-wrap gap-1 mb-3">
+      <% application.skill_tags.limit(3).each do |skill| %>
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+          <%= skill.name %>
+        </span>
+      <% end %>
+      <% if application.skill_tags.count > 3 %>
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+          +<%= application.skill_tags.count - 3 %>
+        </span>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- Footer: Date & Actions -->
+  <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+    <span class="text-xs text-gray-500 dark:text-gray-400">
+      <%= time_ago_in_words(application.applied_at || application.created_at) %> ago
+    </span>
+    
+    <div class="flex items-center gap-1">
+      <% if application.notes.present? %>
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+        </svg>
+      <% end %>
+      
+      <% if application.has_company_feedback? %>
+        <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+

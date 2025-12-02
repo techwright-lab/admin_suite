@@ -1,0 +1,32 @@
+# LLM Provider Configuration for Job Listing Extraction
+#
+# Configure multiple LLM providers with fallback support.
+# The orchestrator will try providers in order until one succeeds.
+
+# Default provider to use for extraction
+default_provider: "anthropic"
+
+# Fallback providers to try if the default fails
+fallback_providers:
+  - "openai"
+  - "ollama"
+
+# Provider-specific configuration
+providers:
+  openai:
+    model: "gpt-4o"
+    max_tokens: 4096
+    temperature: 0
+    enabled: true
+  
+  anthropic:
+    model: "claude-3-5-sonnet-20241022"
+    max_tokens: 4096
+    temperature: 0
+    enabled: true
+  
+  ollama:
+    endpoint: "http://localhost:11434"
+    model: "llama3.1"
+    enabled: false  # Set to true when self-hosted model is available
+

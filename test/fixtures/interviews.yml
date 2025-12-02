@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  company: MyString
+  role: MyString
+  stage: 1
+  status: MyString
+  date: 2025-11-12
+  notes: MyText
+  ai_summary: MyText
+
+two:
+  user: two
+  company: MyString
+  role: MyString
+  stage: 1
+  status: MyString
+  date: 2025-11-12
+  notes: MyText
+  ai_summary: MyText

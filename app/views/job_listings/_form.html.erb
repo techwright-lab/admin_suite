@@ -1,0 +1,330 @@
+<%# Job Listing Form %>
+
+<%= form_with(model: @job_listing, local: true, class: "space-y-6") do |form| %>
+  <%# Error Messages %>
+  <% if @job_listing.errors.any? %>
+    <div class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-red-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+            <%= pluralize(@job_listing.errors.count, "error") %> prohibited
+            this job listing from being saved:
+          </h3>
+          <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+            <ul class="list-disc list-inside space-y-1">
+              <% @job_listing.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Basic Information -->
+  <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+      Basic Information
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <%# Company %>
+      <div>
+        <%= form.label :company_id, class: "form-label" do %>
+          Company <span class="text-red-500">*</span>
+        <% end %>
+        <%= form.collection_select :company_id, 
+            @companies, 
+            :id, 
+            :name,
+            { prompt: "Select a company" },
+            required: true,
+            class: "form-select" %>
+      </div>
+
+      <%# Job Role %>
+      <div>
+        <%= form.label :job_role_id, class: "form-label" do %>
+          Job Role <span class="text-red-500">*</span>
+        <% end %>
+        <%= form.collection_select :job_role_id, 
+            @job_roles, 
+            :id, 
+            :title,
+            { prompt: "Select a job role" },
+            required: true,
+            class: "form-select" %>
+      </div>
+
+      <%# Title (Optional Override) %>
+      <div class="md:col-span-2">
+        <%= form.label :title, "Custom Title (Optional)", class: "form-label" %>
+        <%= form.text_field :title,
+            placeholder: "Leave blank to use job role title",
+            class: "form-input" %>
+      </div>
+
+      <%# URL %>
+      <div class="md:col-span-2">
+        <%= form.label :url, "Job Posting URL", class: "form-label" %>
+        <%= form.url_field :url,
+            placeholder: "https://company.com/jobs/123",
+            class: "form-input" %>
+      </div>
+
+      <%# Source ID %>
+      <div>
+        <%= form.label :source_id, "Source ID", class: "form-label" %>
+        <%= form.text_field :source_id,
+            placeholder: "Company's internal job ID",
+            class: "form-input" %>
+      </div>
+
+      <%# Job Board ID %>
+      <div>
+        <%= form.label :job_board_id, "Job Board ID", class: "form-label" %>
+        <%= form.text_field :job_board_id,
+            placeholder: "LinkedIn, Indeed, etc. ID",
+            class: "form-input" %>
+      </div>
+
+      <%# Status %>
+      <div>
+        <%= form.label :status, class: "form-label" %>
+        <%= form.select :status, 
+            JobListing::STATUSES.map { |s| [s.to_s.titleize, s] },
+            {},
+            class: "form-select" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location & Remote -->
+  <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+      Location
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <%# Location %>
+      <div>
+        <%= form.label :location, class: "form-label" %>
+        <%= form.text_field :location,
+            placeholder: "San Francisco, CA",
+            class: "form-input" %>
+      </div>
+
+      <%# Remote Type %>
+      <div>
+        <%= form.label :remote_type, class: "form-label" %>
+        <%= form.select :remote_type, 
+            JobListing::REMOTE_TYPES.map { |r| [r.to_s.titleize.gsub("_", "-"), r] },
+            {},
+            class: "form-select" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compensation -->
+  <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+      Compensation
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <%# Salary Min %>
+      <div>
+        <%= form.label :salary_min, "Minimum Salary", class: "form-label" %>
+        <%= form.number_field :salary_min,
+            placeholder: "120000",
+            class: "form-input" %>
+      </div>
+
+      <%# Salary Max %>
+      <div>
+        <%= form.label :salary_max, "Maximum Salary", class: "form-label" %>
+        <%= form.number_field :salary_max,
+            placeholder: "180000",
+            class: "form-input" %>
+      </div>
+
+      <%# Currency %>
+      <div>
+        <%= form.label :salary_currency, "Currency", class: "form-label" %>
+        <%= form.text_field :salary_currency,
+            placeholder: "USD",
+            value: form.object.salary_currency || "USD",
+            class: "form-input" %>
+      </div>
+
+      <%# Equity %>
+      <div class="md:col-span-3">
+        <%= form.label :equity_info, "Equity Information", class: "form-label" %>
+        <%= form.text_field :equity_info,
+            placeholder: "0.1% - 0.5% equity",
+            class: "form-input" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Job Details -->
+  <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+      Job Details
+    </h3>
+
+    <div class="space-y-4">
+      <%# Description %>
+      <div>
+        <%= form.label :description, class: "form-label" %>
+        <%= form.text_area :description,
+            rows: 4,
+            placeholder: "Brief description of the role...",
+            class: "form-textarea" %>
+      </div>
+
+      <%# Requirements %>
+      <div>
+        <%= form.label :requirements, class: "form-label" %>
+        <%= form.text_area :requirements,
+            rows: 4,
+            placeholder: "Required skills and experience...",
+            class: "form-textarea" %>
+      </div>
+
+      <%# Responsibilities %>
+      <div>
+        <%= form.label :responsibilities, class: "form-label" %>
+        <%= form.text_area :responsibilities,
+            rows: 4,
+            placeholder: "Day-to-day responsibilities...",
+            class: "form-textarea" %>
+      </div>
+
+      <%# Benefits %>
+      <div>
+        <%= form.label :benefits, class: "form-label" %>
+        <%= form.text_area :benefits,
+            rows: 3,
+            placeholder: "Health insurance, 401k, etc...",
+            class: "form-textarea" %>
+      </div>
+
+      <%# Perks %>
+      <div>
+        <%= form.label :perks, class: "form-label" %>
+        <%= form.text_area :perks,
+            rows: 3,
+            placeholder: "Remote work, learning budget, etc...",
+            class: "form-textarea" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Sections (Dynamic) -->
+  <div
+    class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4"
+    data-controller="dynamic-sections"
+  >
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+        Custom Sections
+      </h3>
+      <button
+        type="button"
+        data-action="click->dynamic-sections#add"
+        class="
+          inline-flex items-center px-3 py-1.5 text-sm font-medium
+          text-primary-600 dark:text-primary-400 hover:text-primary-700
+          dark:hover:text-primary-300
+        "
+      >
+        <svg
+          class="w-4 h-4 mr-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        Add Section
+      </button>
+    </div>
+
+    <div data-dynamic-sections-target="container" class="space-y-3">
+      <% if @job_listing.custom_sections.present? %>
+        <% @job_listing.custom_sections.each_with_index do |(key, value), index| %>
+          <div data-dynamic-sections-target="section" class="flex gap-2">
+            <%= text_field_tag "job_listing[custom_sections_keys][]", key,
+                placeholder: "Section Name",
+                class: "flex-1 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500" %>
+            <%= text_area_tag "job_listing[custom_sections_values][]", value,
+                rows: 2,
+                placeholder: "Section Content",
+                class: "flex-[2] rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500" %>
+            <button
+              type="button"
+              data-action="click->dynamic-sections#remove"
+              class="
+                flex-shrink-0 text-red-600 hover:text-red-700
+                dark:text-red-400 dark:hover:text-red-300
+              "
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+      💡 Add custom sections like "What You'll Be Doing", "What We Offer", etc.
+    </p>
+  </div>
+
+  <%# Form Actions %>
+  <div
+    class="
+      flex items-center justify-end gap-3 pt-6 border-t border-gray-200
+      dark:border-gray-700
+    "
+  >
+    <%= link_to "Cancel", 
+        @job_listing.persisted? ? job_listing_path(@job_listing) : job_listings_path,
+        class: "px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" %>
+
+    <%= form.submit @job_listing.new_record? ? "Create Job Listing" : "Update Job Listing",
+        class: "px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" %>
+  </div>
+<% end %>

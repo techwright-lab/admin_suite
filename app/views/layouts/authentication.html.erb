@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Sign In - Gleania" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Gleania">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+
+    <%# Cloudflare Turnstile %>
+    <% if turnstile_configured? %>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <% end %>
+  </head>
+
+  <body class="bg-gray-50 dark:bg-gray-900">
+    <div class="min-h-screen flex">
+      
+      <!-- Left side - Branding (hidden on mobile) -->
+      <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-purple-700 p-12 flex-col justify-between relative overflow-hidden">
+        
+        <!-- Background pattern -->
+        <div class="absolute inset-0 opacity-10">
+          <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+
+        <!-- Content -->
+        <div class="relative z-10">
+          <div class="flex items-center gap-3 mb-12">
+            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
+              <span class="text-2xl font-bold text-primary-600">G</span>
+            </div>
+            <h1 class="text-3xl font-bold text-white">Gleania</h1>
+          </div>
+
+          <div class="space-y-8">
+            <div>
+              <h2 class="text-4xl font-bold text-white mb-4">
+                Master Your Interview Journey
+              </h2>
+              <p class="text-xl text-primary-100">
+                Track applications, prepare better, and land your dream job with AI-powered insights.
+              </p>
+            </div>
+
+            <!-- Features -->
+            <div class="space-y-4">
+              <div class="flex items-start gap-3">
+                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-white">Track Every Application</h3>
+                  <p class="text-primary-100">Organize your job search with our intuitive Kanban board and timeline views.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-white">AI-Powered Insights</h3>
+                  <p class="text-primary-100">Get personalized feedback and recommendations to improve your interview performance.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-white">Visualize Progress</h3>
+                  <p class="text-primary-100">See your interview journey at a glance with comprehensive analytics and timelines.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="relative z-10">
+          <p class="text-primary-100 text-sm">
+            © <%= Time.current.year %> Gleania. Your interview success partner.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right side - Form -->
+      <div class="flex-1 flex items-center justify-center p-8 lg:p-12">
+        <div class="w-full max-w-md">
+          
+          <!-- Mobile logo -->
+          <div class="lg:hidden mb-8 text-center">
+            <h1 class="text-3xl font-bold">
+              <span class="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">Gleania</span>
+            </h1>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Your interview assistant</p>
+          </div>
+
+          <!-- Theme toggle (mobile) -->
+          <div class="lg:hidden mb-6 flex justify-end">
+            <button type="button"
+                    data-controller="theme"
+                    data-action="click->theme#toggle"
+                    class="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title="Toggle theme">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Form content -->
+          <%= yield %>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+

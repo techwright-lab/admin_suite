@@ -1,0 +1,25 @@
+<h1>Verify your email address</h1>
+
+<p>Hi<%= " #{@user.name}" if @user.name.present? %>,</p>
+
+<p>
+  Welcome to Gleania! We're excited to have you on board. To get started, please verify your email address by clicking the button below:
+</p>
+
+<div style="text-align: center;">
+  <%= link_to "Verify Email Address", @verification_url, class: "email-button" %>
+</div>
+
+<p class="text-muted">
+  Or copy and paste this link into your browser:<br>
+  <%= @verification_url %>
+</p>
+
+<p class="text-muted">
+  This verification link will expire in 24 hours for security reasons.
+</p>
+
+<p class="text-muted">
+  If you didn't create an account with Gleania, you can safely ignore this email.
+</p>
+

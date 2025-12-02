@@ -1,0 +1,62 @@
+<%#
+  View Switcher Component
+  Usage: <%= render "shared/view_switcher", current_view: @current_view
+%>
+
+<% current_view ||= "table" %>
+
+<div
+  class="
+    inline-flex rounded-lg border border-gray-300 dark:border-gray-600
+    bg-white dark:bg-gray-800 p-1
+  "
+  data-controller="view-switcher"
+>
+  <!-- Table View -->
+  <%= link_to interview_applications_path(view: "table"),
+      data: { 
+        view_switcher_target: "button",
+        view: "table",
+        action: "click->view-switcher#switch"
+      },
+      class: "inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors #{current_view == 'table' || current_view == 'list' ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}" do %>
+    <svg
+      class="w-4 h-4 mr-1.5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M4 6h16M4 10h16M4 14h16M4 18h16"
+      />
+    </svg>
+    Table
+  <% end %>
+
+  <!-- Kanban View -->
+  <%= link_to kanban_interview_applications_path,
+      data: { 
+        view_switcher_target: "button",
+        view: "kanban",
+        action: "click->view-switcher#switch"
+      },
+      class: "inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors #{current_view == 'kanban' ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}" do %>
+    <svg
+      class="w-4 h-4 mr-1.5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+      />
+    </svg>
+    Kanban
+  <% end %>
+</div>

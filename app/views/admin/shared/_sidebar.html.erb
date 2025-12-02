@@ -1,0 +1,167 @@
+<aside
+  class="
+    w-64 bg-slate-800 dark:bg-slate-950 border-r border-slate-700
+    dark:border-slate-800 flex flex-col h-screen sticky top-0
+  "
+  data-controller="sidebar"
+>
+  <!-- Logo / Admin Badge -->
+  <div class="p-6 border-b border-slate-700 dark:border-slate-800">
+    <%= link_to admin_root_path, class: "block" do %>
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-1 text-xs font-bold text-amber-400 bg-amber-400/10 rounded">
+          ADMIN
+        </span>
+      </div>
+      <h1 class="text-xl font-bold text-white mt-2">
+        Gleania
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">
+        Developer Tools
+      </p>
+    <% end %>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 p-4 space-y-6 overflow-y-auto">
+    
+    <!-- Dashboard -->
+    <%= link_to admin_root_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(admin_root_path) ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+      <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+      Dashboard
+    <% end %>
+
+    <!-- Users & Email Section -->
+    <div>
+      <h3 class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        Users & Email
+      </h3>
+      <div class="space-y-1">
+        <%= link_to admin_users_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/admin/users') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          Users
+        <% end %>
+
+        <%= link_to admin_email_senders_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/admin/email_senders') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Email Senders
+          <% unassigned_count = EmailSender.unassigned.count rescue 0 %>
+          <% if unassigned_count > 0 %>
+            <span class="ml-auto px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded-full">
+              <%= unassigned_count %>
+            </span>
+          <% end %>
+        <% end %>
+
+        <%= link_to admin_support_tickets_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/admin/support_tickets') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          Support Tickets
+          <% open_tickets_count = SupportTicket.open_tickets.count rescue 0 %>
+          <% if open_tickets_count > 0 %>
+            <span class="ml-auto px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded-full">
+              <%= open_tickets_count %>
+            </span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Content Section -->
+    <div>
+      <h3 class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        Content
+      </h3>
+      <div class="space-y-1">
+        <%= link_to admin_job_listings_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/admin/job_listings') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Job Listings
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Scraping Section -->
+    <div>
+      <h3 class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        Scraping & AI
+      </h3>
+      <div class="space-y-1">
+        <%= link_to admin_scraping_metrics_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(admin_scraping_metrics_path) ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Scraping Metrics
+        <% end %>
+
+        <%= link_to admin_scraping_attempts_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/admin/scraping_attempts') || request.path.start_with?('/admin/scraping_events') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Scraping Attempts
+        <% end %>
+
+        <%= link_to admin_html_scraping_logs_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/admin/html_scraping_logs') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          HTML Scraping
+        <% end %>
+
+        <%= link_to admin_ai_extraction_logs_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/admin/ai_extraction_logs') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          AI Extraction Logs
+        <% end %>
+      </div>
+    </div>
+
+    <!-- System Section -->
+    <div>
+      <h3 class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        System
+      </h3>
+      <div class="space-y-1">
+        <%= link_to internal_mission_control_jobs_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-700 hover:text-white", target: "_blank" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          Background Jobs
+          <svg class="w-4 h-4 ml-auto text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        <% end %>
+
+        <%= link_to avo_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-slate-300 hover:bg-slate-700 hover:text-white", target: "_blank" do %>
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+          </svg>
+          Data Admin (Avo)
+          <svg class="w-4 h-4 ml-auto text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        <% end %>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Exit Admin -->
+  <div class="p-4 border-t border-slate-700 dark:border-slate-800">
+    <%= link_to root_path, class: "flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors" do %>
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+      </svg>
+      Exit Admin
+    <% end %>
+  </div>
+</aside>
+

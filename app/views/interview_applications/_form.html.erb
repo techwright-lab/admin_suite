@@ -1,0 +1,127 @@
+<%# Interview Application Form - Simplified %>
+
+<%= form_with(model: @application, local: true, class: "space-y-6") do |form| %>
+  <%# Error Messages %>
+  <% if @application.errors.any? %>
+    <div
+      class="
+        rounded-lg bg-red-50 dark:bg-red-900/20 p-4 border border-red-200
+        dark:border-red-800
+      "
+    >
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-red-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+            <%= pluralize(@application.errors.count, "error") %> prohibited
+            this application from being saved:
+          </h3>
+          <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+            <ul class="list-disc list-inside space-y-1">
+              <% @application.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Company Autocomplete %>
+  <div>
+    <%= render "shared/autocomplete",
+      form: form,
+      field_name: :company_id,
+      label: "Company",
+      placeholder: "Search or create company...",
+      autocomplete_url: autocomplete_companies_path,
+      create_url: companies_path,
+      modal_id: "company-modal",
+      value: @application.company_id,
+      display_value: @application.company&.name,
+      required: true,
+      help_text: "Start typing to search, or create a new company if not found" %>
+  </div>
+
+  <%# Job Role Autocomplete %>
+  <div>
+    <%= render "shared/autocomplete",
+      form: form,
+      field_name: :job_role_id,
+      label: "Job Role",
+      placeholder: "Search or create job role...",
+      autocomplete_url: autocomplete_job_roles_path,
+      create_url: job_roles_path,
+      modal_id: "job-role-modal",
+      value: @application.job_role_id,
+      display_value: @application.job_role&.title,
+      required: true,
+      help_text: "The position you're applying for" %>
+  </div>
+
+  <%# Job Listing URL (Optional) %>
+  <div>
+    <%= form.label :job_listing_url, "Job Listing URL (Optional)", class: "form-label" %>
+    <%= form.url_field :job_listing_url,
+        placeholder: "https://example.com/jobs/123",
+        class: "form-input" %>
+    <p class="form-help-text">
+      We'll automatically fetch job details from this URL
+    </p>
+  </div>
+
+  <%# Applied Date (Optional) %>
+  <div>
+    <%= form.label :applied_at, "Applied Date (Optional)", class: "form-label" %>
+    <%= form.date_field :applied_at,
+        value: @application.applied_at || Date.today,
+        class: "form-input" %>
+    <p class="form-help-text">
+      Defaults to today if not specified
+    </p>
+  </div>
+
+  <%# Notes (Optional) %>
+  <div>
+    <%= form.label :notes, "Notes (Optional)", class: "form-label" %>
+    <%= form.text_area :notes,
+        rows: 4,
+        placeholder: "Add any notes about this application...",
+        class: "form-textarea" %>
+  </div>
+
+  <%# Form Actions %>
+  <div
+    class="
+      flex items-center justify-end gap-3 pt-6 border-t border-gray-200
+      dark:border-gray-700
+    "
+  >
+    <%= link_to "Cancel", 
+        interview_applications_path,
+        class: "px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors" %>
+
+    <%= form.submit @application.new_record? ? "Create Application" : "Update Application",
+        data: { disable_with: "Saving..." },
+        class: "px-5 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm hover:shadow transition-all" %>
+  </div>
+<% end %>
+
+<%# Include Creation Modals %>
+
+<%= render "shared/company_create_modal" %>
+
+<%= render "shared/job_role_create_modal" %>

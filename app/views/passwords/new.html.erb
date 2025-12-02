@@ -1,0 +1,57 @@
+<% content_for :title, "Forgot Password - Gleania" %>
+
+<div class="space-y-6">
+  <!-- Header -->
+  <div>
+    <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
+      Forgot password?
+    </h2>
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+      No worries, we'll send you reset instructions.
+    </p>
+  </div>
+
+  <!-- Form -->
+  <%= form_with url: passwords_path, class: "space-y-5" do |form| %>
+    <!-- Email -->
+    <div>
+      <%= form.label :email_address, "Email address", class: "form-label" %>
+      <%= form.email_field :email_address, 
+          required: true, 
+          autofocus: true, 
+          autocomplete: "username", 
+          placeholder: "you@example.com", 
+          class: "form-input" %>
+      <p class="form-help-text">
+        Enter the email address associated with your account and we'll send you
+        a link to reset your password.
+      </p>
+    </div>
+
+    <!-- Submit button -->
+    <div>
+      <%= form.submit "Send reset instructions", 
+          class: "w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors" %>
+    </div>
+  <% end %>
+
+  <!-- Back to sign in -->
+  <div class="text-center">
+    <%= link_to new_session_path, class: "inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400" do %>
+      <svg
+        class="w-4 h-4 mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 19l-7-7m0 0l7-7m-7 7h18"
+        />
+      </svg>
+      Back to sign in
+    <% end %>
+  </div>
+</div>

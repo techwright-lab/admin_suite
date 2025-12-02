@@ -1,0 +1,230 @@
+<% content_for :title, "Event: #{@event.event_type_display} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <%= link_to admin_scraping_attempt_path(@attempt), class: "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300" do %>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      <% end %>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+        Step <%= @event.step_order %>: <%= @event.event_type_display %>
+      </h1>
+      <% status_colors = { "success" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", "failed" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", "skipped" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300", "started" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" } %>
+      <span class="px-3 py-1 text-sm font-semibold rounded-full <%= status_colors[@event.status] || 'bg-slate-100 text-slate-800' %>">
+        <%= @event.status.titleize %>
+      </span>
+    </div>
+    <p class="text-sm text-slate-500 dark:text-slate-400">
+      Part of Scraping Attempt #<%= @attempt.id %> • <%= @event.created_at.strftime("%B %d, %Y at %H:%M:%S UTC") %>
+    </p>
+  </div>
+
+  <!-- Navigation between events -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <% if @prev_event %>
+        <%= link_to admin_scraping_event_path(@prev_event), class: "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Step <%= @prev_event.step_order %>: <%= @prev_event.event_type_display %>
+        <% end %>
+      <% end %>
+    </div>
+    <div>
+      <% if @next_event %>
+        <%= link_to admin_scraping_event_path(@next_event), class: "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors" do %>
+          Step <%= @next_event.step_order %>: <%= @next_event.event_type_display %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Duration</p>
+      <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-white"><%= @event.formatted_duration %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Started At</p>
+      <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white"><%= @event.started_at&.strftime("%H:%M:%S.%L") || "N/A" %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Completed At</p>
+      <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white"><%= @event.completed_at&.strftime("%H:%M:%S.%L") || "N/A" %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Event Type</p>
+      <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white"><%= @event.event_type %></p>
+    </div>
+  </div>
+
+  <!-- Error Details (if failed) -->
+  <% if @event.has_error? %>
+    <div class="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4 mb-6">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div class="flex-1">
+          <h3 class="text-sm font-semibold text-red-800 dark:text-red-400">Error Details</h3>
+          <% if @event.error_type.present? %>
+            <p class="mt-1 text-sm text-red-700 dark:text-red-300">
+              <span class="font-medium">Type:</span> <code class="px-1 py-0.5 bg-red-100 dark:bg-red-900/40 rounded"><%= @event.error_type %></code>
+            </p>
+          <% end %>
+          <% if @event.error_message.present? %>
+            <div class="mt-2">
+              <span class="text-sm font-medium text-red-700 dark:text-red-300">Message:</span>
+              <pre class="mt-1 p-3 bg-red-100 dark:bg-red-900/40 rounded-lg text-sm text-red-800 dark:text-red-300 overflow-x-auto whitespace-pre-wrap"><%= @event.error_message %></pre>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Extracted Fields Summary -->
+  <% if @event.extracted_fields.any? %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Extracted Fields</h3>
+      <div class="flex flex-wrap gap-2">
+        <% @event.extracted_fields.each do |field| %>
+          <span class="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 rounded">
+            <%= field %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Input Payload -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" data-controller="collapsible">
+    <button type="button" data-action="click->collapsible#toggle" class="w-full px-4 py-3 flex items-center justify-between text-left border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+          <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Input Payload</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Data passed into this step</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-500 dark:text-slate-400"><%= @event.input_payload.present? ? "#{@event.input_payload.to_json.bytesize} bytes" : "Empty" %></span>
+        <svg data-collapsible-target="icon" class="w-5 h-5 text-slate-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </button>
+    <div data-collapsible-target="content" class="hidden">
+      <div class="p-4" data-controller="json-viewer">
+        <div class="flex items-center justify-end gap-2 mb-2">
+          <button type="button" data-action="click->json-viewer#copy" class="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 rounded transition-colors">
+            Copy
+          </button>
+        </div>
+        <% if @event.input_payload.present? %>
+          <pre data-json-viewer-target="content" class="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto"><%= JSON.pretty_generate(@event.input_payload) %></pre>
+        <% else %>
+          <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No input payload recorded</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output Payload -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" data-controller="collapsible">
+    <button type="button" data-action="click->collapsible#toggle" class="w-full px-4 py-3 flex items-center justify-between text-left border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+          <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Output Payload</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Data produced by this step</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-500 dark:text-slate-400"><%= @event.output_payload.present? ? "#{@event.output_payload.to_json.bytesize} bytes" : "Empty" %></span>
+        <svg data-collapsible-target="icon" class="w-5 h-5 text-slate-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </button>
+    <div data-collapsible-target="content" class="hidden">
+      <div class="p-4" data-controller="json-viewer">
+        <div class="flex items-center justify-end gap-2 mb-2">
+          <button type="button" data-action="click->json-viewer#copy" class="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 rounded transition-colors">
+            Copy
+          </button>
+        </div>
+        <% if @event.output_payload.present? %>
+          <pre data-json-viewer-target="content" class="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto"><%= JSON.pretty_generate(@event.output_payload) %></pre>
+        <% else %>
+          <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No output payload recorded</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metadata -->
+  <% if @event.metadata.present? && @event.metadata.any? %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" data-controller="collapsible">
+      <button type="button" data-action="click->collapsible#toggle" class="w-full px-4 py-3 flex items-center justify-between text-left border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+            <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Metadata</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Additional context and information</p>
+          </div>
+        </div>
+        <svg data-collapsible-target="icon" class="w-5 h-5 text-slate-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div data-collapsible-target="content" class="hidden">
+        <div class="p-4">
+          <pre class="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap overflow-x-auto"><%= JSON.pretty_generate(@event.metadata) %></pre>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Related Links -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+    <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Related Records</h3>
+    <div class="flex flex-wrap gap-3">
+      <%= link_to admin_scraping_attempt_path(@attempt), class: "inline-flex items-center gap-2 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        Scraping Attempt #<%= @attempt.id %>
+      <% end %>
+      <% if @event.job_listing %>
+        <%= link_to avo_path + "/resources/job_listings/#{@event.job_listing.id}", target: "_blank", class: "inline-flex items-center gap-2 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Job Listing
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>
+

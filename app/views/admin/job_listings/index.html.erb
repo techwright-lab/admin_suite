@@ -1,0 +1,169 @@
+<% content_for :title, "Job Listings - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Job Listings</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Manage and review job listings with extraction data
+    </p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total Listings</p>
+      <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:total] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">With Description</p>
+      <p class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400"><%= @stats[:with_description] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">With Requirements</p>
+      <p class="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400"><%= @stats[:with_requirements] %></p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Active</p>
+      <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white"><%= @stats[:by_status]["active"] || 0 %></p>
+    </div>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Filters -->
+    <div class="lg:w-56 flex-shrink-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Filters</h3>
+        
+        <%= form_with url: admin_job_listings_path, method: :get, local: true, class: "space-y-4" do %>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Search</label>
+            <input type="text" name="search" value="<%= @filters[:search] %>" placeholder="Title, company..."
+                   class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
+            <select name="status" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All</option>
+              <option value="active" <%= "selected" if @filters[:status] == "active" %>>Active</option>
+              <option value="closed" <%= "selected" if @filters[:status] == "closed" %>>Closed</option>
+              <option value="draft" <%= "selected" if @filters[:status] == "draft" %>>Draft</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Extraction</label>
+            <select name="extraction_status" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
+              <option value="">All</option>
+              <option value="completed" <%= "selected" if @filters[:extraction_status] == "completed" %>>Completed</option>
+              <option value="pending" <%= "selected" if @filters[:extraction_status] == "pending" %>>Pending</option>
+              <option value="failed" <%= "selected" if @filters[:extraction_status] == "failed" %>>Failed</option>
+            </select>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="submit" class="flex-1 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors">
+              Apply
+            </button>
+            <%= link_to "Clear", admin_job_listings_path, class: "flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-center text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Listings Table -->
+    <div class="flex-1 min-w-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-900">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Job</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Company</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Data</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+              <% @job_listings.each do |listing| %>
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                  <td class="px-4 py-3">
+                    <div class="max-w-xs">
+                      <p class="text-sm font-medium text-slate-900 dark:text-white truncate" title="<%= listing.display_title %>">
+                        <%= listing.display_title %>
+                      </p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 truncate"><%= listing.url %></p>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                    <%= listing.company.name %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <% status_colors = { "active" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", "closed" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300", "draft" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400" } %>
+                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full <%= status_colors[listing.status] || status_colors['active'] %>">
+                      <%= listing.status.titleize %>
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <div class="flex items-center gap-2">
+                      <% if listing.description.present? %>
+                        <span class="w-2 h-2 rounded-full bg-green-500" title="Has description"></span>
+                      <% else %>
+                        <span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" title="No description"></span>
+                      <% end %>
+                      <% if listing.requirements.present? %>
+                        <span class="w-2 h-2 rounded-full bg-green-500" title="Has requirements"></span>
+                      <% else %>
+                        <span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" title="No requirements"></span>
+                      <% end %>
+                      <% if listing.responsibilities.present? %>
+                        <span class="w-2 h-2 rounded-full bg-green-500" title="Has responsibilities"></span>
+                      <% else %>
+                        <span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" title="No responsibilities"></span>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm">
+                    <div class="flex items-center gap-2">
+                      <%= link_to "View", admin_job_listing_path(listing), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium" %>
+                      <%= link_to "Edit", edit_admin_job_listing_path(listing), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium" %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @job_listings.empty? %>
+                <tr>
+                  <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                    No job listings found
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if @total_pages > 1 %>
+          <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-slate-500 dark:text-slate-400">
+                Showing <%= ((@page - 1) * PER_PAGE) + 1 %> to <%= [(@page * PER_PAGE), @total_count].min %> of <%= @total_count %>
+              </div>
+              <div class="flex gap-2">
+                <% if @page > 1 %>
+                  <%= link_to "Previous", url_for(params.permit!.merge(page: @page - 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" %>
+                <% end %>
+                <% if @page < @total_pages %>
+                  <%= link_to "Next", url_for(params.permit!.merge(page: @page + 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+

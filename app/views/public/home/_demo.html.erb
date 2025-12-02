@@ -1,0 +1,175 @@
+<%# Interactive Demo Section %>
+<section id="demo" class="relative py-24 lg:py-32 overflow-hidden">
+  <%# Background %>
+  <div class="absolute inset-0 bg-dark-900"></div>
+  <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-secondary-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <%# Section header %>
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
+        See Gleania in <span class="text-gradient-brand">action</span>
+      </h2>
+      <p class="text-lg text-gray-400">
+        Experience the reflection loop that helps you grow with every interview.
+      </p>
+    </div>
+
+    <%# Demo interface %>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start" data-controller="demo-tabs">
+      <%# Left: Mock Pipeline %>
+      <div class="card-glass">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-white">Your Pipeline</h3>
+          <span class="px-3 py-1 rounded-full bg-primary-500/20 text-primary-300 text-xs font-medium">Live Preview</span>
+        </div>
+        
+        <%# Pipeline stages %>
+        <div class="space-y-4">
+          <% [
+            { company: "Stripe", role: "Senior Software Engineer", stage: "Technical Interview", date: "Dec 5", active: true },
+            { company: "Vercel", role: "Staff Engineer", stage: "Final Round", date: "Dec 3", active: false },
+            { company: "Linear", role: "Frontend Lead", stage: "Offer Discussion", date: "Dec 1", active: false },
+          ].each_with_index do |item, index| %>
+            <div class="p-4 rounded-xl <%= item[:active] ? 'bg-primary-500/10 border border-primary-500/30' : 'bg-white/5 border border-white/5' %> transition-all duration-300 cursor-pointer hover:border-primary-500/30"
+                 data-demo-tabs-target="pipelineItem"
+                 data-action="click->demo-tabs#selectPipelineItem"
+                 data-index="<%= index %>">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <h4 class="font-semibold text-white"><%= item[:company] %></h4>
+                    <% if item[:active] %>
+                      <span class="flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                      </span>
+                    <% end %>
+                  </div>
+                  <p class="text-sm text-gray-400"><%= item[:role] %></p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-gray-500"><%= item[:date] %></p>
+                  <p class="text-sm font-medium text-primary-400"><%= item[:stage] %></p>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Right: Insight Summary with tabs %>
+      <div class="card-glass">
+        <%# Tab navigation %>
+        <div class="flex gap-2 mb-6 border-b border-white/10 pb-4">
+          <% ["Interview Summary", "Weakness Analysis", "Learning Plan"].each_with_index do |tab, index| %>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 <%= index == 0 ? 'bg-primary-500/20 text-primary-300' : 'text-gray-400 hover:text-white hover:bg-white/5' %>"
+                    data-demo-tabs-target="tab"
+                    data-action="click->demo-tabs#selectTab"
+                    data-index="<%= index %>">
+              <%= tab %>
+            </button>
+          <% end %>
+        </div>
+
+        <%# Tab content: Interview Summary %>
+        <div data-demo-tabs-target="tabContent" class="">
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-white mb-1">Technical Interview at Stripe</h4>
+                <p class="text-sm text-gray-400">45 min system design discussion</p>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white/5">
+              <p class="text-sm text-gray-300 leading-relaxed">
+                <span class="text-primary-400 font-medium">Key Topics:</span> Distributed systems, payment processing architecture, database sharding strategies, rate limiting patterns.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <p class="text-xs text-emerald-400 font-medium mb-1">Strengths</p>
+                <p class="text-sm text-gray-300">Clear communication, good system decomposition</p>
+              </div>
+              <div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <p class="text-xs text-amber-400 font-medium mb-1">Areas to Improve</p>
+                <p class="text-sm text-gray-300">Consistency models, CAP theorem trade-offs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# Tab content: Weakness Analysis %>
+        <div data-demo-tabs-target="tabContent" class="hidden">
+          <div class="space-y-4">
+            <p class="text-sm text-gray-400">Based on your last 5 interviews, here are patterns we've identified:</p>
+            
+            <div class="space-y-3">
+              <% [
+                { skill: "Concurrency & Threading", score: 45, trend: "improving" },
+                { skill: "System Design Scale", score: 60, trend: "stable" },
+                { skill: "Database Optimization", score: 35, trend: "needs_attention" },
+              ].each do |item| %>
+                <div class="p-3 rounded-lg bg-white/5">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-white"><%= item[:skill] %></span>
+                    <span class="text-xs <%= 
+                      case item[:trend]
+                      when 'improving' then 'text-emerald-400'
+                      when 'stable' then 'text-blue-400'
+                      else 'text-amber-400'
+                      end
+                    %>">
+                      <%= item[:trend].titleize %>
+                    </span>
+                  </div>
+                  <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div class="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500" style="width: <%= item[:score] %>%"></div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# Tab content: Learning Plan %>
+        <div data-demo-tabs-target="tabContent" class="hidden">
+          <div class="space-y-4">
+            <p class="text-sm text-gray-400">Personalized recommendations based on your interview patterns:</p>
+            
+            <div class="space-y-3">
+              <% [
+                { title: "Master Database Indexing", type: "Course", duration: "2 hours", priority: "high" },
+                { title: "Concurrency Patterns in Go", type: "Practice", duration: "1 hour", priority: "medium" },
+                { title: "CAP Theorem Deep Dive", type: "Article", duration: "15 min", priority: "high" },
+              ].each do |item| %>
+                <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+                  <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500/20 to-secondary-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white"><%= item[:title] %></p>
+                    <p class="text-xs text-gray-500"><%= item[:type] %> &middot; <%= item[:duration] %></p>
+                  </div>
+                  <span class="px-2 py-1 rounded text-xs font-medium <%= item[:priority] == 'high' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400' %>">
+                    <%= item[:priority].upcase %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
