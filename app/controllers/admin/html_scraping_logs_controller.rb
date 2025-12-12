@@ -6,17 +6,13 @@ module Admin
   # Provides an overview of HTML scraping performance across domains
   # and field-level extraction success rates.
   class HtmlScrapingLogsController < BaseController
-    PER_PAGE = 25
+    include Concerns::Paginatable
 
     before_action :set_html_scraping_log, only: [ :show ]
 
     # GET /admin/html_scraping_logs
     def index
-      @page = (params[:page] || 1).to_i
-      @logs = filtered_logs.limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
-      @total_count = filtered_logs.count
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
-
+      @pagy, @logs = paginate(filtered_logs)
       @overview_stats = calculate_overview_stats
       @domain_stats = calculate_domain_stats
       @field_stats = calculate_field_stats
@@ -151,4 +147,3 @@ module Admin
     end
   end
 end
-

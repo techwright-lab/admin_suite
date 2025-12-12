@@ -1,0 +1,149 @@
+<div
+  class="
+    bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200
+    dark:border-gray-700
+  "
+>
+  <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Your Skill Profile
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Aggregated from <%= Current.user.user_resumes.analyzed.count %>
+          resume<%= Current.user.user_resumes.analyzed.count == 1 ? '' : 's' %>
+        </p>
+      </div>
+      <% if user_skills.any? %>
+        <%= link_to skills_path, class: "text-xs text-primary-600 dark:text-primary-400 hover:underline" do %>
+          View All
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="p-6">
+    <% if user_skills.any? %>
+      <!-- Quick Stats Row -->
+      <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="text-center flex-1">
+          <p class="text-xl font-bold text-gray-900 dark:text-white"><%= user_skills.count %></p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Total</p>
+        </div>
+        <div class="text-center flex-1 border-l border-gray-200 dark:border-gray-700">
+          <p class="text-xl font-bold text-green-600 dark:text-green-400"><%= user_skills.strong_skills.count %></p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Strong</p>
+        </div>
+        <div class="text-center flex-1 border-l border-gray-200 dark:border-gray-700">
+          <p class="text-xl font-bold text-amber-600 dark:text-amber-400"><%= user_skills.developing_skills.count %></p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Growing</p>
+        </div>
+      </div>
+
+      <!-- Top Skills -->
+      <div class="mb-6">
+        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          Top Skills
+        </h3>
+
+        <div class="space-y-3">
+          <% user_skills.by_level_desc.limit(8).each do |user_skill| %>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center min-w-0 flex-1">
+                <span class="text-sm text-gray-900 dark:text-white truncate">
+                  <%= user_skill.skill_name %>
+                </span>
+
+                <% if user_skill.resume_count && user_skill.resume_count > 1 %>
+                  <span
+                    class="ml-2 text-xs text-gray-400"
+                    title="Found in <%= user_skill.resume_count %> resumes"
+                  >
+                    (<%= user_skill.resume_count %>)
+                  </span>
+                <% end %>
+              </div>
+
+              <div class="flex items-center ml-3">
+                <!-- Proficiency Bar -->
+                <div class="w-24 bg-gray-200 dark:bg-dark-700 rounded-full h-2 mr-2">
+                  <div
+                    class="
+                      h-2 rounded-full transition-all duration-300
+                      <%= user_skill.strong? ? 'bg-green-500' : user_skill.developing? ? 'bg-amber-500' : 'bg-blue-500' %>
+                    "
+                    style="width: <%= (user_skill.aggregated_level / 5.0 * 100).round %>%"
+                  ></div>
+                </div>
+
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400 w-8 text-right">
+                  <%= user_skill.aggregated_level.round(1) %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Skills by Category -->
+      <% skills_by_category = user_skills.group_by(&:category) %>
+      <% if skills_by_category.keys.compact.any? %>
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+          <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            By Category
+          </h3>
+
+          <div class="flex flex-wrap gap-2">
+            <% skills_by_category.sort_by { |_, skills| -skills.count }.each do |category, skills| %>
+              <% next if category.blank? %>
+
+              <span
+                class="
+                  inline-flex items-center px-2.5 py-1 rounded-full text-xs
+                  font-medium bg-gray-100 text-gray-700 dark:bg-dark-700
+                  dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-600
+                  transition-colors cursor-default
+                "
+                title="<%= skills.map(&:skill_name).join(', ') %>"
+              >
+                <%= category %>
+                <span class="ml-1 text-gray-500">(<%= skills.count %>)</span>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- View Full Dashboard Link -->
+      <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+        <%= link_to skills_path, class: "flex items-center justify-center w-full px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 text-sm font-medium rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors" do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          View Full Skills Dashboard
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-center py-8">
+        <svg
+          class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+          />
+        </svg>
+
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Upload a resume to see your skill profile
+        </p>
+      </div>
+    <% end %>
+  </div>
+</div>

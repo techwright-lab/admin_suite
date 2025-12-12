@@ -1,0 +1,93 @@
+<% content_for :title, "Skill Tags - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: "Skill Tags",
+      description: "Manage skill tags used across interview applications",
+      actions: link_to("New Skill Tag", new_admin_skill_tag_path, class: "px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors") %>
+
+  <%= render "admin/shared/stats_grid",
+      stats: @stats,
+      colors: {
+        total: "text-slate-900 dark:text-white",
+        with_category: "text-blue-600 dark:text-blue-400",
+        with_usage: "text-green-600 dark:text-green-400",
+        unused: "text-amber-600 dark:text-amber-400"
+      },
+      columns: @stats.size,
+      grid_class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" %>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <%= render "admin/shared/filter_sidebar",
+        url: admin_skill_tags_path,
+        filters: [
+          {
+            type: :text,
+            name: :search,
+            label: "Search",
+            placeholder: "Name or category...",
+            value: @filters[:search]
+          },
+          {
+            type: :select,
+            name: :category,
+            label: "Category",
+            options: [["All", ""]] + SkillTag.distinct.pluck(:category).compact.sort.map { |c| [c, c] },
+            value: @filters[:category]
+          },
+          {
+            type: :select,
+            name: :sort,
+            label: "Sort By",
+            options: [
+              ["Name (A-Z)", "name"],
+              ["Category", "category"],
+              ["Most Popular", "popular"],
+              ["Recently Added", "recent"]
+            ],
+            value: @filters[:sort]
+          }
+        ] %>
+
+    <div class="flex-1 min-w-0">
+      <%= render "admin/shared/data_table",
+          collection: @skill_tags,
+          columns: [
+            {
+              header: "Skill Tag",
+              content: ->(tag) do
+                content_tag(:div) do
+                  content_tag(:p, tag.name, class: "text-sm font-medium text-slate-900 dark:text-white") +
+                  (tag.category.present? ? content_tag(:p, tag.category, class: "text-xs text-slate-500 dark:text-slate-400") : "".html_safe)
+                end
+              end
+            },
+            {
+              header: "Usage",
+              content: ->(tag) do
+                count = tag.interview_applications.count
+                if count > 0
+                  content_tag(:span, count, class: "text-sm font-medium text-green-600 dark:text-green-400")
+                else
+                  content_tag(:span, "Unused", class: "text-sm text-slate-400 dark:text-slate-500")
+                end
+              end,
+              class: "whitespace-nowrap text-sm"
+            },
+            {
+              header: "Actions",
+              content: ->(tag) do
+                content_tag(:div, class: "flex items-center gap-2") do
+                  link_to("View", admin_skill_tag_path(tag), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium") +
+                  link_to("Edit", edit_admin_skill_tag_path(tag), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium")
+                end
+              end,
+              class: "whitespace-nowrap text-sm"
+            }
+          ],
+          empty_message: "No skill tags found" %>
+
+      <%= render "admin/shared/pagination", pagy: @pagy %>
+    </div>
+  </div>
+</div>

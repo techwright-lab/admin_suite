@@ -5,18 +5,15 @@ module Admin
   #
   # Provides listing, viewing, and status management for support tickets.
   class SupportTicketsController < BaseController
-    PER_PAGE = 30
+    include Concerns::Paginatable
 
-    before_action :set_support_ticket, only: [:show, :update]
+    before_action :set_support_ticket, only: [ :show, :update ]
 
     # GET /admin/support_tickets
     #
     # Lists support tickets with filtering and search
     def index
-      @page = (params[:page] || 1).to_i
-      @support_tickets = filtered_tickets.limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
-      @total_count = filtered_tickets.count
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
+      @pagy, @support_tickets = paginate(filtered_tickets, limit: 30)
       @stats = calculate_stats
       @filters = filter_params
     end
@@ -118,8 +115,7 @@ module Admin
     #
     # @return [ActionController::Parameters]
     def support_ticket_params
-      params.expect(support_ticket: [:status])
+      params.expect(support_ticket: [ :status ])
     end
   end
 end
-

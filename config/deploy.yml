@@ -2,12 +2,12 @@
 service: gleania
 
 # Name of the container image (use your-user/app-name on external registries).
-image: gleania
+image: techwright-lab/gleania
 
 # Deploy to these servers.
 servers:
   web:
-    - 192.168.0.1
+    - 138.199.230.71
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -20,26 +20,41 @@ servers:
 #
 # Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
 #
-# proxy:
-#   ssl: true
-#   host: app.example.com
+proxy:
+  ssl: true
+  host: gleania.com
+  forward_headers: true
 
 # Where you keep your container images.
 registry:
-  # Alternatives: hub.docker.com / registry.digitalocean.com / ghcr.io / ...
-  server: localhost:5555
-
-  # Needed for authenticated registries.
-  # username: your-user
+  # Specify the registry server, if you're not using Docker Hub
+  server: ghcr.io
+  username: techwright-lab
 
   # Always use an access token rather than real password when possible.
-  # password:
-  #   - KAMAL_REGISTRY_PASSWORD
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
   secret:
     - RAILS_MASTER_KEY
+    - POSTGRES_PASSWORD
+    - LOGTAIL_TOKEN
+    - LOGTAIL_INGESTING_HOST
+    - POSTMARK_API_TOKEN
+    - OPENAI_API_KEY
+    - ANTHROPIC_API_KEY
+    - GOOGLE_CLIENT_ID
+    - GOOGLE_CLIENT_SECRET
+    - CLOUDFLARE_TURNSTILE_SITE_KEY
+    - CLOUDFLARE_TURNSTILE_SECRET_KEY
+    - CLOUDFLARE_ACCOUNT_ID
+    - CLOUDFLARE_ACCESS_KEY_ID
+    - CLOUDFLARE_ACCESS_KEY_SECRET
+    - CLOUDFLARE_BUCKET
+    - CLOUDFLARE_API_TOKEN
+
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
@@ -51,12 +66,18 @@ env:
     # Set number of cores available to the application on each server (default: 1).
     # WEB_CONCURRENCY: 2
 
-    # Match this to any external database server to configure Active Record correctly
-    # Use gleania-db for a db accessory server on same machine via local kamal docker network.
-    # DB_HOST: 192.168.0.2
-
-    # Log everything from Rails
-    # RAILS_LOG_LEVEL: debug
+    RAILS_LOG_LEVEL: debug
+    RAILS_ENV: production
+    AWS_REGION: "eu-central-1"
+    BASE_URL: "https://gleania.com"
+    RAILS_SERVE_STATIC_FILES: true
+    # PostgreSQL database configuration
+    DB_HOST: 10.0.0.2  # Replace with your PostgreSQL server IP
+    DB_PORT: 5432
+    DB_USERNAME: twl_db_admin
+    POSTGRES_DB: gleania_production
+    OPENAI_ORGANIZATION_ID: org-pjb9CpfGrDZbkQf5s0gvxwu2
+    APP_DOMAIN: gleania.com
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
@@ -80,6 +101,10 @@ asset_path: /rails/public/assets
 # Configure the image builder.
 builder:
   arch: amd64
+  dockerfile: Dockerfile
+  args:
+    RAILS_ENV: <%= ENV["RAILS_ENV"] || "production" %>
+    RUBY_VERSION: "3.4.7"
 
   # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
   # remote: ssh://docker@docker-builder-server
@@ -95,26 +120,20 @@ builder:
 # ssh:
 #   user: app
 
-# Use accessory services (secrets come from .kamal/secrets).
 # accessories:
 #   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
+#     image: postgres:16
+#     host: 188.245.112.83  # Replace with your PostgreSQL server IP
+#     # Expose port 5432 to the world (remove 127.0.0.1: prefix for external access)
+#     port: "5432:5432"
 #     env:
 #       clear:
-#         MYSQL_ROOT_HOST: '%'
+#         POSTGRES_DB: gleania_production
+#         POSTGRES_USER: twl_db_admin
+#         POSTGRES_MULTIPLE_DATABASES: gleania_production_cache,gleania_production_queue,gleania_production_cable
 #       secret:
-#         - MYSQL_ROOT_PASSWORD
+#         - POSTGRES_PASSWORD
 #     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
+#       - config/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
 #     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: valkey/valkey:8
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+#       - data:/var/lib/postgresql/data

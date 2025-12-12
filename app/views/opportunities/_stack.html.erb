@@ -1,0 +1,54 @@
+<% if @current_opportunity.present? %>
+  <div
+    class="relative w-full max-w-2xl mx-auto"
+    data-opportunities-target="stack"
+  >
+    <!-- Background cards (stack effect) -->
+    <% if @remaining_count && @remaining_count > 0 %>
+      <!-- Third card (furthest back) -->
+      <% if @remaining_count >= 2 %>
+        <div
+          class="
+            absolute inset-0 bg-white dark:bg-gray-800 rounded-2xl shadow-lg
+            transform translate-y-4 scale-[0.94] opacity-60
+          "
+        ></div>
+      <% end %>
+      <!-- Second card -->
+      <div
+        class="
+          absolute inset-0 bg-white dark:bg-gray-800 rounded-2xl shadow-lg
+          transform translate-y-2 scale-[0.97] opacity-80
+        "
+      ></div>
+    <% end %>
+
+    <!-- Current card (front) -->
+    <div
+      id="opportunity_card_<%= @current_opportunity.id %>"
+      class="
+        relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl
+        transition-all duration-300
+      "
+      data-opportunities-target="currentCard"
+      data-opportunity-id="<%= @current_opportunity.id %>"
+    >
+      <%= render "opportunities/card", opportunity: @current_opportunity, show_actions: true %>
+    </div>
+
+    <!-- Remaining count indicator -->
+    <% if @remaining_count && @remaining_count > 0 %>
+      <div
+        class="
+          absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-sm
+          text-gray-500 dark:text-gray-400
+        "
+      >
+        +<%= @remaining_count %> more
+        <%= "opportunity".pluralize(@remaining_count) %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <%= render "opportunities/empty_state" %>
+<% end %>

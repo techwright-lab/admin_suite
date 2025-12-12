@@ -1,0 +1,42 @@
+<% stats ||= {} %>
+<% colors ||= {} %>
+<% columns ||= nil %>
+<% grid_class ||= nil %>
+
+<%
+  # Determine column count based on number of stats
+  if columns.nil?
+    case stats.length
+    when 1..2
+      columns = 2
+    when 3..4
+      columns = 4
+    when 5..7
+      columns = 7
+    else
+      columns = 4
+    end
+  end
+
+  default_grid_class = "grid grid-cols-2 md:grid-cols-#{[columns, stats.length].min} gap-4 mb-6"
+  grid_class ||= default_grid_class
+%>
+
+<div class="<%= grid_class %>">
+  <% stats.each do |key, value| %>
+    <div
+      class="
+        bg-white dark:bg-slate-800 rounded-xl shadow-sm border
+        border-slate-200 dark:border-slate-700 p-4
+      "
+    >
+      <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+        <%= key.to_s.humanize %>
+      </p>
+
+      <p class="mt-1 text-2xl font-bold <%= colors[key] || 'text-slate-900 dark:text-white' %>">
+        <%= value %>
+      </p>
+    </div>
+  <% end %>
+</div>

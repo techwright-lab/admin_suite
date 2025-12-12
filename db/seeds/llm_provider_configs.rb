@@ -133,46 +133,5 @@ end
 
 puts "✓ Created #{LlmProviderConfig.count} LLM provider configurations"
 
-# Create default extraction prompt template
-puts "\nSeeding Extraction Prompt Templates..."
-
-ExtractionPromptTemplate.find_or_create_by!(name: "Default Job Extraction Prompt") do |template|
-  template.description = "Standard prompt for extracting job listing data from HTML"
-  template.prompt_template = <<~PROMPT
-    You are an expert at extracting structured job listing data from HTML.
-
-    Extract the following information from this job listing HTML and return it as JSON:
-
-    Required fields:
-    - title: Job title
-    - description: Full job description (text only, no HTML)
-    - requirements: Required qualifications and skills
-    - responsibilities: Key responsibilities and duties
-    - location: Office location or "Remote"
-    - remote_type: one of "on_site", "hybrid", or "remote"
-
-    Optional fields (use null if not found):
-    - salary_min: Minimum salary as number
-    - salary_max: Maximum salary as number
-    - salary_currency: Currency code (e.g., "USD", "EUR")
-    - equity_info: Stock options or equity details
-    - benefits: Benefits package description
-    - perks: Additional perks and amenities
-    - custom_sections: Any additional structured data as a JSON object
-
-    Also provide:
-    - confidence_score: Your confidence in the extraction accuracy (0.0 to 1.0)
-    - notes: Any extraction challenges or uncertainties
-
-    Job Listing URL: {{url}}
-
-    HTML Content:
-    {{html_content}}
-
-    Return only valid JSON with no additional commentary.
-  PROMPT
-  template.active = true
-  template.version = 1
-end
-
-puts "✓ Created #{ExtractionPromptTemplate.count} extraction prompt templates"
+# Note: LLM prompt templates are now seeded via db/seeds/llm_prompts.rb
+# using the new Ai::LlmPrompt STI model hierarchy

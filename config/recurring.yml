@@ -10,6 +10,13 @@
 #     schedule: at 5am every day
 
 default: &default
+  # Proactively refresh OAuth tokens before they expire
+  # Runs before sync to ensure tokens are fresh
+  refresh_oauth_tokens:
+    class: RefreshOauthTokensJob
+    queue: default
+    schedule: every 15 minutes
+
   # Sync Gmail emails for all users with connected accounts
   gmail_sync_all_users:
     class: GmailSyncAllUsersJob

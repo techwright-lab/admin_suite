@@ -76,6 +76,28 @@ class Gmail::EmailProcessorService
       /thank\s+you\s+for\s+(your\s+time|meeting|interviewing)/i,
       /great\s+meeting\s+you/i,
       /enjoyed\s+(speaking|talking|meeting)/i
+    ],
+    recruiter_outreach: [
+      /exciting\s+(opportunity|role|position)/i,
+      /perfect\s+fit/i,
+      /great\s+fit/i,
+      /your\s+(profile|background|experience)/i,
+      /reaching\s+out/i,
+      /interested\s+in\s+you/i,
+      /open\s+position/i,
+      /hiring\s+for/i,
+      /would\s+you\s+be\s+interested/i,
+      /great\s+match/i,
+      /ideal\s+candidate/i,
+      /thought\s+of\s+you/i,
+      /came\s+across\s+your/i,
+      /found\s+your\s+profile/i,
+      /saw\s+your\s+resume/i,
+      /impressive\s+background/i,
+      /looking\s+for\s+someone/i,
+      /we\s+have\s+an\s+opening/i,
+      /new\s+opportunity/i,
+      /career\s+opportunity/i
     ]
   }.freeze
 
@@ -286,4 +308,3 @@ class Gmail::EmailProcessorService
     nil
   end
 end
-

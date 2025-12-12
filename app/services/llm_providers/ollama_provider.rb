@@ -1,115 +1,108 @@
 # frozen_string_literal: true
 
 module LlmProviders
-  # Ollama provider for self-hosted LLM job listing extraction
+  # Ollama provider for self-hosted LLM completions
+  #
+  # Uses the Ollama REST API for local model inference.
+  # Does not require an API key - connects to local Ollama server.
   class OllamaProvider < BaseProvider
-    # Extracts structured job data using Ollama's local models
+    REQUEST_TIMEOUT = 120 # Longer timeout for local inference
+
+    # Sends a prompt to Ollama and returns the response
     #
-    # @param [String] html_content The HTML content of the job listing
-    # @param [String] url The URL of the job listing
-    # @return [Hash] Extracted job data with confidence scores
-    def extract_job_data(html_content, url)
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      prompt = build_extraction_prompt(html_content, url)
-      html_size = html_content.bytesize
-
-      response = HTTParty.post(
-        "#{ollama_endpoint}/api/generate",
-        headers: { "Content-Type" => "application/json" },
-        body: {
-          model: model_name,
-          prompt: prompt,
-          stream: false,
-          format: "json"
-        }.to_json,
-        timeout: 120 # Longer timeout for local inference
-      )
-
-      # Calculate latency
-      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      latency_ms = ((end_time - start_time) * 1000).round
-
-      if response.success?
-        content = response.parsed_response["response"]
-        parsed_data = parse_response(content)
-
-        # Extract token info from Ollama response if available
-        prompt_eval_count = response.parsed_response["prompt_eval_count"]
-        eval_count = response.parsed_response["eval_count"]
-
-        # Add provider metadata
-        result = parsed_data.merge(
-          provider: "ollama",
-          model: model_name,
-          tokens_used: eval_count,
-          input_tokens: prompt_eval_count,
-          output_tokens: eval_count,
-          raw_response: content
-        )
-
-        # Log the extraction result
-        log_extraction_result(result, latency_ms: latency_ms, prompt: prompt, html_size: html_size)
-
-        result
-      else
-        result = {
-          error: "Ollama request failed: #{response.code}",
-          confidence: 0.0,
-          provider: "ollama",
-          error_type: "http_error"
-        }
-
-        log_extraction_result(result, latency_ms: latency_ms, prompt: prompt, html_size: html_size) rescue nil
-
-        result
-      end
+    # @param prompt [String] The prompt text
+    # @param options [Hash] Optional parameters (temperature not supported by Ollama)
+    # @return [Hash] Result with content and metadata
+    def run(prompt, options = {})
+      result, latency_ms = with_timing { call_api(prompt, options) }
+      build_response(result, latency_ms)
     rescue => e
-      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      latency_ms = ((end_time - start_time) * 1000).round rescue 0
-
-      Rails.logger.error("Ollama extraction failed: #{e.message}")
-
-      # Notify exception with AI context
-      ExceptionNotifier.notify_ai_error(e, {
-        operation: "job_extraction",
-        provider_name: "ollama",
-        model_identifier: model_name,
-        error_type: "extraction_failed",
-        url: url,
-        endpoint: ollama_endpoint
-      })
-
-      result = {
-        error: e.message,
-        confidence: 0.0,
-        provider: "ollama",
-        error_type: e.class.name
-      }
-
-      log_extraction_result(result, latency_ms: latency_ms, prompt: prompt, html_size: html_size) rescue nil
-
-      result
+      handle_error(e)
     end
 
-    # Ollama doesn't require an API key for local deployment
-    #
-    # @return [Boolean] Always true for Ollama
+    # Ollama doesn't require an API key
     def available?
       enabled? && ollama_endpoint.present?
     end
 
     protected
 
-    # Ollama uses local endpoint, no API key needed
-    #
-    # @return [String] Dummy value to indicate availability
     def api_key
-      "local"
+      "local" # Dummy value for availability check
     end
 
-    # Returns the Ollama endpoint URL
-    #
-    # @return [String] Endpoint URL
+    def default_model
+      "llama3"
+    end
+
+    private
+
+    def call_api(prompt, options)
+      response = HTTParty.post(
+        "#{ollama_endpoint}/api/generate",
+        headers: { "Content-Type" => "application/json" },
+        body: build_request_body(prompt, options).to_json,
+        timeout: REQUEST_TIMEOUT
+      )
+
+      parse_response(response)
+    end
+
+    def build_request_body(prompt, options)
+      body = {
+        model: model_name,
+        prompt: prompt,
+        stream: false
+      }
+
+      # Only request JSON format if caller expects it
+      body[:format] = "json" if options[:json_format]
+      body
+    end
+
+    def parse_response(response)
+      unless response.success?
+        return { error: "Ollama request failed: #{response.code}" }
+      end
+
+      parsed = response.parsed_response
+
+      {
+        content: parsed["response"],
+        input_tokens: parsed["prompt_eval_count"],
+        output_tokens: parsed["eval_count"]
+      }
+    end
+
+    def build_response(result, latency_ms)
+      if result[:error]
+        error_response(
+          error: result[:error],
+          latency_ms: latency_ms,
+          error_type: "http_error"
+        )
+      else
+        success_response(
+          content: result[:content],
+          latency_ms: latency_ms,
+          input_tokens: result[:input_tokens],
+          output_tokens: result[:output_tokens]
+        )
+      end
+    end
+
+    def handle_error(exception)
+      Rails.logger.error("Ollama request failed: #{exception.message}")
+
+      notify_error(exception, operation: "run", error_type: "request_failed", endpoint: ollama_endpoint)
+
+      error_response(
+        error: exception.message,
+        latency_ms: 0,
+        error_type: exception.class.name
+      )
+    end
+
     def ollama_endpoint
       db_config&.api_endpoint || "http://localhost:11434"
     end

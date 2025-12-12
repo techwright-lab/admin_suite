@@ -114,4 +114,3 @@ module ApiFetchers
     end
   end
 end
-

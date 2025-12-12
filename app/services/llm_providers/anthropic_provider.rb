@@ -1,228 +1,184 @@
 # frozen_string_literal: true
 
 module LlmProviders
-  # Anthropic Claude provider for job listing extraction
+  # Anthropic Claude provider for LLM completions
+  #
+  # Uses the Anthropic Ruby SDK with streaming for efficient long-running requests.
+  # Includes rate limiting via AnthropicRateLimiterService.
   class AnthropicProvider < BaseProvider
-    # Extracts structured job data using Anthropic's Claude models
+    # Sends a prompt to Claude and returns the response
     #
-    # @param [String] html_content The HTML content of the job listing
-    # @param [String] url The URL of the job listing
-    # @return [Hash] Extracted job data with confidence scores
-    def extract_job_data(html_content, url)
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    # @param prompt [String] The prompt text
+    # @param options [Hash] Optional parameters
+    #   @option options [Integer] :max_tokens Maximum tokens in response
+    #   @option options [Float] :temperature Temperature setting
+    #   @option options [String] :system_message Optional system message
+    # @return [Hash] Result with content and metadata
+    def run(prompt, options = {})
+      return rate_limit_error_response if exceeds_rate_limit?(prompt)
 
-      # Build prompt and estimate tokens
-      prompt = build_extraction_prompt(html_content, url)
-      estimated_tokens = estimate_tokens(prompt)
-      html_size = html_content.bytesize
-
-      # Check rate limiter before making request
-      rate_limiter = Scraping::AnthropicRateLimiterService.new
-
-      unless rate_limiter.can_send_tokens?(estimated_tokens)
-        wait_time = rate_limiter.wait_time_for_tokens(estimated_tokens)
-        if wait_time > 0
-          Rails.logger.warn("Anthropic rate limit: waiting #{wait_time}s before request (estimated: #{estimated_tokens} tokens)")
-          sleep(wait_time)
-        else
-          # Can't send even after waiting - return rate limit error
-          result = {
-            error: "Request would exceed token rate limit (estimated: #{estimated_tokens} tokens)",
-            confidence: 0.0,
-            provider: "anthropic",
-            rate_limit: true,
-            error_type: "rate_limit"
-          }
-          log_extraction_result(result, latency_ms: 0, prompt: prompt, html_size: html_size)
-          return result
-        end
-      end
-
-      client = Anthropic::Client.new(api_key: api_key)
-
-      # Use streaming for long requests (required for operations > 10 minutes)
-      # Streaming is also more efficient for large content
-      stream = client.messages.stream(
-        model: model_name,
-        max_tokens: db_config&.max_tokens || 4096,
-        temperature: db_config&.temperature || 0,
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
-      )
-
-      # Collect the full text from the stream
-      # accumulated_text blocks until the stream is complete and returns all text
-      # It will raise an error if no text content blocks were returned
-      content = stream.accumulated_text
-
-      # Get the accumulated message for metadata (usage, etc.)
-      # This also blocks until the stream is complete
-      accumulated_message = stream.accumulated_message
-
-      parsed_data = parse_response(content)
-
-      # Record actual token usage
-      input_tokens = accumulated_message&.usage&.input_tokens || estimated_tokens
-      output_tokens = accumulated_message&.usage&.output_tokens
-      rate_limiter.record_tokens_used(input_tokens) if input_tokens
-
-      # Calculate latency
-      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      latency_ms = ((end_time - start_time) * 1000).round
-
-      # Add provider metadata
-      result = parsed_data.merge(
-        provider: "anthropic",
-        model: model_name,
-        tokens_used: output_tokens,
-        input_tokens: input_tokens,
-        output_tokens: output_tokens,
-        raw_response: content
-      )
-
-      # Log the extraction result
-      log_extraction_result(result, latency_ms: latency_ms, prompt: prompt, html_size: html_size)
-
-      result
+      result, latency_ms = with_timing { call_api(prompt, options) }
+      build_response(result, latency_ms)
     rescue => e
-      # Calculate latency even for failures
-      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      latency_ms = ((end_time - start_time) * 1000).round rescue 0
-
-      # Check if this is a rate limit error (429 status)
-      is_rate_limit = rate_limit_error?(e)
-
-      if is_rate_limit
-        Rails.logger.warn("Anthropic rate limit exceeded: #{e.message}")
-
-        # Extract retry-after header if available
-        retry_after = extract_retry_after(e)
-
-        # Notify exception with rate limit context
-        ExceptionNotifier.notify_ai_error(e, {
-          operation: "job_extraction",
-          provider_name: "anthropic",
-          model_identifier: model_name,
-          error_type: "rate_limit_exceeded",
-          url: url,
-          retry_after: retry_after
-        })
-
-        # Return error with rate_limit flag so caller can retry
-        result = {
-          error: "Rate limit exceeded: #{e.message}",
-          confidence: 0.0,
-          provider: "anthropic",
-          rate_limit: true,
-          retry_after: retry_after,
-          error_type: "rate_limit"
-        }
-      else
-        Rails.logger.error("Anthropic extraction failed: #{e.message}")
-
-        # Notify exception with AI context
-        ExceptionNotifier.notify_ai_error(e, {
-          operation: "job_extraction",
-          provider_name: "anthropic",
-          model_identifier: model_name,
-          error_type: "extraction_failed",
-          url: url
-        })
-
-        result = {
-          error: e.message,
-          confidence: 0.0,
-          provider: "anthropic",
-          error_type: e.class.name
-        }
-      end
-
-      # Log the failed extraction
-      log_extraction_result(result, latency_ms: latency_ms, prompt: prompt, html_size: html_size) rescue nil
-
-      result
+      handle_error(e)
     end
 
     protected
 
-    # Returns the Anthropic API key from credentials
-    #
-    # @return [String, nil] API key or nil
     def api_key
       Rails.application.credentials.dig(:anthropic, :api_key)
     end
 
-    # Checks if an error is a rate limit error
-    #
-    # @param [Exception] error The error to check
-    # @return [Boolean] True if rate limit error
-    def rate_limit_error?(error)
-      # Check error message for rate limit indicators
-      error_message = error.message.to_s.downcase
-      return true if error_message.include?("rate_limit") ||
-                     error_message.include?("rate limit") ||
-                     error_message.include?("429")
+    def default_model
+      "claude-sonnet-4-20250514"
+    end
 
-      # Check if error has status 429
-      if error.respond_to?(:status) && error.status == 429
+    private
+
+    # Checks rate limit and waits or returns error
+    def exceeds_rate_limit?(prompt)
+      estimated_tokens = estimate_tokens(prompt)
+
+      unless rate_limiter.can_send_tokens?(estimated_tokens)
+        wait_time = rate_limiter.wait_time_for_tokens(estimated_tokens)
+        if wait_time > 0
+          Rails.logger.warn("Anthropic rate limit: waiting #{wait_time}s")
+          sleep(wait_time)
+          return false
+        end
+        @rate_limit_tokens = estimated_tokens
         return true
       end
-
-      # Check response object for status 429
-      if error.respond_to?(:response)
-        response = error.response
-        if response.is_a?(Hash)
-          return true if response[:status] == 429 || response["status"] == 429
-
-          # Check body for rate_limit_error type
-          body = response[:body] || response["body"]
-          if body.is_a?(Hash)
-            error_info = body[:error] || body["error"]
-            if error_info.is_a?(Hash)
-              error_type = error_info[:type] || error_info["type"]
-              return true if error_type&.downcase&.include?("rate_limit")
-            end
-          end
-        end
-      end
-
       false
     end
 
-    # Extracts retry-after value from error response
-    #
-    # @param [Exception] error The error
-    # @return [Integer, nil] Seconds to wait, or nil if not available
+    def rate_limit_error_response
+      error_response(
+        error: "Request would exceed token rate limit",
+        latency_ms: 0,
+        error_type: "rate_limit",
+        rate_limit: true
+      )
+    end
+
+    # Makes the actual API call
+    def call_api(prompt, options)
+      client = Anthropic::Client.new(api_key: api_key)
+
+      params = build_params(prompt, options)
+      stream = client.messages.stream(**params)
+
+      content = stream.accumulated_text
+      message = stream.accumulated_message
+
+      record_token_usage(message)
+
+      {
+        content: content,
+        input_tokens: message&.usage&.input_tokens,
+        output_tokens: message&.usage&.output_tokens
+      }
+    end
+
+    def build_params(prompt, options)
+      params = {
+        model: model_name,
+        max_tokens: options[:max_tokens] || max_tokens_config,
+        temperature: options[:temperature] || temperature_config,
+        messages: [ { role: "user", content: prompt } ]
+      }
+
+      params[:system] = options[:system_message] if options[:system_message].present?
+      params
+    end
+
+    def build_response(result, latency_ms)
+      success_response(
+        content: result[:content],
+        latency_ms: latency_ms,
+        input_tokens: result[:input_tokens],
+        output_tokens: result[:output_tokens]
+      )
+    end
+
+    def handle_error(exception)
+      latency_ms = 0 # Error occurred, timing not meaningful
+
+      if rate_limit_error?(exception)
+        handle_rate_limit_error(exception, latency_ms)
+      else
+        handle_general_error(exception, latency_ms)
+      end
+    end
+
+    def handle_rate_limit_error(exception, latency_ms)
+      Rails.logger.warn("Anthropic rate limit exceeded: #{exception.message}")
+      retry_after = extract_retry_after(exception)
+
+      notify_error(exception, operation: "run", error_type: "rate_limit_exceeded", retry_after: retry_after)
+
+      error_response(
+        error: "Rate limit exceeded: #{exception.message}",
+        latency_ms: latency_ms,
+        error_type: "rate_limit",
+        rate_limit: true,
+        retry_after: retry_after
+      )
+    end
+
+    def handle_general_error(exception, latency_ms)
+      Rails.logger.error("Anthropic request failed: #{exception.message}")
+
+      notify_error(exception, operation: "run", error_type: "request_failed")
+
+      error_response(
+        error: exception.message,
+        latency_ms: latency_ms,
+        error_type: exception.class.name
+      )
+    end
+
+    # Rate limiting helpers
+
+    def rate_limiter
+      @rate_limiter ||= Scraping::AnthropicRateLimiterService.new
+    end
+
+    def record_token_usage(message)
+      input_tokens = message&.usage&.input_tokens
+      rate_limiter.record_tokens_used(input_tokens) if input_tokens
+    end
+
+    def estimate_tokens(text)
+      (text.length.to_f / 3.0).ceil
+    end
+
+    def rate_limit_error?(error)
+      message = error.message.to_s.downcase
+      return true if message.include?("rate_limit") || message.include?("rate limit") || message.include?("429")
+      return true if error.respond_to?(:status) && error.status == 429
+      check_response_for_rate_limit(error)
+    end
+
+    def check_response_for_rate_limit(error)
+      return false unless error.respond_to?(:response)
+
+      response = error.response
+      return false unless response.is_a?(Hash)
+      return true if response[:status] == 429 || response["status"] == 429
+
+      error_type = response.dig(:body, :error, :type) || response.dig("body", "error", "type")
+      error_type&.downcase&.include?("rate_limit") || false
+    end
+
     def extract_retry_after(error)
       return nil unless error.respond_to?(:response)
 
-      response = error.response
-      return nil unless response
-
-      # Try to get retry-after header
-      headers = response[:headers] || response["headers"] || {}
+      headers = error.response&.dig(:headers) || error.response&.dig("headers") || {}
       retry_after = headers["retry-after"] || headers[:retry_after] || headers["Retry-After"]
-
-      return nil unless retry_after
-
-      # Parse as integer (seconds)
-      retry_after.to_i
-    rescue => e
-      Rails.logger.warn("Failed to extract retry-after: #{e.message}")
+      retry_after&.to_i
+    rescue
       nil
-    end
-
-    # Estimates token count for text
-    #
-    # @param [String] text The text to estimate
-    # @return [Integer] Estimated token count
-    def estimate_tokens(text)
-      # Conservative estimate: 1 token ≈ 3 characters for HTML/text
-      (text.length.to_f / 3.0).ceil
     end
   end
 end

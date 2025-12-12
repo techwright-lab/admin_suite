@@ -1,0 +1,65 @@
+<% title ||= nil %>
+<% description ||= nil %>
+<% breadcrumbs ||= nil %>
+<% actions ||= nil %>
+
+<div class="mb-6">
+  <% if breadcrumbs.present? %>
+    <div
+      class="
+        flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400
+        mb-2
+      "
+    >
+      <% breadcrumbs.each_with_index do |crumb, index| %>
+        <% if crumb.is_a?(Hash) %>
+          <% if crumb[:path].present? && index < breadcrumbs.length - 1 %>
+            <%= link_to crumb[:label], crumb[:path], class: "hover:text-amber-600 dark:hover:text-amber-400" %>
+          <% else %>
+            <span class="text-slate-900 dark:text-white">
+              <%= crumb[:label] %>
+            </span>
+          <% end %>
+        <% else %>
+          <span class="text-slate-900 dark:text-white"><%= crumb %></span>
+        <% end %>
+
+        <% unless index == breadcrumbs.length - 1 %>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="flex items-center justify-between">
+    <div>
+      <% if title.present? %>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+          <%= title %>
+        </h1>
+      <% end %>
+
+      <% if description.present? %>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <%= description %>
+        </p>
+      <% end %>
+    </div>
+
+    <% if actions.present? %>
+      <div class="flex items-center gap-3"><%= actions %></div>
+    <% end %>
+  </div>
+</div>

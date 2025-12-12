@@ -1,0 +1,318 @@
+<% content_for :title, @user_resume.name %>
+
+<div
+  class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+  <% if @user_resume.analysis_status_pending? || @user_resume.analysis_status_processing? %>
+    data-controller="analysis-status"
+    data-analysis-status-url-value="<%= user_resume_path(@user_resume, format: :json) %>"
+    data-analysis-status-status-value="<%= @user_resume.analysis_status %>"
+    data-analysis-status-interval-value="3000"
+  <% end %>
+>
+  <!-- Back Link -->
+  <div class="mb-6">
+    <%= link_to user_resumes_path, class: "inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" do %>
+      <svg
+        class="w-4 h-4 mr-1"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+      Back to Resumes
+    <% end %>
+  </div>
+
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            <%= @user_resume.name %>
+          </h1>
+
+          <%= render "user_resumes/analysis_status", user_resume: @user_resume %>
+        </div>
+
+        <div
+          class="
+            mt-2 flex items-center gap-4 text-sm text-gray-500
+            dark:text-gray-400
+          "
+        >
+          <span><%= @user_resume.file_type %></span>
+          <span>•</span>
+          <span><%= @user_resume.purpose.humanize %></span>
+
+          <% if @user_resume.has_target_roles? %>
+            <span>•</span>
+            <span>
+              Target:
+              <%= @user_resume.target_job_roles.pluck(:title).join(", ") %>
+            </span>
+          <% end %>
+
+          <% if @user_resume.has_target_companies? %>
+            <span>
+              @ <%= @user_resume.target_companies.pluck(:name).join(", ") %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <%= link_to edit_user_resume_path(@user_resume), class: "inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-700" do %>
+          <svg
+            class="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
+          </svg>
+          Edit
+        <% end %>
+
+        <%= button_to reanalyze_user_resume_path(@user_resume), method: :post, class: "inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-700" do %>
+          <svg
+            class="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          Re-analyze
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <% if @user_resume.analyzed? %>
+    <!-- AI Summary -->
+    <% if @user_resume.analysis_summary.present? %>
+      <div
+        class="
+          mb-8 p-4 bg-gradient-to-r from-primary-50 to-blue-50
+          dark:from-primary-900/20 dark:to-blue-900/20 rounded-xl border
+          border-primary-200 dark:border-primary-800
+        "
+      >
+        <div class="flex items-start">
+          <svg
+            class="
+              w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-3
+              flex-shrink-0
+            "
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+
+          <div>
+            <h3
+              class="
+                text-sm font-medium text-primary-900 dark:text-primary-300
+                mb-1
+              "
+            >
+              AI Summary
+            </h3>
+
+            <p class="text-sm text-primary-800 dark:text-primary-200">
+              <%= @user_resume.analysis_summary %>
+            </p>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    <!-- Skills Review Section -->
+    <div
+      class="
+        bg-white dark:bg-dark-900 rounded-xl shadow-sm border
+        border-gray-200 dark:border-gray-700
+      "
+    >
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              Extracted Skills
+            </h2>
+
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              <%= @total_skills_count %> skills found • Review and adjust
+              proficiency levels
+            </p>
+          </div>
+
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            <span class="inline-flex items-center">
+              <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+              Your level
+            </span>
+
+            <span class="ml-3 inline-flex items-center">
+              <span class="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full mr-1"></span>
+              AI detected
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div id="skills_list">
+        <%= render "resume_skills/skills_list", resume_skills: @resume_skills %>
+      </div>
+
+      <% if @pagy && @pagy.pages > 1 %>
+        <div class="px-6">
+          <%= render "shared/pagination", pagy: @pagy %>
+        </div>
+      <% end %>
+    </div>
+  <% elsif @user_resume.analyzing? %>
+    <!-- Processing State -->
+    <div
+      class="
+        bg-white dark:bg-dark-900 rounded-xl shadow-sm border
+        border-gray-200 dark:border-gray-700 p-12 text-center
+      "
+    >
+      <svg
+        class="w-16 h-16 mx-auto text-primary-500 animate-spin mb-4"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        Analyzing Resume...
+      </h3>
+
+      <p class="text-gray-500 dark:text-gray-400">
+        We're extracting skills from your resume. This usually takes 30-60
+        seconds.
+      </p>
+
+      <p class="mt-4 text-sm text-gray-400 dark:text-gray-500">
+        This page will automatically update when analysis is complete.
+      </p>
+    </div>
+  <% elsif @user_resume.analysis_status_failed? %>
+    <!-- Failed State -->
+    <div
+      class="
+        bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-red-200
+        dark:border-red-800 p-12 text-center
+      "
+    >
+      <svg
+        class="w-16 h-16 mx-auto text-red-400 mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
+      </svg>
+
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        Analysis Failed
+      </h3>
+
+      <p class="text-gray-500 dark:text-gray-400 mb-4">
+        We couldn't extract skills from this resume. This might be due to file
+        format issues or temporary service problems.
+      </p>
+
+      <%= button_to reanalyze_user_resume_path(@user_resume), method: :post, class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors" do %>
+        <svg
+          class="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        Try Again
+      <% end %>
+    </div>
+  <% else %>
+    <!-- Pending State -->
+    <div
+      class="
+        bg-white dark:bg-dark-900 rounded-xl shadow-sm border
+        border-gray-200 dark:border-gray-700 p-12 text-center
+      "
+    >
+      <svg
+        class="w-16 h-16 mx-auto text-yellow-400 mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        Analysis Pending
+      </h3>
+
+      <p class="text-gray-500 dark:text-gray-400">
+        Your resume is queued for analysis. It will start processing shortly.
+      </p>
+    </div>
+  <% end %>
+</div>

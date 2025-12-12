@@ -1,0 +1,13 @@
+Action Required: Reconnect Your Gmail Account
+============================================= Hi
+<%= @user.name.present? ? @user.name : 'there' %>, We were unable to sync your
+Gmail account (<%= @account.email %>) because your connection has expired. This
+can happen for a few reasons: - Your Google account password was changed - You
+revoked access to Gleania from your Google account settings - The connection
+hasn't been used in a while Don't worry, your data is safe! To resume syncing
+interview-related emails, you'll need to reconnect your Gmail account.
+Reconnect your account at: <%= settings_url(tab: "integrations") %> Why is this
+important? Keeping your Gmail connected helps Gleania automatically detect and
+track interview-related emails, so you never miss an important update about
+your job applications. If you have any questions, feel free to reach out! Best
+regards, The Gleania Team

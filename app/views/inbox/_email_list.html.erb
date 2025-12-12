@@ -1,4 +1,4 @@
-<%# locals: (grouped_emails:, unmatched_emails:, selected_email_id: nil) %>
+<%# locals: (grouped_emails:, unmatched_emails:, selected_email_id: nil, pagy_unmatched: nil) %>
 
 <div class="divide-y divide-gray-200 dark:divide-gray-700">
   <!-- Needs Review Section -->
@@ -10,18 +10,30 @@
             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
           </svg>
           <span class="text-xs font-medium text-amber-800 dark:text-amber-300">
-            Needs Review (<%= unmatched_emails.count %>)
+            <%= pagy_unmatched ? "#{pagy_unmatched.count} emails need review" : "Needs Review" %>
           </span>
         </div>
       </div>
-      <% unmatched_emails.limit(10).each do |email| %>
+      <% unmatched_emails.each do |email| %>
         <%= render "inbox/email_row", email: email, selected: selected_email_id == email.id, show_company: true %>
       <% end %>
-      <% if unmatched_emails.count > 10 %>
-        <div class="px-4 py-2 text-center">
-          <span class="text-xs text-amber-600 dark:text-amber-400">
-            +<%= unmatched_emails.count - 10 %> more
-          </span>
+      <% if pagy_unmatched && pagy_unmatched.pages > 1 %>
+        <div class="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-amber-700 dark:text-amber-400">
+              Page <%= pagy_unmatched.page %> of <%= pagy_unmatched.pages %>
+            </span>
+            <div class="flex gap-2">
+              <% if pagy_unmatched.prev %>
+                <%= link_to "← Previous", inbox_index_path(unmatched_page: pagy_unmatched.prev),
+                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded" %>
+              <% end %>
+              <% if pagy_unmatched.next %>
+                <%= link_to "Next →", inbox_index_path(unmatched_page: pagy_unmatched.next),
+                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded" %>
+              <% end %>
+            </div>
+          </div>
         </div>
       <% end %>
     </div>
@@ -90,4 +102,3 @@
     </div>
   <% end %>
 </div>
-

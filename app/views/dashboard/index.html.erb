@@ -1,0 +1,265 @@
+<% content_for :title, "Dashboard" %>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Greeting Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+      <%= greeting_message %>, <%= @user.display_name.split.first %>!
+    </h1>
+    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+      Here's what's happening with your job search
+    </p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @quick_stats[:active_applications] %></p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Active Applications</p>
+        </div>
+        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @quick_stats[:interviews_this_week] %></p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Interviews This Week</p>
+        </div>
+        <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @quick_stats[:emails_to_review] %></p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Emails to Review</p>
+        </div>
+        <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @quick_stats[:skills_count] %></p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Skills Tracked</p>
+        </div>
+        <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Column: Quick Actions + Needs Attention -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Quick Actions -->
+      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Quick Actions</h2>
+        <div class="space-y-3">
+          <button
+            type="button"
+            onclick="document.getElementById('new-application-modal')?.dispatchEvent(new CustomEvent('modal:show')) || (window.location.href = '<%= new_interview_application_path %>')"
+            class="w-full flex items-center px-4 py-3 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
+          >
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Application
+          </button>
+
+          <%= link_to new_user_resume_path, class: "w-full flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" do %>
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Upload Resume
+          <% end %>
+
+          <%= link_to inbox_index_path, class: "w-full flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" do %>
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            Check Inbox
+          <% end %>
+
+          <%= link_to opportunities_path, class: "w-full flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" do %>
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+            View Opportunities
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Needs Attention -->
+      <% if @needs_attention.any? %>
+        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Needs Attention</h2>
+          <div class="space-y-3">
+            <% @needs_attention.each do |item| %>
+              <%= link_to item[:path], class: "flex items-center p-3 rounded-lg border border-#{item[:color]}-200 dark:border-#{item[:color]}-800 bg-#{item[:color]}-50 dark:bg-#{item[:color]}-900/20 hover:bg-#{item[:color]}-100 dark:hover:bg-#{item[:color]}-900/30 transition-colors" do %>
+                <div class="flex-shrink-0 w-8 h-8 bg-<%= item[:color] %>-100 dark:bg-<%= item[:color] %>-900/30 rounded-full flex items-center justify-center mr-3">
+                  <span class="text-sm font-bold text-<%= item[:color] %>-600 dark:text-<%= item[:color] %>-400"><%= item[:count] %></span>
+                </div>
+                <span class="text-sm font-medium text-<%= item[:color] %>-700 dark:text-<%= item[:color] %>-300"><%= item[:message] %></span>
+                <svg class="w-4 h-4 ml-auto text-<%= item[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Middle Column: Pipeline Summary -->
+    <div class="lg:col-span-1">
+      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 h-full">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">Your Pipeline</h2>
+          <%= link_to "View All", interview_applications_path, class: "text-sm text-primary-600 dark:text-primary-400 hover:underline" %>
+        </div>
+
+        <% if @pipeline_summary[:total] > 0 %>
+          <div class="space-y-4">
+            <% pipeline_stages = [
+              { key: :applied, label: "Applied", color: "gray" },
+              { key: :screening, label: "Screening", color: "blue" },
+              { key: :interviewing, label: "Interviewing", color: "purple" },
+              { key: :offer, label: "Offer", color: "green" }
+            ] %>
+
+            <% pipeline_stages.each do |stage| %>
+              <% count = @pipeline_summary[stage[:key]] %>
+              <% percentage = @pipeline_summary[:total] > 0 ? (count.to_f / @pipeline_summary[:total] * 100).round : 0 %>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><%= stage[:label] %></span>
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white"><%= count %></span>
+                </div>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    class="bg-<%= stage[:color] %>-500 h-2 rounded-full transition-all duration-300"
+                    style="width: <%= percentage %>%"
+                  ></div>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Active</span>
+                <span class="text-lg font-bold text-gray-900 dark:text-white"><%= @pipeline_summary[:total] %></span>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <div class="text-center py-8">
+            <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">No applications yet</p>
+            <button
+              type="button"
+              onclick="document.getElementById('new-application-modal')?.dispatchEvent(new CustomEvent('modal:show'))"
+              class="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+            >
+              Add your first application
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Right Column: Upcoming Interviews + Recent Activity -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Upcoming Interviews -->
+      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Upcoming Interviews</h2>
+
+        <% if @upcoming_interviews.any? %>
+          <div class="space-y-3">
+            <% @upcoming_interviews.each do |round| %>
+              <% app = round.interview_application %>
+              <%= link_to interview_application_path(app), class: "block p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" do %>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-medium text-gray-900 dark:text-white"><%= round.stage_display_name %></span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    <%= round.scheduled_at.strftime("%b %d, %I:%M %p") %>
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  <%= app.company.name %> - <%= app.job_role.title %>
+                </p>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            No upcoming interviews scheduled
+          </p>
+        <% end %>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Recent Activity</h2>
+
+        <% if @recent_activity.any? %>
+          <div class="space-y-3">
+            <% @recent_activity.each do |activity| %>
+              <%= link_to activity[:path], class: "flex items-start p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" do %>
+                <div class="flex-shrink-0 w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mr-3">
+                  <% if activity[:type] == :application %>
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                  <% else %>
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                  <% end %>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white truncate"><%= activity[:title] %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= activity[:subtitle] %></p>
+                </div>
+                <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-2">
+                  <%= time_ago_in_words(activity[:timestamp]) rescue "Recently" %>
+                </span>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            No recent activity
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include the new application modal if it exists -->
+<%= render "interview_applications/new_application_modal" if lookup_context.template_exists?("interview_applications/new_application_modal", [], true) %>
+

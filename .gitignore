@@ -38,5 +38,10 @@
 !/app/assets/builds/.keep
 
 # Ignore key files for decrypting credentials and more.
+/config/*.key
 /config/credentials/*.key
 
+# Ignore any decrypted credentials files (should never exist)
+/config/credentials/*.yml
+!/config/credentials/*.yml.enc
+!/config/credentials.example.yml

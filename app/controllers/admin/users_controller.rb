@@ -6,18 +6,19 @@ module Admin
   # Provides listing, viewing, and email lookup for users with
   # visibility into connected accounts and sync status.
   class UsersController < BaseController
+    include Concerns::Paginatable
+    include Concerns::Filterable
+    include Concerns::StatsCalculator
+
     PER_PAGE = 30
 
-    before_action :set_user, only: [:show]
+    before_action :set_user, only: [ :show ]
 
     # GET /admin/users
     #
     # Lists users with filtering and search
     def index
-      @page = (params[:page] || 1).to_i
-      @users = filtered_users.limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
-      @total_count = filtered_users.count
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
+      @pagy, @users = paginate(filtered_users)
       @stats = calculate_stats
       @filters = filter_params
     end
@@ -66,7 +67,7 @@ module Admin
       when "admin"
         users = users.where(is_admin: true)
       when "user"
-        users = users.where(is_admin: [false, nil])
+        users = users.where(is_admin: [ false, nil ])
       end
 
       # Search by email
@@ -142,8 +143,7 @@ module Admin
     #
     # @return [Hash]
     def filter_params
-      params.permit(:gmail_status, :role, :search, :sort)
+      params.permit(:gmail_status, :role, :search, :sort, :page)
     end
   end
 end
-

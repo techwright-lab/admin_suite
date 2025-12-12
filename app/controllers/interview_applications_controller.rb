@@ -7,16 +7,16 @@ class InterviewApplicationsController < ApplicationController
 
   # GET /interview_applications
   def index
-    @applications = Current.user.interview_applications
+    base_applications = Current.user.interview_applications
       .includes(:company, :job_role, :job_listing, :skill_tags, :interview_rounds)
 
     # Apply filters
-    @applications = @applications.where(status: params[:status]) if params[:status].present?
-    @applications = @applications.where(pipeline_stage: params[:pipeline_stage]) if params[:pipeline_stage].present?
+    base_applications = base_applications.where(status: params[:status]) if params[:status].present?
+    base_applications = base_applications.where(pipeline_stage: params[:pipeline_stage]) if params[:pipeline_stage].present?
 
     if params[:date_from].present?
       begin
-        @applications = @applications.where("applied_at >= ?", Date.parse(params[:date_from]))
+        base_applications = base_applications.where("applied_at >= ?", Date.parse(params[:date_from]))
       rescue ArgumentError
         # Invalid date format, ignore filter
       end
@@ -24,7 +24,7 @@ class InterviewApplicationsController < ApplicationController
 
     if params[:date_to].present?
       begin
-        @applications = @applications.where("applied_at <= ?", Date.parse(params[:date_to]))
+        base_applications = base_applications.where("applied_at <= ?", Date.parse(params[:date_to]))
       rescue ArgumentError
         # Invalid date format, ignore filter
       end
@@ -33,23 +33,30 @@ class InterviewApplicationsController < ApplicationController
     # Apply sorting
     case params[:sort]
     when "company"
-      @applications = @applications.joins(:company).order("companies.name ASC")
+      base_applications = base_applications.joins(:company).order("companies.name ASC")
     when "company_desc"
-      @applications = @applications.joins(:company).order("companies.name DESC")
+      base_applications = base_applications.joins(:company).order("companies.name DESC")
     when "role"
-      @applications = @applications.joins(:job_role).order("job_roles.title ASC")
+      base_applications = base_applications.joins(:job_role).order("job_roles.title ASC")
     when "role_desc"
-      @applications = @applications.joins(:job_role).order("job_roles.title DESC")
+      base_applications = base_applications.joins(:job_role).order("job_roles.title DESC")
     when "date"
-      @applications = @applications.order("applied_at ASC, created_at ASC")
+      base_applications = base_applications.order("applied_at ASC, created_at ASC")
     when "date_desc"
-      @applications = @applications.order("applied_at DESC, created_at DESC")
+      base_applications = base_applications.order("applied_at DESC, created_at DESC")
     else
-      @applications = @applications.recent
+      base_applications = base_applications.recent
     end
 
-    @applications_by_pipeline_stage = InterviewApplication::PIPELINE_STAGES.index_with do |stage|
-      @applications.select { |app| app.pipeline_stage == stage.to_s }
+    # Paginate for table view, load all for kanban
+    if @current_view == "kanban"
+      @applications = base_applications.to_a
+      # Group by pipeline stage for kanban columns
+      @applications_by_pipeline_stage = InterviewApplication::PIPELINE_STAGES.index_with do |stage|
+        @applications.select { |app| app.pipeline_stage == stage.to_s }
+      end
+    else
+      @pagy, @applications = pagy(base_applications, limit: 20)
     end
 
     respond_to do |format|
@@ -205,7 +212,7 @@ class InterviewApplicationsController < ApplicationController
   # POST /interview_applications/quick_apply
   def quick_apply
     url = params[:url]&.strip
-    
+
     if url.blank?
       respond_to do |format|
         format.json { render json: { success: false, error: "URL is required" }, status: :unprocessable_entity }
@@ -219,7 +226,7 @@ class InterviewApplicationsController < ApplicationController
 
     if result[:success]
       application = result[:application]
-      
+
       respond_to do |format|
         format.json do
           render json: {
@@ -247,7 +254,7 @@ class InterviewApplicationsController < ApplicationController
       end
     else
       error_message = result[:error] || "Failed to create application"
-      
+
       respond_to do |format|
         format.json do
           render json: {
@@ -267,7 +274,7 @@ class InterviewApplicationsController < ApplicationController
   rescue => e
     Rails.logger.error("Quick apply failed: #{e.message}")
     Rails.logger.error(e.backtrace.join("\n"))
-    
+
     respond_to do |format|
       format.json do
         render json: {

@@ -197,26 +197,8 @@
           </table>
         </div>
 
-        <!-- Pagination -->
-        <% if @total_pages > 1 %>
-          <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-slate-500 dark:text-slate-400">
-                Showing <%= ((@page - 1) * PER_PAGE) + 1 %> to <%= [(@page * PER_PAGE), @total_count].min %> of <%= @total_count %>
-              </div>
-              <div class="flex gap-2">
-                <% if @page > 1 %>
-                  <%= link_to "Previous", url_for(params.permit!.merge(page: @page - 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" %>
-                <% end %>
-                <% if @page < @total_pages %>
-                  <%= link_to "Next", url_for(params.permit!.merge(page: @page + 1)), class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" %>
-                <% end %>
-              </div>
-            </div>
-          </div>
-        <% end %>
+        <%= render "admin/shared/pagination", pagy: @pagy %>
       </div>
     </div>
   </div>
 </div>
-

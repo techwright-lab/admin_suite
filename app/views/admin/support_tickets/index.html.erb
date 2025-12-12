@@ -99,7 +99,7 @@
       <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
-            Tickets (<%= @total_count %>)
+            Tickets (<%= @pagy.count %>)
           </h2>
         </div>
 
@@ -148,24 +148,7 @@
             <% end %>
           </div>
 
-          <!-- Pagination -->
-          <% if @total_pages > 1 %>
-            <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <p class="text-sm text-slate-500 dark:text-slate-400">
-                Page <%= @page %> of <%= @total_pages %>
-              </p>
-              <div class="flex gap-2">
-                <% if @page > 1 %>
-                  <%= link_to "Previous", admin_support_tickets_path(@filters.merge(page: @page - 1)), 
-                      class: "px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600" %>
-                <% end %>
-                <% if @page < @total_pages %>
-                  <%= link_to "Next", admin_support_tickets_path(@filters.merge(page: @page + 1)), 
-                      class: "px-3 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700" %>
-                <% end %>
-              </div>
-            </div>
-          <% end %>
+          <%= render "admin/shared/pagination", pagy: @pagy %>
         <% else %>
           <div class="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
             No support tickets found
@@ -175,4 +158,3 @@
     </div>
   </div>
 </div>
-

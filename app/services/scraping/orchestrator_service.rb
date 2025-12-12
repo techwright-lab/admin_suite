@@ -312,6 +312,8 @@ module Scraping
     # @param [String] job_id Job identifier
     # @return [Hash, nil] Extracted data or nil
     def execute_api_extraction_internal(board_type, company_slug, job_id)
+      return nil unless Setting.api_population_enabled?
+
       fetcher = get_api_fetcher(board_type)
       return nil unless fetcher
 

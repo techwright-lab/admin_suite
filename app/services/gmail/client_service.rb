@@ -59,7 +59,7 @@ class Gmail::ClientService
   # @return [void]
   # @raise [Gmail::TokenExpiredError] If the token can't be refreshed
   def refresh_token_if_needed!
-    return unless connected_account.token_expiring_soon?
+    return unless connected_account.token_expired? || connected_account.token_expiring_soon?
     return unless connected_account.refreshable?
 
     refresh_token!
@@ -82,10 +82,6 @@ class Gmail::ClientService
     @client = nil
   rescue Signet::AuthorizationError => e
     Rails.logger.error "Gmail token refresh failed: #{e.message}"
-    raise Gmail::TokenExpiredError, "Failed to refresh Gmail token. Please reconnect your account."
+    raise Gmail::Errors::TokenExpiredError, "Failed to refresh Gmail token. Please reconnect your account."
   end
 end
-
-# Custom error for expired tokens
-class Gmail::TokenExpiredError < StandardError; end
-

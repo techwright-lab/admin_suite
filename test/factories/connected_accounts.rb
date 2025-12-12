@@ -28,6 +28,12 @@ FactoryBot.define do
     trait :recently_synced do
       last_synced_at { 5.minutes.ago }
     end
+
+    trait :needs_reauth do
+      needs_reauth { true }
+      auth_error_at { 1.hour.ago }
+      auth_error_message { "Token has been revoked" }
+      sync_enabled { false }
+    end
   end
 end
-

@@ -9,6 +9,12 @@ class User < ApplicationRecord
   has_one :preference, class_name: "UserPreference", dependent: :destroy
   has_many :connected_accounts, dependent: :destroy
   has_many :synced_emails, dependent: :destroy
+  has_many :opportunities, dependent: :destroy
+
+  # Resume and skill profile associations
+  has_many :user_resumes, dependent: :destroy
+  has_many :user_skills, dependent: :destroy
+  has_many :skill_tags, through: :user_skills
 
   # Current job role and company associations
   belongs_to :current_job_role, class_name: "JobRole", optional: true
@@ -99,6 +105,31 @@ class User < ApplicationRecord
   # @return [Boolean]
   def oauth_user?
     oauth_provider.present?
+  end
+
+  # Returns the user's aggregated skill profile
+  # @return [ActiveRecord::Relation<UserSkill>]
+  def skill_profile
+    user_skills.includes(:skill_tag).by_level_desc
+  end
+
+  # Returns the user's top skills
+  # @param limit [Integer] Number of skills to return
+  # @return [ActiveRecord::Relation<UserSkill>]
+  def top_skills(limit: 10)
+    UserSkill.top_skills(self, limit: limit)
+  end
+
+  # Checks if user has uploaded any resumes
+  # @return [Boolean]
+  def has_resumes?
+    user_resumes.exists?
+  end
+
+  # Returns the count of analyzed resumes
+  # @return [Integer]
+  def analyzed_resumes_count
+    user_resumes.analyzed.count
   end
 
   private

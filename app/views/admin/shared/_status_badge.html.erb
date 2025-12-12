@@ -1,0 +1,18 @@
+<% status ||= nil %>
+<% custom_colors ||= {} %>
+
+<% default_colors = {
+    "active" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+    "inactive" => "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400",
+    "pending" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400",
+    "completed" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+    "failed" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+    "closed" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300",
+    "draft" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
+  }
+  
+  color_class = custom_colors[status.to_s] || default_colors[status.to_s] || default_colors["inactive"] %>
+
+<span class="px-2 py-0.5 text-xs font-semibold rounded-full <%= color_class %>">
+  <%= status.to_s.titleize %>
+</span>

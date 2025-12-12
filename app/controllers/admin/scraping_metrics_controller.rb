@@ -30,7 +30,7 @@ module Admin
     #
     # @return [Hash] AI metrics data
     def calculate_ai_metrics
-      return {} unless defined?(AiExtractionLog)
+      return {} unless defined?(Ai::LlmApiLog)
 
       {
         overview: ai_overview_metrics,
@@ -48,7 +48,7 @@ module Admin
     #
     # @return [Hash] Chart data
     def prepare_chart_data
-      return {} unless defined?(AiExtractionLog)
+      return {} unless defined?(Ai::LlmApiLog)
 
       {
         ai_calls_over_time: ai_calls_over_time,
@@ -65,15 +65,18 @@ module Admin
     #
     # @return [Hash] AI overview stats
     def ai_overview_metrics
-      logs_7d = AiExtractionLog.recent_period(7)
-      logs_today = AiExtractionLog.today
+      logs_7d = Ai::LlmApiLog.where("created_at > ?", 7.days.ago)
+      logs_today = Ai::LlmApiLog.where("created_at > ?", Time.current.beginning_of_day)
+
+      success_count = logs_7d.where(status: :success).count
+      success_rate = logs_7d.count > 0 ? (success_count.to_f / logs_7d.count * 100).round(1) : 0
 
       {
         total_calls_7d: logs_7d.count,
         calls_today: logs_today.count,
-        success_rate_7d: AiExtractionLog.success_rate_for_period(7),
-        total_cost_7d: AiExtractionLog.total_cost_for_period(7),
-        avg_latency_7d: AiExtractionLog.average_latency_for_period(7),
+        success_rate_7d: success_rate,
+        total_cost_7d: (logs_7d.sum(:estimated_cost_cents).to_f / 100).round(4),
+        avg_latency_7d: logs_7d.average(:latency_ms).to_f.round(0),
         total_tokens_7d: logs_7d.sum(:total_tokens)
       }
     end
@@ -82,7 +85,7 @@ module Admin
     #
     # @return [Array<Hash>] Metrics per provider
     def ai_provider_metrics
-      AiExtractionLog.recent_period(7)
+      Ai::LlmApiLog.where("created_at > ?", 7.days.ago)
         .group(:provider)
         .select("provider,
                  COUNT(*) as total_calls,
@@ -108,27 +111,30 @@ module Admin
     #
     # @return [Hash] Cost by provider
     def ai_cost_breakdown
-      AiExtractionLog.cost_by_provider(7)
+      Ai::LlmApiLog.where("created_at > ?", 7.days.ago)
+        .group(:provider)
+        .sum(:estimated_cost_cents)
+        .transform_values { |v| (v.to_f / 100).round(4) }
     end
 
     # AI error breakdown
     #
     # @return [Hash] Error counts by type
     def ai_error_breakdown
-      AiExtractionLog.recent_period(7)
-        .with_errors
+      Ai::LlmApiLog.where("created_at > ?", 7.days.ago)
+        .where.not(status: :success)
         .group(:status)
         .count
-        .transform_keys { |k| AiExtractionLog.statuses.key(k) || k }
+        .transform_keys { |k| Ai::LlmApiLog.statuses.key(k) || k }
     end
 
     # Recent AI extraction logs
     #
     # @return [ActiveRecord::Relation] Recent AI logs
     def recent_ai_logs
-      AiExtractionLog
-        .includes(:job_listing, :scraping_attempt)
-        .recent
+      Ai::LlmApiLog
+        .includes(:loggable)
+        .order(created_at: :desc)
         .limit(10)
     end
 
@@ -136,7 +142,7 @@ module Admin
     #
     # @return [Hash] Daily call counts
     def ai_calls_over_time
-      AiExtractionLog.recent_period(14)
+      Ai::LlmApiLog.where("created_at > ?", 14.days.ago)
         .group_by_day(:created_at)
         .count
     end
@@ -145,7 +151,7 @@ module Admin
     #
     # @return [Hash] Daily costs
     def cost_over_time
-      AiExtractionLog.recent_period(14)
+      Ai::LlmApiLog.where("created_at > ?", 14.days.ago)
         .group_by_day(:created_at)
         .sum(:estimated_cost_cents)
         .transform_values { |v| (v.to_f / 100).round(4) }
@@ -155,26 +161,27 @@ module Admin
     #
     # @return [Hash] Latency buckets
     def latency_distribution
-      ranges = {
-        "< 1s" => AiExtractionLog.recent_period(7).where("latency_ms < 1000").count,
-        "1-2s" => AiExtractionLog.recent_period(7).where("latency_ms >= 1000 AND latency_ms < 2000").count,
-        "2-5s" => AiExtractionLog.recent_period(7).where("latency_ms >= 2000 AND latency_ms < 5000").count,
-        "5-10s" => AiExtractionLog.recent_period(7).where("latency_ms >= 5000 AND latency_ms < 10000").count,
-        "> 10s" => AiExtractionLog.recent_period(7).where("latency_ms >= 10000").count
+      logs_7d = Ai::LlmApiLog.where("created_at > ?", 7.days.ago)
+      {
+        "< 1s" => logs_7d.where("latency_ms < 1000").count,
+        "1-2s" => logs_7d.where("latency_ms >= 1000 AND latency_ms < 2000").count,
+        "2-5s" => logs_7d.where("latency_ms >= 2000 AND latency_ms < 5000").count,
+        "5-10s" => logs_7d.where("latency_ms >= 5000 AND latency_ms < 10000").count,
+        "> 10s" => logs_7d.where("latency_ms >= 10000").count
       }
-      ranges
     end
 
     # Confidence distribution for chart
     #
     # @return [Hash] Confidence buckets
     def confidence_distribution
+      logs_7d = Ai::LlmApiLog.where("created_at > ?", 7.days.ago)
       {
-        "0-50%" => AiExtractionLog.recent_period(7).where("confidence_score < 0.5").count,
-        "50-70%" => AiExtractionLog.recent_period(7).where("confidence_score >= 0.5 AND confidence_score < 0.7").count,
-        "70-85%" => AiExtractionLog.recent_period(7).where("confidence_score >= 0.7 AND confidence_score < 0.85").count,
-        "85-95%" => AiExtractionLog.recent_period(7).where("confidence_score >= 0.85 AND confidence_score < 0.95").count,
-        "95-100%" => AiExtractionLog.recent_period(7).where("confidence_score >= 0.95").count
+        "0-50%" => logs_7d.where("confidence_score < 0.5").count,
+        "50-70%" => logs_7d.where("confidence_score >= 0.5 AND confidence_score < 0.7").count,
+        "70-85%" => logs_7d.where("confidence_score >= 0.7 AND confidence_score < 0.85").count,
+        "85-95%" => logs_7d.where("confidence_score >= 0.85 AND confidence_score < 0.95").count,
+        "95-100%" => logs_7d.where("confidence_score >= 0.95").count
       }
     end
 

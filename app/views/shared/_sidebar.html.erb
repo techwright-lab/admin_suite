@@ -7,17 +7,15 @@
 >
   <!-- Logo -->
   <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-    <%= link_to interview_applications_path, class: "block" do %>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-        <span
-          class="
-            bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text
-            text-transparent
-          "
-        >
-          Gleania
-        </span>
-      </h1>
+    <%= link_to dashboard_path, class: "block" do %>
+      <div class="flex items-center gap-3 mb-2">
+        <%= image_tag "logo/logo.png", alt: "Gleania", class: "w-12 h-12 rounded-lg" %>
+
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <span class="text-gradient-logo"> Gleania </span>
+        </h1>
+      </div>
+
       <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
         Your interview assistant
       </p>
@@ -26,7 +24,24 @@
 
   <!-- Navigation -->
   <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-    <%= link_to interview_applications_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(interview_applications_path) || current_page?(root_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
+    <%= link_to dashboard_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(dashboard_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
+      <svg
+        class="w-5 h-5 mr-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+        />
+      </svg>
+      Dashboard
+    <% end %>
+
+    <%= link_to interview_applications_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(interview_applications_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
       <svg
         class="w-5 h-5 mr-3"
         fill="none"
@@ -60,6 +75,34 @@
       Insights
     <% end %>
 
+    <%= link_to user_resumes_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{request.path.start_with?('/resumes') ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
+      <svg
+        class="w-5 h-5 mr-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+      Resumes & Skills
+      <% if defined?(Current.user) && Current.user&.user_skills&.any? %>
+        <span
+          class="
+            ml-auto inline-flex items-center px-2 py-0.5 rounded-full
+            text-xs font-medium bg-green-100 text-green-800
+            dark:bg-green-900/30 dark:text-green-400
+          "
+        >
+          <%= Current.user.user_skills.count %>
+        </span>
+      <% end %>
+    <% end %>
+
     <%= link_to inbox_index_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(inbox_index_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
       <svg
         class="w-5 h-5 mr-3"
@@ -76,8 +119,43 @@
       </svg>
       Inbox
       <% if defined?(Current.user) && Current.user&.synced_emails&.needs_review&.any? %>
-        <span class="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+        <span
+          class="
+            ml-auto inline-flex items-center px-2 py-0.5 rounded-full
+            text-xs font-medium bg-yellow-100 text-yellow-800
+            dark:bg-yellow-900/30 dark:text-yellow-400
+          "
+        >
           <%= Current.user.synced_emails.needs_review.count %>
+        </span>
+      <% end %>
+    <% end %>
+
+    <%= link_to opportunities_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(opportunities_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
+      <svg
+        class="w-5 h-5 mr-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+        />
+      </svg>
+      Opportunities
+      <% if defined?(Current.user) && Current.user&.opportunities&.actionable&.any? %>
+        <span
+          id="opportunities_count"
+          class="
+            ml-auto inline-flex items-center px-2 py-0.5 rounded-full
+            text-xs font-medium bg-indigo-100 text-indigo-800
+            dark:bg-indigo-900/30 dark:text-indigo-400
+          "
+        >
+          <%= Current.user.opportunities.actionable.count %>
         </span>
       <% end %>
     <% end %>
@@ -95,6 +173,7 @@
           stroke-width="2"
           d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
         />
+
         <path
           stroke-linecap="round"
           stroke-linejoin="round"

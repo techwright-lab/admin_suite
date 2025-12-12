@@ -1,8 +1,16 @@
 <div class="space-y-6">
   <!-- Gmail Integration -->
-  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+  <div
+    class="
+      bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200
+      dark:border-gray-700
+    "
+  >
     <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Connected Accounts</h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        Connected Accounts
+      </h2>
+
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
         Connect external services to enhance your interview tracking experience
       </p>
@@ -11,31 +19,69 @@
     <div class="p-6 space-y-6">
       <!-- Gmail -->
       <% google_accounts = user.respond_to?(:connected_accounts) ? user.connected_accounts.google.order(created_at: :desc) : [] %>
+
       <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+            <div
+              class="
+                w-12 h-12 rounded-lg bg-white dark:bg-gray-800 border
+                border-gray-200 dark:border-gray-600 flex items-center
+                justify-center
+              "
+            >
               <svg class="w-7 h-7" viewBox="0 0 24 24">
-                <path fill="#EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/>
-                <path fill="#34A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"/>
-                <path fill="#4A90E2" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/>
-                <path fill="#FBBC05" d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"/>
+                <path
+                  fill="#EA4335"
+                  d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"
+                />
+
+                <path
+                  fill="#34A853"
+                  d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"
+                />
+
+                <path
+                  fill="#4A90E2"
+                  d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"
+                />
+
+                <path
+                  fill="#FBBC05"
+                  d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"
+                />
               </svg>
             </div>
+
             <div>
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white">Gmail</h3>
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                Gmail
+              </h3>
+
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 Import interview emails and sync calendar events
               </p>
             </div>
           </div>
+
           <div>
             <%= link_to "/auth/google_oauth2",
                 class: "inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium rounded-lg text-sm text-gray-700 dark:text-gray-200 transition-colors",
                 data: { turbo: false } do %>
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
+
               <%= google_accounts.any? ? "Connect Another Account" : "Connect" %>
             <% end %>
           </div>
@@ -45,96 +91,288 @@
           <!-- Connected Accounts List -->
           <div class="space-y-3">
             <% google_accounts.each do |account| %>
-              <div class="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div class="p-3 bg-white dark:bg-gray-800 rounded-lg border <%= account.needs_reauth? ? 'border-yellow-400 dark:border-yellow-500' : 'border-gray-200 dark:border-gray-600' %>">
+                <%# Warning banner for accounts needing reauthorization %>
+                <% if account.needs_reauth? %>
+                  <div
+                    class="
+                      mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border
+                      border-yellow-200 dark:border-yellow-700 rounded-lg
+                    "
+                  >
+                    <div class="flex items-start gap-2">
+                      <svg
+                        class="
+                          w-5 h-5 text-yellow-600 dark:text-yellow-400
+                          flex-shrink-0 mt-0.5
+                        "
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+
+                      <div class="flex-1">
+                        <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                          Connection expired - action required
+                        </p>
+
+                        <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                          Your Gmail connection needs to be renewed to continue
+                          syncing emails.
+                        </p>
+
+                        <%= link_to "/auth/google_oauth2",
+                            class: "inline-flex items-center mt-2 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded text-xs transition-colors",
+                            data: { turbo: false } do %>
+                          <svg
+                            class="w-3.5 h-3.5 mr-1.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                          Reconnect Account
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                <% elsif account.token_expired? %>
+                  <div
+                    class="
+                      mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border
+                      border-orange-200 dark:border-orange-700 rounded-lg
+                    "
+                  >
+                    <div class="flex items-center gap-2">
+                      <svg
+                        class="w-4 h-4 text-orange-600 dark:text-orange-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+
+                      <p class="text-xs text-orange-700 dark:text-orange-300">
+                        Token expired - will refresh automatically on next sync
+                      </p>
+                    </div>
+                  </div>
+                <% end %>
+
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
                     <div class="flex items-center gap-2">
-                      <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                      </svg>
+                      <% if account.needs_reauth? %>
+                        <svg
+                          class="w-4 h-4 text-yellow-600 dark:text-yellow-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      <% elsif account.token_expired? %>
+                        <svg
+                          class="w-4 h-4 text-orange-600 dark:text-orange-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      <% else %>
+                        <svg
+                          class="w-4 h-4 text-green-600 dark:text-green-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      <% end %>
+
                       <p class="text-sm font-medium text-gray-900 dark:text-white">
                         <%= account.email %>
                       </p>
                     </div>
+
                     <% if account.last_synced_at %>
                       <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
-                        Last synced: <%= time_ago_in_words(account.last_synced_at) %> ago
+                        Last synced:
+                        <%= time_ago_in_words(account.last_synced_at) %> ago
                       </p>
                     <% end %>
-                    <% if account.sync_enabled? %>
+
+                    <% if account.needs_reauth? %>
+                      <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1 ml-6">
+                        Sync paused - reconnection required
+                      </p>
+                    <% elsif account.sync_enabled? %>
                       <p class="text-xs text-green-600 dark:text-green-400 mt-1 ml-6">
                         Auto-sync enabled
                       </p>
                     <% end %>
                   </div>
+
                   <div class="flex items-center gap-2">
-                    <%= button_to trigger_sync_settings_path,
-                        method: :post,
-                        params: { account_id: account.id },
-                        class: "inline-flex items-center px-2 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded text-xs transition-colors",
-                        data: { disable_with: "Syncing..." },
-                        title: "Sync Now" do %>
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                      </svg>
+                    <% unless account.needs_reauth? %>
+                      <%= button_to trigger_sync_settings_path,
+                          method: :post,
+                          params: { account_id: account.id },
+                          class: "inline-flex items-center px-2 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded text-xs transition-colors",
+                          data: { disable_with: "Syncing..." },
+                          title: "Sync Now" do %>
+                        <svg
+                          class="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                      <% end %>
                     <% end %>
+
                     <%= button_to disconnect_provider_settings_path(provider: "google_oauth2", account_id: account.id),
                         method: :delete,
                         class: "inline-flex items-center px-2 py-1.5 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium rounded text-xs transition-colors",
                         data: { turbo_confirm: "Are you sure you want to disconnect #{account.email}?" },
                         title: "Disconnect" do %>
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
                       </svg>
                     <% end %>
                   </div>
                 </div>
-                
+
                 <!-- Account Statistics -->
                 <% synced_count = user.synced_emails.from_account(account).count %>
                 <% matched_count = user.synced_emails.from_account(account).matched.count %>
                 <% pending_count = user.synced_emails.from_account(account).pending.count %>
+
                 <% if synced_count > 0 || matched_count > 0 || pending_count > 0 %>
-                  <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 grid grid-cols-3 gap-2 text-center">
+                  <div
+                    class="
+                      mt-3 pt-3 border-t border-gray-200
+                      dark:border-gray-600 grid grid-cols-3 gap-2
+                      text-center
+                    "
+                  >
                     <div>
-                      <p class="text-lg font-semibold text-gray-900 dark:text-white"><%= synced_count %></p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">Synced</p>
+                      <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <%= synced_count %>
+                      </p>
+
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Synced
+                      </p>
                     </div>
+
                     <div>
-                      <p class="text-lg font-semibold text-green-600 dark:text-green-400"><%= matched_count %></p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">Matched</p>
+                      <p class="text-lg font-semibold text-green-600 dark:text-green-400">
+                        <%= matched_count %>
+                      </p>
+
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Matched
+                      </p>
                     </div>
+
                     <div>
-                      <p class="text-lg font-semibold text-yellow-600 dark:text-yellow-400"><%= pending_count %></p>
-                      <p class="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+                      <p class="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
+                        <%= pending_count %>
+                      </p>
+
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Pending
+                      </p>
                     </div>
                   </div>
                 <% end %>
               </div>
             <% end %>
           </div>
-
           <!-- Overall Statistics -->
           <% total_synced = user.synced_emails.from_account(google_accounts).count %>
           <% total_matched = user.synced_emails.from_account(google_accounts).matched.count %>
           <% total_pending = user.synced_emails.from_account(google_accounts).pending.count %>
           <% if total_synced > 0 || total_matched > 0 || total_pending > 0 %>
             <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-              <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">All Accounts Combined</p>
+              <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                All Accounts Combined
+              </p>
+
               <div class="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p class="text-2xl font-semibold text-gray-900 dark:text-white"><%= total_synced %></p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Emails Synced</p>
+                  <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                    <%= total_synced %>
+                  </p>
+
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Emails Synced
+                  </p>
                 </div>
+
                 <div>
-                  <p class="text-2xl font-semibold text-green-600 dark:text-green-400"><%= total_matched %></p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Matched to Apps</p>
+                  <p class="text-2xl font-semibold text-green-600 dark:text-green-400">
+                    <%= total_matched %>
+                  </p>
+
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Matched to Apps
+                  </p>
                 </div>
+
                 <div>
-                  <p class="text-2xl font-semibold text-yellow-600 dark:text-yellow-400"><%= total_pending %></p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Needs Review</p>
+                  <p class="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">
+                    <%= total_pending %>
+                  </p>
+
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Needs Review
+                  </p>
                 </div>
               </div>
+
               <% if total_pending > 0 %>
                 <div class="mt-3 text-center">
                   <%= link_to inbox_index_path, class: "text-sm text-primary-600 dark:text-primary-400 hover:underline" do %>
@@ -149,31 +387,78 @@
 
       <!-- Future Integrations Placeholder -->
       <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Coming Soon</h3>
+        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          Coming Soon
+        </h3>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- LinkedIn -->
-          <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-60">
-            <div class="w-10 h-10 rounded-lg bg-[#0A66C2] flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          <div
+            class="
+              flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50
+              rounded-lg opacity-60
+            "
+          >
+            <div
+              class="
+                w-10 h-10 rounded-lg bg-[#0A66C2] flex items-center
+                justify-center
+              "
+            >
+              <svg
+                class="w-5 h-5 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+                />
               </svg>
             </div>
+
             <div>
-              <span class="text-sm font-medium text-gray-900 dark:text-white">LinkedIn</span>
-              <span class="block text-xs text-gray-500 dark:text-gray-400">Import job applications</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">
+                LinkedIn
+              </span>
+
+              <span class="block text-xs text-gray-500 dark:text-gray-400">
+                Import job applications
+              </span>
             </div>
           </div>
 
           <!-- Outlook -->
-          <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-60">
-            <div class="w-10 h-10 rounded-lg bg-[#0078D4] flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M7.88 12.04q0 .45-.11.87-.1.41-.33.74-.22.33-.58.52-.37.2-.87.2t-.85-.2q-.35-.21-.57-.55-.22-.33-.33-.75-.1-.42-.1-.86t.1-.87q.1-.43.34-.76.22-.34.59-.54.36-.2.87-.2t.86.2q.35.21.57.55.22.34.31.77.1.43.1.88zM24 12v9.38q0 .46-.33.8-.33.32-.8.32H7.13q-.46 0-.8-.33-.32-.33-.32-.8V18H1q-.41 0-.7-.3-.3-.29-.3-.7V7q0-.41.3-.7Q.58 6 1 6h6.5V2.55q0-.44.3-.75.3-.3.75-.3h12.9q.44 0 .75.3.3.3.3.75V12zm-6-8.25v3h3v-3zm0 4.5v3h3v-3zm0 4.5v1.83l3.05-1.83zm-5.25-9v3h3.75v-3zm0 4.5v3h3.75v-3zm0 4.5v2.03l2.41 1.5 1.34-.8v-2.73zM9 3.75V6h2l.13.01.12.04v-2.3zM5.98 15.98q.9 0 1.6-.3.7-.32 1.19-.86.48-.55.73-1.28.25-.74.25-1.61 0-.83-.25-1.55-.24-.71-.71-1.24t-1.15-.83q-.68-.3-1.55-.3-.92 0-1.64.3-.71.3-1.2.85-.5.54-.75 1.3-.25.74-.25 1.63 0 .85.26 1.56.26.72.74 1.23.48.52 1.17.81.69.3 1.56.3zM7.5 21h12.39L12 16.08V17q0 .41-.3.7-.29.3-.7.3H7.5zm15-.13v-7.24l-5.9 3.54Z"/>
+          <div
+            class="
+              flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50
+              rounded-lg opacity-60
+            "
+          >
+            <div
+              class="
+                w-10 h-10 rounded-lg bg-[#0078D4] flex items-center
+                justify-center
+              "
+            >
+              <svg
+                class="w-5 h-5 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M7.88 12.04q0 .45-.11.87-.1.41-.33.74-.22.33-.58.52-.37.2-.87.2t-.85-.2q-.35-.21-.57-.55-.22-.33-.33-.75-.1-.42-.1-.86t.1-.87q.1-.43.34-.76.22-.34.59-.54.36-.2.87-.2t.86.2q.35.21.57.55.22.34.31.77.1.43.1.88zM24 12v9.38q0 .46-.33.8-.33.32-.8.32H7.13q-.46 0-.8-.33-.32-.33-.32-.8V18H1q-.41 0-.7-.3-.3-.29-.3-.7V7q0-.41.3-.7Q.58 6 1 6h6.5V2.55q0-.44.3-.75.3-.3.75-.3h12.9q.44 0 .75.3.3.3.3.75V12zm-6-8.25v3h3v-3zm0 4.5v3h3v-3zm0 4.5v1.83l3.05-1.83zm-5.25-9v3h3.75v-3zm0 4.5v3h3.75v-3zm0 4.5v2.03l2.41 1.5 1.34-.8v-2.73zM9 3.75V6h2l.13.01.12.04v-2.3zM5.98 15.98q.9 0 1.6-.3.7-.32 1.19-.86.48-.55.73-1.28.25-.74.25-1.61 0-.83-.25-1.55-.24-.71-.71-1.24t-1.15-.83q-.68-.3-1.55-.3-.92 0-1.64.3-.71.3-1.2.85-.5.54-.75 1.3-.25.74-.25 1.63 0 .85.26 1.56.26.72.74 1.23.48.52 1.17.81.69.3 1.56.3zM7.5 21h12.39L12 16.08V17q0 .41-.3.7-.29.3-.7.3H7.5zm15-.13v-7.24l-5.9 3.54Z"
+                />
               </svg>
             </div>
+
             <div>
-              <span class="text-sm font-medium text-gray-900 dark:text-white">Outlook</span>
-              <span class="block text-xs text-gray-500 dark:text-gray-400">Calendar & email sync</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">
+                Outlook
+              </span>
+
+              <span class="block text-xs text-gray-500 dark:text-gray-400">
+                Calendar & email sync
+              </span>
             </div>
           </div>
         </div>
@@ -183,9 +468,17 @@
 
   <!-- Sync Settings -->
   <% if google_accounts.any? %>
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div
+      class="
+        bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+        border-gray-200 dark:border-gray-700
+      "
+    >
       <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Sync Settings</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Sync Settings
+        </h2>
+
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Configure how your connected accounts sync data
         </p>
@@ -194,37 +487,79 @@
       <div class="p-6">
         <div class="space-y-4">
           <!-- Auto-sync Toggle -->
-          <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div
+            class="
+              flex items-center justify-between p-4 bg-gray-50
+              dark:bg-gray-700/50 rounded-lg
+            "
+          >
             <div>
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white">Auto-sync emails</h3>
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                Auto-sync emails
+              </h3>
+
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 Automatically import interview-related emails every 30 minutes
               </p>
             </div>
+
             <% primary_account = google_accounts.first %>
+
             <%= form_with url: toggle_sync_settings_path, method: :patch, data: { controller: "autosave", autosave_delay_value: 0 } do |f| %>
               <%= hidden_field_tag :account_id, primary_account.id %>
+
               <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" 
-                       name="sync_enabled" 
-                       value="1"
-                       class="sr-only peer"
-                       <%= primary_account.sync_enabled? ? "checked" : "" %>
-                       data-action="change->autosave#save">
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-500 peer-checked:bg-primary-600"></div>
+                <input
+                  type="checkbox"
+                  name="sync_enabled"
+                  value="1"
+                  class="sr-only peer"
+                  <%= primary_account.sync_enabled? ? "checked" : "" %>
+                  data-action="change->autosave#save"
+                >
+
+                <div
+                  class="
+                    w-11 h-6 bg-gray-200 peer-focus:outline-none
+                    peer-focus:ring-4 peer-focus:ring-primary-300
+                    dark:peer-focus:ring-primary-800 rounded-full peer
+                    dark:bg-gray-600 peer-checked:after:translate-x-full
+                    peer-checked:after:border-white after:content-['']
+                    after:absolute after:top-[2px] after:left-[2px]
+                    after:bg-white after:border-gray-300 after:border
+                    after:rounded-full after:h-5 after:w-5
+                    after:transition-all dark:border-gray-500
+                    peer-checked:bg-primary-600
+                  "
+                ></div>
               </label>
             <% end %>
           </div>
 
           <!-- Calendar Integration -->
-          <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-60">
+          <div
+            class="
+              flex items-center justify-between p-4 bg-gray-50
+              dark:bg-gray-700/50 rounded-lg opacity-60
+            "
+          >
             <div>
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white">Calendar integration</h3>
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                Calendar integration
+              </h3>
+
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 Sync interview schedules with your calendar
               </p>
             </div>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+
+            <span
+              class="
+                inline-flex items-center px-2.5 py-0.5 rounded-full text-xs
+                font-medium bg-gray-100 text-gray-800 dark:bg-gray-700
+                dark:text-gray-300
+              "
+            >
               Coming soon
             </span>
           </div>
@@ -233,4 +568,3 @@
     </div>
   <% end %>
 </div>
-

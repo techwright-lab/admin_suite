@@ -10,39 +10,36 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
-  create_table "ai_extraction_logs", force: :cascade do |t|
-    t.float "confidence_score"
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
-    t.text "error_message"
-    t.string "error_type"
-    t.integer "estimated_cost_cents"
-    t.jsonb "extracted_fields", default: []
-    t.integer "html_content_size"
-    t.integer "input_tokens"
-    t.bigint "job_listing_id"
-    t.integer "latency_ms"
-    t.string "model", null: false
-    t.integer "output_tokens"
-    t.integer "prompt_template_id"
-    t.string "provider", null: false
-    t.jsonb "request_payload", default: {}
-    t.jsonb "response_payload", default: {}
-    t.bigint "scraping_attempt_id"
-    t.integer "status", default: 0, null: false
-    t.integer "total_tokens"
-    t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_ai_extraction_logs_on_created_at"
-    t.index ["job_listing_id"], name: "index_ai_extraction_logs_on_job_listing_id"
-    t.index ["prompt_template_id"], name: "index_ai_extraction_logs_on_prompt_template_id"
-    t.index ["provider", "created_at"], name: "index_ai_extraction_logs_on_provider_and_created_at"
-    t.index ["provider", "status"], name: "index_ai_extraction_logs_on_provider_and_status"
-    t.index ["provider"], name: "index_ai_extraction_logs_on_provider"
-    t.index ["scraping_attempt_id"], name: "index_ai_extraction_logs_on_scraping_attempt_id"
-    t.index ["status"], name: "index_ai_extraction_logs_on_status"
+    t.string "name", null: false
+    t.bigint "record_id", null: false
+    t.string "record_type", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.string "content_type"
+    t.datetime "created_at", null: false
+    t.string "filename", null: false
+    t.string "key", null: false
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
   create_table "companies", force: :cascade do |t|
@@ -69,10 +66,13 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
 
   create_table "connected_accounts", force: :cascade do |t|
     t.text "access_token"
+    t.datetime "auth_error_at"
+    t.string "auth_error_message"
     t.datetime "created_at", null: false
     t.string "email"
     t.datetime "expires_at"
     t.datetime "last_synced_at"
+    t.boolean "needs_reauth", default: false, null: false
     t.string "provider", null: false
     t.text "refresh_token"
     t.string "scopes"
@@ -102,18 +102,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
     t.index ["domain"], name: "index_email_senders_on_domain"
     t.index ["email"], name: "index_email_senders_on_email", unique: true
     t.index ["verified"], name: "index_email_senders_on_verified"
-  end
-
-  create_table "extraction_prompt_templates", force: :cascade do |t|
-    t.boolean "active", default: false, null: false
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "name", null: false
-    t.text "prompt_template", null: false
-    t.datetime "updated_at", null: false
-    t.integer "version", default: 1, null: false
-    t.index ["active", "version"], name: "index_extraction_prompt_templates_on_active_and_version"
-    t.index ["active"], name: "index_extraction_prompt_templates_on_active"
   end
 
   create_table "friendly_id_slugs", force: :cascade do |t|
@@ -263,6 +251,58 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
     t.index ["title"], name: "index_job_roles_on_title", unique: true
   end
 
+  create_table "llm_api_logs", force: :cascade do |t|
+    t.float "confidence_score"
+    t.integer "content_size"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.string "error_type"
+    t.integer "estimated_cost_cents"
+    t.jsonb "extracted_fields", default: []
+    t.integer "input_tokens"
+    t.integer "latency_ms"
+    t.bigint "llm_prompt_id"
+    t.bigint "loggable_id"
+    t.string "loggable_type"
+    t.string "model", null: false
+    t.string "operation_type", null: false
+    t.integer "output_tokens"
+    t.string "provider", null: false
+    t.jsonb "request_payload", default: {}
+    t.jsonb "response_payload", default: {}
+    t.integer "status", default: 0, null: false
+    t.integer "total_tokens"
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_llm_api_logs_on_created_at"
+    t.index ["llm_prompt_id"], name: "index_llm_api_logs_on_llm_prompt_id"
+    t.index ["loggable_type", "loggable_id"], name: "index_llm_api_logs_on_loggable"
+    t.index ["loggable_type", "loggable_id"], name: "index_llm_api_logs_on_loggable_type_and_loggable_id"
+    t.index ["operation_type", "created_at"], name: "index_llm_api_logs_on_operation_type_and_created_at"
+    t.index ["operation_type", "status"], name: "index_llm_api_logs_on_operation_type_and_status"
+    t.index ["operation_type"], name: "index_llm_api_logs_on_operation_type"
+    t.index ["provider", "created_at"], name: "index_llm_api_logs_on_provider_and_created_at"
+    t.index ["provider", "status"], name: "index_llm_api_logs_on_provider_and_status"
+    t.index ["provider"], name: "index_llm_api_logs_on_provider"
+    t.index ["status"], name: "index_llm_api_logs_on_status"
+  end
+
+  create_table "llm_prompts", force: :cascade do |t|
+    t.boolean "active", default: false, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.text "prompt_template", null: false
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "variables", default: {}
+    t.integer "version", default: 1, null: false
+    t.index ["active"], name: "index_llm_prompts_on_active"
+    t.index ["name"], name: "index_llm_prompts_on_name"
+    t.index ["type", "active", "version"], name: "index_llm_prompts_on_type_and_active_and_version"
+    t.index ["type", "active"], name: "index_llm_prompts_on_type_and_active"
+    t.index ["type"], name: "index_llm_prompts_on_type"
+  end
+
   create_table "llm_provider_configs", force: :cascade do |t|
     t.string "api_endpoint"
     t.datetime "created_at", null: false
@@ -278,6 +318,51 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
     t.index ["enabled", "priority"], name: "index_llm_provider_configs_on_enabled_and_priority"
     t.index ["enabled"], name: "index_llm_provider_configs_on_enabled"
     t.index ["provider_type"], name: "index_llm_provider_configs_on_provider_type"
+  end
+
+  create_table "opportunities", force: :cascade do |t|
+    t.float "ai_confidence_score"
+    t.string "company_name"
+    t.datetime "created_at", null: false
+    t.text "email_snippet"
+    t.jsonb "extracted_data", default: {}
+    t.jsonb "extracted_links", default: []
+    t.bigint "interview_application_id"
+    t.string "job_role_title"
+    t.string "job_url"
+    t.text "key_details"
+    t.string "recruiter_company"
+    t.string "recruiter_email"
+    t.string "recruiter_name"
+    t.string "source_type"
+    t.string "status", default: "new", null: false
+    t.bigint "synced_email_id"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["interview_application_id"], name: "index_opportunities_on_interview_application_id"
+    t.index ["source_type"], name: "index_opportunities_on_source_type"
+    t.index ["status"], name: "index_opportunities_on_status"
+    t.index ["synced_email_id"], name: "index_opportunities_on_synced_email_id"
+    t.index ["user_id", "created_at"], name: "index_opportunities_on_user_id_and_created_at"
+    t.index ["user_id", "status"], name: "index_opportunities_on_user_id_and_status"
+    t.index ["user_id"], name: "index_opportunities_on_user_id"
+  end
+
+  create_table "resume_skills", force: :cascade do |t|
+    t.string "category"
+    t.float "confidence_score"
+    t.datetime "created_at", null: false
+    t.text "evidence_snippet"
+    t.integer "model_level", null: false
+    t.bigint "skill_tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_level"
+    t.bigint "user_resume_id", null: false
+    t.integer "years_of_experience"
+    t.index ["category"], name: "index_resume_skills_on_category"
+    t.index ["skill_tag_id"], name: "index_resume_skills_on_skill_tag_id"
+    t.index ["user_resume_id", "skill_tag_id"], name: "index_resume_skills_on_user_resume_id_and_skill_tag_id", unique: true
+    t.index ["user_resume_id"], name: "index_resume_skills_on_user_resume_id"
   end
 
   create_table "scraped_job_listing_data", force: :cascade do |t|
@@ -452,6 +537,63 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
   end
 
+  create_table "user_resume_target_companies", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_resume_id", null: false
+    t.index ["company_id"], name: "index_user_resume_target_companies_on_company_id"
+    t.index ["user_resume_id", "company_id"], name: "idx_resume_target_companies_unique", unique: true
+    t.index ["user_resume_id"], name: "index_user_resume_target_companies_on_user_resume_id"
+  end
+
+  create_table "user_resume_target_job_roles", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "job_role_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_resume_id", null: false
+    t.index ["job_role_id"], name: "index_user_resume_target_job_roles_on_job_role_id"
+    t.index ["user_resume_id", "job_role_id"], name: "idx_resume_target_roles_unique", unique: true
+    t.index ["user_resume_id"], name: "index_user_resume_target_job_roles_on_user_resume_id"
+  end
+
+  create_table "user_resumes", force: :cascade do |t|
+    t.integer "analysis_status", default: 0, null: false
+    t.text "analysis_summary"
+    t.datetime "analyzed_at"
+    t.datetime "created_at", null: false
+    t.jsonb "extracted_data", default: {}
+    t.string "name", null: false
+    t.text "parsed_text"
+    t.integer "purpose", default: 0, null: false
+    t.string "resume_date_confidence"
+    t.string "resume_date_source"
+    t.date "resume_updated_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["analysis_status"], name: "index_user_resumes_on_analysis_status"
+    t.index ["user_id", "created_at"], name: "index_user_resumes_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_user_resumes_on_user_id"
+  end
+
+  create_table "user_skills", force: :cascade do |t|
+    t.float "aggregated_level", null: false
+    t.string "category"
+    t.float "confidence_score"
+    t.datetime "created_at", null: false
+    t.datetime "last_demonstrated_at"
+    t.integer "max_years_experience"
+    t.integer "resume_count", default: 0
+    t.bigint "skill_tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["skill_tag_id"], name: "index_user_skills_on_skill_tag_id"
+    t.index ["user_id", "aggregated_level"], name: "index_user_skills_on_user_id_and_aggregated_level"
+    t.index ["user_id", "category"], name: "index_user_skills_on_user_id_and_category"
+    t.index ["user_id", "skill_tag_id"], name: "index_user_skills_on_user_id_and_skill_tag_id", unique: true
+    t.index ["user_id"], name: "index_user_skills_on_user_id"
+  end
+
   create_table "user_target_companies", force: :cascade do |t|
     t.bigint "company_id", null: false
     t.datetime "created_at", null: false
@@ -500,8 +642,8 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
     t.index ["oauth_provider", "oauth_uid"], name: "index_users_on_oauth_provider_and_oauth_uid", unique: true
   end
 
-  add_foreign_key "ai_extraction_logs", "job_listings"
-  add_foreign_key "ai_extraction_logs", "scraping_attempts"
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "company_feedbacks", "interview_applications"
   add_foreign_key "connected_accounts", "users"
   add_foreign_key "email_senders", "companies"
@@ -518,6 +660,12 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
   add_foreign_key "interview_skill_tags", "skill_tags"
   add_foreign_key "job_listings", "companies"
   add_foreign_key "job_listings", "job_roles"
+  add_foreign_key "llm_api_logs", "llm_prompts"
+  add_foreign_key "opportunities", "interview_applications"
+  add_foreign_key "opportunities", "synced_emails"
+  add_foreign_key "opportunities", "users"
+  add_foreign_key "resume_skills", "skill_tags"
+  add_foreign_key "resume_skills", "user_resumes"
   add_foreign_key "scraped_job_listing_data", "job_listings"
   add_foreign_key "scraped_job_listing_data", "scraping_attempts"
   add_foreign_key "scraping_attempts", "job_listings"
@@ -530,6 +678,13 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_222434) do
   add_foreign_key "synced_emails", "interview_applications"
   add_foreign_key "synced_emails", "users"
   add_foreign_key "user_preferences", "users"
+  add_foreign_key "user_resume_target_companies", "companies"
+  add_foreign_key "user_resume_target_companies", "user_resumes"
+  add_foreign_key "user_resume_target_job_roles", "job_roles"
+  add_foreign_key "user_resume_target_job_roles", "user_resumes"
+  add_foreign_key "user_resumes", "users"
+  add_foreign_key "user_skills", "skill_tags"
+  add_foreign_key "user_skills", "users"
   add_foreign_key "user_target_companies", "companies"
   add_foreign_key "user_target_companies", "users"
   add_foreign_key "user_target_job_roles", "job_roles"

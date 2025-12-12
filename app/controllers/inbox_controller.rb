@@ -14,7 +14,11 @@ class InboxController < ApplicationController
       .includes(:interview_application, :email_sender, interview_application: [ :company, :job_role ])
       .order(email_date: :desc)
 
-    # Apply filters
+    # Apply relevance filter (default to relevant emails only)
+    @current_relevance = params[:relevance] || "relevant"
+    @emails = filter_by_relevance(@emails)
+
+    # Apply other filters
     @emails = filter_by_type(@emails)
     @emails = filter_by_status(@emails)
     @emails = filter_by_company(@emails)
@@ -22,7 +26,10 @@ class InboxController < ApplicationController
 
     # Group emails by thread for display (showing latest in each thread)
     @grouped_emails = group_emails_by_application(@emails)
-    @unmatched_emails = @emails.unmatched
+
+    # Get unmatched emails grouped by thread (only latest email per thread)
+    unmatched_by_thread = group_emails_by_thread(@emails.unmatched)
+    @pagy_unmatched, @unmatched_emails = pagy_array(unmatched_by_thread, limit: 15, page_param: :unmatched_page)
 
     # Load filter options
     @email_types = SyncedEmail::EMAIL_TYPES
@@ -30,6 +37,9 @@ class InboxController < ApplicationController
       .where(interview_applications: { user_id: Current.user.id })
       .distinct
       .alphabetical
+
+    # Calculate counts for relevance tabs
+    @relevance_counts = calculate_relevance_counts
 
     # If email_id param, pre-select that email
     @selected_email = current_user_emails.find_by(id: params[:email_id]) if params[:email_id]
@@ -80,7 +90,7 @@ class InboxController < ApplicationController
             ),
             turbo_stream.update("email_list",
               partial: "inbox/email_list",
-              locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, selected_email_id: @email.id }
+              locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, pagy_unmatched: @pagy_unmatched, selected_email_id: @email.id }
             ),
             turbo_stream.update("email_stats",
               html: email_stats_html
@@ -118,7 +128,7 @@ class InboxController < ApplicationController
             ),
             turbo_stream.update("email_list",
               partial: "inbox/email_list",
-              locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, selected_email_id: nil }
+              locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, pagy_unmatched: @pagy_unmatched, selected_email_id: nil }
             ),
             turbo_stream.update("email_stats",
               html: email_stats_html
@@ -167,6 +177,36 @@ class InboxController < ApplicationController
   # @return [ActiveRecord::Relation]
   def current_user_emails
     Current.user.synced_emails
+  end
+
+  # Filters emails by relevance (all, relevant, interviews, opportunities)
+  #
+  # @param emails [ActiveRecord::Relation]
+  # @return [ActiveRecord::Relation]
+  def filter_by_relevance(emails)
+    case @current_relevance
+    when "all"
+      emails.not_ignored
+    when "interviews"
+      emails.interview_related
+    when "opportunities"
+      emails.potential_opportunities
+    else # "relevant" (default)
+      emails.relevant
+    end
+  end
+
+  # Calculates counts for relevance filter tabs
+  #
+  # @return [Hash] Counts by relevance type
+  def calculate_relevance_counts
+    base = current_user_emails
+    {
+      all: base.not_ignored.count,
+      relevant: base.relevant.count,
+      interviews: base.interview_related.count,
+      opportunities: base.potential_opportunities.count
+    }
   end
 
   # Filters emails by type
@@ -252,6 +292,22 @@ class InboxController < ApplicationController
       .to_h
   end
 
+  # Groups emails by thread, keeping only the latest email from each thread
+  #
+  # @param emails [ActiveRecord::Relation]
+  # @return [Array<SyncedEmail>]
+  def group_emails_by_thread(emails)
+    unique_threads = {}
+    emails.each do |email|
+      thread_key = email.thread_id.presence || "single_#{email.id}"
+      if unique_threads[thread_key].nil? || (email.email_date && email.email_date > unique_threads[thread_key].email_date)
+        unique_threads[thread_key] = email
+      end
+    end
+
+    unique_threads.values.sort_by { |e| e.email_date || e.created_at }.reverse
+  end
+
   # Matches all emails in the same thread to an application
   #
   # @param application [InterviewApplication]
@@ -272,7 +328,8 @@ class InboxController < ApplicationController
       .order(email_date: :desc)
 
     @grouped_emails = group_emails_by_application(emails)
-    @unmatched_emails = emails.unmatched
+    unmatched_by_thread = group_emails_by_thread(emails.unmatched)
+    @pagy_unmatched, @unmatched_emails = pagy_array(unmatched_by_thread, limit: 15, page_param: :unmatched_page)
   end
 
   # Returns HTML for the email stats footer

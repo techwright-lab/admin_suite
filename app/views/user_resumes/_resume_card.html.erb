@@ -1,0 +1,215 @@
+<div
+  id="resume_card_<%= user_resume.id %>"
+  class="p-6 hover:bg-gray-50 dark:hover:bg-dark-800 transition-colors"
+>
+  <div class="flex items-start justify-between">
+    <div class="flex items-start space-x-4">
+      <!-- File Icon -->
+      <div class="flex-shrink-0">
+        <div
+          class="
+            w-12 h-12 rounded-lg flex items-center justify-center
+            <%= case user_resume.file_extension
+            when 'pdf' then 'bg-red-100 dark:bg-red-900/30'
+            when 'docx', 'doc' then 'bg-blue-100 dark:bg-blue-900/30'
+            else 'bg-gray-100 dark:bg-gray-800'
+            end %>
+          "
+        >
+          <svg
+            class="
+              w-6 h-6
+              <%= case user_resume.file_extension
+              when 'pdf' then 'text-red-600 dark:text-red-400'
+              when 'docx', 'doc' then 'text-blue-600 dark:text-blue-400'
+              else 'text-gray-600 dark:text-gray-400'
+              end %>
+            "
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Resume Info -->
+      <div class="flex-1 min-w-0">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white truncate">
+          <%= link_to user_resume.name, user_resume_path(user_resume), class: "hover:text-primary-600 dark:hover:text-primary-400" %>
+        </h3>
+
+        <div class="mt-1 flex flex-wrap items-center gap-2">
+          <!-- Purpose Badge -->
+          <span
+            class="
+              inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+              <%= case user_resume.purpose
+              when 'generic' then 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+              when 'company_specific' then 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+              when 'role_specific' then 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+              end %>
+            "
+          >
+            <%= user_resume.purpose.humanize %>
+          </span>
+
+          <!-- Target Roles -->
+          <% if user_resume.has_target_roles? %>
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+              → <%= user_resume.target_job_roles.pluck(:title).join(", ") %>
+            </span>
+          <% end %>
+
+          <!-- Target Companies -->
+          <% if user_resume.has_target_companies? %>
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+              @ <%= user_resume.target_companies.pluck(:name).join(", ") %>
+            </span>
+          <% end %>
+        </div>
+
+        <div
+          class="
+            mt-2 flex items-center gap-4 text-sm text-gray-500
+            dark:text-gray-400
+          "
+        >
+          <span><%= user_resume.file_type %></span>
+          <span>•</span>
+          <span><%= time_ago_in_words(user_resume.created_at) %> ago</span>
+
+          <% if user_resume.analyzed? %>
+            <span>•</span>
+            <span class="text-green-600 dark:text-green-400">
+              <%= user_resume.resume_skills.count %> skills
+            </span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status & Actions -->
+    <div class="flex items-center space-x-2">
+      <div id="resume_status_<%= user_resume.id %>">
+        <%= render "user_resumes/analysis_status", user_resume: user_resume %>
+      </div>
+
+      <div class="relative" data-controller="dropdown">
+        <button
+          data-action="click->dropdown#toggle"
+          class="
+            p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+            rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700
+          "
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+            />
+          </svg>
+        </button>
+
+        <div
+          data-dropdown-target="menu"
+          class="
+            hidden absolute right-0 mt-2 w-48 bg-white dark:bg-dark-800
+            rounded-lg shadow-lg border border-gray-200 dark:border-gray-700
+            py-1 z-10
+          "
+        >
+          <%= link_to user_resume_path(user_resume), class: "flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700" do %>
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            View Skills
+          <% end %>
+
+          <%= link_to edit_user_resume_path(user_resume), class: "flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700" do %>
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Edit
+          <% end %>
+
+          <%= button_to reanalyze_user_resume_path(user_resume), method: :post, class: "flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700" do %>
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Re-analyze
+          <% end %>
+
+          <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+
+          <%= button_to user_resume_path(user_resume), method: :delete, data: { turbo_confirm: "Are you sure you want to delete this resume?" }, class: "flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" do %>
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Delete
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -106,8 +106,8 @@ production:
   primary: &primary_production
     <<: *default
     database: gleania_production
-    username: gleania
-    password: <%= ENV["GLEANIA_DATABASE_PASSWORD"] %>
+    username: <%= ENV["DB_USERNAME"] %>
+    password: <%= ENV["POSTGRES_PASSWORD"] %>
   cache:
     <<: *primary_production
     database: gleania_production_cache

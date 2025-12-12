@@ -1,0 +1,81 @@
+<% content_for :title, @opportunity.display_title %>
+
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Back link -->
+  <div class="mb-6">
+    <%= link_to opportunities_path, class: "inline-flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" do %>
+      <svg
+        class="w-4 h-4 mr-1"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+      Back to Opportunities
+    <% end %>
+  </div>
+
+  <!-- Opportunity Card -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+    <%= render "opportunities/card", opportunity: @opportunity, show_actions: true %>
+  </div>
+
+  <!-- Email Details (if available) -->
+  <% if @opportunity.synced_email.present? %>
+    <div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        Original Email
+      </h3>
+
+      <div class="space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 w-20">
+            From:
+          </span>
+
+          <span class="text-sm text-gray-900 dark:text-white">
+            <%= @opportunity.synced_email.sender_display %>
+
+            <span class="text-gray-500 dark:text-gray-400">
+              &lt;<%= @opportunity.synced_email.from_email %>&gt;
+            </span>
+          </span>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 w-20">
+            Subject:
+          </span>
+
+          <span class="text-sm text-gray-900 dark:text-white">
+            <%= @opportunity.synced_email.subject %>
+          </span>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 w-20">
+            Date:
+          </span>
+
+          <span class="text-sm text-gray-900 dark:text-white">
+            <%= @opportunity.synced_email.email_date&.strftime("%B %d, %Y at %I:%M %p") %>
+          </span>
+        </div>
+
+        <% if @opportunity.synced_email.body_preview.present? %>
+          <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+              <%= @opportunity.synced_email.body_preview %>
+            </p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

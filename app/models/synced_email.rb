@@ -19,13 +19,30 @@ class SyncedEmail < ApplicationRecord
     thank_you
     scheduling
     assessment
+    recruiter_outreach
     other
   ].freeze
+
+  # Types that are interview-related
+  INTERVIEW_TYPES = %w[
+    application_confirmation
+    interview_invite
+    interview_reminder
+    rejection
+    offer
+    follow_up
+    scheduling
+    assessment
+  ].freeze
+
+  # Types that represent potential opportunities
+  OPPORTUNITY_TYPES = %w[recruiter_outreach].freeze
 
   belongs_to :user
   belongs_to :connected_account
   belongs_to :interview_application, optional: true
   belongs_to :email_sender, optional: true
+  has_one :opportunity, dependent: :nullify
 
   # Status enum
   enum :status, STATUSES, default: :pending
@@ -48,6 +65,21 @@ class SyncedEmail < ApplicationRecord
   scope :needs_review, -> { pending.unmatched }
   scope :from_account, ->(account) { where(connected_account: account) }
   scope :for_application, ->(app) { where(interview_application: app) }
+  scope :recruiter_outreach, -> { where(email_type: "recruiter_outreach") }
+
+  # Relevance scopes for smart filtering
+  scope :interview_related, -> {
+    where(email_type: INTERVIEW_TYPES).or(matched)
+  }
+  scope :potential_opportunities, -> { where(email_type: OPPORTUNITY_TYPES) }
+  scope :relevant, -> {
+    not_ignored.where(
+      "email_type IN (?) OR email_type IN (?) OR interview_application_id IS NOT NULL",
+      INTERVIEW_TYPES,
+      OPPORTUNITY_TYPES
+    )
+  }
+  scope :not_ignored, -> { where.not(status: :ignored) }
 
   # Callbacks
   before_save :link_or_create_sender
@@ -185,6 +217,8 @@ class SyncedEmail < ApplicationRecord
       "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
     when "assessment"
       "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+    when "recruiter_outreach"
+      "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
     else
       "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
     end
@@ -205,11 +239,20 @@ class SyncedEmail < ApplicationRecord
       "check-circle"
     when "assessment"
       "clipboard-check"
+    when "recruiter_outreach"
+      "sparkles"
     when "follow_up", "thank_you"
       "mail"
     else
       "mail"
     end
+  end
+
+  # Checks if this email is a recruiter outreach
+  #
+  # @return [Boolean]
+  def recruiter_outreach?
+    email_type == "recruiter_outreach"
   end
 
   # Returns all emails in this conversation thread
@@ -276,4 +319,3 @@ class SyncedEmail < ApplicationRecord
     self.email_sender = EmailSender.find_or_create_from_email(from_email, from_name)
   end
 end
-

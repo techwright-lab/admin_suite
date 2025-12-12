@@ -6,10 +6,21 @@ module Admin
   # Provides common functionality for admin access control and layout.
   # All admin controllers should inherit from this class.
   #
+  # Includes common concerns for pagination, filtering, and stats calculation.
+  # These can be optionally included in child controllers as needed.
+  #
   # @example
-  #   class Admin::MetricsController < Admin::BaseController
+  #   class Admin::UsersController < Admin::BaseController
+  #     include Admin::Concerns::Paginatable
+  #     include Admin::Concerns::Filterable
+  #     include Admin::Concerns::StatsCalculator
+  #
+  #     PER_PAGE = 30
+  #
   #     def index
-  #       # Admin-only action
+  #       @users = paginate(filtered_users)
+  #       @stats = calculate_stats
+  #       @filters = filter_params
   #     end
   #   end
   class BaseController < ApplicationController
@@ -30,4 +41,3 @@ module Admin
     end
   end
 end
-

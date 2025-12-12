@@ -3,22 +3,39 @@
 module LlmProviders
   # Base provider class for LLM integrations
   #
-  # All LLM providers must implement this interface to be used for
-  # job listing data extraction.
+  # Providers are responsible for:
+  # - Making API calls to LLM services
+  # - Error handling and rate limiting
+  # - Instrumentation (latency, token usage)
   #
-  # @abstract Subclass and override {#extract_job_data} to implement
+  # Providers are NOT responsible for:
+  # - Building prompts (done by services)
+  # - Parsing responses (done by services)
+  #
+  # @abstract Subclass and override {#run} to implement
   class BaseProvider
-    # Logging context attributes (set by AiJobExtractorService)
+    # Logging context attributes (set by caller for observability)
     attr_accessor :scraping_attempt, :job_listing
 
-    # Extracts structured job data from HTML content
+    # Sends a prompt to the LLM and returns the response
     #
-    # @param [String] html_content The HTML content of the job listing
-    # @param [String] url The URL of the job listing
-    # @return [Hash] Extracted job data with confidence scores
+    # @param prompt [String] The prompt text to send
+    # @param options [Hash] Optional parameters
+    #   @option options [Integer] :max_tokens Maximum tokens in response
+    #   @option options [Float] :temperature Temperature setting (0-1)
+    #   @option options [String] :system_message Optional system message
+    # @return [Hash] Result hash with:
+    #   - :content [String] The LLM response text
+    #   - :provider [String] Provider name
+    #   - :model [String] Model used
+    #   - :input_tokens [Integer] Input token count
+    #   - :output_tokens [Integer] Output token count
+    #   - :latency_ms [Integer] Request latency in milliseconds
+    #   - :error [String, nil] Error message if failed
+    #   - :rate_limit [Boolean] True if rate limited
     # @raise [NotImplementedError] Must be implemented by subclass
-    def extract_job_data(html_content, url)
-      raise NotImplementedError, "#{self.class} must implement #extract_job_data"
+    def run(prompt, options = {})
+      raise NotImplementedError, "#{self.class} must implement #run"
     end
 
     # Checks if the provider is available and configured
@@ -28,7 +45,7 @@ module LlmProviders
       api_key.present? && enabled?
     end
 
-    # Returns the provider name
+    # Returns the provider name (e.g., "anthropic", "openai")
     #
     # @return [String] Provider name
     def provider_name
@@ -39,7 +56,7 @@ module LlmProviders
     #
     # @return [String] Model name
     def model_name
-      config["model"]
+      db_config&.llm_model || config["model"] || default_model
     end
 
     protected
@@ -52,6 +69,13 @@ module LlmProviders
       raise NotImplementedError, "#{self.class} must implement #api_key"
     end
 
+    # Returns the default model for this provider
+    #
+    # @return [String] Default model name
+    def default_model
+      "unknown"
+    end
+
     # Returns the database configuration for this provider
     #
     # @return [LlmProviderConfig, nil] Provider configuration or nil
@@ -59,7 +83,7 @@ module LlmProviders
       @db_config ||= ::LlmProviderConfig.by_provider_type(provider_name).enabled.first
     end
 
-    # Returns the configuration for this provider
+    # Returns the configuration hash for this provider
     #
     # @return [Hash] Provider configuration
     def config
@@ -73,125 +97,83 @@ module LlmProviders
       db_config&.enabled? || false
     end
 
-    # Returns the model name from database config
+    # Returns max tokens from config or default
     #
-    # @return [String] Model name
-    def model_name
-      db_config&.llm_model || config["model"] || "unknown"
+    # @param default [Integer] Default value
+    # @return [Integer] Max tokens
+    def max_tokens_config(default: 4096)
+      db_config&.max_tokens || default
     end
 
-    # Builds the extraction prompt for the LLM
+    # Returns temperature from config or default
     #
-    # @param [String] html_content The HTML content to extract from
-    # @param [String] url The job listing URL
-    # @return [String] The formatted prompt
-    def build_extraction_prompt(html_content, url)
-      # Use active prompt template from database
-      template = ExtractionPromptTemplate.active_prompt
-
-      if template
-        template.build_prompt(
-          url: url,
-          html_content: html_content
-        )
-      else
-        # Fallback to default prompt
-        ExtractionPromptTemplate.default_prompt
-          .gsub("{{url}}", url)
-          .gsub("{{html_content}}", html_content)
-      end
+    # @param default [Float] Default value
+    # @return [Float] Temperature
+    def temperature_config(default: 0)
+      db_config&.temperature || default
     end
 
-    # Creates an extraction logger for observability
+    # Measures execution time and returns latency in ms
     #
-    # @param [String, nil] prompt The prompt text
-    # @param [Integer, nil] html_size Size of HTML content
-    # @return [AiExtractionLoggerService] The logger instance
-    def create_extraction_logger(prompt: nil, html_size: nil)
-      AiExtractionLoggerService.new(
-        scraping_attempt: scraping_attempt,
-        job_listing: job_listing,
+    # @yield Block to measure
+    # @return [Array] [result, latency_ms]
+    def with_timing
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      result = yield
+      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      latency_ms = ((end_time - start_time) * 1000).round
+      [ result, latency_ms ]
+    end
+
+    # Builds a success response hash
+    #
+    # @param content [String] Response content
+    # @param latency_ms [Integer] Latency in milliseconds
+    # @param input_tokens [Integer, nil] Input token count
+    # @param output_tokens [Integer, nil] Output token count
+    # @return [Hash] Success response
+    def success_response(content:, latency_ms:, input_tokens: nil, output_tokens: nil)
+      {
+        content: content,
         provider: provider_name,
         model: model_name,
-        prompt_template_id: ExtractionPromptTemplate.active_prompt&.id
-      )
-    end
-
-    # Records an extraction result to the log
-    #
-    # @param [Hash] result The extraction result
-    # @param [Integer] latency_ms Latency in milliseconds
-    # @param [String, nil] prompt The prompt text
-    # @param [Integer, nil] html_size Size of HTML content
-    # @return [AiExtractionLog, nil] The log record or nil
-    def log_extraction_result(result, latency_ms:, prompt: nil, html_size: nil)
-      logger = create_extraction_logger(prompt: prompt, html_size: html_size)
-      logger.record_result(result, latency_ms: latency_ms, prompt: prompt, html_size: html_size)
-    rescue => e
-      Rails.logger.warn("Failed to log extraction result: #{e.message}")
-      nil
-    end
-
-    # Parses and validates the LLM response
-    #
-    # @param [String] response_text The LLM response text
-    # @return [Hash] Parsed and validated response
-    def parse_response(response_text)
-      # Try to extract JSON from the response
-      json_match = response_text.match(/\{.*\}/m)
-      return { error: "No JSON found in response", confidence: 0.0 } unless json_match
-
-      data = JSON.parse(json_match[0])
-
-      # Ensure required fields have defaults
-      {
-        title: data["title"],
-        company: data["company"],
-        job_role: data["job_role"],
-        description: data["description"],
-        requirements: data["requirements"],
-        responsibilities: data["responsibilities"],
-        location: data["location"],
-        remote_type: data["remote_type"],
-        salary_min: data["salary_min"],
-        salary_max: data["salary_max"],
-        salary_currency: data["salary_currency"] || "USD",
-        equity_info: data["equity_info"],
-        benefits: data["benefits"],
-        perks: data["perks"],
-        custom_sections: data["custom_sections"] || {},
-        confidence: data["confidence_score"] || 0.5,
-        notes: data["notes"]
+        input_tokens: input_tokens,
+        output_tokens: output_tokens,
+        latency_ms: latency_ms
       }
-    rescue JSON::ParserError => e
-      Rails.logger.error("Failed to parse LLM response: #{e.message}")
-      { error: "Invalid JSON response", confidence: 0.0 }
     end
-  end
 
-  # Configuration helper for LLM providers (database-backed)
-  module ProviderConfigHelper
-    class << self
-      # Returns the default provider name
-      #
-      # @return [String] Default provider name
-      def default_provider
-        ::LlmProviderConfig.default_provider&.provider_type || "anthropic"
-      end
+    # Builds an error response hash
+    #
+    # @param error [String] Error message
+    # @param latency_ms [Integer] Latency in milliseconds
+    # @param error_type [String] Error classification
+    # @param rate_limit [Boolean] Whether this is a rate limit error
+    # @param retry_after [Integer, nil] Seconds to wait before retry
+    # @return [Hash] Error response
+    def error_response(error:, latency_ms:, error_type: nil, rate_limit: false, retry_after: nil)
+      response = {
+        content: nil,
+        error: error,
+        provider: provider_name,
+        model: model_name,
+        error_type: error_type,
+        latency_ms: latency_ms
+      }
+      response[:rate_limit] = true if rate_limit
+      response[:retry_after] = retry_after if retry_after
+      response
+    end
 
-      # Returns the list of fallback provider names
-      #
-      # @return [Array<String>] Fallback provider names
-      def fallback_providers
-        ::LlmProviderConfig.fallback_providers.pluck(:provider_type)
-      end
-
-      # Returns all available providers in priority order
-      #
-      # @return [Array<String>] Provider names
-      def all_providers
-        [ default_provider ] + fallback_providers
-      end
+    # Notifies about an AI error
+    #
+    # @param exception [Exception] The exception
+    # @param context [Hash] Additional context
+    def notify_error(exception, context = {})
+      ExceptionNotifier.notify_ai_error(exception, {
+        provider_name: provider_name,
+        model_identifier: model_name
+      }.merge(context))
     end
   end
 end

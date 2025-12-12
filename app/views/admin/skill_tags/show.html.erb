@@ -1,0 +1,109 @@
+<% content_for :title, "#{@skill_tag.name} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: @skill_tag.name,
+      description: @skill_tag.category || "Skill tag details",
+      breadcrumbs: [
+        { label: "Skill Tags", path: admin_skill_tags_path },
+        { label: @skill_tag.name }
+      ],
+      actions: render("admin/shared/action_bar", actions: [
+        {
+          label: "Edit",
+          path: edit_admin_skill_tag_path(@skill_tag),
+          style: :primary
+        }
+      ]) %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Usage Statistics -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          Usage Statistics
+        </h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Total Usage</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+              <%= @usage_count %>
+            </p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Interview Applications</p>
+          </div>
+          <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Category</p>
+            <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
+              <%= @skill_tag.category || "—" %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interview Applications -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+              Interview Applications
+            </h2>
+            <span class="text-sm text-slate-500 dark:text-slate-400">
+              <%= @usage_count %> total
+            </span>
+          </div>
+        </div>
+
+        <% if @interview_applications.any? %>
+          <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            <% @interview_applications.each do |application| %>
+              <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-900 dark:text-white">
+                      <%= application.company.name %> • <%= application.job_role.title %>
+                    </p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <%= application.user.display_name %> • <%= application.pipeline_stage&.titleize || "No stage" %>
+                    </p>
+                    <div class="mt-2">
+                      <%= render "admin/shared/status_badge", status: application.status, custom_colors: {
+                        "active" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                        "archived" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300",
+                        "rejected" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+                        "accepted" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                      } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            No interview applications use this skill tag
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <%= render "admin/shared/info_card",
+          title: "Skill Tag Details",
+          data: {
+            "Name" => @skill_tag.name,
+            "Category" => @skill_tag.category || "—",
+            "Usage Count" => @usage_count
+          } %>
+
+      <%= render "admin/shared/info_card",
+          title: "Timestamps",
+          data: {
+            "Created" => @skill_tag.created_at.strftime("%B %d, %Y at %H:%M"),
+            "Updated" => @skill_tag.updated_at.strftime("%B %d, %Y at %H:%M")
+          } %>
+    </div>
+  </div>
+</div>
+

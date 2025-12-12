@@ -124,6 +124,115 @@
         </div>
       </div>
 
+      <!-- Skills Summary Card -->
+      <% if @insights[:skill_insights] && @insights[:skill_insights][:total] > 0 %>
+        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+              🎯 Your Skills Summary
+            </h2>
+            <%= link_to skills_path, class: "text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center" do %>
+              View Full Dashboard
+              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            <% end %>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Skills Stats -->
+            <div class="col-span-1">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-3 bg-gray-50 dark:bg-dark-800 rounded-lg">
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @insights[:skill_insights][:total] %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Total Skills</p>
+                </div>
+                <div class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <p class="text-2xl font-bold text-green-600 dark:text-green-400"><%= @insights[:skill_insights][:strong] %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Strong (4+)</p>
+                </div>
+                <div class="text-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                  <p class="text-2xl font-bold text-amber-600 dark:text-amber-400"><%= @insights[:skill_insights][:developing] %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Developing</p>
+                </div>
+                <div class="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p class="text-2xl font-bold text-blue-600 dark:text-blue-400"><%= @insights[:skill_insights][:average_level] %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Avg Level</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top 5 Skills Visualization -->
+            <div class="col-span-1">
+              <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Skills</h3>
+              <div class="space-y-2">
+                <% @insights[:skill_insights][:top_skills]&.each do |skill| %>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-700 dark:text-gray-300 w-24 truncate" title="<%= skill[:name] %>">
+                      <%= skill[:name] %>
+                    </span>
+                    <div class="flex-1 bg-gray-200 dark:bg-dark-700 rounded-full h-2">
+                      <div
+                        class="<%= skill[:level] >= 4 ? 'bg-green-500' : skill[:level] >= 2.5 ? 'bg-amber-500' : 'bg-blue-500' %> h-2 rounded-full"
+                        style="width: <%= (skill[:level] / 5.0 * 100).round %>%"
+                      ></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 w-8 text-right">
+                      <%= skill[:level] %>
+                    </span>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <!-- Category Distribution & Target Match -->
+            <div class="col-span-1">
+              <% if @insights[:skill_insights][:categories]&.any? %>
+                <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Categories</h3>
+                <div class="flex flex-wrap gap-2 mb-4">
+                  <% @insights[:skill_insights][:categories].first(4).each do |category, count| %>
+                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300">
+                      <%= category || "Other" %> (<%= count %>)
+                    </span>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <% if @insights[:skill_insights][:matching_target_roles] && @insights[:skill_insights][:matching_target_roles] > 0 %>
+                <div class="mt-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Target Role Match</span>
+                    <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
+                      <%= @insights[:skill_insights][:matching_target_roles] %>%
+                    </span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            🎯 Your Skills Summary
+          </h2>
+          <div class="text-center py-6">
+            <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              Upload a resume to build your skill profile
+            </p>
+            <%= link_to new_user_resume_path, class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors" do %>
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Upload Resume
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
       <!-- Two Column Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <!-- Top Strengths -->
@@ -257,5 +366,4 @@
           </div>
         <% end %>
       </div>
-    </div>
 </div>

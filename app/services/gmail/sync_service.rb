@@ -30,6 +30,23 @@ class Gmail::SyncService
     "position has been filled"
   ].freeze
 
+  # Keywords that indicate recruiter outreach (new opportunity)
+  RECRUITER_OUTREACH_KEYWORDS = [
+    "opportunity",
+    "exciting role",
+    "perfect fit",
+    "your profile",
+    "your background",
+    "reaching out",
+    "interested in you",
+    "open position",
+    "hiring for",
+    "would you be interested",
+    "great match",
+    "ideal candidate",
+    "came across your"
+  ].freeze
+
   # Common recruiting email domains
   RECRUITER_DOMAINS = [
     "greenhouse.io",
@@ -41,6 +58,18 @@ class Gmail::SyncService
     "smartrecruiters.com",
     "ashbyhq.com",
     "bamboohr.com"
+  ].freeze
+
+  # Domains that send recruiter outreach (LinkedIn, job boards)
+  OUTREACH_DOMAINS = [
+    "linkedin.com",
+    "mail.linkedin.com",
+    "hired.com",
+    "angel.co",
+    "wellfound.com",
+    "dice.com",
+    "indeed.com",
+    "ziprecruiter.com"
   ].freeze
 
   # @return [ConnectedAccount] The connected account
@@ -86,9 +115,10 @@ class Gmail::SyncService
         emails_new: sync_results[:new_count],
         emails_processed: sync_results[:processed_count],
         emails_matched: sync_results[:matched_count],
+        opportunities_created: sync_results[:opportunities_count],
         synced_at: Time.current
       }
-    rescue Gmail::TokenExpiredError => e
+    rescue Gmail::Errors::TokenExpiredError => e
       { success: false, error: e.message, needs_reauth: true }
     rescue Google::Apis::Error => e
       Rails.logger.error "Gmail API error: #{e.message}"
@@ -108,7 +138,8 @@ class Gmail::SyncService
       total: user.synced_emails.from_account(connected_account).count,
       pending: user.synced_emails.from_account(connected_account).pending.count,
       processed: user.synced_emails.from_account(connected_account).processed.count,
-      matched: user.synced_emails.from_account(connected_account).matched.count
+      matched: user.synced_emails.from_account(connected_account).matched.count,
+      opportunities: user.opportunities.actionable.count
     }
   end
 
@@ -157,15 +188,24 @@ class Gmail::SyncService
     # Search for emails from the last 30 days
     after_date = 30.days.ago.strftime("%Y/%m/%d")
 
-    # Build keyword query
-    keyword_query = INTERVIEW_KEYWORDS.map { |kw| "\"#{kw}\"" }.join(" OR ")
+    # Build keyword query for interview-related emails
+    interview_keyword_query = INTERVIEW_KEYWORDS.map { |kw| "\"#{kw}\"" }.join(" OR ")
+
+    # Build keyword query for recruiter outreach
+    outreach_keyword_query = RECRUITER_OUTREACH_KEYWORDS.map { |kw| "\"#{kw}\"" }.join(" OR ")
 
     # Build domain query for ATS systems
-    domain_query = RECRUITER_DOMAINS.map { |d| "from:#{d}" }.join(" OR ")
+    ats_domain_query = RECRUITER_DOMAINS.map { |d| "from:#{d}" }.join(" OR ")
 
-    # Combine queries - look for keyword matches OR from known recruiting systems
-    # Only in inbox and important/starred, exclude spam and trash
-    "after:#{after_date} in:inbox -in:spam -in:trash (#{keyword_query} OR #{domain_query})"
+    # Build domain query for outreach platforms (LinkedIn, job boards)
+    outreach_domain_query = OUTREACH_DOMAINS.map { |d| "from:#{d}" }.join(" OR ")
+
+    # Combine all queries - look for keyword matches OR from known systems
+    # Only in inbox, exclude spam and trash
+    all_keywords = "(#{interview_keyword_query} OR #{outreach_keyword_query})"
+    all_domains = "(#{ats_domain_query} OR #{outreach_domain_query})"
+
+    "after:#{after_date} in:inbox -in:spam -in:trash (#{all_keywords} OR #{all_domains})"
   end
 
   # Parses email messages into structured data
@@ -272,7 +312,7 @@ class Gmail::SyncService
   # @param parsed_emails [Array<Hash>] Parsed email data
   # @return [Hash] Processing statistics
   def store_and_process_emails(parsed_emails)
-    stats = { new_count: 0, processed_count: 0, matched_count: 0 }
+    stats = { new_count: 0, processed_count: 0, matched_count: 0, opportunities_count: 0 }
 
     parsed_emails.each do |email_data|
       # Create or find existing synced email
@@ -280,13 +320,21 @@ class Gmail::SyncService
       next unless synced_email
 
       # Track if this is a new email
-      stats[:new_count] += 1 if synced_email.created_at >= 1.minute.ago
+      is_new_email = synced_email.created_at >= 1.minute.ago
+      stats[:new_count] += 1 if is_new_email
 
       # Process the email if it's pending
       if synced_email.pending?
         result = Gmail::EmailProcessorService.new(synced_email).run
         stats[:processed_count] += 1 if result[:success]
-        stats[:matched_count] += 1 if synced_email.reload.matched?
+
+        # Check for recruiter outreach and create opportunity
+        if is_new_email && result[:email_type] == "recruiter_outreach"
+          opportunity = create_opportunity_from_email(synced_email)
+          stats[:opportunities_count] += 1 if opportunity
+        elsif synced_email.reload.matched?
+          stats[:matched_count] += 1
+        end
       elsif synced_email.matched?
         stats[:matched_count] += 1
       end
@@ -294,5 +342,25 @@ class Gmail::SyncService
 
     stats
   end
-end
 
+  # Creates an opportunity from a recruiter outreach email
+  #
+  # @param synced_email [SyncedEmail] The synced email
+  # @return [Opportunity, nil] Created opportunity or nil
+  def create_opportunity_from_email(synced_email)
+    return nil if synced_email.opportunity.present?
+
+    detector = Gmail::OpportunityDetectorService.new(synced_email)
+    return nil unless detector.recruiter_outreach?
+
+    opportunity = detector.create_opportunity!
+
+    # Queue background job for AI extraction
+    ProcessOpportunityEmailJob.perform_later(opportunity.id)
+
+    opportunity
+  rescue StandardError => e
+    Rails.logger.error "Failed to create opportunity: #{e.message}"
+    nil
+  end
+end

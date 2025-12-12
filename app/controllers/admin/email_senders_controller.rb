@@ -6,18 +6,19 @@ module Admin
   # Provides listing, filtering, viewing, editing, and bulk company assignment
   # for email senders discovered during Gmail sync.
   class EmailSendersController < BaseController
+    include Concerns::Paginatable
+    include Concerns::Filterable
+    include Concerns::StatsCalculator
+
     PER_PAGE = 30
 
-    before_action :set_email_sender, only: [:show, :edit, :update]
+    before_action :set_email_sender, only: [ :show, :edit, :update ]
 
     # GET /admin/email_senders
     #
     # Lists email senders with filtering and pagination
     def index
-      @page = (params[:page] || 1).to_i
-      @email_senders = filtered_senders.limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
-      @total_count = filtered_senders.count
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
+      @pagy, @email_senders = paginate(filtered_senders)
       @stats = calculate_stats
       @filters = filter_params
       @companies = Company.order(:name).limit(100)
@@ -156,7 +157,7 @@ module Admin
     #
     # @return [Hash]
     def filter_params
-      params.permit(:status, :domain, :sender_type, :search, :sort)
+      params.permit(:status, :domain, :sender_type, :search, :sort, :page)
     end
 
     # Strong params for email sender
@@ -167,4 +168,3 @@ module Admin
     end
   end
 end
-

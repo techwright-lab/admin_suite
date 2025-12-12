@@ -1,0 +1,78 @@
+<% content_for :title, "Resumes & Skills" %>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+          Resumes & Skills
+        </h1>
+
+        <p class="mt-2 text-gray-600 dark:text-gray-400">
+          Upload your resumes to build your skill profile
+        </p>
+      </div>
+
+      <%= link_to new_user_resume_path, class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors" do %>
+        <svg
+          class="w-5 h-5 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        Upload Resume
+      <% end %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Resume List (Left Column) -->
+    <div class="lg:col-span-2 space-y-6">
+      <div
+        class="
+          bg-white dark:bg-dark-900 rounded-xl shadow-sm border
+          border-gray-200 dark:border-gray-700
+        "
+      >
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Your Resumes
+          </h2>
+
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            <%= @user_resumes.count %>
+            resume<%= @user_resumes.count == 1 ? '' : 's' %> uploaded
+          </p>
+        </div>
+
+        <div
+          id="resumes_list"
+          class="divide-y divide-gray-200 dark:divide-gray-700"
+        >
+          <% if @user_resumes.any? %>
+            <% @user_resumes.each do |user_resume| %>
+              <%= render "user_resumes/resume_card", user_resume: user_resume %>
+            <% end %>
+          <% else %>
+            <%= render "user_resumes/empty_state" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill Profile Sidebar (Right Column) -->
+    <div class="space-y-6">
+      <div id="skill_profile">
+        <%= render "user_resumes/skill_profile", user_skills: @user_skills %>
+      </div>
+    </div>
+  </div>
+</div>

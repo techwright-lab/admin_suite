@@ -1,0 +1,49 @@
+<% return unless local_assigns[:pagy] && pagy.pages > 1 %>
+
+<div class="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+  <div class="flex items-center justify-between">
+    <div class="text-sm text-slate-500 dark:text-slate-400">
+      Showing <%= pagy.from %> to <%= pagy.to %> of <%= pagy.count %>
+    </div>
+
+    <nav class="flex items-center gap-1">
+      <%# Previous button %>
+      <% if pagy.prev %>
+        <%= link_to url_for(params.permit!.merge(page: pagy.prev)),
+            class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" do %>
+          Previous
+        <% end %>
+      <% else %>
+        <span class="px-3 py-1 text-sm bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+          Previous
+        </span>
+      <% end %>
+
+      <%# Page numbers %>
+      <% pagy.series.each do |item| %>
+        <% if item == :gap %>
+          <span class="px-2 py-1 text-sm text-slate-500 dark:text-slate-400">…</span>
+        <% elsif item.is_a?(Integer) %>
+          <%= link_to item, url_for(params.permit!.merge(page: item)),
+              class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" %>
+        <% elsif item.is_a?(String) %>
+          <span class="px-3 py-1 text-sm bg-primary-600 text-white border border-primary-600 rounded-lg">
+            <%= item %>
+          </span>
+        <% end %>
+      <% end %>
+
+      <%# Next button %>
+      <% if pagy.next %>
+        <%= link_to url_for(params.permit!.merge(page: pagy.next)),
+            class: "px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600" do %>
+          Next
+        <% end %>
+      <% else %>
+        <span class="px-3 py-1 text-sm bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+          Next
+        </span>
+      <% end %>
+    </nav>
+  </div>
+</div>

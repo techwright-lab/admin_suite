@@ -12,10 +12,29 @@ class ProfileInsightsService
   def generate_insights
     {
       stats: interview_stats,
+      skill_insights: skill_insights,
       strengths: top_strengths,
       improvements: areas_to_improve,
       timeline: learning_timeline,
       recent_activity: recent_activity
+    }
+  end
+
+  # Skill-related insights from user profile
+  # @return [Hash] Skill statistics and insights
+  def skill_insights
+    user_skills = @user.user_skills.includes(:skill_tag)
+
+    {
+      total: user_skills.count,
+      strong: user_skills.strong_skills.count,
+      moderate: user_skills.moderate_skills.count,
+      developing: user_skills.developing_skills.count,
+      top_skills: user_skills.by_level_desc.limit(5).map { |s| { name: s.skill_name, level: s.aggregated_level.round(1) } },
+      categories: user_skills.group(:category).count.sort_by { |_, v| -v }.first(5).to_h,
+      average_level: user_skills.average(:aggregated_level)&.round(1) || 0,
+      resumes_analyzed: @user.user_resumes.analyzed.count,
+      matching_target_roles: calculate_target_role_match_percentage(user_skills)
     }
   end
 
@@ -149,5 +168,27 @@ class ProfileInsightsService
     else
       "neutral"
     end
+  end
+
+  # Calculate percentage of skills matching target roles
+  # @param user_skills [ActiveRecord::Relation] User skills relation
+  # @return [Integer] Percentage of matching skills (0-100)
+  def calculate_target_role_match_percentage(user_skills)
+    target_roles = @user.target_job_roles
+    return 0 if target_roles.empty? || user_skills.empty?
+
+    # Get required skills from target roles via application skill tags
+    target_role_skill_ids = ApplicationSkillTag.joins(:interview_application)
+      .where(interview_applications: { job_role_id: target_roles.pluck(:id) })
+      .distinct
+      .pluck(:skill_tag_id)
+
+    return 0 if target_role_skill_ids.empty?
+
+    # Calculate overlap
+    user_skill_ids = user_skills.pluck(:skill_tag_id)
+    matching_skills = (user_skill_ids & target_role_skill_ids).count
+
+    ((matching_skills.to_f / target_role_skill_ids.count) * 100).round
   end
 end

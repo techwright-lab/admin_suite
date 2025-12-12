@@ -10,7 +10,7 @@ class JobListing < ApplicationRecord
   has_many :interview_applications, dependent: :nullify
   has_many :scraping_attempts, dependent: :destroy
   has_many :scraped_job_listing_data, class_name: "ScrapedJobListingData", dependent: :destroy
-  has_many :ai_extraction_logs, dependent: :destroy
+  has_many :llm_api_logs, class_name: "Ai::LlmApiLog", as: :loggable, dependent: :destroy
 
   enum :remote_type, REMOTE_TYPES, default: :on_site
   enum :status, STATUSES, default: :active

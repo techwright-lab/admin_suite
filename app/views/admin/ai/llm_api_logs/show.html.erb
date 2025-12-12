@@ -1,0 +1,212 @@
+<% content_for :title, "LLM API Log ##{@log.id} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+      <%= link_to "LLM API Logs", admin_ai_llm_api_logs_path, class: "hover:text-amber-600" %>
+      <span>/</span>
+      <span>Log #<%= @log.id %></span>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+          <%= @log.operation_type_name %> Log
+        </h1>
+        <% status_colors = { 
+          "success" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", 
+          "error" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", 
+          "timeout" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400", 
+          "rate_limited" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" 
+        } %>
+        <span class="px-2 py-1 text-xs font-semibold rounded-full <%= status_colors[@log.status] %>">
+          <%= @log.status.titleize %>
+        </span>
+      </div>
+
+      <div class="text-sm text-slate-500 dark:text-slate-400">
+        <%= @log.created_at.strftime("%b %d, %Y at %H:%M:%S") %>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Request Payload -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Request Payload</h2>
+        </div>
+        <div class="p-6">
+          <% if @log.request_payload.present? %>
+            <pre class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 overflow-x-auto text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto"><%= JSON.pretty_generate(@log.request_payload) rescue @log.request_payload.inspect %></pre>
+          <% else %>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">No request payload available</p>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Response Payload -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Response Payload</h2>
+        </div>
+        <div class="p-6">
+          <% if @log.response_payload.present? %>
+            <pre class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 overflow-x-auto text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto"><%= JSON.pretty_generate(@log.response_payload) rescue @log.response_payload.inspect %></pre>
+          <% else %>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">No response payload available</p>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Error Details (if any) -->
+      <% if @log.error_message.present? %>
+        <div class="bg-red-50 dark:bg-red-900/20 rounded-xl shadow-sm border border-red-200 dark:border-red-800">
+          <div class="px-6 py-4 border-b border-red-200 dark:border-red-800">
+            <h2 class="text-lg font-semibold text-red-800 dark:text-red-300">Error Details</h2>
+          </div>
+          <div class="p-6">
+            <dl class="space-y-4">
+              <% if @log.error_type.present? %>
+                <div>
+                  <dt class="text-sm font-medium text-red-600 dark:text-red-400">Error Type</dt>
+                  <dd class="mt-1 text-sm text-red-800 dark:text-red-300"><%= @log.error_type %></dd>
+                </div>
+              <% end %>
+              <div>
+                <dt class="text-sm font-medium text-red-600 dark:text-red-400">Error Message</dt>
+                <dd class="mt-1 text-sm text-red-800 dark:text-red-300"><%= @log.error_message %></dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <!-- Details -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Details</h2>
+        </div>
+        <div class="p-6">
+          <dl class="space-y-4">
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Operation</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= @log.operation_type_name %></dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Provider</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= @log.provider.titleize %></dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Model</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white font-mono"><%= @log.model %></dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Latency</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= @log.formatted_latency %></dd>
+            </div>
+            <% if @log.confidence_score %>
+              <div>
+                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Confidence</dt>
+                <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= (@log.confidence_score * 100).round(1) %>%</dd>
+              </div>
+            <% end %>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Token Usage -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Token Usage</h2>
+        </div>
+        <div class="p-6">
+          <dl class="space-y-4">
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Input Tokens</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= number_with_delimiter(@log.input_tokens) || "-" %></dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Output Tokens</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= number_with_delimiter(@log.output_tokens) || "-" %></dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Tokens</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= number_with_delimiter(@log.total_tokens) || "-" %></dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Estimated Cost</dt>
+              <dd class="mt-1 text-sm text-green-600 dark:text-green-400 font-medium"><%= @log.formatted_cost %></dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Loggable Object -->
+      <% if @log.loggable.present? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Related Object</h2>
+          </div>
+          <div class="p-6">
+            <dl class="space-y-4">
+              <div>
+                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Type</dt>
+                <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= @log.loggable_type %></dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">ID</dt>
+                <dd class="mt-1 text-sm text-slate-900 dark:text-white">#<%= @log.loggable_id %></dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Prompt Template -->
+      <% if @log.llm_prompt.present? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Prompt Template</h2>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-slate-900 dark:text-white mb-2"><%= @log.llm_prompt.name %></p>
+            <%= link_to "View Template", admin_ai_llm_prompt_path(@log.llm_prompt), class: "text-sm text-amber-600 hover:text-amber-800 dark:text-amber-400" %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Related Logs -->
+      <% if @related_logs.any? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Related Logs</h2>
+          </div>
+          <div class="p-6">
+            <div class="space-y-3">
+              <% @related_logs.each do |related| %>
+                <div class="flex items-center justify-between text-sm">
+                  <div>
+                    <span class="text-slate-500 dark:text-slate-400"><%= related.created_at.strftime("%b %d, %H:%M") %></span>
+                    <span class="text-slate-900 dark:text-white ml-2"><%= related.provider %></span>
+                  </div>
+                  <%= link_to "View", admin_ai_llm_api_log_path(related), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+
+
+

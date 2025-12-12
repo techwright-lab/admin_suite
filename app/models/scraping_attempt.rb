@@ -19,7 +19,7 @@ class ScrapingAttempt < ApplicationRecord
 
   belongs_to :job_listing
   has_one :scraped_job_listing_data, dependent: :nullify
-  has_many :ai_extraction_logs, dependent: :destroy
+  has_many :llm_api_logs, class_name: "Ai::LlmApiLog", as: :loggable, dependent: :destroy
   has_many :scraping_events, dependent: :destroy
   has_one :html_scraping_log, dependent: :destroy
 

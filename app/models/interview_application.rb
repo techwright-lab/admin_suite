@@ -19,6 +19,7 @@ class InterviewApplication < ApplicationRecord
   has_many :skill_tags, through: :application_skill_tags
   has_one :company_feedback, dependent: :destroy, foreign_key: :interview_application_id
   has_many :synced_emails, dependent: :nullify
+  has_one :opportunity, dependent: :nullify
 
   validates :user, presence: true
   validates :company, presence: true

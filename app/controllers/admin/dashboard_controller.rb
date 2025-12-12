@@ -9,6 +9,8 @@ module Admin
     def index
       @stats = calculate_dashboard_stats
       @gmail_stats = calculate_gmail_stats
+      @content_stats = calculate_content_stats
+      @ai_llm_stats = calculate_ai_llm_stats
     end
 
     private
@@ -85,11 +87,45 @@ module Admin
     #
     # @return [Integer] Count of today's AI logs
     def ai_logs_today_count
-      return 0 unless defined?(AiExtractionLog)
+      return 0 unless defined?(Ai::LlmApiLog)
 
-      AiExtractionLog.where("created_at > ?", Time.current.beginning_of_day).count
+      Ai::LlmApiLog.where("created_at > ?", Time.current.beginning_of_day).count
     rescue
       0
+    end
+
+    # Calculates content statistics
+    #
+    # @return [Hash] Content stats
+    def calculate_content_stats
+      {
+        total_companies: Company.count,
+        companies_with_logos: Company.where.not(logo_url: [ nil, "" ]).count,
+        total_job_roles: JobRole.count,
+        job_roles_with_category: JobRole.where.not(category: [ nil, "" ]).count,
+        total_settings: Setting.count,
+        enabled_settings: Setting.where(value: true).count
+      }
+    rescue StandardError => e
+      Rails.logger.warn "Failed to calculate content stats: #{e.message}"
+      {}
+    end
+
+    # Calculates AI/LLM statistics
+    #
+    # @return [Hash] AI/LLM stats
+    def calculate_ai_llm_stats
+      {
+        total_prompt_templates: Ai::LlmPrompt.count,
+        active_prompt_template: Ai::LlmPrompt.where(active: true).first&.name || "None",
+        total_llm_providers: LlmProviderConfig.count,
+        enabled_providers: LlmProviderConfig.where(enabled: true).count,
+        ready_providers: LlmProviderConfig.all.select(&:ready?).count,
+        providers_without_api_key: LlmProviderConfig.all.reject(&:api_key_configured?).count
+      }
+    rescue StandardError => e
+      Rails.logger.warn "Failed to calculate AI/LLM stats: #{e.message}"
+      {}
     end
   end
 end

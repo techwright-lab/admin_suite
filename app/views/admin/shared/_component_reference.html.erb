@@ -1,0 +1,271 @@
+<%#
+  Component Reference Page
+
+  This page demonstrates all available admin UI components.
+  Access it at /admin/component_reference (if route exists) or use as a reference.
+
+  This is a documentation/example page showing how to use all the design system components.
+%>
+<% content_for :title, "Component Reference - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <!-- Page Header Examples -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Page Header
+    </h2>
+
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+        Basic Header
+      </h3>
+
+      <%= render "admin/shared/page_header",
+          title: "Users",
+          description: "Manage users and view their Gmail sync status" %>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+        Header with Breadcrumbs
+      </h3>
+
+      <%= render "admin/shared/page_header",
+          title: "User Details",
+          description: "john@example.com",
+          breadcrumbs: [
+            { label: "Users", path: admin_users_path },
+            { label: "John Doe" }
+          ] %>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+        Header with Actions
+      </h3>
+
+      <%= render "admin/shared/page_header",
+          title: "Users",
+          actions: link_to("New User", "#", class: "inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg") %>
+    </div>
+  </section>
+
+  <!-- Stats Grid Examples -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Stats Grid
+    </h2>
+
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+        Basic Stats
+      </h3>
+
+      <%= render "admin/shared/stats_grid",
+          stats: {
+            total: 150,
+            active: 120,
+            inactive: 30
+          } %>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+        Stats with Custom Colors
+      </h3>
+
+      <%= render "admin/shared/stats_grid",
+          stats: {
+            total: 150,
+            active: 120,
+            inactive: 30,
+            pending: 15
+          },
+          colors: {
+            total: "text-slate-900 dark:text-white",
+            active: "text-green-600 dark:text-green-400",
+            inactive: "text-red-600 dark:text-red-400",
+            pending: "text-amber-600 dark:text-amber-400"
+          } %>
+    </div>
+  </section>
+
+  <!-- Filter Sidebar Examples -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Filter Sidebar
+    </h2>
+
+    <div class="flex flex-col lg:flex-row gap-6">
+      <%= render "admin/shared/filter_sidebar",
+          url: "#",
+          filters: [
+            {
+              type: :text,
+              name: :search,
+              label: "Search",
+              placeholder: "Email or name...",
+              value: nil
+            },
+            {
+              type: :select,
+              name: :status,
+              label: "Status",
+              options: [["All", ""], ["Active", "active"], ["Inactive", "inactive"], ["Pending", "pending"]],
+              value: nil
+            },
+            {
+              type: :select,
+              name: :sort,
+              label: "Sort By",
+              options: [["Recent", "recent"], ["Name", "name"], ["Email Count", "email_count"]],
+              value: nil
+            }
+          ] %>
+
+      <div class="flex-1">
+        <div
+          class="
+            bg-white dark:bg-slate-800 rounded-xl shadow-sm border
+            border-slate-200 dark:border-slate-700 p-6
+          "
+        >
+          <p class="text-sm text-slate-600 dark:text-slate-400">
+            This is where your filtered content would appear. The filter sidebar
+            is on the left.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Status Badge Examples -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Status Badges
+    </h2>
+
+    <div
+      class="
+        bg-white dark:bg-slate-800 rounded-xl shadow-sm border
+        border-slate-200 dark:border-slate-700 p-6
+      "
+    >
+      <div class="flex flex-wrap gap-4">
+        <%= render "admin/shared/status_badge", status: "active" %>
+        <%= render "admin/shared/status_badge", status: "inactive" %>
+        <%= render "admin/shared/status_badge", status: "pending" %>
+        <%= render "admin/shared/status_badge", status: "completed" %>
+        <%= render "admin/shared/status_badge", status: "failed" %>
+        <%= render "admin/shared/status_badge", status: "closed" %>
+        <%= render "admin/shared/status_badge", status: "draft" %>
+      </div>
+    </div>
+  </section>
+
+  <!-- Action Bar Examples -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Action Bar
+    </h2>
+
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+        Primary Actions
+      </h3>
+
+      <%= render "admin/shared/action_bar", actions: [
+        { label: "Edit", path: "#", style: :primary },
+        { label: "View Original", path: "#", style: :secondary, target: "_blank" }
+      ] %>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+        With Danger Action
+      </h3>
+
+      <%= render "admin/shared/action_bar", actions: [
+        { label: "Edit", path: "#", style: :primary },
+        { label: "Delete", path: "#", method: :delete, style: :danger, confirm: "Are you sure?" }
+      ] %>
+    </div>
+  </section>
+
+  <!-- Info Card Examples -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Info Cards
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <%= render "admin/shared/info_card",
+          title: "User Details",
+          data: {
+            "Name" => "John Doe",
+            "Email" => "john@example.com",
+            "Role" => "Admin",
+            "Created" => "January 1, 2024"
+          } %>
+
+      <%= render "admin/shared/info_card",
+          title: "System Info",
+          data: {
+            "Version" => "1.0.0",
+            "Environment" => "Production",
+            "Last Updated" => "December 6, 2025"
+          } %>
+    </div>
+  </section>
+
+  <!-- Data Table Example -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Data Table
+    </h2>
+
+    <%= render "admin/shared/data_table",
+        collection: [
+          { name: "John Doe", email: "john@example.com", status: "active" },
+          { name: "Jane Smith", email: "jane@example.com", status: "inactive" },
+          { name: "Bob Johnson", email: "bob@example.com", status: "pending" }
+        ],
+        columns: [
+          { 
+            header: "Name",
+            content: ->(item) { item[:name] }
+          },
+          { 
+            header: "Email",
+            content: ->(item) { item[:email] }
+          },
+          { 
+            header: "Status",
+            content: ->(item) { render "admin/shared/status_badge", status: item[:status] }
+          },
+          { 
+            header: "Actions",
+            content: ->(item) { link_to "View", "#", class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium" }
+          }
+        ],
+        empty_message: "No items found" %>
+
+    <%# Pagination - Use with @pagy from controller %>
+    <%# render "admin/shared/pagination", pagy: @pagy %>
+  </section>
+
+  <!-- Empty State Example -->
+  <section class="mb-12">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+      Empty State
+    </h2>
+
+    <%= render "admin/shared/data_table",
+        collection: [],
+        columns: [
+          { header: "Name", content: ->(item) { item[:name] } },
+          { header: "Email", content: ->(item) { item[:email] } }
+        ],
+        empty_message: "No items found" %>
+  </section>
+</div>

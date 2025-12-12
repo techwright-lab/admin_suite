@@ -5,16 +5,17 @@ module Admin
   #
   # Provides full CRUD for job listings with extraction status visibility
   class JobListingsController < BaseController
+    include Concerns::Paginatable
+    include Concerns::Filterable
+    include Concerns::StatsCalculator
+
     PER_PAGE = 25
 
     before_action :set_job_listing, only: [ :show, :edit, :update, :destroy ]
 
     # GET /admin/job_listings
     def index
-      @page = (params[:page] || 1).to_i
-      @job_listings = filtered_listings.limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
-      @total_count = filtered_listings.count
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
+      @pagy, @job_listings = paginate(filtered_listings)
       @stats = calculate_stats
       @filters = filter_params
     end
@@ -24,7 +25,7 @@ module Admin
       @scraping_attempts = @job_listing.scraping_attempts.recent.limit(5)
       @latest_attempt = @scraping_attempts.first
       @html_scraping_log = @latest_attempt&.html_scraping_log
-      @ai_extraction_logs = @job_listing.ai_extraction_logs.recent.limit(5)
+      @llm_api_logs = @job_listing.llm_api_logs.order(created_at: :desc).limit(5)
     end
 
     # GET /admin/job_listings/:id/edit
@@ -106,7 +107,7 @@ module Admin
     #
     # @return [Hash] Filter params
     def filter_params
-      params.permit(:status, :remote_type, :company_id, :search, :extraction_status)
+      params.permit(:status, :remote_type, :company_id, :search, :extraction_status, :page)
     end
 
     # Strong params for job listing
@@ -121,4 +122,3 @@ module Admin
     end
   end
 end
-

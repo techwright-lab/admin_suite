@@ -6,6 +6,17 @@ class Setting < ApplicationRecord
     mixpanel_enabled
     sentry_enabled
     bugsnag_enabled
+    api_population_enabled
+    ashby_enabled
+    greenhouse_enabled
+    lever_enabled
+    linkedin_enabled
+    indeed_enabled
+    glassdoor_enabled
+    ziprecruiter_enabled
+    careerbuilder_enabled
+    monster_enabled
+    careerjet_enabled
   ]
 
   CACHE_KEY = "settings"

@@ -1,0 +1,44 @@
+<% content_for :title, "Edit Resume" %>
+
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Back Link -->
+  <div class="mb-6">
+    <%= link_to user_resume_path(@user_resume), class: "inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" do %>
+      <svg
+        class="w-4 h-4 mr-1"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+      Back to Resume
+    <% end %>
+  </div>
+
+  <div
+    class="
+      bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200
+      dark:border-gray-700
+    "
+  >
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        Edit Resume
+      </h1>
+
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Update resume details and targeting
+      </p>
+    </div>
+
+    <div class="p-6">
+      <%= render "user_resumes/form", user_resume: @user_resume, job_roles: @job_roles, companies: @companies %>
+    </div>
+  </div>
+</div>

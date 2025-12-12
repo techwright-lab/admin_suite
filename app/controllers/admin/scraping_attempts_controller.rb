@@ -6,16 +6,13 @@ module Admin
   # Provides index with filters and detailed show view with event timeline
   # and data comparison for debugging the scraping pipeline.
   class ScrapingAttemptsController < BaseController
-    PER_PAGE = 25
+    include Concerns::Paginatable
 
     before_action :set_scraping_attempt, only: [ :show ]
 
     # GET /admin/scraping_attempts
     def index
-      @page = (params[:page] || 1).to_i
-      @attempts = filtered_attempts.limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
-      @total_count = filtered_attempts.count
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
+      @pagy, @attempts = paginate(filtered_attempts)
       @stats = calculate_stats
       @filters = filter_params
     end
@@ -23,7 +20,7 @@ module Admin
     # GET /admin/scraping_attempts/:id
     def show
       @events = @attempt.scraping_events.in_order
-      @ai_logs = @attempt.ai_extraction_logs.recent.limit(10)
+      @ai_logs = @attempt.llm_api_logs.order(created_at: :desc).limit(10)
       @scraped_data = @attempt.scraped_job_listing_data
       @job_listing = @attempt.job_listing
       @timeline_stats = calculate_timeline_stats(@events)
@@ -33,7 +30,7 @@ module Admin
 
     # Sets the scraping attempt from params
     def set_scraping_attempt
-      @attempt = ScrapingAttempt.includes(:job_listing, :scraping_events, :ai_extraction_logs, :scraped_job_listing_data, :html_scraping_log).find(params[:id])
+      @attempt = ScrapingAttempt.includes(:job_listing, :scraping_events, :llm_api_logs, :scraped_job_listing_data, :html_scraping_log).find(params[:id])
     rescue ActiveRecord::RecordNotFound
       redirect_to admin_scraping_attempts_path, alert: "Scraping attempt not found"
     end
@@ -129,4 +126,3 @@ module Admin
     end
   end
 end
-

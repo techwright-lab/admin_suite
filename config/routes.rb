@@ -18,7 +18,16 @@ Rails.application.routes.draw do
     root to: "dashboard#index"
     get "scraping_metrics", to: "scraping_metrics#index"
     resources :job_listings, only: [ :index, :show, :edit, :update, :destroy ]
-    resources :ai_extraction_logs, only: [ :index, :show ]
+    # AI Namespace - LLM Prompts and API Logs
+    namespace :ai do
+      resources :llm_prompts do
+        member do
+          post :activate
+          post :duplicate
+        end
+      end
+      resources :llm_api_logs, only: [ :index, :show ]
+    end
     resources :html_scraping_logs, only: [ :index, :show ]
     resources :scraping_attempts, only: [ :index, :show ]
     resources :scraping_events, only: [ :show ]
@@ -33,6 +42,32 @@ Rails.application.routes.draw do
 
     # Support Tickets
     resources :support_tickets, only: [ :index, :show, :update ]
+
+    # Company and Job Role management
+    resources :companies, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :job_roles, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+
+    # Settings
+    resources :settings, only: [ :index, :show, :new, :create, :edit, :update ]
+
+    # LLM Provider Configs
+    resources :llm_provider_configs, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+      member do
+        post :test_provider
+      end
+    end
+
+    # Content Management
+    resources :skill_tags, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+
+    # Interview Applications (read-only for support/debugging)
+    resources :interview_applications, only: [ :index, :show ]
+
+    # Email Management
+    resources :synced_emails, only: [ :index, :show, :edit, :update ]
+
+    # OAuth & Accounts
+    resources :connected_accounts, only: [ :index, :show ]
   end
 
   # Authentication routes
@@ -106,6 +141,31 @@ Rails.application.routes.draw do
     end
   end
 
+  # Opportunities from recruiter outreach
+  resources :opportunities, only: [ :index, :show ] do
+    member do
+      post :apply
+      post :ignore
+      patch :update_url
+    end
+  end
+
+  # Skills dashboard
+  resources :skills, only: [ :index ]
+
+  # Resumes and skill profile
+  resources :user_resumes, path: "resumes" do
+    member do
+      post :reanalyze
+    end
+    resources :resume_skills, path: "skills", only: [ :update, :destroy ] do
+      collection do
+        post :merge
+        post :bulk_update
+      end
+    end
+  end
+
   # OAuth callbacks
   get "/auth/:provider/callback", to: "oauth_callbacks#create", as: :oauth_callback
   post "/auth/:provider/callback", to: "oauth_callbacks#create" # Also handle POST callbacks
@@ -125,7 +185,7 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Dashboard route for authenticated users
-  get "dashboard", to: "interview_applications#index", as: :dashboard
+  get "dashboard", to: "dashboard#index", as: :dashboard
 
   # Root path - public homepage
   root "public/home#index"

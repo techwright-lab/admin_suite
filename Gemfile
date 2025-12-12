@@ -130,6 +130,10 @@ gem "robots"
 # HTML parsing and cleaning
 gem "nokogiri"
 
+# Document parsing for resume extraction
+gem "pdf-reader"      # PDF text extraction
+gem "docx"            # DOCX text extraction
+
 # awesome_print allows us to `ap` our objects for a clean presentation of them.
 # https://github.com/awesome-print/awesome_print
 gem "awesome_print"
@@ -176,3 +180,6 @@ group :development do
 end
 
 gem "friendly_id"
+
+# Pagination
+gem "pagy", "~> 9.0"

@@ -1,0 +1,88 @@
+<% content_for :title, "Settings - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: "Settings",
+      description: "Manage application settings",
+      actions: link_to("New Setting", new_admin_setting_path, class: "px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors") %>
+
+  <div class="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+    <p class="text-sm text-amber-800 dark:text-amber-400">
+      <strong>Available Settings:</strong> <%= @available_settings.join(", ") %>
+    </p>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <%= render "admin/shared/filter_sidebar",
+        url: admin_settings_path,
+        filters: [
+          {
+            type: :text,
+            name: :search,
+            label: "Search",
+            placeholder: "Setting name...",
+            value: @filters[:search]
+          },
+          {
+            type: :select,
+            name: :value,
+            label: "Status",
+            options: [
+              ["All", ""],
+              ["Enabled", "enabled"],
+              ["Disabled", "disabled"]
+            ],
+            value: @filters[:value]
+          },
+          {
+            type: :select,
+            name: :sort,
+            label: "Sort By",
+            options: [
+              ["Name (A-Z)", "name"],
+              ["Recently Updated", "recent"]
+            ],
+            value: @filters[:sort]
+          }
+        ] %>
+
+    <div class="flex-1 min-w-0">
+      <%= render "admin/shared/data_table",
+          collection: @settings,
+          columns: [
+            {
+              header: "Setting",
+              content: ->(setting) do
+                content_tag(:div) do
+                  content_tag(:p, setting.name, class: "text-sm font-medium text-slate-900 dark:text-white") +
+                  (setting.description.present? ? content_tag(:p, setting.description, class: "text-xs text-slate-500 dark:text-slate-400 mt-1") : "".html_safe)
+                end
+              end
+            },
+            {
+              header: "Value",
+              content: ->(setting) do
+                render "admin/shared/status_badge", status: setting.value ? "enabled" : "disabled", custom_colors: {
+                  "enabled" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                  "disabled" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300"
+                }
+              end,
+              class: "whitespace-nowrap"
+            },
+            {
+              header: "Actions",
+              content: ->(setting) do
+                content_tag(:div, class: "flex items-center gap-2") do
+                  link_to("View", admin_setting_path(setting), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium") +
+                  link_to("Edit", edit_admin_setting_path(setting), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium")
+                end
+              end,
+              class: "whitespace-nowrap text-sm"
+            }
+          ],
+          empty_message: "No settings found" %>
+
+      <%= render "admin/shared/pagination", pagy: @pagy %>
+    </div>
+  </div>
+</div>

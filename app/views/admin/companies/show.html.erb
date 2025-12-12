@@ -1,0 +1,153 @@
+<% content_for :title, "#{@company.name} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: @company.name,
+      description: @company.website || "Company details",
+      breadcrumbs: [
+        { label: "Companies", path: admin_companies_path },
+        { label: @company.name }
+      ],
+      actions: render("admin/shared/action_bar", actions: [
+        {
+          label: "Edit",
+          path: edit_admin_company_path(@company),
+          style: :primary
+        }
+      ]) %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- About -->
+      <% if @company.about.present? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+            About
+          </h2>
+          <div class="prose dark:prose-invert max-w-none">
+            <%= simple_format(@company.about) %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Job Listings -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+              Job Listings
+            </h2>
+            <span class="text-sm text-slate-500 dark:text-slate-400">
+              <%= @company.job_listings.count %> total
+            </span>
+          </div>
+        </div>
+
+        <% if @job_listings.any? %>
+          <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            <% @job_listings.each do |listing| %>
+              <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-900 dark:text-white">
+                      <%= listing.title %>
+                    </p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <%= listing.job_role.title %> • <%= listing.location || "No location" %>
+                    </p>
+                    <div class="mt-2">
+                      <%= render "admin/shared/status_badge", status: listing.status, custom_colors: {
+                        "active" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                        "closed" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300",
+                        "draft" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
+                      } %>
+                    </div>
+                  </div>
+                  <div class="ml-4">
+                    <%= link_to "View", admin_job_listing_path(listing), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            No job listings
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Interview Applications -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+              Interview Applications
+            </h2>
+            <span class="text-sm text-slate-500 dark:text-slate-400">
+              <%= @company.interview_applications.count %> total
+            </span>
+          </div>
+        </div>
+
+        <% if @interview_applications.any? %>
+          <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            <% @interview_applications.each do |application| %>
+              <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-900 dark:text-white">
+                      <%= application.job_role.title %>
+                    </p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <%= application.user.display_name %> • <%= application.pipeline_stage&.titleize || "No stage" %>
+                    </p>
+                  </div>
+                  <div class="ml-4">
+                    <%= render "admin/shared/status_badge", status: application.status, custom_colors: {
+                      "active" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                      "archived" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300"
+                    } %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            No interview applications
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <%= render "admin/shared/info_card",
+          title: "Company Details",
+          data: {
+            "Name" => @company.name,
+            "Website" => (@company.website.present? ? link_to(@company.website, @company.website, target: "_blank", class: "text-amber-600 dark:text-amber-400 hover:underline") : "—"),
+            "Logo" => (@company.logo_url.present? ? "Yes" : "No")
+          } %>
+
+      <%= render "admin/shared/info_card",
+          title: "Statistics",
+          data: {
+            "Job Listings" => @company.job_listings.count,
+            "Applications" => @company.interview_applications.count,
+            "Current Employees" => @company.users_with_current_company.count,
+            "Users Targeting" => @company.users_targeting.count
+          } %>
+
+      <%= render "admin/shared/info_card",
+          title: "Timestamps",
+          data: {
+            "Created" => @company.created_at.strftime("%B %d, %Y at %H:%M"),
+            "Updated" => @company.updated_at.strftime("%B %d, %Y at %H:%M")
+          } %>
+    </div>
+  </div>
+</div>
+

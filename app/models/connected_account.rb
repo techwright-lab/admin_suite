@@ -25,6 +25,9 @@ class ConnectedAccount < ApplicationRecord
   scope :sync_enabled, -> { where(sync_enabled: true) }
   scope :expired, -> { where("expires_at < ?", Time.current) }
   scope :valid_tokens, -> { where("expires_at > ? OR expires_at IS NULL", Time.current) }
+  scope :needs_reauth, -> { where(needs_reauth: true) }
+  scope :ready_for_sync, -> { where(needs_reauth: false) }
+  scope :expiring_soon, -> { where("expires_at < ?", 1.hour.from_now) }
 
   # Checks if the access token is expired
   # @return [Boolean]
@@ -77,7 +80,13 @@ class ConnectedAccount < ApplicationRecord
       refresh_token: auth.credentials.refresh_token || account.refresh_token,
       expires_at: auth.credentials.expires_at ? Time.at(auth.credentials.expires_at) : nil,
       email: auth.info.email,
-      scopes: auth.credentials.scope
+      scopes: auth.credentials.scope,
+      # Clear reauth flags on successful reconnection
+      needs_reauth: false,
+      auth_error_at: nil,
+      auth_error_message: nil,
+      # Re-enable sync if it was disabled due to auth failure
+      sync_enabled: account.sync_enabled? || account.needs_reauth?
     )
 
     account.save!
@@ -88,5 +97,27 @@ class ConnectedAccount < ApplicationRecord
   # @return [Boolean]
   def mark_synced!
     update(last_synced_at: Time.current)
+  end
+
+  # Mark the account as needing reauthorization
+  # @param error_message [String, nil] Optional error message
+  # @return [Boolean]
+  def mark_needs_reauth!(error_message = nil)
+    update!(
+      needs_reauth: true,
+      auth_error_at: Time.current,
+      auth_error_message: error_message,
+      sync_enabled: false
+    )
+  end
+
+  # Clear the reauth requirement
+  # @return [Boolean]
+  def clear_reauth!
+    update!(
+      needs_reauth: false,
+      auth_error_at: nil,
+      auth_error_message: nil
+    )
   end
 end

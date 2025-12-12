@@ -1,0 +1,52 @@
+<% content_for :title, "Opportunities" %>
+<% content_for :full_bleed, true %>
+
+<div class="h-full flex flex-col" data-controller="opportunities">
+  <!-- Header -->
+  <div
+    class="
+      px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-gray-800 border-b
+      border-gray-200 dark:border-gray-700
+    "
+  >
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          Opportunities
+        </h1>
+
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <% if @opportunities.any? %>
+            <%= @opportunities.count %>
+            new
+            <%= "opportunity".pluralize(@opportunities.count) %>
+            from recruiters
+          <% else %>
+            No new opportunities
+          <% end %>
+        </p>
+      </div>
+
+      <% if @opportunities.any? %>
+        <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <span>Swipe through or use buttons</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div
+    class="
+      flex-1 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100
+      dark:from-gray-900 dark:to-gray-800
+    "
+  >
+    <div
+      id="opportunities_stack"
+      class="h-full flex items-center justify-center p-4 sm:p-8"
+    >
+      <%= render "opportunities/stack" %>
+    </div>
+  </div>
+</div>

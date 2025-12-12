@@ -1,0 +1,68 @@
+<% content_for :title, "#{@setting.name} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: @setting.name,
+      description: @setting.description || "Setting details",
+      breadcrumbs: [
+        { label: "Settings", path: admin_settings_path },
+        { label: @setting.name }
+      ],
+      actions: render("admin/shared/action_bar", actions: [
+        {
+          label: "Edit",
+          path: edit_admin_setting_path(@setting),
+          style: :primary
+        }
+      ]) %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          Setting Information
+        </h2>
+
+        <dl class="space-y-4">
+          <div>
+            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Name</dt>
+            <dd class="mt-1 text-sm text-slate-900 dark:text-white font-mono">
+              <%= @setting.name %>
+            </dd>
+          </div>
+
+          <% if @setting.description.present? %>
+            <div>
+              <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Description</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-white">
+                <%= @setting.description %>
+              </dd>
+            </div>
+          <% end %>
+
+          <div>
+            <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Current Value</dt>
+            <dd class="mt-1">
+              <%= render "admin/shared/status_badge", status: @setting.value ? "enabled" : "disabled", custom_colors: {
+                "enabled" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                "disabled" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300"
+              } %>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <%= render "admin/shared/info_card",
+          title: "Timestamps",
+          data: {
+            "Created" => @setting.created_at.strftime("%B %d, %Y at %H:%M"),
+            "Updated" => @setting.updated_at.strftime("%B %d, %Y at %H:%M")
+          } %>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,69 @@
+# frozen_string_literal: true
+
+module Ai
+  # Prompt template for extracting job listing data from HTML
+  #
+  # Used by Scraping::AiJobExtractorService to extract structured job data
+  # from scraped HTML content.
+  #
+  # Variables:
+  # - {{url}} - The job listing URL
+  # - {{html_content}} - The cleaned HTML content
+  #
+  class JobExtractionPrompt < LlmPrompt
+    # Default prompt template for job extraction
+    #
+    # @return [String] Default prompt template
+    def self.default_prompt_template
+      <<~PROMPT
+        You are an expert at extracting structured job listing data from HTML.
+
+        Extract the following information from this job listing HTML and return it as JSON:
+
+        Required fields:
+        - title: Job title
+        - company: Company name (the organization posting the job)
+        - job_role: Job role/title (can be the same as title or a normalized version)
+        - description: Full job description (text only, no HTML)
+        - requirements: Required qualifications and skills
+        - responsibilities: Key responsibilities and duties
+        - location: Office location or "Remote"
+        - remote_type: one of "on_site", "hybrid", or "remote"
+
+        Optional fields (use null if not found):
+        - salary_min: Minimum salary as number
+        - salary_max: Maximum salary as number
+        - salary_currency: Currency code (e.g., "USD", "EUR")
+        - equity_info: Stock options or equity details
+        - benefits: Benefits package description
+        - perks: Additional perks and amenities
+        - custom_sections: Any additional structured data as a JSON object
+
+        Also provide:
+        - confidence_score: Your confidence in the extraction accuracy (0.0 to 1.0)
+        - notes: Any extraction challenges or uncertainties
+
+        Job Listing URL: {{url}}
+
+        HTML Content:
+        {{html_content}}
+
+        Return only valid JSON with no additional commentary.
+      PROMPT
+    end
+
+    # Returns the expected variables for this prompt type
+    #
+    # @return [Hash] Variable definitions
+    def self.default_variables
+      {
+        "url" => { "required" => true, "description" => "The job listing URL" },
+        "html_content" => { "required" => true, "description" => "The cleaned HTML content" }
+      }
+    end
+  end
+end
+
+
+
+

@@ -6,9 +6,10 @@ class GmailSyncAllUsersJob < ApplicationJob
   queue_as :default
 
   # Performs Gmail sync for all users with connected Google accounts
-  # Only syncs accounts that have sync enabled
+  # Only syncs accounts that have sync enabled and don't need reauthorization
+  # Accounts with expired access tokens will still be processed (refresh will be attempted)
   def perform
-    accounts_to_sync = ConnectedAccount.google.sync_enabled.valid_tokens
+    accounts_to_sync = ConnectedAccount.google.sync_enabled.ready_for_sync
 
     Rails.logger.info "Starting Gmail sync for #{accounts_to_sync.count} accounts"
 

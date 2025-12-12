@@ -1,0 +1,59 @@
+<%# JSON Editor Partial
+    Provides a textarea with JSON validation and formatting
+    
+    Parameters:
+    - form: Form builder object (required)
+    - field_name: Field name for the JSON field (required)
+    - value: Current JSON value (optional, defaults to empty hash)
+    - rows: Number of rows for textarea (optional, defaults to 10)
+    - help_text: Help text to display (optional)
+-%>
+<% value ||= "{}" %>
+<% rows ||= 10 %>
+<% help_text ||= "Enter valid JSON. Use the Format button to pretty-print." %>
+
+<div data-controller="json-editor">
+  <div>
+    <%= form.label field_name, class: "form-label" %>
+    <% if help_text.present? %>
+      <p class="form-help-text mb-2"><%= help_text %></p>
+    <% end %>
+    
+    <div class="relative">
+      <% 
+        # Format the value if it's a hash or array
+        formatted_value = if value.is_a?(Hash) || value.is_a?(Array)
+          JSON.pretty_generate(value)
+        elsif value.present?
+          value.to_s
+        else
+          "{}"
+        end
+      %>
+      <%= form.text_area field_name, 
+          rows: rows,
+          class: "form-textarea font-mono text-sm",
+          value: formatted_value,
+          data: { 
+            json_editor_target: "input",
+            action: "input->json-editor#validate"
+          } %>
+      
+      <div class="absolute top-2 right-2">
+        <button 
+          type="button"
+          data-action="click->json-editor#format"
+          class="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+        >
+          Format JSON
+        </button>
+      </div>
+    </div>
+    
+    <div 
+      data-json-editor-target="error" 
+      class="hidden mt-2 text-sm text-red-600 dark:text-red-400"
+    ></div>
+  </div>
+</div>
+

@@ -74,80 +74,156 @@
     </div>
   </div>
 
-  <!-- Quick Links -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Scraping & AI Section -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-      <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Scraping & AI</h2>
-      <div class="space-y-3">
-        <%= link_to admin_scraping_metrics_path, class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
-          <div class="flex items-center">
-            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <div>
-              <p class="font-medium text-slate-900 dark:text-white">Scraping Metrics</p>
-              <p class="text-sm text-slate-500 dark:text-slate-400">View extraction performance and domain stats</p>
-            </div>
+  <!-- AI/LLM Status Alert -->
+  <% if @ai_llm_stats.present? && (@ai_llm_stats[:ready_providers] == 0 || @ai_llm_stats[:active_prompt_template] == "None") %>
+    <div class="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+      <div class="flex items-start">
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div class="flex-1">
+          <h3 class="text-sm font-medium text-amber-800 dark:text-amber-300">AI/LLM Configuration Warning</h3>
+          <div class="mt-2 text-sm text-amber-700 dark:text-amber-400">
+            <% if @ai_llm_stats[:ready_providers] == 0 %>
+              <p>No ready LLM providers configured. <%= link_to "Configure providers", admin_llm_provider_configs_path, class: "font-medium underline" %> to enable AI extraction.</p>
+            <% end %>
+            <% if @ai_llm_stats[:active_prompt_template] == "None" %>
+              <p class="<%= 'mt-1' if @ai_llm_stats[:ready_providers] == 0 %>">No active prompt template. <%= link_to "Activate a template", admin_ai_llm_prompts_path, class: "font-medium underline" %> to enable extraction.</p>
+            <% end %>
           </div>
-          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Quick Links -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <!-- Content Management -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Content</h2>
+        <div class="flex gap-2">
+          <%= link_to "New Company", new_admin_company_path, class: "px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors" %>
+        </div>
+      </div>
+      <div class="space-y-3 mb-4">
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="p-2 rounded bg-slate-50 dark:bg-slate-700/50">
+            <p class="text-xs text-slate-500 dark:text-slate-400">Companies</p>
+            <p class="text-lg font-bold text-slate-900 dark:text-white"><%= @content_stats[:total_companies] || 0 %></p>
+          </div>
+          <div class="p-2 rounded bg-slate-50 dark:bg-slate-700/50">
+            <p class="text-xs text-slate-500 dark:text-slate-400">Job Roles</p>
+            <p class="text-lg font-bold text-slate-900 dark:text-white"><%= @content_stats[:total_job_roles] || 0 %></p>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <%= link_to admin_companies_path, class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">Companies</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         <% end %>
-
-        <%= link_to admin_ai_extraction_logs_path, class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
-          <div class="flex items-center">
-            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            <div>
-              <p class="font-medium text-slate-900 dark:text-white">AI Extraction Logs</p>
-              <p class="text-sm text-slate-500 dark:text-slate-400">Debug AI calls with full request/response data</p>
-            </div>
-          </div>
-          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <%= link_to admin_job_roles_path, class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">Job Roles</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         <% end %>
       </div>
     </div>
 
-    <!-- System Section -->
+    <!-- AI/LLM Management -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-      <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">System</h2>
-      <div class="space-y-3">
-        <%= link_to internal_mission_control_jobs_path, target: "_blank", class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
-          <div class="flex items-center">
-            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <div>
-              <p class="font-medium text-slate-900 dark:text-white">Background Jobs</p>
-              <p class="text-sm text-slate-500 dark:text-slate-400">Monitor job queues with Mission Control</p>
-            </div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">AI & LLM</h2>
+        <div class="flex gap-2">
+          <%= link_to "New Template", new_admin_ai_llm_prompt_path, class: "px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors" %>
+        </div>
+      </div>
+      <div class="space-y-3 mb-4">
+        <div class="p-3 rounded bg-slate-50 dark:bg-slate-700/50">
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Active Prompt</p>
+          <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
+            <%= @ai_llm_stats[:active_prompt_template] || "None" %>
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="p-2 rounded bg-slate-50 dark:bg-slate-700/50">
+            <p class="text-xs text-slate-500 dark:text-slate-400">Providers</p>
+            <p class="text-lg font-bold text-slate-900 dark:text-white">
+              <%= @ai_llm_stats[:ready_providers] || 0 %>/<%= @ai_llm_stats[:enabled_providers] || 0 %>
+            </p>
+            <p class="text-xs text-slate-400">Ready/Enabled</p>
           </div>
-          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          <div class="p-2 rounded bg-slate-50 dark:bg-slate-700/50">
+            <p class="text-xs text-slate-500 dark:text-slate-400">Templates</p>
+            <p class="text-lg font-bold text-slate-900 dark:text-white"><%= @ai_llm_stats[:total_prompt_templates] || 0 %></p>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <%= link_to admin_ai_llm_prompts_path, class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">Prompt Templates</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         <% end %>
+        <%= link_to admin_llm_provider_configs_path, class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">LLM Providers</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+        <%= link_to admin_scraping_metrics_path, class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">Scraping Metrics</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+      </div>
+    </div>
 
-        <%= link_to avo_path, target: "_blank", class: "flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" do %>
-          <div class="flex items-center">
-            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-            </svg>
-            <div>
-              <p class="font-medium text-slate-900 dark:text-white">Data Admin (Avo)</p>
-              <p class="text-sm text-slate-500 dark:text-slate-400">Manage database records directly</p>
-            </div>
-          </div>
-          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- System & Settings -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">System</h2>
+        <div class="flex gap-2">
+          <%= link_to "New Setting", new_admin_setting_path, class: "px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors" %>
+        </div>
+      </div>
+      <div class="space-y-3 mb-4">
+        <div class="p-3 rounded bg-slate-50 dark:bg-slate-700/50">
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Settings</p>
+          <p class="text-sm font-medium text-slate-900 dark:text-white">
+            <%= @content_stats[:enabled_settings] || 0 %>/<%= @content_stats[:total_settings] || 0 %> enabled
+          </p>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <%= link_to admin_settings_path, class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">Settings</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+        <%= link_to admin_ai_llm_api_logs_path, class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">LLM API Logs</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+        <%= link_to internal_mission_control_jobs_path, target: "_blank", class: "flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm" do %>
+          <span class="text-slate-900 dark:text-white">Background Jobs</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
         <% end %>
       </div>
     </div>
   </div>
+
 
   <!-- Gmail Sync Health -->
   <% if @gmail_stats.present? %>

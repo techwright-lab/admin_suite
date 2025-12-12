@@ -15,6 +15,8 @@ module ApiFetchers
     # @param [String] company_slug The company board token/slug
     # @return [Hash] Standardized job data
     def fetch(url:, job_id: nil, company_slug: nil)
+      return nil unless Setting.greenhouse_enabled?
+
       # If we don't have required params, try to extract from URL
       company_slug ||= extract_company_from_url(url)
       job_id ||= extract_job_id_from_url(url)

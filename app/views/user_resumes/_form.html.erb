@@ -1,0 +1,213 @@
+<%= form_with model: user_resume, class: "space-y-6", data: user_resume.new_record? ? { turbo: false } : {} do |f| %>
+  <% if user_resume.errors.any? %>
+    <div
+      class="
+        p-4 bg-red-50 dark:bg-red-900/20 border border-red-200
+        dark:border-red-800 rounded-lg
+      "
+    >
+      <div class="flex items-start">
+        <svg
+          class="w-5 h-5 text-red-400 mt-0.5 mr-3"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+
+        <div>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-300">
+            <%= pluralize(user_resume.errors.count, "error") %> prevented this
+            resume from being saved:
+          </h3>
+
+          <ul
+            class="
+              mt-2 text-sm text-red-700 dark:text-red-400 list-disc
+              list-inside
+            "
+          >
+            <% user_resume.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Name -->
+  <div>
+    <%= f.label :name, "Resume Name", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" %>
+
+    <%= f.text_field :name,
+      class: "block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
+      placeholder: "e.g., Backend Engineer - Generic" %>
+
+    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+      A descriptive name to identify this resume
+    </p>
+  </div>
+
+  <!-- File Upload (only for new) -->
+  <% if user_resume.new_record? %>
+    <div>
+      <%= f.label :file, "Resume File", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" %>
+
+      <div
+        class="
+          mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300
+          dark:border-gray-600 border-dashed rounded-lg
+          hover:border-primary-500 dark:hover:border-primary-500
+          transition-colors
+        "
+        data-controller="file-upload"
+      >
+        <div class="space-y-1 text-center">
+          <svg
+            class="mx-auto h-12 w-12 text-gray-400"
+            stroke="currentColor"
+            fill="none"
+            viewBox="0 0 48 48"
+          >
+            <path
+              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+
+          <div class="flex text-sm text-gray-600 dark:text-gray-400">
+            <label
+              for="<%= f.field_id(:file) %>"
+              class="
+                relative cursor-pointer rounded-md font-medium
+                text-primary-600 hover:text-primary-500
+                focus-within:outline-none
+              "
+            >
+              <span>Upload a file</span>
+
+              <%= f.file_field :file,
+                class: "sr-only",
+                accept: ".pdf,.doc,.docx,.txt",
+                data: { file_upload_target: "input", action: "change->file-upload#preview" } %>
+            </label>
+
+            <p class="pl-1">or drag and drop</p>
+          </div>
+
+          <p
+            class="text-xs text-gray-500 dark:text-gray-400"
+            data-file-upload-target="filename"
+          >
+            PDF, DOC, DOCX, or TXT up to 10MB
+          </p>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <!-- Show current file for edit -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        Current File
+      </label>
+
+      <div class="flex items-center p-3 bg-gray-50 dark:bg-dark-800 rounded-lg">
+        <svg
+          class="w-8 h-8 text-gray-400 mr-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+
+        <div>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            <%= user_resume.file.filename %>
+          </p>
+
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            <%= user_resume.file_type %> • Uploaded
+            <%= time_ago_in_words(user_resume.created_at) %> ago
+          </p>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Purpose -->
+  <div>
+    <%= f.label :purpose, "Resume Type", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" %>
+
+    <%= f.select :purpose,
+      [["Generic (multi-purpose)", "generic"], ["Company-specific", "company_specific"], ["Role-specific", "role_specific"]],
+      {},
+      class: "block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500" %>
+  </div>
+
+  <!-- Target Job Roles (optional, multiple) -->
+  <div>
+    <%= f.label :target_job_role_ids, "Target Roles (optional)", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" %>
+
+    <%= f.collection_select :target_job_role_ids,
+      job_roles,
+      :id,
+      :title,
+      { include_hidden: false },
+      {
+        multiple: true,
+        class: "block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
+        size: 4
+      } %>
+
+    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+      Hold Ctrl/Cmd to select multiple roles this resume is tailored for
+    </p>
+  </div>
+
+  <!-- Target Companies (optional, multiple) -->
+  <div>
+    <%= f.label :target_company_ids, "Target Companies (optional)", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" %>
+
+    <%= f.collection_select :target_company_ids,
+      companies,
+      :id,
+      :name,
+      { include_hidden: false },
+      {
+        multiple: true,
+        class: "block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
+        size: 4
+      } %>
+
+    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+      Hold Ctrl/Cmd to select multiple companies this resume is tailored for
+    </p>
+  </div>
+
+  <!-- Submit -->
+  <div
+    class="
+      flex items-center justify-end gap-3 pt-4 border-t border-gray-200
+      dark:border-gray-700
+    "
+  >
+    <%= link_to "Cancel", user_resume.persisted? ? user_resume_path(user_resume) : user_resumes_path,
+      class: "px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white" %>
+
+    <%= f.submit user_resume.persisted? ? "Update Resume" : "Upload & Analyze",
+      class: "px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors cursor-pointer" %>
+  </div>
+<% end %>
