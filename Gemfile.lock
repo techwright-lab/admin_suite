@@ -90,7 +90,7 @@ GEM
     after_commit_everywhere (1.6.0)
       activerecord (>= 4.2)
       activesupport
-    anthropic (1.15.2)
+    anthropic (1.16.0)
       connection_pool
     ast (2.4.3)
     avo (3.26.4)
