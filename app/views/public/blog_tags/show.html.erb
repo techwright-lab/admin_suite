@@ -1,0 +1,84 @@
+<% content_for :title, "Tag: #{@tag} - Gleania Blog" %>
+<% content_for :description, "Posts tagged with #{@tag} on the Gleania blog." %>
+
+<%# Simple header %>
+<section class="pt-28 pb-10">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <nav class="text-sm text-gray-400 mb-4">
+      <%= link_to "Blog", blog_index_path, class: "hover:text-primary-300 transition-colors" %>
+      <span class="mx-2 text-gray-600">/</span>
+      <span class="text-gray-300">Tag</span>
+    </nav>
+
+    <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+      #<%= @tag %>
+    </h1>
+    <p class="mt-2 text-gray-400"><%= pluralize(@posts.count, "post") %> found</p>
+  </div>
+</section>
+
+<section class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pb-20">
+  <% if @posts.any? %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <% @posts.each do |post| %>
+        <article class="card-blog group">
+          <%# Cover image at top %>
+          <% if post.cover_image.attached? %>
+            <div class="aspect-video overflow-hidden rounded-lg mb-4 -mx-6 -mt-6">
+              <%= link_to blog_path(post.slug), class: "block" do %>
+                <%= image_tag post.cover_image_variant(size: :medium),
+                    class: "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105",
+                    loading: "lazy",
+                    alt: post.title %>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Card content %>
+          <div class="flex flex-col flex-1">
+            <% if post.tag_list.any? %>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <% post.tag_list.first(2).each do |tag| %>
+                  <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+                    <%= tag %>
+                  <% end %>
+                <% end %>
+              </div>
+            <% end %>
+
+            <h2 class="text-lg font-semibold text-white mb-2">
+              <%= link_to post.title, blog_path(post.slug), class: "hover:text-primary-300 transition-colors" %>
+            </h2>
+
+            <% if post.excerpt.present? %>
+              <p class="text-gray-400 text-sm mb-4 line-clamp-2"><%= post.excerpt %></p>
+            <% end %>
+
+            <div class="flex items-center justify-between text-sm text-gray-500 mt-auto pt-4 border-t border-white/5">
+              <% if post.published_at.present? %>
+                <time datetime="<%= post.published_at.iso8601 %>">
+                  <%= post.published_at.to_date.strftime("%b %-d, %Y") %>
+                </time>
+              <% end %>
+              <%= link_to blog_path(post.slug), class: "text-primary-400 hover:text-primary-300 font-medium transition-colors" do %>
+                Read →
+              <% end %>
+            </div>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="card-blog text-center py-12">
+      <p class="text-gray-400">No posts with this tag yet.</p>
+    </div>
+  <% end %>
+
+  <%# Back link %>
+  <div class="mt-10">
+    <%= link_to blog_index_path, class: "inline-flex items-center gap-2 text-sm text-gray-400 hover:text-primary-300 transition-colors" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Back to Blog
+    <% end %>
+  </div>
+</section>

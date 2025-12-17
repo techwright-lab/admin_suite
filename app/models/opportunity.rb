@@ -11,13 +11,15 @@ class Opportunity < ApplicationRecord
   include Transitionable
 
   # Status values stored as strings for readability
-  STATUSES = %i[new reviewing applied ignored].freeze
+  STATUSES = %i[new reviewing applied archived].freeze
   SOURCE_TYPES = %w[direct_email linkedin_forward referral other].freeze
 
   # Associations
   belongs_to :user
   belongs_to :synced_email, optional: true
   belongs_to :interview_application, optional: true
+  has_one :saved_job, dependent: :destroy
+  has_one :fit_assessment, as: :fittable, dependent: :destroy
 
   # Validations
   validates :user, presence: true
@@ -37,7 +39,7 @@ class Opportunity < ApplicationRecord
     state :new, initial: true
     state :reviewing
     state :applied
-    state :ignored
+    state :archived
 
     event :start_review do
       transitions from: :new, to: :reviewing
@@ -47,17 +49,18 @@ class Opportunity < ApplicationRecord
       transitions from: [ :new, :reviewing ], to: :applied
     end
 
-    event :mark_ignored do
-      transitions from: [ :new, :reviewing ], to: :ignored
+    event :archive_as_ignored do
+      transitions from: [ :new, :reviewing ], to: :archived, after: :set_archived_as_ignored
     end
 
     event :reconsider do
-      transitions from: :ignored, to: :new
+      transitions from: :archived, to: :new, after: :clear_archived_metadata
     end
   end
 
   # Scopes
   scope :actionable, -> { where(status: %w[new reviewing]) }
+  scope :archived, -> { where(status: "archived") }
   scope :recent, -> { order(created_at: :desc) }
   scope :by_status, ->(status) { where(status: status) }
   scope :with_job_url, -> { where.not(job_url: [ nil, "" ]) }
@@ -137,11 +140,29 @@ class Opportunity < ApplicationRecord
       "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
     when "applied"
       "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-    when "ignored"
+    when "archived"
       "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
     else
       "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
     end
+  end
+
+  private
+
+  # @return [void]
+  def set_archived_as_ignored
+    update_columns(
+      archived_reason: "ignored",
+      archived_at: Time.current
+    )
+  end
+
+  # @return [void]
+  def clear_archived_metadata
+    update_columns(
+      archived_reason: nil,
+      archived_at: nil
+    )
   end
 
   # Returns icon name for source type

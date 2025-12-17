@@ -5,7 +5,7 @@
       Edit Application
     </h1>
     <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-      <%= @application.company.name %> - <%= @application.job_role.title %>
+      <%= @application.display_company.name %> - <%= @application.display_job_role.title %>
     </p>
   </div>
 
@@ -14,4 +14,3 @@
     <%= render "form" %>
   </div>
 </div>
-

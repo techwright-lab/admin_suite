@@ -116,38 +116,68 @@ class QuickApplyFromUrlService
     # Use orchestrator service for extraction
     orchestrator = Scraping::OrchestratorService.new(job_listing)
 
-    # Run with timeout
-    success = Timeout.timeout(EXTRACTION_TIMEOUT) do
-      orchestrator.call
+    # Run with timeout - but use a thread so we don't interrupt the orchestrator
+    # This allows the extraction to continue even if we timeout waiting for it
+    extraction_thread = Thread.new do
+      Thread.current[:result] = orchestrator.call
     end
 
-    # Reload job listing to get updated data
-    job_listing.reload
+    # Wait for completion with timeout
+    completed = extraction_thread.join(EXTRACTION_TIMEOUT)
 
-    if success && job_listing.extraction_completed?
-      {
-        success: true,
-        data: {}
-      }
+    if completed
+      success = extraction_thread[:result]
+      job_listing.reload
+
+      if success && job_listing.extraction_completed?
+        {
+          success: true,
+          data: {}
+        }
+      else
+        {
+          success: false,
+          error: "Extraction failed"
+        }
+      end
     else
-      {
-        success: false,
-        error: "Extraction failed or timed out"
-      }
+      # Timeout waiting for extraction - it's still running in the background thread
+      # Queue a background job to handle completion/retry
+      handle_extraction_timeout(job_listing)
     end
-  rescue Timeout::Error
-    # Queue async job for background processing
-    ScrapeJobListingJob.perform_later(job_listing)
-    {
-      success: false,
-      error: "Extraction is taking longer than expected. Processing in background..."
-    }
   rescue => e
     Rails.logger.error("Extraction error: #{e.message}")
     Rails.logger.error(e.backtrace.join("\n"))
     {
       success: false,
       error: e.message
+    }
+  end
+
+  # Handles timeout by queuing background job if needed
+  #
+  # @param job_listing [JobListing] The job listing being extracted
+  # @return [Hash] Result hash
+  def handle_extraction_timeout(job_listing)
+    latest_attempt = job_listing.scraping_attempts.order(created_at: :desc).first
+
+    # Always queue a background job to monitor/complete the extraction
+    # The extraction might still be running, but if it fails, the job will handle it
+    if latest_attempt
+      # Queue with delay to give the current extraction time to complete
+      ScrapeJobListingJob.set(wait: 30.seconds).perform_later(job_listing)
+
+      Rails.logger.info({
+        event: "extraction_timeout_job_queued",
+        job_listing_id: job_listing.id,
+        scraping_attempt_id: latest_attempt.id,
+        attempt_status: latest_attempt.status
+      }.to_json)
+    end
+
+    {
+      success: false,
+      error: "Extraction is taking longer than expected. Processing in background..."
     }
   end
 

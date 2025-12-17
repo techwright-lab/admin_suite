@@ -1,6 +1,6 @@
 # Google OAuth Setup Guide
 
-This guide will help you set up Google OAuth for user sign-in/sign-up and Gmail/Calendar integration in Gleania.
+This guide will help you set up Google OAuth for user sign-in/sign-up and Gmail integration in Gleania.
 
 ## Prerequisites
 
@@ -20,9 +20,8 @@ This guide will help you set up Google OAuth for user sign-in/sign-up and Gmail/
 
 1. In the Google Cloud Console, go to **"APIs & Services" > "Library"**
 2. Search for and enable the following APIs:
-   - **Google+ API** (for basic profile/email access)
    - **Gmail API** (for email syncing)
-   - **Google Calendar API** (for calendar integration)
+   - (Optional) **Google Calendar API** (only if/when you add calendar features)
 
 ## Step 3: Configure OAuth Consent Screen
 
@@ -51,7 +50,6 @@ Click **"Add or Remove Scopes"** and add:
 - `email` - See your primary Google Account email address
 - `profile` - See your personal info, including any personal info you've made publicly available
 - `https://www.googleapis.com/auth/gmail.readonly` - View your Gmail messages
-- `https://www.googleapis.com/auth/calendar.readonly` - See all calendars you have access to
 
 **Test users** (for development):
 - Add your own Google account email address

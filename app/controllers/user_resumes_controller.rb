@@ -15,6 +15,9 @@ class UserResumesController < ApplicationController
     @skills_by_category = @user_skills.group_by(&:category)
     @job_roles = JobRole.order(:title)
     @companies = Company.order(:name)
+
+    @merged_strengths = merged_strengths_for(Current.user)
+    @resume_domains = aggregated_label_counts(Current.user.user_resumes.analyzed.pluck(:domains).flatten)
   end
 
   # GET /resumes/:id
@@ -118,9 +121,11 @@ class UserResumesController < ApplicationController
       format.html { redirect_to user_resumes_path, notice: "Resume deleted." }
       format.turbo_stream do
         @user_skills = Current.user.user_skills.includes(:skill_tag).by_level_desc
+        @merged_strengths = merged_strengths_for(Current.user)
+        @resume_domains = aggregated_label_counts(Current.user.user_resumes.analyzed.pluck(:domains).flatten)
         render turbo_stream: [
           turbo_stream.remove("resume_card_#{params[:id]}"),
-          turbo_stream.update("skill_profile", partial: "user_resumes/skill_profile", locals: { user_skills: @user_skills }),
+          turbo_stream.update("skill_profile", partial: "user_resumes/skill_profile", locals: { user_skills: @user_skills, merged_strengths: @merged_strengths, domains: @resume_domains }),
           turbo_stream.update("flash", partial: "shared/flash", locals: { flash: { notice: "Resume deleted." } })
         ]
       end
@@ -198,5 +203,68 @@ class UserResumesController < ApplicationController
       target_job_role_ids: [],
       target_company_ids: []
     )
+  end
+
+  # Aggregates a list of labels into a normalized hash with counts.
+  #
+  # @param labels [Array<String>]
+  # @return [Hash{String => Hash}] e.g. { "system design" => { label: "System Design", count: 2 } }
+  def aggregated_label_counts(labels)
+    labels = Array(labels).map { |l| l.to_s.strip }.reject(&:blank?)
+    counts = {}
+
+    labels.each do |label|
+      key = normalize_label_key(label)
+      next if key.blank?
+
+      counts[key] ||= { label: label, count: 0 }
+      counts[key][:count] += 1
+    end
+
+    counts
+  end
+
+  def merged_strengths_for(user)
+    resume_counts = aggregated_label_counts(user.user_resumes.analyzed.pluck(:strengths).flatten)
+
+    feedback_strengths = ProfileInsightsService.new(user).generate_insights[:strengths] || []
+    feedback_counts = {}
+    feedback_strengths.each do |row|
+      name = row[:name] || row["name"]
+      count = row[:count] || row["count"] || 0
+      key = normalize_label_key(name)
+      next if key.blank?
+
+      feedback_counts[key] ||= { label: name.to_s.strip, count: 0 }
+      feedback_counts[key][:count] += count.to_i
+    end
+
+    keys = (resume_counts.keys + feedback_counts.keys).uniq
+    merged = keys.map do |key|
+      resume = resume_counts[key]
+      feedback = feedback_counts[key]
+
+      label = resume&.dig(:label).presence || feedback&.dig(:label).presence || key
+      resume_count = resume&.dig(:count).to_i
+      feedback_count = feedback&.dig(:count).to_i
+      sources = []
+      sources << "resume" if resume_count.positive?
+      sources << "feedback" if feedback_count.positive?
+
+      {
+        key: key,
+        label: label,
+        total_count: resume_count + feedback_count,
+        resume_count: resume_count,
+        feedback_count: feedback_count,
+        sources: sources
+      }
+    end
+
+    merged.sort_by { |h| -h[:total_count].to_i }
+  end
+
+  def normalize_label_key(label)
+    label.to_s.strip.downcase.gsub(/\s+/, " ")
   end
 end

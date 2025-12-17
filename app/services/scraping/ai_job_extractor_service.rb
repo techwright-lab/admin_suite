@@ -67,7 +67,12 @@ module Scraping
     def extract_with_providers(prompt, html_size)
       provider_chain.each do |provider_name|
         result = try_provider(provider_name, prompt, html_size)
-        return result if result && result[:confidence] && result[:confidence] >= 0.7
+        if result && result[:confidence] && result[:confidence] >= 0.7
+          return result.merge(prompt_used: prompt)
+        elsif result && result[:confidence]
+          # Return low confidence result with prompt for logging
+          return result.merge(prompt_used: prompt)
+        end
       end
 
       extraction_error("All providers failed or returned low confidence")
@@ -94,7 +99,7 @@ module Scraping
       end
 
       parsed = parse_response(result[:content])
-      log_extraction(provider_name, result, parsed, html_size)
+      log_extraction(provider_name, result, parsed, html_size, prompt: prompt)
 
       build_extraction_result(parsed, result, provider_name)
     rescue => e
@@ -125,7 +130,7 @@ module Scraping
       )
     end
 
-    def log_extraction(provider_name, result, parsed, html_size)
+    def log_extraction(provider_name, result, parsed, html_size, prompt: nil)
       confidence = parsed[:confidence] || 0.0
 
       if confidence >= 0.7
@@ -134,10 +139,10 @@ module Scraping
         log_event("ai_extraction_low_confidence", { provider: provider_name, confidence: confidence })
       end
 
-      log_extraction_result(result, parsed, html_size)
+      log_extraction_result(result, parsed, html_size, prompt: prompt)
     end
 
-    def log_extraction_result(result, parsed, html_size)
+    def log_extraction_result(result, parsed, html_size, prompt: nil)
       return unless @job_listing
 
       prompt_template = Ai::JobExtractionPrompt.active_prompt
@@ -153,7 +158,8 @@ module Scraping
       logger.record_result(
         parsed.merge(provider: result[:provider], model: result[:model]),
         latency_ms: result[:latency_ms] || 0,
-        content_size: html_size
+        content_size: html_size,
+        prompt: prompt
       )
     rescue => e
       Rails.logger.warn("Failed to log extraction result: #{e.message}")
@@ -182,13 +188,19 @@ module Scraping
     def build_extraction_prompt(html_content)
       prompt_template = Ai::JobExtractionPrompt.active_prompt
 
-      if prompt_template
+      if prompt_template && prompt_supports_company_sections?(prompt_template.prompt_template)
         prompt_template.build_prompt(url: @url, html_content: html_content)
       else
         Ai::JobExtractionPrompt.default_prompt_template
           .gsub("{{url}}", @url)
           .gsub("{{html_content}}", html_content)
       end
+    end
+
+    def prompt_supports_company_sections?(template)
+      return false unless template.is_a?(String)
+
+      template.include?("about_company") && template.include?("company_culture")
     end
 
     # Response parsing
@@ -209,9 +221,11 @@ module Scraping
     def normalize_parsed_data(data)
       {
         title: data["title"],
-        company: data["company"],
-        job_role: data["job_role"],
+        company: data["company"] || data["company_name"],
+        job_role: data["job_role"] || data["job_role_title"],
         description: data["description"],
+        about_company: data["about_company"],
+        company_culture: data["company_culture"],
         requirements: data["requirements"],
         responsibilities: data["responsibilities"],
         location: data["location"],

@@ -1,0 +1,71 @@
+<% content_for :title, "#{@blog_post.title} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <% actions = [
+    { label: "Edit", path: edit_admin_blog_post_path(@blog_post), style: :primary },
+    { label: "Back", path: admin_blog_posts_path, style: :secondary },
+    { label: "Delete", path: admin_blog_post_path(@blog_post), style: :danger, method: :delete, confirm: "Delete this blog post?" }
+  ] %>
+
+  <%= render "admin/shared/page_header",
+      title: @blog_post.title,
+      description: "Slug: #{@blog_post.slug}",
+      actions: render("admin/shared/action_bar", actions: actions) %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Preview</h2>
+        </div>
+
+        <div class="p-6">
+          <div class="prose prose-slate dark:prose-invert max-w-none">
+            <%= @content_html %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Details</h2>
+        </div>
+
+        <div class="p-6 space-y-3 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">Status</span>
+            <span class="font-medium text-slate-900 dark:text-white"><%= @blog_post.status.to_s.titleize %></span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">Published at</span>
+            <span class="font-medium text-slate-900 dark:text-white"><%= @blog_post.published_at ? l(@blog_post.published_at, format: :long) : "—" %></span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">Author</span>
+            <span class="font-medium text-slate-900 dark:text-white"><%= @blog_post.author_name.presence || "—" %></span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">Tags</span>
+            <span class="font-medium text-slate-900 dark:text-white"><%= @blog_post.tag_list.any? ? @blog_post.tag_list.join(", ") : "—" %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Excerpt</h2>
+        </div>
+        <div class="p-6 text-sm text-slate-700 dark:text-slate-300">
+          <%= @blog_post.excerpt.presence || "—" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

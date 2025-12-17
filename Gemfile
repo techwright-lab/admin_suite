@@ -74,7 +74,6 @@ end
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
-  gem "selenium-webdriver"
 
   # HTTP request stubbing and recording
   gem "vcr"
@@ -130,6 +129,9 @@ gem "robots"
 # HTML parsing and cleaning
 gem "nokogiri"
 
+# JS-rendered scraping (headless browser)
+gem "selenium-webdriver"
+
 # Document parsing for resume extraction
 gem "pdf-reader"      # PDF text extraction
 gem "docx"            # DOCX text extraction
@@ -183,3 +185,9 @@ gem "friendly_id"
 
 # Pagination
 gem "pagy", "~> 9.0"
+
+# Blog: tags, markdown, SEO meta, newsletter
+gem "acts-as-taggable-on"
+gem "commonmarker"
+gem "meta-tags"
+gem "mailkick"

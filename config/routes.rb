@@ -5,19 +5,40 @@ Rails.application.routes.draw do
   namespace :internal do
     mount MissionControl::Jobs::Engine, at: "/jobs"
     mount Avo::Engine, at: "/admin"
+    mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
   end
 
   # Public pages (marketing, landing pages)
   # Using scope with module to keep controllers in Public:: but without /public in URLs
   scope module: :public do
     resource :contact, only: [ :show, :create ]
+    get "privacy", to: "legal#privacy", as: :privacy
+    get "terms", to: "legal#terms", as: :terms
+    get "cookies", to: "legal#cookies_policy", as: :cookies
+
+    resources :blog, only: [ :index, :show ], param: :slug
+    get "blog/tags/:tag", to: "blog_tags#show", as: :blog_tag
+
+    post "newsletter/subscribe", to: "newsletter_subscriptions#create", as: :newsletter_subscribe
+    get "newsletter/unsubscribe/:signed_id", to: "newsletter_subscriptions#destroy", as: :newsletter_unsubscribe
+
+    get "sitemap", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
   end
 
   # Admin routes
   namespace :admin do
     root to: "dashboard#index"
     get "scraping_metrics", to: "scraping_metrics#index"
-    resources :job_listings, only: [ :index, :show, :edit, :update, :destroy ]
+    resources :blog_posts
+    resources :blog_tags, only: [ :index ]
+    get "docs", to: "docs#index", as: :docs
+    get "docs/*path", to: "docs#show", as: :doc
+    resources :job_listings, only: [ :index, :show, :edit, :update, :destroy ] do
+      member do
+        post :disable
+        post :enable
+      end
+    end
     # AI Namespace - LLM Prompts and API Logs
     namespace :ai do
       resources :llm_prompts do
@@ -29,7 +50,15 @@ Rails.application.routes.draw do
       resources :llm_api_logs, only: [ :index, :show ]
     end
     resources :html_scraping_logs, only: [ :index, :show ]
-    resources :scraping_attempts, only: [ :index, :show ]
+    resources :scraping_attempts, only: [ :index, :show ] do
+      member do
+        post :mark_failed
+        post :retry_attempt
+      end
+      collection do
+        post :cleanup_stuck
+      end
+    end
     resources :scraping_events, only: [ :show ]
 
     # Users & Email management
@@ -44,8 +73,23 @@ Rails.application.routes.draw do
     resources :support_tickets, only: [ :index, :show, :update ]
 
     # Company and Job Role management
-    resources :companies, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
-    resources :job_roles, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :companies, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+      member do
+        post :disable
+        post :enable
+        get :merge
+        post :merge_into
+      end
+    end
+
+    resources :job_roles, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+      member do
+        post :disable
+        post :enable
+        get :merge
+        post :merge_into
+      end
+    end
 
     # Settings
     resources :settings, only: [ :index, :show, :new, :create, :edit, :update ]
@@ -58,7 +102,23 @@ Rails.application.routes.draw do
     end
 
     # Content Management
-    resources :skill_tags, only: [ :index, :show, :new, :create, :edit, :update, :destroy ]
+    resources :skill_tags, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+      member do
+        post :disable
+        post :enable
+        get :merge
+        post :merge_into
+      end
+    end
+
+    resources :categories, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+      member do
+        post :disable
+        post :enable
+        get :merge
+        post :merge_into
+      end
+    end
 
     # Interview Applications (read-only for support/debugging)
     resources :interview_applications, only: [ :index, :show ]
@@ -70,10 +130,15 @@ Rails.application.routes.draw do
     resources :connected_accounts, only: [ :index, :show ]
   end
 
-  # Authentication routes
-  resource :session
+  # Authentication routes (user-friendly URLs)
+  get "login", to: "sessions#new", as: :new_session
+  post "login", to: "sessions#create", as: :session
+  delete "logout", to: "sessions#destroy", as: :logout
+
+  get "signup", to: "registrations#new", as: :new_registration
+  post "signup", to: "registrations#create", as: :registrations
+
   resources :passwords, param: :token
-  resources :registrations, only: [ :new, :create ]
   post "email_verification", to: "email_verifications#create", as: :resend_email_verification
   get "email_verification/:token", to: "email_verifications#show", as: :email_verification
 
@@ -108,6 +173,18 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :skill_tags, only: [ :index, :create ] do
+    collection do
+      get :autocomplete
+    end
+  end
+
+  resources :categories, only: [ :index, :create ] do
+    collection do
+      get :autocomplete
+    end
+  end
+
   # Job Listings (managed in admin panel only)
   # Users view job details via the interview application "Job Details" tab
   # resources :job_listings # Moved to admin namespace
@@ -124,7 +201,7 @@ Rails.application.routes.draw do
     patch :update_ai_preferences
     patch :update_privacy
     patch :update_security
-    delete "sessions/:session_id", action: :destroy_session, as: :destroy_session
+    delete "sessions/:session_id", action: :destroy_session, as: :revoke_session
     delete :destroy_all_sessions
     delete "disconnect/:provider", action: :disconnect_provider, as: :disconnect_provider
     post :export_data
@@ -149,6 +226,17 @@ Rails.application.routes.draw do
       patch :update_url
     end
   end
+
+  # Saved jobs (bookmarked leads)
+  resources :saved_jobs, only: [ :index, :create, :destroy ] do
+    member do
+      post :restore
+      post :convert
+    end
+  end
+
+  # Archived jobs (opportunities + saved jobs)
+  resources :archived_jobs, only: [ :index ]
 
   # Skills dashboard
   resources :skills, only: [ :index ]

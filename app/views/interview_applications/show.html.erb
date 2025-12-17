@@ -16,24 +16,25 @@
     <div class="flex items-start justify-between">
       <div class="flex items-start gap-4">
         <!-- Company Logo -->
+        <% display_company = @application.display_company %>
         <div class="flex-shrink-0 w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-          <% if @application.company.logo_url.present? %>
-            <%= image_tag @application.company.logo_url, 
-                alt: @application.company.name,
+          <% if display_company.logo_url.present? %>
+            <%= image_tag display_company.logo_url, 
+                alt: display_company.name,
                 class: "w-16 h-16 rounded-lg object-cover" %>
           <% else %>
             <span class="text-2xl font-bold text-gray-600 dark:text-gray-400">
-              <%= @application.company.name[0].upcase %>
+              <%= display_company.name[0].upcase %>
             </span>
           <% end %>
         </div>
 
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            <%= @application.job_role.title %>
+            <%= @application.display_job_role.title %>
           </h1>
           <p class="mt-1 text-lg text-gray-600 dark:text-gray-400">
-            <%= @application.company.name %>
+            <%= display_company.name %>
           </p>
           
           <!-- Badges -->
@@ -59,6 +60,12 @@
                   end %>">
               <%= (@application.status || 'active').to_s.titleize %>
             </span>
+
+            <% if @application.fit_assessment&.computed? %>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300">
+                Fit <%= @application.fit_assessment.score %>/100
+              </span>
+            <% end %>
           </div>
         </div>
       </div>
@@ -208,8 +215,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Company Info</h3>
             <div class="space-y-3">
-              <% if @application.company.website.present? %>
-                <a href="<%= @application.company.website %>" 
+              <% if display_company.website.present? %>
+                <a href="<%= display_company.website %>" 
                    target="_blank"
                    class="flex items-center text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700">
                   <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,9 +226,9 @@
                 </a>
               <% end %>
               
-              <% if @application.company.about.present? %>
+              <% if display_company.about.present? %>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                  <%= @application.company.about %>
+                  <%= display_company.about %>
                 </p>
               <% end %>
             </div>

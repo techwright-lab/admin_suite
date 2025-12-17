@@ -42,6 +42,9 @@ class AnalyzeResumeJob < ApplicationJob
         "Successfully analyzed resume #{user_resume.id}: " \
         "#{result[:skills_count]} skills extracted using #{result[:provider]}"
       )
+
+      # Recompute fit scores since the user's skill profile may have changed.
+      RecomputeFitAssessmentsForUserJob.perform_later(user_resume.user_id)
     else
       Rails.logger.error("Failed to analyze resume #{user_resume.id}: #{result[:error]}")
     end

@@ -2,11 +2,27 @@
 
 <div class="px-4 sm:px-6 lg:px-8">
   <!-- Header -->
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Scraping Attempts</h1>
-    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-      View and debug job listing extraction attempts
-    </p>
+  <div class="mb-6 flex items-start justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Scraping Attempts</h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        View and debug job listing extraction attempts
+      </p>
+    </div>
+
+    <!-- Cleanup Stuck Button -->
+    <% stuck_count = ScrapingAttempt.where(status: %w[pending fetching extracting retrying]).where("updated_at < ?", 10.minutes.ago).count %>
+    <% if stuck_count > 0 %>
+      <%= button_to cleanup_stuck_admin_scraping_attempts_path,
+          method: :post,
+          class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+          data: { turbo_confirm: "Clean up #{stuck_count} stuck attempt(s)? They will be marked as failed and can be retried." } do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        Cleanup <%= stuck_count %> Stuck
+      <% end %>
+    <% end %>
   </div>
 
   <div class="flex flex-col lg:flex-row gap-6">

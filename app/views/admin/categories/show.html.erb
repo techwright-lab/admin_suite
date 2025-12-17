@@ -1,0 +1,138 @@
+<% content_for :title, "#{@category.name} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: @category.name,
+      description: @category.kind.to_s.humanize,
+      breadcrumbs: [
+        { label: "Categories", path: admin_categories_path },
+        { label: @category.name }
+      ],
+      actions: render("admin/shared/action_bar", actions: [
+        {
+          label: "Edit",
+          path: edit_admin_category_path(@category),
+          style: :primary
+        },
+        {
+          label: "Merge…",
+          path: merge_admin_category_path(@category),
+          style: :secondary
+        },
+        (@category.disabled? ? {
+          label: "Enable",
+          path: enable_admin_category_path(@category),
+          method: :post,
+          style: :secondary,
+          confirm: "Enable this category?"
+        } : {
+          label: "Disable",
+          path: disable_admin_category_path(@category),
+          method: :post,
+          style: :secondary,
+          confirm: "Disable this category? It will be hidden from autocomplete."
+        })
+      ]) %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <% if @duplicate_suggestions.present? && @duplicate_suggestions.any? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+              Possible duplicates
+            </h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400">
+              <%= @duplicate_suggestions.size %> suggested
+            </span>
+          </div>
+
+          <ul class="space-y-2">
+            <% @duplicate_suggestions.each do |s| %>
+              <li class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
+                    <%= link_to s[:record].name, admin_category_path(s[:record]), class: "hover:underline" %>
+                    <% if s[:record].disabled? %>
+                      <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">Disabled</span>
+                    <% end %>
+                  </p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    <%= s[:reasons].join(", ") %>
+                  </p>
+                </div>
+
+                <div class="flex-shrink-0">
+                  <%= link_to "Merge", merge_admin_category_path(@category, target_category_id: s[:record].id), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+              Recent Usage
+            </h2>
+            <span class="text-sm text-slate-500 dark:text-slate-400">
+              <%= @usage_count %> total
+            </span>
+          </div>
+        </div>
+
+        <% if @recent_usage.any? %>
+          <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            <% @recent_usage.each do |item| %>
+              <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <% if @category.job_role? %>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-slate-900 dark:text-white"><%= item.title %></p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400"><%= item.job_listings.count %> job listings</p>
+                    </div>
+                    <%= link_to "View", admin_job_role_path(item), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
+                  </div>
+                <% else %>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-slate-900 dark:text-white"><%= item.name %></p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400"><%= item.interview_applications.count %> uses</p>
+                    </div>
+                    <%= link_to "View", admin_skill_tag_path(item), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            No usage found
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <%= render "admin/shared/info_card",
+          title: "Category Details",
+          data: {
+            "Name" => @category.name,
+            "Kind" => @category.kind.to_s.humanize,
+            "Status" => (@category.disabled? ? "Disabled" : "Enabled"),
+            "Usage Count" => @usage_count
+          } %>
+
+      <%= render "admin/shared/info_card",
+          title: "Timestamps",
+          data: {
+            "Created" => @category.created_at.strftime("%B %d, %Y at %H:%M"),
+            "Updated" => @category.updated_at.strftime("%B %d, %Y at %H:%M")
+          } %>
+    </div>
+  </div>
+</div>

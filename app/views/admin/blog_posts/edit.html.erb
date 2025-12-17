@@ -1,0 +1,11 @@
+<% content_for :title, "Edit Blog Post - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: "Edit Blog Post",
+      description: @blog_post.title %>
+
+  <%= render "form", blog_post: @blog_post %>
+</div>
+
+

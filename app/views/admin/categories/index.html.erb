@@ -1,0 +1,116 @@
+<% content_for :title, "Categories - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: "Categories",
+      description: "Manage categories used for job roles and skill tags",
+      actions: link_to("New Category", new_admin_category_path, class: "px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors") %>
+
+  <%= render "admin/shared/stats_grid",
+      stats: @stats,
+      colors: {
+        total: "text-slate-900 dark:text-white",
+        job_role: "text-blue-600 dark:text-blue-400",
+        skill_tag: "text-green-600 dark:text-green-400",
+        disabled: "text-slate-600 dark:text-slate-400"
+      },
+      columns: @stats.size,
+      grid_class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" %>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <%= render "admin/shared/filter_sidebar",
+        url: admin_categories_path,
+        filters: [
+          {
+            type: :text,
+            name: :search,
+            label: "Search",
+            placeholder: "Category name...",
+            value: @filters[:search]
+          },
+          {
+            type: :select,
+            name: :kind,
+            label: "Kind",
+            options: [
+              ["All", ""],
+              ["Job Role", "job_role"],
+              ["Skill Tag", "skill_tag"]
+            ],
+            value: @filters[:kind]
+          },
+          {
+            type: :select,
+            name: :status,
+            label: "Status",
+            options: [
+              ["All", ""],
+              ["Enabled", "enabled"],
+              ["Disabled", "disabled"]
+            ],
+            value: @filters[:status]
+          },
+          {
+            type: :select,
+            name: :sort,
+            label: "Sort By",
+            options: [
+              ["Kind", "kind"],
+              ["Name (A-Z)", "name"],
+              ["Recently Added", "recent"]
+            ],
+            value: @filters[:sort]
+          }
+        ] %>
+
+    <div class="flex-1 min-w-0">
+      <%= render "admin/shared/data_table",
+          collection: @categories,
+          columns: [
+            {
+              header: "Category",
+              content: ->(category) do
+                content_tag(:div) do
+                  content_tag(:div, class: "flex items-center gap-2") do
+                    content_tag(:p, category.name, class: "text-sm font-medium text-slate-900 dark:text-white") +
+                    (category.disabled? ? content_tag(:span, "Disabled", class: "px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200") : "".html_safe)
+                  end
+                end
+              end
+            },
+            {
+              header: "Kind",
+              content: ->(category) { category.kind.to_s.humanize },
+              class: "whitespace-nowrap text-sm text-slate-600 dark:text-slate-400"
+            },
+            {
+              header: "Usage",
+              content: ->(category) do
+                count = category.job_role? ? category.job_roles.count : category.skill_tags.count
+                content_tag(:span, count, class: "text-sm text-slate-600 dark:text-slate-400")
+              end,
+              class: "whitespace-nowrap text-sm"
+            },
+            {
+              header: "Actions",
+              content: ->(category) do
+                content_tag(:div, class: "flex items-center gap-2") do
+                  link_to("View", admin_category_path(category), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium") +
+                  link_to("Edit", edit_admin_category_path(category), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium") +
+                  link_to("Merge", merge_admin_category_path(category), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium") +
+                  (category.disabled? ?
+                    button_to("Enable", enable_admin_category_path(category), method: :post, class: "text-green-600 hover:text-green-800 dark:text-green-400 font-medium") :
+                    button_to("Disable", disable_admin_category_path(category), method: :post, class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium", data: { turbo_confirm: "Disable this category? It will be hidden from autocomplete." })
+                  ) +
+                  link_to("Delete", admin_category_path(category), method: :delete, data: { turbo_confirm: "Delete this category? Only allowed if unused." }, class: "text-red-600 hover:text-red-800 dark:text-red-400 font-medium")
+                end
+              end,
+              class: "whitespace-nowrap text-sm"
+            }
+          ],
+          empty_message: "No categories found" %>
+
+      <%= render "admin/shared/pagination", pagy: @pagy %>
+    </div>
+  </div>
+</div>

@@ -108,6 +108,25 @@
             </svg>
             View Opportunities
           <% end %>
+
+          <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Save a job link
+            </p>
+            <%= form_with model: SavedJob.new, url: saved_jobs_path, method: :post, class: "flex gap-2" do |f| %>
+              <%= f.text_field :url,
+                placeholder: "https://...",
+                class: "flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent" %>
+
+              <%= f.submit "Save",
+                class: "px-3 py-2 text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors cursor-pointer" %>
+            <% end %>
+            <div class="mt-2">
+              <%= link_to saved_jobs_path, class: "text-xs text-primary-600 dark:text-primary-400 hover:underline" do %>
+                View saved jobs
+              <% end %>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -262,4 +281,3 @@
 
 <!-- Include the new application modal if it exists -->
 <%= render "interview_applications/new_application_modal" if lookup_context.template_exists?("interview_applications/new_application_modal", [], true) %>
-

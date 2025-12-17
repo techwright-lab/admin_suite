@@ -142,8 +142,22 @@
                 
                 <% if result["value"].present? %>
                   <div>
-                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Extracted Value</p>
-                    <pre class="text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 overflow-x-auto whitespace-pre-wrap"><%= result["value"] %></pre>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Extracted Value (<%= result["value"].to_s.length %> chars)</p>
+                    <pre class="text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto"><%= result["value"] %></pre>
+                  </div>
+                <% end %>
+                
+                <% if result["raw_html"].present? %>
+                  <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Raw HTML Matched</p>
+                    <pre class="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto font-mono"><%= truncate(result["raw_html"].to_s, length: 1000) %></pre>
+                  </div>
+                <% end %>
+                
+                <% if result["error"].present? %>
+                  <div>
+                    <p class="text-xs font-medium text-red-500 dark:text-red-400 uppercase mb-1">Error</p>
+                    <p class="text-xs text-red-600 dark:text-red-400"><%= result["error"] %></p>
                   </div>
                 <% end %>
               </div>
@@ -157,6 +171,85 @@
       <% end %>
     </div>
   </div>
+
+  <!-- Cached HTML Data -->
+  <% scraped_data = @attempt&.scraped_job_listing_data || ScrapedJobListingData.find_valid_for_url(@log.url, job_listing: @job_listing) %>
+  <% if scraped_data %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Cached HTML Data</h2>
+        <span class="text-xs <%= scraped_data.cache_valid? ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' %>">
+          <%= scraped_data.cache_valid? ? "Valid" : "Expired" %> until <%= scraped_data.valid_until.strftime("%b %d, %Y") %>
+        </span>
+      </div>
+      <div class="p-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Raw HTML</p>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white"><%= number_to_human_size(scraped_data.html_content&.bytesize || 0) %></p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Cleaned HTML</p>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white"><%= number_to_human_size(scraped_data.cleaned_html&.bytesize || 0) %></p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">HTTP Status</p>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white"><%= scraped_data.http_status || "N/A" %></p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Content Hash</p>
+            <p class="text-xs font-mono text-slate-600 dark:text-slate-400 truncate" title="<%= scraped_data.content_hash %>"><%= scraped_data.content_hash&.first(16) %>...</p>
+          </div>
+        </div>
+        
+        <!-- Cleaned HTML Preview (collapsible) -->
+        <div data-controller="collapsible" class="border border-slate-200 dark:border-slate-700 rounded-lg">
+          <button type="button" data-action="click->collapsible#toggle" class="w-full px-4 py-2 flex items-center justify-between text-left bg-slate-50 dark:bg-slate-900 rounded-t-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">View Cleaned HTML (used for AI extraction)</span>
+            <svg data-collapsible-target="icon" class="w-4 h-4 text-slate-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div data-collapsible-target="content" class="hidden">
+            <pre class="p-4 text-xs text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto"><%= scraped_data.cleaned_html&.truncate(30000) || "No cleaned HTML available" %></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- AI Extraction Logs for this attempt -->
+  <% ai_logs = @attempt&.llm_api_logs&.recent&.limit(5) || [] %>
+  <% if ai_logs.any? %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">AI Extraction Logs</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400"><%= ai_logs.count %> log(s)</span>
+      </div>
+      <div class="divide-y divide-slate-200 dark:divide-slate-700">
+        <% ai_logs.each do |log| %>
+          <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <% ai_status_colors = { "success" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", "error" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400" } %>
+                <span class="px-2 py-0.5 text-xs font-semibold rounded-full <%= ai_status_colors[log.status] || 'bg-slate-100 text-slate-800' %>">
+                  <%= log.status.titleize %>
+                </span>
+                <span class="text-sm text-slate-900 dark:text-white"><%= log.provider.titleize %> / <%= log.model %></span>
+                <span class="text-xs text-slate-500 dark:text-slate-400"><%= log.formatted_latency %></span>
+                <% if log.confidence_score %>
+                  <span class="text-xs <%= log.confidence_score >= 0.7 ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400' %>">
+                    <%= (log.confidence_score * 100).round(1) %>% confidence
+                  </span>
+                <% end %>
+              </div>
+              <%= link_to "View Details", admin_ai_llm_api_log_path(log), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <!-- Related Links -->
   <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
@@ -181,4 +274,3 @@
     </div>
   </div>
 </div>
-

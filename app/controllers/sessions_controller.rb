@@ -4,15 +4,21 @@ class SessionsController < ApplicationController
   layout "authentication"
 
   def new
+    redirect_to root_path, alert: "Sign in is disabled." unless Setting.user_login_enabled?
   end
 
   def create
+    unless Setting.username_password_login_enabled?
+      redirect_to new_session_path, alert: "Username and password login is disabled."
+      return
+    end
+
     if user = User.authenticate_by(params.permit(:email_address, :password))
       if user.email_verified?
         start_new_session_for user
         redirect_to after_authentication_url
       else
-        redirect_to new_session_path, 
+        redirect_to new_session_path,
           alert: "Please verify your email first. Check your inbox for the verification link."
       end
     else

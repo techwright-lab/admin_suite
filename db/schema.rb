@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_16_214112) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,13 +42,42 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "blog_posts", force: :cascade do |t|
+    t.string "author_name"
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.text "excerpt"
+    t.datetime "published_at"
+    t.string "slug", null: false
+    t.integer "status", default: 0, null: false
+    t.string "tags"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["published_at"], name: "index_blog_posts_on_published_at"
+    t.index ["slug"], name: "index_blog_posts_on_slug", unique: true
+    t.index ["status"], name: "index_blog_posts_on_status"
+  end
+
+  create_table "categories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "disabled_at"
+    t.integer "kind", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text), kind", name: "index_categories_on_lower_name_and_kind", unique: true
+    t.index ["disabled_at"], name: "index_categories_on_disabled_at"
+    t.index ["kind"], name: "index_categories_on_kind"
+  end
+
   create_table "companies", force: :cascade do |t|
     t.text "about"
     t.datetime "created_at", null: false
+    t.datetime "disabled_at"
     t.string "logo_url"
     t.string "name"
     t.datetime "updated_at", null: false
     t.string "website"
+    t.index ["disabled_at"], name: "index_companies_on_disabled_at"
     t.index ["name"], name: "index_companies_on_name", unique: true
   end
 
@@ -104,6 +133,24 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.index ["verified"], name: "index_email_senders_on_verified"
   end
 
+  create_table "fit_assessments", force: :cascade do |t|
+    t.string "algorithm_version"
+    t.jsonb "breakdown", default: {}, null: false
+    t.datetime "computed_at"
+    t.datetime "created_at", null: false
+    t.bigint "fittable_id", null: false
+    t.string "fittable_type", null: false
+    t.string "inputs_digest"
+    t.integer "score"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["computed_at"], name: "index_fit_assessments_on_computed_at"
+    t.index ["fittable_type", "fittable_id"], name: "index_fit_assessments_on_fittable"
+    t.index ["user_id", "fittable_type", "fittable_id"], name: "index_fit_assessments_on_user_and_fittable_unique", unique: true
+    t.index ["user_id"], name: "index_fit_assessments_on_user_id"
+  end
+
   create_table "friendly_id_slugs", force: :cascade do |t|
     t.datetime "created_at"
     t.string "scope"
@@ -116,6 +163,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
   end
 
   create_table "html_scraping_logs", force: :cascade do |t|
+    t.string "board_type"
     t.integer "cleaned_html_size"
     t.datetime "created_at", null: false
     t.string "domain", null: false
@@ -123,22 +171,29 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.text "error_message"
     t.string "error_type"
     t.float "extraction_rate"
+    t.string "extractor_kind"
+    t.string "fetch_mode"
     t.jsonb "field_results", default: {}
     t.integer "fields_attempted", default: 0
     t.integer "fields_extracted", default: 0
     t.integer "html_size"
     t.bigint "job_listing_id"
+    t.string "run_context"
     t.bigint "scraping_attempt_id", null: false
     t.jsonb "selectors_tried", default: {}
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.index ["board_type"], name: "index_html_scraping_logs_on_board_type"
     t.index ["created_at"], name: "index_html_scraping_logs_on_created_at"
     t.index ["domain", "created_at"], name: "index_html_scraping_logs_on_domain_and_created_at"
     t.index ["domain", "status"], name: "index_html_scraping_logs_on_domain_and_status"
     t.index ["domain"], name: "index_html_scraping_logs_on_domain"
     t.index ["extraction_rate"], name: "index_html_scraping_logs_on_extraction_rate"
+    t.index ["extractor_kind"], name: "index_html_scraping_logs_on_extractor_kind"
+    t.index ["fetch_mode"], name: "index_html_scraping_logs_on_fetch_mode"
     t.index ["job_listing_id"], name: "index_html_scraping_logs_on_job_listing_id"
+    t.index ["run_context"], name: "index_html_scraping_logs_on_run_context"
     t.index ["scraping_attempt_id"], name: "index_html_scraping_logs_on_scraping_attempt_id"
     t.index ["status"], name: "index_html_scraping_logs_on_status"
   end
@@ -213,11 +268,14 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
   end
 
   create_table "job_listings", force: :cascade do |t|
+    t.text "about_company"
     t.text "benefits"
+    t.text "company_culture"
     t.bigint "company_id", null: false
     t.datetime "created_at", null: false
     t.jsonb "custom_sections", default: {}
     t.text "description"
+    t.datetime "disabled_at"
     t.text "equity_info"
     t.string "job_board_id"
     t.bigint "job_role_id", null: false
@@ -237,17 +295,22 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.string "url"
     t.index ["company_id", "job_role_id"], name: "index_job_listings_on_company_id_and_job_role_id"
     t.index ["company_id"], name: "index_job_listings_on_company_id"
+    t.index ["disabled_at"], name: "index_job_listings_on_disabled_at"
     t.index ["job_role_id"], name: "index_job_listings_on_job_role_id"
     t.index ["remote_type"], name: "index_job_listings_on_remote_type"
     t.index ["status"], name: "index_job_listings_on_status"
   end
 
   create_table "job_roles", force: :cascade do |t|
-    t.string "category"
+    t.bigint "category_id"
     t.datetime "created_at", null: false
     t.text "description"
+    t.datetime "disabled_at"
+    t.string "legacy_category"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_job_roles_on_category_id"
+    t.index ["disabled_at"], name: "index_job_roles_on_disabled_at"
     t.index ["title"], name: "index_job_roles_on_title", unique: true
   end
 
@@ -320,8 +383,26 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.index ["provider_type"], name: "index_llm_provider_configs_on_provider_type"
   end
 
+  create_table "mailkick_subscriptions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "list"
+    t.bigint "subscriber_id"
+    t.string "subscriber_type"
+    t.datetime "updated_at", null: false
+    t.index ["subscriber_type", "subscriber_id", "list"], name: "index_mailkick_subscriptions_on_subscriber_and_list", unique: true
+  end
+
+  create_table "newsletter_subscribers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_newsletter_subscribers_on_email", unique: true
+  end
+
   create_table "opportunities", force: :cascade do |t|
     t.float "ai_confidence_score"
+    t.datetime "archived_at"
+    t.string "archived_reason"
     t.string "company_name"
     t.datetime "created_at", null: false
     t.text "email_snippet"
@@ -363,6 +444,31 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.index ["skill_tag_id"], name: "index_resume_skills_on_skill_tag_id"
     t.index ["user_resume_id", "skill_tag_id"], name: "index_resume_skills_on_user_resume_id_and_skill_tag_id", unique: true
     t.index ["user_resume_id"], name: "index_resume_skills_on_user_resume_id"
+  end
+
+  create_table "saved_jobs", force: :cascade do |t|
+    t.datetime "archived_at"
+    t.string "archived_reason"
+    t.string "company_name"
+    t.datetime "converted_at"
+    t.datetime "created_at", null: false
+    t.string "job_role_title"
+    t.text "notes"
+    t.bigint "opportunity_id"
+    t.string "status", default: "active", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.bigint "user_id", null: false
+    t.index ["archived_at"], name: "index_saved_jobs_on_archived_at"
+    t.index ["converted_at"], name: "index_saved_jobs_on_converted_at"
+    t.index ["opportunity_id"], name: "index_saved_jobs_on_opportunity_id"
+    t.index ["status"], name: "index_saved_jobs_on_status"
+    t.index ["user_id", "created_at"], name: "index_saved_jobs_on_user_id_and_created_at"
+    t.index ["user_id", "opportunity_id"], name: "index_saved_jobs_on_user_and_opportunity_unique", unique: true, where: "((opportunity_id IS NOT NULL) AND ((status)::text = 'active'::text))"
+    t.index ["user_id", "url"], name: "index_saved_jobs_on_user_and_url_unique", unique: true, where: "((url IS NOT NULL) AND ((status)::text = 'active'::text))"
+    t.index ["user_id"], name: "index_saved_jobs_on_user_id"
+    t.check_constraint "(opportunity_id IS NOT NULL) <> (url IS NOT NULL)", name: "chk_saved_jobs_exactly_one_source"
   end
 
   create_table "scraped_job_listing_data", force: :cascade do |t|
@@ -453,10 +559,14 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
   end
 
   create_table "skill_tags", force: :cascade do |t|
-    t.string "category"
+    t.bigint "category_id"
     t.datetime "created_at", null: false
+    t.datetime "disabled_at"
+    t.string "legacy_category"
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_skill_tags_on_category_id"
+    t.index ["disabled_at"], name: "index_skill_tags_on_disabled_at"
     t.index ["name"], name: "index_skill_tags_on_name", unique: true
   end
 
@@ -505,6 +615,37 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.index ["thread_id"], name: "index_synced_emails_on_thread_id"
     t.index ["user_id", "gmail_id"], name: "index_synced_emails_on_user_id_and_gmail_id", unique: true
     t.index ["user_id"], name: "index_synced_emails_on_user_id"
+  end
+
+  create_table "taggings", force: :cascade do |t|
+    t.string "context", limit: 128
+    t.datetime "created_at", precision: nil
+    t.bigint "tag_id"
+    t.bigint "taggable_id"
+    t.string "taggable_type"
+    t.bigint "tagger_id"
+    t.string "tagger_type"
+    t.string "tenant", limit: 128
+    t.index ["context"], name: "index_taggings_on_context"
+    t.index ["tag_id", "taggable_id", "taggable_type", "context", "tagger_id", "tagger_type"], name: "taggings_idx", unique: true
+    t.index ["tag_id"], name: "index_taggings_on_tag_id"
+    t.index ["taggable_id", "taggable_type", "context"], name: "taggings_taggable_context_idx"
+    t.index ["taggable_id", "taggable_type", "tagger_id", "context"], name: "taggings_idy"
+    t.index ["taggable_id"], name: "index_taggings_on_taggable_id"
+    t.index ["taggable_type", "taggable_id"], name: "index_taggings_on_taggable_type_and_taggable_id"
+    t.index ["taggable_type"], name: "index_taggings_on_taggable_type"
+    t.index ["tagger_id", "tagger_type"], name: "index_taggings_on_tagger_id_and_tagger_type"
+    t.index ["tagger_id"], name: "index_taggings_on_tagger_id"
+    t.index ["tagger_type", "tagger_id"], name: "index_taggings_on_tagger_type_and_tagger_id"
+    t.index ["tenant"], name: "index_taggings_on_tenant"
+  end
+
+  create_table "tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.integer "taggings_count", default: 0
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
   create_table "transitions", force: :cascade do |t|
@@ -562,6 +703,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.text "analysis_summary"
     t.datetime "analyzed_at"
     t.datetime "created_at", null: false
+    t.jsonb "domains", default: [], null: false
     t.jsonb "extracted_data", default: {}
     t.string "name", null: false
     t.text "parsed_text"
@@ -569,6 +711,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.string "resume_date_confidence"
     t.string "resume_date_source"
     t.date "resume_updated_at"
+    t.jsonb "strengths", default: [], null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["analysis_status"], name: "index_user_resumes_on_analysis_status"
@@ -627,11 +770,13 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
     t.string "gitlab_url"
     t.boolean "is_admin", default: false, null: false
     t.string "linkedin_url"
+    t.boolean "marketing_opt_in", default: false, null: false
     t.string "name"
     t.string "oauth_provider"
     t.string "oauth_uid"
     t.string "password_digest", null: false
     t.string "portfolio_url"
+    t.datetime "terms_accepted_at"
     t.string "twitter_url"
     t.datetime "updated_at", null: false
     t.integer "years_of_experience"
@@ -648,6 +793,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
   add_foreign_key "connected_accounts", "users"
   add_foreign_key "email_senders", "companies"
   add_foreign_key "email_senders", "companies", column: "auto_detected_company_id"
+  add_foreign_key "fit_assessments", "users"
   add_foreign_key "html_scraping_logs", "job_listings"
   add_foreign_key "html_scraping_logs", "scraping_attempts"
   add_foreign_key "interview_applications", "companies"
@@ -660,23 +806,28 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_11_235931) do
   add_foreign_key "interview_skill_tags", "skill_tags"
   add_foreign_key "job_listings", "companies"
   add_foreign_key "job_listings", "job_roles"
+  add_foreign_key "job_roles", "categories"
   add_foreign_key "llm_api_logs", "llm_prompts"
   add_foreign_key "opportunities", "interview_applications"
   add_foreign_key "opportunities", "synced_emails"
   add_foreign_key "opportunities", "users"
   add_foreign_key "resume_skills", "skill_tags"
   add_foreign_key "resume_skills", "user_resumes"
+  add_foreign_key "saved_jobs", "opportunities"
+  add_foreign_key "saved_jobs", "users"
   add_foreign_key "scraped_job_listing_data", "job_listings"
   add_foreign_key "scraped_job_listing_data", "scraping_attempts"
   add_foreign_key "scraping_attempts", "job_listings"
   add_foreign_key "scraping_events", "job_listings"
   add_foreign_key "scraping_events", "scraping_attempts"
   add_foreign_key "sessions", "users"
+  add_foreign_key "skill_tags", "categories"
   add_foreign_key "support_tickets", "users"
   add_foreign_key "synced_emails", "connected_accounts"
   add_foreign_key "synced_emails", "email_senders"
   add_foreign_key "synced_emails", "interview_applications"
   add_foreign_key "synced_emails", "users"
+  add_foreign_key "taggings", "tags"
   add_foreign_key "user_preferences", "users"
   add_foreign_key "user_resume_target_companies", "companies"
   add_foreign_key "user_resume_target_companies", "user_resumes"

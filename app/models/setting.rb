@@ -2,6 +2,13 @@ class Setting < ApplicationRecord
   AVAILABLE_SETTINGS = %w[
     user_sign_up_enabled
     user_login_enabled
+    user_email_verification_enabled
+    username_password_login_enabled
+    magic_link_login_enabled
+    oauth_login_enabled
+    oauth_registration_enabled
+    google_login_enabled
+    google_registration_enabled
     analytics_enabled
     mixpanel_enabled
     sentry_enabled
@@ -17,6 +24,8 @@ class Setting < ApplicationRecord
     careerbuilder_enabled
     monster_enabled
     careerjet_enabled
+    js_rendering_enabled
+    turnstile_enabled
   ]
 
   CACHE_KEY = "settings"

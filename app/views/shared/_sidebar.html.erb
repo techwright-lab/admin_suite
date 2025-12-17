@@ -160,6 +160,51 @@
       <% end %>
     <% end %>
 
+    <%= link_to saved_jobs_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(saved_jobs_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
+      <svg
+        class="w-5 h-5 mr-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-4-7 4V5z"
+        />
+      </svg>
+      Saved
+      <% if defined?(Current.user) && Current.user&.saved_jobs&.active&.unconverted&.any? %>
+        <span
+          class="
+            ml-auto inline-flex items-center px-2 py-0.5 rounded-full
+            text-xs font-medium bg-indigo-100 text-indigo-800
+            dark:bg-indigo-900/30 dark:text-indigo-400
+          "
+        >
+          <%= Current.user.saved_jobs.active.unconverted.count %>
+        </span>
+      <% end %>
+    <% end %>
+
+    <%= link_to archived_jobs_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(archived_jobs_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
+      <svg
+        class="w-5 h-5 mr-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M20 7l-8-4-8 4m16 0v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0l-8 4-8-4"
+        />
+      </svg>
+      Archived
+    <% end %>
+
     <%= link_to settings_path, class: "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors #{current_page?(settings_path) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}" do %>
       <svg
         class="w-5 h-5 mr-3"

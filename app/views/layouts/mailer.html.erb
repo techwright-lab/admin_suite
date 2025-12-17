@@ -14,43 +14,58 @@
         font-size: 16px;
         line-height: 1.6;
         color: #374151;
-        background-color: #f9fafb;
+        background-color: #0f172a;
       }
       
       /* Container */
       .email-wrapper {
         width: 100%;
-        background-color: #f9fafb;
+        background-color: #0f172a;
         padding: 40px 20px;
       }
       
       .email-container {
         max-width: 600px;
         margin: 0 auto;
-        background-color: #ffffff;
-        border-radius: 8px;
+        background-color: #1e293b;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
       }
       
       /* Header */
       .email-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         padding: 32px 40px;
         text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
       
-      .email-logo {
-        font-size: 28px;
+      .email-logo-img {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+      }
+      
+      .email-logo-text {
+        font-size: 24px;
         font-weight: bold;
         color: #ffffff;
         margin: 0;
         letter-spacing: -0.5px;
       }
       
+      .email-logo-tagline {
+        font-size: 14px;
+        color: #94a3b8;
+        margin: 4px 0 0 0;
+      }
+      
       /* Content */
       .email-content {
         padding: 40px;
+        background-color: #ffffff;
       }
       
       .email-content h1 {
@@ -65,17 +80,18 @@
         color: #374151;
       }
       
-      /* Button */
+      /* Button - Gleania teal color */
       .email-button {
         display: inline-block;
         padding: 14px 32px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
         color: #ffffff !important;
         text-decoration: none;
-        border-radius: 6px;
+        border-radius: 8px;
         font-weight: 600;
         margin: 24px 0;
         text-align: center;
+        box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3);
       }
       
       .email-button:hover {
@@ -84,21 +100,32 @@
       
       /* Footer */
       .email-footer {
-        background-color: #f9fafb;
+        background-color: #0f172a;
         padding: 32px 40px;
         text-align: center;
-        border-top: 1px solid #e5e7eb;
       }
       
       .email-footer p {
         margin: 0 0 8px 0;
         font-size: 14px;
-        color: #6b7280;
+        color: #94a3b8;
       }
       
       .email-footer a {
-        color: #667eea;
+        color: #14b8a6;
         text-decoration: none;
+      }
+      
+      .email-footer-brand {
+        color: #ffffff;
+        font-weight: 600;
+      }
+      
+      .email-footer-divider {
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #14b8a6, transparent);
+        margin: 16px auto;
       }
       
       /* Utility */
@@ -124,6 +151,11 @@
         .email-footer {
           padding: 24px;
         }
+        
+        .email-logo-img {
+          width: 48px;
+          height: 48px;
+        }
       }
     </style>
   </head>
@@ -131,9 +163,15 @@
   <body>
     <div class="email-wrapper">
       <div class="email-container">
-        <!-- Header -->
+        <!-- Header with Logo -->
         <div class="email-header">
-          <h1 class="email-logo">Gleania</h1>
+          <% if attachments['logo.png'].present? %>
+            <%= image_tag attachments['logo.png'].url, 
+                alt: "Gleania", 
+                style: "width: 56px; height: 56px; border-radius: 12px; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;" %>
+          <% end %>
+          <p class="email-logo-text">Gleania</p>
+          <p class="email-logo-tagline">Your Intelligent Interview Assistant</p>
         </div>
 
         <!-- Content -->
@@ -141,14 +179,22 @@
 
         <!-- Footer -->
         <div class="email-footer">
-          <p><strong>Gleania</strong> - Your Interview Tracking Companion</p>
+          <div class="email-footer-divider"></div>
+          
+          <p>
+            <span class="email-footer-brand">Gleania</span> — Your Intelligent Interview Assistant
+          </p>
 
-          <p class="text-muted">
+          <p>
             Questions? Reply to this email or visit our
             <%= link_to "help center", root_url %>
           </p>
+          
+          <p style="margin-top: 16px;">
+            <%= link_to "Privacy Policy", privacy_url %> · <%= link_to "Terms of Service", terms_url %>
+          </p>
 
-          <p class="text-muted">
+          <p style="margin-top: 16px; font-size: 12px; color: #64748b;">
             © <%= Time.current.year %> Gleania. All rights reserved.
           </p>
         </div>

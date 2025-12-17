@@ -33,6 +33,36 @@
             value: @filters[:search]
           },
           {
+            type: :autocomplete,
+            name: :company_id,
+            label: "Company",
+            placeholder: "Search or create company...",
+            autocomplete_url: autocomplete_companies_path,
+            create_url: companies_path,
+            value: @filters[:company_id],
+            display_value: @selected_company&.name
+          },
+          {
+            type: :autocomplete,
+            name: :job_role_id,
+            label: "Job Role",
+            placeholder: "Search or create job role...",
+            autocomplete_url: autocomplete_job_roles_path,
+            create_url: job_roles_path,
+            value: @filters[:job_role_id],
+            display_value: @selected_job_role&.title
+          },
+          {
+            type: :autocomplete,
+            name: :skill_tag_id,
+            label: "Skill Tag",
+            placeholder: "Search or create skill tag...",
+            autocomplete_url: autocomplete_skill_tags_path,
+            create_url: skill_tags_path,
+            value: @filters[:skill_tag_id],
+            display_value: @selected_skill_tag&.name
+          },
+          {
             type: :select,
             name: :status,
             label: "Status",

@@ -92,6 +92,16 @@
             </span>
           <% end %>
         </div>
+
+        <% if user_resume.analyzed? && user_resume.strengths.any? %>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <% user_resume.strengths.first(3).each do |strength| %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
+                <%= strength %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
       </div>
     </div>
 

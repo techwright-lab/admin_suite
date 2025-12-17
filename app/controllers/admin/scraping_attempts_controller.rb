@@ -5,10 +5,15 @@ module Admin
   #
   # Provides index with filters and detailed show view with event timeline
   # and data comparison for debugging the scraping pipeline.
+  #
+  # Admin actions:
+  # - mark_failed: Manually mark a stuck attempt as failed
+  # - retry_attempt: Retry a failed attempt
+  # - cleanup_stuck: Run cleanup job for all stuck attempts
   class ScrapingAttemptsController < BaseController
     include Concerns::Paginatable
 
-    before_action :set_scraping_attempt, only: [ :show ]
+    before_action :set_scraping_attempt, only: [ :show, :mark_failed, :retry_attempt ]
 
     # GET /admin/scraping_attempts
     def index
@@ -23,14 +28,76 @@ module Admin
       @ai_logs = @attempt.llm_api_logs.order(created_at: :desc).limit(10)
       @scraped_data = @attempt.scraped_job_listing_data
       @job_listing = @attempt.job_listing
+    @html_scraping_logs = @attempt.html_scraping_logs.order(created_at: :desc)
       @timeline_stats = calculate_timeline_stats(@events)
+    end
+
+    # POST /admin/scraping_attempts/:id/mark_failed
+    # Manually marks a stuck attempt as failed
+    def mark_failed
+      if @attempt.completed? || @attempt.failed?
+        redirect_to admin_scraping_attempt_path(@attempt), alert: "Attempt already in final state (#{@attempt.status})"
+        return
+      end
+
+      # Find any incomplete events and mark them as failed
+      @attempt.scraping_events.where(status: :started).find_each do |event|
+        event.update!(
+          status: :failed,
+          completed_at: Time.current,
+          error_type: "ManuallyMarkedFailed",
+          error_message: "Manually marked as failed by admin"
+        )
+      end
+
+      @attempt.update!(
+        status: :failed,
+        failed_step: @attempt.status,
+        error_message: "Manually marked as failed by admin at #{Time.current.strftime('%Y-%m-%d %H:%M:%S UTC')}"
+      )
+
+      redirect_to admin_scraping_attempt_path(@attempt), notice: "Attempt marked as failed"
+    end
+
+    # POST /admin/scraping_attempts/:id/retry
+    # Queues a retry job for a failed attempt
+    def retry_attempt
+      unless @attempt.failed?
+        redirect_to admin_scraping_attempt_path(@attempt), alert: "Can only retry failed attempts"
+        return
+      end
+
+      # Queue a new scraping job
+      ScrapeJobListingJob.perform_later(@attempt.job_listing)
+
+      redirect_to admin_scraping_attempt_path(@attempt), notice: "Retry job queued for job listing ##{@attempt.job_listing_id}"
+    end
+
+    # POST /admin/scraping_attempts/cleanup_stuck
+    # Runs the cleanup job for all stuck attempts
+    def cleanup_stuck
+      # Find how many would be cleaned up
+      stuck_count = ScrapingAttempt
+        .where(status: %w[pending fetching extracting retrying])
+        .where("updated_at < ?", 10.minutes.ago)
+        .count
+
+      if stuck_count.zero?
+        redirect_to admin_scraping_attempts_path, notice: "No stuck attempts found"
+        return
+      end
+
+      # Run the cleanup job
+      CleanupStuckScrapingAttemptsJob.perform_later
+
+      redirect_to admin_scraping_attempts_path, notice: "Cleanup job queued for #{stuck_count} stuck attempt(s)"
     end
 
     private
 
     # Sets the scraping attempt from params
     def set_scraping_attempt
-      @attempt = ScrapingAttempt.includes(:job_listing, :scraping_events, :llm_api_logs, :scraped_job_listing_data, :html_scraping_log).find(params[:id])
+    @attempt = ScrapingAttempt.includes(:job_listing, :scraping_events, :llm_api_logs, :scraped_job_listing_data, :html_scraping_logs).find(params[:id])
     rescue ActiveRecord::RecordNotFound
       redirect_to admin_scraping_attempts_path, alert: "Scraping attempt not found"
     end
@@ -110,7 +177,8 @@ module Admin
     def calculate_timeline_stats(events)
       return {} if events.empty?
 
-      total_duration = events.sum(&:duration_ms) || 0
+      # Handle nil duration_ms values safely
+      total_duration = events.sum { |e| e.duration_ms || 0 }
       successful = events.select(&:success?)
       failed = events.select(&:failed?)
 
@@ -120,7 +188,7 @@ module Admin
         failed_steps: failed.count,
         skipped_steps: events.select(&:skipped?).count,
         total_duration_ms: total_duration,
-        slowest_step: events.max_by(&:duration_ms),
+        slowest_step: events.max_by { |e| e.duration_ms || 0 },
         first_failure: failed.first
       }
     end

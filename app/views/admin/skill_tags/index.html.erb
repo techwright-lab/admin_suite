@@ -29,11 +29,15 @@
             value: @filters[:search]
           },
           {
-            type: :select,
-            name: :category,
+            type: :autocomplete,
+            name: :category_id,
             label: "Category",
-            options: [["All", ""]] + SkillTag.distinct.pluck(:category).compact.sort.map { |c| [c, c] },
-            value: @filters[:category]
+            placeholder: "Search or create category...",
+            autocomplete_url: autocomplete_categories_path(kind: "skill_tag"),
+            create_url: categories_path,
+            value: @filters[:category_id],
+            display_value: @selected_category&.name,
+            kind: "skill_tag"
           },
           {
             type: :select,
@@ -57,8 +61,11 @@
               header: "Skill Tag",
               content: ->(tag) do
                 content_tag(:div) do
-                  content_tag(:p, tag.name, class: "text-sm font-medium text-slate-900 dark:text-white") +
-                  (tag.category.present? ? content_tag(:p, tag.category, class: "text-xs text-slate-500 dark:text-slate-400") : "".html_safe)
+                  content_tag(:div, class: "flex items-center gap-2") do
+                    content_tag(:p, tag.name, class: "text-sm font-medium text-slate-900 dark:text-white") +
+                    (tag.disabled? ? content_tag(:span, "Disabled", class: "px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200") : "".html_safe)
+                  end +
+                  (tag.category_name.present? ? content_tag(:p, tag.category_name, class: "text-xs text-slate-500 dark:text-slate-400") : "".html_safe)
                 end
               end
             },
@@ -79,7 +86,12 @@
               content: ->(tag) do
                 content_tag(:div, class: "flex items-center gap-2") do
                   link_to("View", admin_skill_tag_path(tag), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium") +
-                  link_to("Edit", edit_admin_skill_tag_path(tag), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium")
+                  link_to("Edit", edit_admin_skill_tag_path(tag), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium") +
+                  (tag.disabled? ?
+                    button_to("Enable", enable_admin_skill_tag_path(tag), method: :post, class: "text-green-600 hover:text-green-800 dark:text-green-400 font-medium") :
+                    button_to("Disable", disable_admin_skill_tag_path(tag), method: :post, class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium", data: { turbo_confirm: "Disable this skill tag? It will be hidden from autocomplete and can be re-enabled." })
+                  ) +
+                  link_to("Delete", admin_skill_tag_path(tag), method: :delete, data: { turbo_confirm: "Delete this skill tag? This will remove associated tag links." }, class: "text-red-600 hover:text-red-800 dark:text-red-400 font-medium")
                 end
               end,
               class: "whitespace-nowrap text-sm"

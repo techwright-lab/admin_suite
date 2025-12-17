@@ -21,13 +21,18 @@ module Scraping
     def initialize(domain)
       @domain = domain
       @cache_key = "rate_limit:#{domain}"
+      @cache = if Rails.cache.is_a?(ActiveSupport::Cache::NullStore)
+        ActiveSupport::Cache::MemoryStore.new
+      else
+        Rails.cache
+      end
     end
 
     # Checks if a request to this domain is allowed
     #
     # @return [Boolean] True if request can be made now
     def allowed?
-      last_request_time = Rails.cache.read(@cache_key)
+      last_request_time = cache.read(@cache_key)
       return true if last_request_time.nil?
 
       time_since_last = Time.current - last_request_time
@@ -38,7 +43,7 @@ module Scraping
     #
     # @return [Boolean] True if successfully recorded
     def record_request!
-      Rails.cache.write(@cache_key, Time.current, expires_in: 1.hour)
+      cache.write(@cache_key, Time.current, expires_in: 1.hour)
     end
 
     # Returns the wait time before next request is allowed
@@ -47,12 +52,12 @@ module Scraping
     def wait_time
       return 0.0 if allowed?
 
-      last_request_time = Rails.cache.read(@cache_key)
+      last_request_time = cache.read(@cache_key)
       return 0.0 if last_request_time.nil?
 
       time_since_last = Time.current - last_request_time
       remaining = rate_limit_seconds - time_since_last
-      [remaining, 0.0].max
+      [ remaining, 0.0 ].max
     end
 
     # Blocks until the domain is ready for another request
@@ -64,6 +69,10 @@ module Scraping
     end
 
     private
+
+    def cache
+      @cache
+    end
 
     # Returns the rate limit in seconds for this domain
     #
@@ -77,7 +86,7 @@ module Scraping
     # @return [Integer] Seconds between requests
     def load_rate_limit_config
       config = YAML.load_file(Rails.root.join("config/rate_limits.yml"))
-      
+
       # Try exact domain match first
       domain_limits = config["domains"] || {}
       return domain_limits[@domain] if domain_limits.key?(@domain)
@@ -90,4 +99,3 @@ module Scraping
     end
   end
 end
-

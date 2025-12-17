@@ -48,10 +48,66 @@
         </div>
       </div>
 
-      <!-- Response Payload -->
+      <!-- Extracted Fields Summary -->
+      <% if @log.response_payload.present? && @log.response_payload.except("raw_response", "confidence", "error").any? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Extracted Fields</h2>
+          </div>
+          <div class="divide-y divide-slate-200 dark:divide-slate-700">
+            <% extraction_fields = %w[title company job_role description about_company company_culture requirements responsibilities location remote_type salary_min salary_max salary_currency equity_info benefits perks notes] %>
+            <% extraction_fields.each do |field| %>
+              <% value = @log.response_payload[field] || @log.response_payload[field.to_sym] %>
+              <div class="px-6 py-4 flex items-start gap-4">
+                <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center <%= value.present? ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500' %>">
+                  <% if value.present? %>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  <% else %>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                    </svg>
+                  <% end %>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 dark:text-white"><%= field.titleize %></p>
+                  <% if value.present? %>
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap break-words">
+                      <%= case value
+                          when Array then value.join(", ")
+                          when Hash then value.to_json
+                          else truncate(value.to_s, length: 300)
+                          end %>
+                    </p>
+                  <% else %>
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500 italic">Not extracted</p>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Raw LLM Response -->
+      <% raw_response = @log.response_payload&.dig("raw_response") || @log.response_payload&.dig(:raw_response) %>
+      <% if raw_response.present? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Raw LLM Response</h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400"><%= raw_response.length.to_s(:delimited) %> chars</span>
+          </div>
+          <div class="p-6">
+            <pre class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 overflow-x-auto text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-mono max-h-96 overflow-y-auto"><%= raw_response %></pre>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Response Payload (Full JSON) -->
       <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Response Payload</h2>
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Response Payload (JSON)</h2>
         </div>
         <div class="p-6">
           <% if @log.response_payload.present? %>
@@ -206,7 +262,3 @@
     </div>
   </div>
 </div>
-
-
-
-

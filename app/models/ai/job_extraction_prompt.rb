@@ -31,6 +31,8 @@ module Ai
         - remote_type: one of "on_site", "hybrid", or "remote"
 
         Optional fields (use null if not found):
+        - about_company: A concise “About the company” section (mission/product context)
+        - company_culture: Company values/culture section (how they work, principles, DEI, etc.)
         - salary_min: Minimum salary as number
         - salary_max: Maximum salary as number
         - salary_currency: Currency code (e.g., "USD", "EUR")

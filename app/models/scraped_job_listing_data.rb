@@ -44,7 +44,7 @@ class ScrapedJobListingData < ApplicationRecord
   def self.create_with_html(url:, html_content:, job_listing:, scraping_attempt: nil, http_status: nil, metadata: {})
     normalized_url = normalize_url(url)
     content_hash = Digest::SHA256.hexdigest(html_content)
-    cleaned_html = clean_html(html_content)
+    cleaned_html = clean_html(html_content, url: url)
 
     create!(
       job_listing: job_listing,
@@ -71,14 +71,21 @@ class ScrapedJobListingData < ApplicationRecord
     url.to_s.downcase
   end
 
-  # Cleans HTML content for better extraction using Nokogiri
+  # Cleans HTML content for better extraction
+  #
+  # Uses board-specific cleaners when URL is known, otherwise falls back to generic.
   #
   # @param [String] html The raw HTML
+  # @param [String, nil] url Optional URL to determine board-specific cleaner
   # @return [String] Cleaned HTML text
-  def self.clean_html(html)
+  def self.clean_html(html, url: nil)
     return "" if html.blank?
 
-    cleaner = Scraping::NokogiriHtmlCleanerService.new
+    cleaner = if url.present?
+                Scraping::HtmlCleaners::CleanerFactory.cleaner_for_url(url)
+    else
+                Scraping::NokogiriHtmlCleanerService.new
+    end
     cleaner.clean(html)
   end
 

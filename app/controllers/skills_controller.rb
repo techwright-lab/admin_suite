@@ -19,6 +19,9 @@ class SkillsController < ApplicationController
     @skill_stats = calculate_skill_stats
     @category_stats = calculate_category_stats
     @resume_coverage = calculate_resume_coverage
+
+    @merged_strengths = merged_strengths_for(Current.user)
+    @resume_domains = aggregated_label_counts(Current.user.user_resumes.analyzed.pluck(:domains).flatten)
   end
 
   private
@@ -69,5 +72,63 @@ class SkillsController < ApplicationController
       avg_skills_per_resume: total_resumes > 0 ? (ResumeSkill.joins(:user_resume).where(user_resumes: { user_id: Current.user.id }).count.to_f / total_resumes).round(1) : 0
     }
   end
-end
 
+  def aggregated_label_counts(labels)
+    labels = Array(labels).map { |l| l.to_s.strip }.reject(&:blank?)
+    counts = {}
+
+    labels.each do |label|
+      key = normalize_label_key(label)
+      next if key.blank?
+
+      counts[key] ||= { label: label, count: 0 }
+      counts[key][:count] += 1
+    end
+
+    counts
+  end
+
+  def merged_strengths_for(user)
+    resume_counts = aggregated_label_counts(user.user_resumes.analyzed.pluck(:strengths).flatten)
+
+    feedback_strengths = ProfileInsightsService.new(user).generate_insights[:strengths] || []
+    feedback_counts = {}
+    feedback_strengths.each do |row|
+      name = row[:name] || row["name"]
+      count = row[:count] || row["count"] || 0
+      key = normalize_label_key(name)
+      next if key.blank?
+
+      feedback_counts[key] ||= { label: name.to_s.strip, count: 0 }
+      feedback_counts[key][:count] += count.to_i
+    end
+
+    keys = (resume_counts.keys + feedback_counts.keys).uniq
+    merged = keys.map do |key|
+      resume = resume_counts[key]
+      feedback = feedback_counts[key]
+
+      label = resume&.dig(:label).presence || feedback&.dig(:label).presence || key
+      resume_count = resume&.dig(:count).to_i
+      feedback_count = feedback&.dig(:count).to_i
+      sources = []
+      sources << "resume" if resume_count.positive?
+      sources << "feedback" if feedback_count.positive?
+
+      {
+        key: key,
+        label: label,
+        total_count: resume_count + feedback_count,
+        resume_count: resume_count,
+        feedback_count: feedback_count,
+        sources: sources
+      }
+    end
+
+    merged.sort_by { |h| -h[:total_count].to_i }
+  end
+
+  def normalize_label_key(label)
+    label.to_s.strip.downcase.gsub(/\s+/, " ")
+  end
+end

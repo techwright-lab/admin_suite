@@ -28,8 +28,8 @@
       </div>
 
       <% if @opportunities.any? %>
-        <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>Swipe through or use buttons</span>
+        <div class="hidden sm:flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <span>Swipe, or use buttons</span>
         </div>
       <% end %>
     </div>
@@ -42,11 +42,8 @@
       dark:from-gray-900 dark:to-gray-800
     "
   >
-    <div
-      id="opportunities_stack"
-      class="h-full flex items-center justify-center p-4 sm:p-8"
-    >
+    <%= turbo_frame_tag "opportunities_stack", class: "h-full flex items-center justify-center p-4 sm:p-8" do %>
       <%= render "opportunities/stack" %>
-    </div>
+    <% end %>
   </div>
 </div>

@@ -135,13 +135,16 @@ module Scraping
     def save_to_cache(response, duration)
       metadata = {
         fetched_at: Time.current.iso8601,
+        fetched_via: "http",
+        fetch_mode: "static",
+        rendered: false,
         duration_seconds: duration,
         content_length: response.body.length,
         headers: response.headers.to_h.slice("content-type", "content-encoding", "last-modified")
       }
 
-      # Use Nokogiri cleaner for cleaned_html
-      cleaner = Scraping::NokogiriHtmlCleanerService.new
+      # Use board-specific cleaner if available, otherwise fall back to generic
+      cleaner = Scraping::HtmlCleaners::CleanerFactory.cleaner_for_url(@url)
       cleaned_html = cleaner.clean(response.body)
 
       ScrapedJobListingData.create_with_html(

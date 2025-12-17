@@ -4,6 +4,9 @@
     dark:border-gray-700
   "
 >
+  <% merged_strengths = local_assigns.fetch(:merged_strengths, []) %>
+  <% domains = local_assigns.fetch(:domains, {}) %>
+
   <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
     <div class="flex items-center justify-between">
       <div>
@@ -40,6 +43,58 @@
           <p class="text-xs text-gray-500 dark:text-gray-400">Growing</p>
         </div>
       </div>
+
+      <!-- Strengths & Domains -->
+      <% if merged_strengths.any? || domains.any? %>
+        <div class="mb-6">
+          <% if merged_strengths.any? %>
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Strengths
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              <% merged_strengths.first(8).each do |s| %>
+                <span
+                  class="
+                    inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs
+                    font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20
+                    dark:text-indigo-300
+                  "
+                  title="Resume: <%= s[:resume_count] %> • Feedback: <%= s[:feedback_count] %>"
+                >
+                  <%= s[:label] %>
+                  <span class="text-[10px] text-indigo-600/80 dark:text-indigo-300/80">
+                    <%= s[:total_count] %>
+                  </span>
+                  <span class="text-[10px] text-indigo-600/70 dark:text-indigo-300/70">
+                    <%= s[:sources].join("+") %>
+                  </span>
+                </span>
+              <% end %>
+            </div>
+          <% end %>
+
+          <% if domains.any? %>
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-5 mb-2">
+              Domains
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              <% domains.values.sort_by { |h| -h[:count].to_i }.first(8).each do |d| %>
+                <span
+                  class="
+                    inline-flex items-center px-2.5 py-1 rounded-full text-xs
+                    font-medium bg-gray-100 text-gray-700 dark:bg-dark-700
+                    dark:text-gray-300
+                  "
+                  title="Mentioned in <%= d[:count] %> resume<%= d[:count].to_i == 1 ? '' : 's' %>"
+                >
+                  <%= d[:label] %>
+                  <span class="ml-1 text-gray-500 dark:text-gray-400">(<%= d[:count] %>)</span>
+                </span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
 
       <!-- Top Skills -->
       <div class="mb-6">

@@ -20,6 +20,10 @@ module Admin
       @pagy, @interview_applications = paginate(filtered_applications)
       @stats = calculate_stats
       @filters = filter_params
+
+      @selected_company = Company.find_by(id: params[:company_id]) if params[:company_id].present?
+      @selected_job_role = JobRole.find_by(id: params[:job_role_id]) if params[:job_role_id].present?
+      @selected_skill_tag = SkillTag.find_by(id: params[:skill_tag_id]) if params[:skill_tag_id].present?
     end
 
     # GET /admin/interview_applications/:id
@@ -77,6 +81,11 @@ module Admin
         applications = applications.where(job_role_id: params[:job_role_id])
       end
 
+      # Filter by skill_tag
+      if params[:skill_tag_id].present?
+        applications = applications.joins(:skill_tags).where(skill_tags: { id: params[:skill_tag_id] }).distinct
+      end
+
       # Search
       if params[:search].present?
         search_term = "%#{params[:search]}%"
@@ -120,7 +129,7 @@ module Admin
     #
     # @return [Hash]
     def filter_params
-      params.permit(:search, :status, :pipeline_stage, :user_id, :company_id, :job_role_id, :sort, :page)
+      params.permit(:search, :status, :pipeline_stage, :user_id, :company_id, :job_role_id, :skill_tag_id, :sort, :page)
     end
   end
 end

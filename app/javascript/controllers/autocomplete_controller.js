@@ -7,6 +7,7 @@ export default class extends Controller {
     url: String,
     createUrl: String,
     modalTarget: String,
+    kind: String,
     minChars: { type: Number, default: 2 },
     debounce: { type: Number, default: 300 }
   }
@@ -181,7 +182,8 @@ export default class extends Controller {
         },
         body: JSON.stringify({
           name: name,
-          title: name  // For job roles
+          title: name,  // For job roles
+          kind: this.hasKindValue ? this.kindValue : undefined
         })
       })
       

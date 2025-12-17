@@ -81,6 +81,9 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    acts-as-taggable-on (13.0.0)
+      activerecord (>= 7.1, < 8.2)
+      zeitwerk (>= 2.4, < 3.0)
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
     afm (1.0.0)
@@ -157,6 +160,13 @@ GEM
     code_analyzer (0.5.5)
       sexp_processor
     colorize (1.1.0)
+    commonmarker (2.6.0)
+      rb_sys (~> 0.9)
+    commonmarker (2.6.0-aarch64-linux)
+    commonmarker (2.6.0-aarch64-linux-musl)
+    commonmarker (2.6.0-arm64-darwin)
+    commonmarker (2.6.0-x86_64-linux)
+    commonmarker (2.6.0-x86_64-linux-musl)
     concurrent-ruby (1.3.5)
     connection_pool (2.5.4)
     crack (1.0.1)
@@ -349,6 +359,8 @@ GEM
       net-imap
       net-pop
       net-smtp
+    mailkick (2.0.0)
+      activesupport (>= 7.1)
     marcel (1.1.0)
     matrix (0.4.3)
     memory_profiler (1.1.0)
@@ -541,6 +553,9 @@ GEM
       zeitwerk (~> 2.6)
     rainbow (3.1.1)
     rake (13.3.1)
+    rake-compiler-dock (1.10.0)
+    rb_sys (0.9.119)
+      rake-compiler-dock (= 1.10.0)
     rdoc (6.15.1)
       erb
       psych (>= 4.0.0)
@@ -735,6 +750,7 @@ PLATFORMS
 
 DEPENDENCIES
   aasm
+  acts-as-taggable-on
   after_commit_everywhere (~> 1.0)
   anthropic
   avo (>= 3)
@@ -747,6 +763,7 @@ DEPENDENCIES
   capybara
   chartkick
   colorize
+  commonmarker
   database_cleaner-active_record
   debug
   derailed_benchmarks
@@ -766,6 +783,8 @@ DEPENDENCIES
   letter_opener
   letter_opener_web (~> 3.0)
   logtail-rails
+  mailkick
+  meta-tags
   microscope
   mission_control-jobs
   mixpanel-ruby

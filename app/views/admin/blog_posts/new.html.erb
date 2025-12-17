@@ -1,0 +1,11 @@
+<% content_for :title, "New Blog Post - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: "New Blog Post",
+      description: "Create a new blog post (draft by default)" %>
+
+  <%= render "form", blog_post: @blog_post %>
+</div>
+
+

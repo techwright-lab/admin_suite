@@ -134,7 +134,7 @@
               </div>
             </div>
             <% if session_record.id != Current.session&.id %>
-              <%= button_to destroy_session_settings_path(session_id: session_record.id),
+              <%= button_to revoke_session_settings_path(session_id: session_record.id),
                   method: :delete,
                   class: "text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium",
                   data: { confirm: "Revoke this session?", turbo_confirm: "Revoke this session?" } do %>
@@ -151,4 +151,3 @@
     </div>
   </div>
 </div>
-

@@ -16,66 +16,110 @@
     <%= form_with url: url, method: :get, local: true, class: "space-y-4" do |f| %>
       <% filters.each do |filter| %>
         <div>
-          <label
-            class="
-              block text-xs font-medium text-slate-500 dark:text-slate-400
-              mb-1
-            "
-          >
-            <%= filter[:label] || filter[:name].to_s.humanize %>
-          </label>
-
           <% case filter[:type] %>
-          <% when :text, :search %>
-            <input
-              type="text"
-              name="<%= filter[:name] %>"
-              value="<%= filter[:value] %>"
-              placeholder="<%= filter[:placeholder] || '' %>"
+          <% when :checkbox %>
+            <div class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="<%= filter[:name] %>"
+                value="<%= filter[:checked_value] || 'true' %>"
+                id="<%= filter[:id] || filter[:name] %>"
+                <%= "checked" if filter[:value].to_s == (filter[:checked_value] || 'true').to_s %>
+                class="rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500"
+              >
+              <label
+                for="<%= filter[:id] || filter[:name] %>"
+                class="text-xs text-slate-500 dark:text-slate-400"
+              >
+                <%= filter[:label] || filter[:name].to_s.humanize %>
+              </label>
+            </div>
+          <% when :autocomplete %>
+            <%= render "shared/autocomplete",
+              form: f,
+              field_name: filter[:name],
+              label: filter[:label] || filter[:name].to_s.humanize,
+              placeholder: filter[:placeholder] || "Search...",
+              autocomplete_url: filter[:autocomplete_url],
+              create_url: filter[:create_url],
+              modal_id: filter[:modal_id] || "admin-filter-autocomplete",
+              value: filter[:value],
+              display_value: filter[:display_value],
+              kind: filter[:kind],
+              required: false,
+              help_text: filter[:help_text],
+              wrapper_class: "mb-0",
+              input_class: "text-sm" %>
+          <% else %>
+            <label
               class="
-                w-full rounded-lg border-slate-300 dark:border-slate-600
-                dark:bg-slate-700 dark:text-white text-sm
-              "
-              autocomplete="off"
-            >
-          <% when :select %>
-            <select
-              name="<%= filter[:name] %>"
-              class="
-                w-full rounded-lg border-slate-300 dark:border-slate-600
-                dark:bg-slate-700 dark:text-white text-sm
+                block text-xs font-medium text-slate-500 dark:text-slate-400
+                mb-1
               "
             >
-              <% filter[:options].each do |option| %>
-                <% if option.is_a?(Array) %>
-                  <option
-                    value="<%= option[1] %>"
-                    <%= "selected" if filter[:value] == option[1].to_s %>
-                  >
-                    <%= option[0] %>
-                  </option>
-                <% else %>
-                  <option
-                    value="<%= option %>"
-                    <%= "selected" if filter[:value] == option.to_s %>
-                  >
-                    <%= option.to_s.humanize %>
-                  </option>
+              <%= filter[:label] || filter[:name].to_s.humanize %>
+            </label>
+
+            <% case filter[:type] %>
+            <% when :text %>
+              <input
+                type="text"
+                name="<%= filter[:name] %>"
+                value="<%= filter[:value] %>"
+                placeholder="<%= filter[:placeholder] || '' %>"
+                class="form-input text-sm"
+                autocomplete="off"
+              >
+            <% when :search %>
+              <input
+                type="search"
+                name="<%= filter[:name] %>"
+                value="<%= filter[:value] %>"
+                placeholder="<%= filter[:placeholder] || '' %>"
+                class="form-input text-sm"
+                autocomplete="off"
+              >
+            <% when :number %>
+              <input
+                type="number"
+                name="<%= filter[:name] %>"
+                value="<%= filter[:value] %>"
+                placeholder="<%= filter[:placeholder] || '' %>"
+                class="form-input text-sm"
+                autocomplete="off"
+              >
+            <% when :date %>
+              <input
+                type="date"
+                name="<%= filter[:name] %>"
+                value="<%= filter[:value] %>"
+                class="form-input text-sm"
+                autocomplete="off"
+              >
+            <% when :select %>
+              <select
+                name="<%= filter[:name] %>"
+                class="form-select text-sm"
+              >
+                <% filter[:options].each do |option| %>
+                  <% if option.is_a?(Array) %>
+                    <option
+                      value="<%= option[1] %>"
+                      <%= "selected" if filter[:value] == option[1].to_s %>
+                    >
+                      <%= option[0] %>
+                    </option>
+                  <% else %>
+                    <option
+                      value="<%= option %>"
+                      <%= "selected" if filter[:value] == option.to_s %>
+                    >
+                      <%= option.to_s.humanize %>
+                    </option>
+                  <% end %>
                 <% end %>
-              <% end %>
-            </select>
-          <% when :number %>
-            <input
-              type="number"
-              name="<%= filter[:name] %>"
-              value="<%= filter[:value] %>"
-              placeholder="<%= filter[:placeholder] || '' %>"
-              class="
-                w-full rounded-lg border-slate-300 dark:border-slate-600
-                dark:bg-slate-700 dark:text-white text-sm
-              "
-              autocomplete="off"
-            >
+              </select>
+            <% end %>
           <% end %>
         </div>
       <% end %>

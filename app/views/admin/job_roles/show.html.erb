@@ -3,7 +3,7 @@
 <div class="px-4 sm:px-6 lg:px-8">
   <%= render "admin/shared/page_header",
       title: @job_role.title,
-      description: @job_role.category || "Job role details",
+      description: @job_role.category_name || @job_role.legacy_category_name || "Job role details",
       breadcrumbs: [
         { label: "Job Roles", path: admin_job_roles_path },
         { label: @job_role.title }
@@ -13,12 +13,65 @@
           label: "Edit",
           path: edit_admin_job_role_path(@job_role),
           style: :primary
-        }
+        },
+        {
+          label: "Merge…",
+          path: merge_admin_job_role_path(@job_role),
+          style: :secondary
+        },
+        (@job_role.disabled? ? {
+          label: "Enable",
+          path: enable_admin_job_role_path(@job_role),
+          method: :post,
+          style: :secondary,
+          confirm: "Enable this job role?"
+        } : {
+          label: "Disable",
+          path: disable_admin_job_role_path(@job_role),
+          method: :post,
+          style: :secondary,
+          confirm: "Disable this job role? It will be hidden from autocomplete."
+        })
       ]) %>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Main Content -->
     <div class="lg:col-span-2 space-y-6">
+      <% if @duplicate_suggestions.present? && @duplicate_suggestions.any? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+              Possible duplicates
+            </h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400">
+              <%= @duplicate_suggestions.size %> suggested
+            </span>
+          </div>
+
+          <ul class="space-y-2">
+            <% @duplicate_suggestions.each do |s| %>
+              <li class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
+                    <%= link_to s[:record].title, admin_job_role_path(s[:record]), class: "hover:underline" %>
+                    <% if s[:record].disabled? %>
+                      <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">Disabled</span>
+                    <% end %>
+                  </p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    <%= s[:reasons].join(", ") %>
+                  </p>
+                </div>
+
+                <div class="flex-shrink-0">
+                  <%= link_to "Merge", merge_admin_job_role_path(@job_role, target_job_role_id: s[:record].id), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
       <!-- Description -->
       <% if @job_role.description.present? %>
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
@@ -128,7 +181,7 @@
           title: "Job Role Details",
           data: {
             "Title" => @job_role.title,
-            "Category" => @job_role.category || "—"
+            "Category" => @job_role.category_name || @job_role.legacy_category_name || "—"
           } %>
 
       <%= render "admin/shared/info_card",
@@ -149,4 +202,3 @@
     </div>
   </div>
 </div>
-

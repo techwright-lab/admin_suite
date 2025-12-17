@@ -2,6 +2,8 @@
 
 # JobListing model representing job postings
 class JobListing < ApplicationRecord
+  include Disableable
+
   REMOTE_TYPES = [ :on_site, :hybrid, :remote ].freeze
   STATUSES = [ :draft, :active, :closed ].freeze
 

@@ -66,7 +66,7 @@ module Scraping
 
       # Try API extraction first if applicable
       detector = Scraping::JobBoardDetectorService.new(@job_listing.url)
-      if detector.api_supported? && detector.company_slug.present?
+      if Setting.api_population_enabled? && detector.api_supported? && detector.company_slug.present?
         api_result = try_api_extraction(detector.detect, detector.company_slug, detector.job_id)
         if api_result && api_result[:confidence] && api_result[:confidence] >= 0.7
           update_job_listing(api_result)
@@ -253,4 +253,3 @@ module Scraping
     end
   end
 end
-

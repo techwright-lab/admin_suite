@@ -10,6 +10,8 @@ class User < ApplicationRecord
   has_many :connected_accounts, dependent: :destroy
   has_many :synced_emails, dependent: :destroy
   has_many :opportunities, dependent: :destroy
+  has_many :saved_jobs, dependent: :destroy
+  has_many :fit_assessments, dependent: :destroy
 
   # Resume and skill profile associations
   has_many :user_resumes, dependent: :destroy
@@ -26,9 +28,16 @@ class User < ApplicationRecord
   has_many :user_target_companies, dependent: :destroy
   has_many :target_companies, through: :user_target_companies, source: :company
 
+  # Virtual attribute for terms acceptance checkbox
+  attribute :terms_accepted, :boolean, default: false
+
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
   validates :email_address, presence: true, uniqueness: true
+  validates :terms_accepted, acceptance: { accept: true, message: "You must accept the Terms of Service and Privacy Policy" }, on: :create
+
+  # Set terms_accepted_at when terms are accepted
+  before_create :set_terms_accepted_at, if: :terms_accepted
 
   # Generate token for email verification
   generates_token_for :email_verification, expires_in: 24.hours
@@ -136,5 +145,9 @@ class User < ApplicationRecord
 
   def create_default_preference
     create_preference! unless preference.persisted?
+  end
+
+  def set_terms_accepted_at
+    self.terms_accepted_at = Time.current
   end
 end

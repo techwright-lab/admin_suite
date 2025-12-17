@@ -1,0 +1,32 @@
+<div class="rounded-xl p-6 border border-white/10 bg-white/[0.02]">
+  <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+    <div class="flex-1 min-w-0">
+      <h3 class="text-base font-semibold text-white">Get new posts in your inbox</h3>
+      <p class="mt-1 text-sm text-gray-400">Occasional updates on interview strategy and job-search workflows.</p>
+    </div>
+
+    <%= form_with url: newsletter_subscribe_path,
+                  method: :post,
+                  local: true,
+                  class: "flex flex-col sm:flex-row gap-3 sm:w-auto sm:flex-shrink-0",
+                  data: { controller: "newsletter-form", action: "submit->newsletter-form#submit" } do %>
+      <label class="sr-only" for="newsletter_email">Email</label>
+      <input
+        id="newsletter_email"
+        name="email"
+        type="email"
+        required
+        placeholder="you@example.com"
+        class="w-full sm:w-56 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-400/50 focus:border-primary-400/50 transition-colors"
+        autocomplete="email"
+      >
+      <button
+        type="submit"
+        data-newsletter-form-target="button"
+        class="inline-flex items-center justify-center rounded-lg bg-primary-600 hover:bg-primary-500 px-4 py-2.5 text-sm font-medium text-white transition-colors"
+      >
+        Subscribe
+      </button>
+    <% end %>
+  </div>
+</div>

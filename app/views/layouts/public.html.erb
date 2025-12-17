@@ -2,19 +2,12 @@
 
 <html class="dark">
   <head>
-    <title>
-      <%= content_for(:title) || "Gleania - Turn Every Interview Into Insight" %>
-    </title>
+    <%= display_meta_tags %>
 
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Gleania">
     <meta name="mobile-web-app-capable" content="yes">
-
-    <meta
-      name="description"
-      content="<%= content_for(:description) || 'Gleania helps you track interviews, gather feedback, and grow your skills with AI-powered reflection.' %>"
-    >
 
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>

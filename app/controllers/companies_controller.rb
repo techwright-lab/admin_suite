@@ -4,7 +4,7 @@
 class CompaniesController < ApplicationController
   # GET /companies
   def index
-    @companies = Company.alphabetical
+    @companies = Company.enabled.alphabetical
 
     if params[:q].present?
       @companies = @companies.where("name ILIKE ?", "%#{params[:q]}%")
@@ -23,11 +23,11 @@ class CompaniesController < ApplicationController
     query = params[:q].to_s.strip
 
     @companies = if query.present?
-      Company.where("name ILIKE ?", "%#{query}%")
+      Company.enabled.where("name ILIKE ?", "%#{query}%")
         .alphabetical
         .limit(10)
     else
-      Company.alphabetical.limit(10)
+      Company.enabled.alphabetical.limit(10)
     end
 
     render json: @companies.map { |c| { id: c.id, name: c.name, website: c.website } }
@@ -53,6 +53,8 @@ class CompaniesController < ApplicationController
           render json: { errors: @company.errors.full_messages }, status: :unprocessable_entity
         end
       else
+        # If it exists but was disabled, re-enable it
+        @company.update!(disabled_at: nil) if @company.disabled?
         # Company already exists, return it
         render json: { id: @company.id, name: @company.name }, status: :ok
       end

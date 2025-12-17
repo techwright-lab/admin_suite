@@ -62,7 +62,9 @@ class OauthAuthenticationService
       password_confirmation: random_password,
       oauth_provider: @provider,
       oauth_uid: @uid,
-      email_verified_at: Time.current # OAuth users are auto-verified
+      email_verified_at: Time.current,  # OAuth users are auto-verified
+      terms_accepted_at: Time.current,  # OAuth sign-up implies terms acceptance
+      terms_accepted: true              # Satisfy the validation
     )
   end
 

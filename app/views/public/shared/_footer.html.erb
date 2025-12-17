@@ -1,5 +1,6 @@
 <%# Public footer %>
 <footer class="bg-dark-950 border-t border-white/5">
+  <div class="h-px bg-gradient-to-r from-transparent via-primary-500/30 to-transparent"></div>
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
       <%# Brand column %>
@@ -17,8 +18,8 @@
       <div>
         <h3 class="text-sm font-semibold text-white mb-4">Product</h3>
         <ul class="space-y-3">
-          <li><a href="#features" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Features</a></li>
-          <li><a href="#pricing" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Pricing</a></li>
+          <li><a href="<%= root_path %>#features" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Features</a></li>
+          <li><a href="<%= root_path %>#pricing" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Pricing</a></li>
           <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Changelog</a></li>
           <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Roadmap</a></li>
         </ul>
@@ -29,7 +30,7 @@
         <h3 class="text-sm font-semibold text-white mb-4">Company</h3>
         <ul class="space-y-3">
           <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">About</a></li>
-          <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Blog</a></li>
+          <li><%= link_to "Blog", blog_index_path, class: "text-sm text-gray-400 hover:text-primary-400 transition-colors" %></li>
           <li><%= link_to "Contact", contact_path, class: "text-sm text-gray-400 hover:text-primary-400 transition-colors" %></li>
           <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Careers</a></li>
         </ul>
@@ -39,9 +40,9 @@
       <div>
         <h3 class="text-sm font-semibold text-white mb-4">Legal</h3>
         <ul class="space-y-3">
-          <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Privacy Policy</a></li>
-          <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Terms of Service</a></li>
-          <li><a href="#" class="text-sm text-gray-400 hover:text-primary-400 transition-colors">Cookie Policy</a></li>
+          <li><%= link_to "Privacy Policy", privacy_path, class: "text-sm text-gray-400 hover:text-primary-400 transition-colors" %></li>
+          <li><%= link_to "Terms of Service", terms_path, class: "text-sm text-gray-400 hover:text-primary-400 transition-colors" %></li>
+          <li><%= link_to "Cookie Policy", cookies_path, class: "text-sm text-gray-400 hover:text-primary-400 transition-colors" %></li>
         </ul>
       </div>
     </div>
@@ -72,4 +73,3 @@
     </div>
   </div>
 </footer>
-

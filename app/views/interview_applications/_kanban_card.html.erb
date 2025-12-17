@@ -1,4 +1,6 @@
 <%# Kanban Card Component %>
+<% display_company = application.display_company %>
+<% display_job_role = application.display_job_role %>
 
 <%= link_to interview_application_path(application), 
     class: "block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow cursor-pointer" do %>
@@ -7,23 +9,23 @@
   <div class="flex items-start gap-3 mb-3">
     <!-- Company Logo -->
     <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-      <% if application.company.logo_url.present? %>
-        <%= image_tag application.company.logo_url, 
-            alt: application.company.name,
+      <% if display_company.logo_url.present? %>
+        <%= image_tag display_company.logo_url, 
+            alt: display_company.name,
             class: "w-10 h-10 rounded-lg object-cover" %>
       <% else %>
         <span class="text-sm font-bold text-gray-600 dark:text-gray-400">
-          <%= application.company.name[0].upcase %>
+          <%= display_company.name[0].upcase %>
         </span>
       <% end %>
     </div>
 
     <div class="flex-1 min-w-0">
       <h4 class="font-medium text-gray-900 dark:text-white text-sm truncate">
-        <%= application.job_role.title %>
+        <%= display_job_role.title %>
       </h4>
       <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-        <%= application.company.name %>
+        <%= display_company.name %>
       </p>
     </div>
   </div>
@@ -93,4 +95,3 @@
     </div>
   </div>
 <% end %>
-

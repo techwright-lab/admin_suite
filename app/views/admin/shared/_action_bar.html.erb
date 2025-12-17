@@ -26,6 +26,8 @@
       <% end %>
     <% else %>
       <%= link_to action[:path], 
+          method: (method == :get ? nil : method),
+          data: (method == :get ? {} : { turbo_method: method, turbo_confirm: confirm }),
           class: "inline-flex items-center px-4 py-2 #{style_classes[style]} text-sm font-medium rounded-lg transition-colors",
           target: action[:target] do %>
         <% if action[:icon].present? %>

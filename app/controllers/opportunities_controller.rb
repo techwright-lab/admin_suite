@@ -3,23 +3,22 @@
 # Controller for managing job opportunities from recruiter outreach
 # Presents opportunities in a stacked-cards UI with Apply/Ignore actions
 class OpportunitiesController < ApplicationController
-  before_action :set_opportunity, only: [ :show, :apply, :ignore, :update_url ]
+  before_action :set_opportunity, only: [ :show, :apply, :ignore, :restore, :update_url ]
 
   # GET /opportunities
   #
   # Main opportunities view with stacked cards layout
   def index
-    @opportunities = current_user_opportunities
-      .actionable
-      .includes(:synced_email)
-      .recent
-
-    @current_opportunity = @opportunities.first
-    @remaining_count = @opportunities.count - 1 if @opportunities.any?
+    load_opportunity_stack(selected_id: params[:opportunity_id].presence&.to_i)
 
     respond_to do |format|
       format.html
-      format.turbo_stream
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.update("opportunities_stack", partial: "opportunities/stack"),
+          turbo_stream.update("opportunities_count", html: opportunities_count_badge)
+        ]
+      end
     end
   end
 
@@ -53,9 +52,7 @@ class OpportunitiesController < ApplicationController
             notice: "Application created for #{result[:company].name}!"
         end
         format.turbo_stream do
-          @opportunities = current_user_opportunities.actionable.recent
-          @current_opportunity = @opportunities.first
-          @remaining_count = @opportunities.count - 1 if @opportunities.any?
+          load_opportunity_stack
 
           render turbo_stream: [
             turbo_stream.update("opportunities_stack", partial: "opportunities/stack"),
@@ -84,13 +81,11 @@ class OpportunitiesController < ApplicationController
   #
   # Marks the opportunity as ignored and shows the next one
   def ignore
-    if @opportunity.mark_ignored!
+    if @opportunity.archive_as_ignored!
       respond_to do |format|
         format.html { redirect_to opportunities_path, notice: "Opportunity ignored." }
         format.turbo_stream do
-          @opportunities = current_user_opportunities.actionable.recent
-          @current_opportunity = @opportunities.first
-          @remaining_count = @opportunities.count - 1 if @opportunities.any?
+          load_opportunity_stack
 
           render turbo_stream: [
             turbo_stream.update("opportunities_stack", partial: "opportunities/stack"),
@@ -107,6 +102,38 @@ class OpportunitiesController < ApplicationController
             "flash",
             partial: "shared/flash",
             locals: { flash: { alert: "Could not ignore opportunity." } }
+          )
+        end
+        format.json { render json: { success: false }, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # POST /opportunities/:id/restore
+  #
+  # Restores an archived opportunity back to the stack
+  def restore
+    if @opportunity.reconsider!
+      respond_to do |format|
+        format.html { redirect_to opportunities_path, notice: "Opportunity restored." }
+        format.turbo_stream do
+          load_opportunity_stack(selected_id: @opportunity.id)
+
+          render turbo_stream: [
+            turbo_stream.update("opportunities_stack", partial: "opportunities/stack"),
+            turbo_stream.update("opportunities_count", html: opportunities_count_badge)
+          ]
+        end
+        format.json { render json: { success: true } }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to opportunities_path, alert: "Could not restore opportunity." }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.update(
+            "flash",
+            partial: "shared/flash",
+            locals: { flash: { alert: "Could not restore opportunity." } }
           )
         end
         format.json { render json: { success: false }, status: :unprocessable_entity }
@@ -182,12 +209,48 @@ class OpportunitiesController < ApplicationController
   #
   # @return [String]
   def opportunities_count_badge
-    count = current_user_opportunities.actionable.count
+    count = actionable_unsaved_opportunities.count
     return "" if count == 0
 
-    content_tag(:span, count,
+    helpers.content_tag(:span, count,
       class: "ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400"
     )
+  end
+
+  def actionable_unsaved_opportunities
+    current_user_opportunities
+      .actionable
+      .left_outer_joins(:saved_job)
+      .where("saved_jobs.id IS NULL OR saved_jobs.status = 'archived'")
+  end
+
+  def load_opportunity_stack(selected_id: nil)
+    @opportunities = actionable_unsaved_opportunities
+      .includes(:synced_email)
+      .recent
+
+    @current_opportunity = if selected_id
+      @opportunities.detect { |o| o.id == selected_id } || @opportunities.first
+    else
+      @opportunities.first
+    end
+
+    if @current_opportunity
+      ids = @opportunities.map(&:id)
+      idx = ids.index(@current_opportunity.id) || 0
+
+      @current_position = idx + 1
+      @total_count = ids.length
+      @prev_opportunity_id = idx.positive? ? ids[idx - 1] : nil
+      @next_opportunity_id = (idx + 1) < ids.length ? ids[idx + 1] : nil
+      @remaining_count = ids.length - @current_position
+    else
+      @current_position = 0
+      @total_count = 0
+      @prev_opportunity_id = nil
+      @next_opportunity_id = nil
+      @remaining_count = nil
+    end
   end
 
   # Strong parameters for opportunity updates

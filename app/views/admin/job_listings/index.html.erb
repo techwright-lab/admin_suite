@@ -73,6 +73,26 @@
         url: admin_job_listings_path,
         filters: [
           {
+            type: :autocomplete,
+            name: :company_id,
+            label: "Company",
+            placeholder: "Search or create company...",
+            autocomplete_url: autocomplete_companies_path,
+            create_url: companies_path,
+            value: @filters[:company_id],
+            display_value: @selected_company&.name
+          },
+          {
+            type: :autocomplete,
+            name: :job_role_id,
+            label: "Job Role",
+            placeholder: "Search or create job role...",
+            autocomplete_url: autocomplete_job_roles_path,
+            create_url: job_roles_path,
+            value: @filters[:job_role_id],
+            display_value: @selected_job_role&.title
+          },
+          {
             type: :text,
             name: :search,
             label: "Search",
@@ -113,7 +133,10 @@
               header: "Job",
               content: ->(listing) do
                 content_tag(:div, class: "max-w-xs") do
-                  content_tag(:p, listing.display_title, class: "text-sm font-medium text-slate-900 dark:text-white truncate", title: listing.display_title) +
+                  content_tag(:div, class: "flex items-center gap-2") do
+                    content_tag(:p, listing.display_title, class: "text-sm font-medium text-slate-900 dark:text-white truncate", title: listing.display_title) +
+                    (listing.disabled? ? content_tag(:span, "Disabled", class: "px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200") : "".html_safe)
+                  end +
                   content_tag(:p, listing.url, class: "text-xs text-slate-500 dark:text-slate-400 truncate")
                 end
               end
@@ -150,7 +173,12 @@
               content: ->(listing) do
                 content_tag(:div, class: "flex items-center gap-2") do
                   link_to("View", admin_job_listing_path(listing), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium") +
-                  link_to("Edit", edit_admin_job_listing_path(listing), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium")
+                  link_to("Edit", edit_admin_job_listing_path(listing), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium") +
+                  (listing.disabled? ?
+                    button_to("Enable", enable_admin_job_listing_path(listing), method: :post, class: "text-green-600 hover:text-green-800 dark:text-green-400 font-medium") :
+                    button_to("Disable", disable_admin_job_listing_path(listing), method: :post, class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium", data: { turbo_confirm: "Disable this job listing? It will be hidden from autocomplete and can be re-enabled." })
+                  ) +
+                  link_to("Delete", admin_job_listing_path(listing), method: :delete, data: { turbo_confirm: "Delete this job listing? This will also delete its scraping attempts." }, class: "text-red-600 hover:text-red-800 dark:text-red-400 font-medium")
                 end
               end,
               class: "whitespace-nowrap text-sm"

@@ -37,8 +37,10 @@ FactoryBot.define do
       association :interview_application
     end
 
-    trait :ignored do
-      status { "ignored" }
+    trait :archived do
+      status { "archived" }
+      archived_reason { "ignored" }
+      archived_at { Time.current }
     end
 
     trait :with_extracted_links do

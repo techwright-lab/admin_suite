@@ -16,6 +16,10 @@
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    
+    <%# EasyMDE Markdown Editor %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css" data-turbo-track="reload">
+    <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js" data-turbo-track="reload"></script>
     <%= javascript_importmap_tags %>
   </head>
 
@@ -60,4 +64,3 @@
     </div>
   </body>
 </html>
-

@@ -10,7 +10,7 @@ class EmailVerificationsController < ApplicationController
     if @user.verify_email!
       # Send welcome email
       UserMailer.welcome(@user).deliver_later
-      
+
       redirect_to new_session_path, notice: "Email verified! You can now sign in."
     else
       redirect_to new_session_path, alert: "Unable to verify email. Please try again."
@@ -32,10 +32,9 @@ class EmailVerificationsController < ApplicationController
   private
     def set_user_by_token
       @user = User.find_by_token_for(:email_verification, params[:token])
-      
+
       unless @user
         redirect_to new_session_path, alert: "Email verification link is invalid or has expired."
       end
     end
 end
-

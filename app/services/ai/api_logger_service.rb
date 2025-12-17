@@ -190,31 +190,69 @@ module Ai
 
     # Builds response payload for storage
     #
+    # Stores comprehensive extraction data for debugging purposes.
+    #
     # @param result [Hash] The extraction result
     # @return [Hash] Payload for storage
     def build_response_payload(result)
       payload = {}
 
-      # Include extracted data (truncated for storage)
-      payload[:title] = result[:title] if result[:title].present?
-      payload[:company] = result[:company] if result[:company].present?
+      # Core extraction fields for job extraction
+      job_extraction_fields = %i[
+        title company job_role description about_company company_culture
+        requirements responsibilities location remote_type
+        salary_min salary_max salary_currency equity_info benefits perks
+        notes
+      ]
+
+      # Store all extracted job fields with their values (truncated for long text)
+      job_extraction_fields.each do |field|
+        next unless result[field].present?
+
+        value = result[field]
+        payload[field] = case value
+        when String
+          truncate_for_display(value, 500)
+        when Array, Hash
+          value
+        else
+          value
+        end
+      end
+
+      # Always include confidence
       payload[:confidence] = result[:confidence] if result[:confidence].present?
 
       # Include skills summary for resume extraction
       if result[:skills].is_a?(Array)
         payload[:skills_count] = result[:skills].size
-        payload[:skills_preview] = result[:skills].first(5).map { |s| s[:name] }
+        payload[:skills_preview] = result[:skills].first(5).map { |s| s[:name] rescue s.to_s }
       end
 
-      # Include raw content if available (truncated)
+      # Include raw LLM response if available (truncated but longer for debugging)
       if result[:raw_response].present?
-        payload[:raw_response] = truncate_for_storage(result[:raw_response])
+        payload[:raw_response] = truncate_for_storage(result[:raw_response], 10_000)
       end
 
       # Include error info
       payload[:error] = result[:error] if result[:error].present?
 
+      # Include any custom sections
+      payload[:custom_sections] = result[:custom_sections] if result[:custom_sections].present?
+
       payload
+    end
+
+    # Truncates content for display in UI
+    #
+    # @param content [String, nil] The content to truncate
+    # @param max_length [Integer] Maximum length
+    # @return [String, nil] Truncated content
+    def truncate_for_display(content, max_length = 500)
+      return nil if content.nil?
+      return content if content.length <= max_length
+
+      content[0...max_length] + "..."
     end
 
     # Extracts field names that were successfully populated
@@ -257,7 +295,3 @@ module Ai
     end
   end
 end
-
-
-
-

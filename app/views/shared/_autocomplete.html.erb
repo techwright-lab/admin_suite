@@ -15,12 +15,13 @@
     required: true
 %>
 
-<% # Set defaults
-  required ||= false
+<%# Set defaults %>
+<% required ||= false
   display_value ||= nil
   help_text ||= nil
   wrapper_class ||= "mb-4"
-  input_class ||= "" %>
+  input_class ||= ""
+  kind ||= nil %>
 
 <div class="<%= wrapper_class %>">
   <div
@@ -28,6 +29,7 @@
     data-autocomplete-url-value="<%= autocomplete_url %>"
     data-autocomplete-create-url-value="<%= create_url %>"
     data-autocomplete-modal-target-value="<%= modal_id %>"
+    <%= kind.present? ? %(data-autocomplete-kind-value="#{kind}") : "" %>
     class="relative"
   >
     <%= form.label field_name, class: "form-label" do %>

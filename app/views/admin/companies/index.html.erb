@@ -56,7 +56,10 @@
                     end
                   end +
                   content_tag(:div) do
-                    content_tag(:p, company.name, class: "text-sm font-medium text-slate-900 dark:text-white") +
+                    content_tag(:div, class: "flex items-center gap-2") do
+                      content_tag(:p, company.name, class: "text-sm font-medium text-slate-900 dark:text-white") +
+                      (company.disabled? ? content_tag(:span, "Disabled", class: "px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200") : "".html_safe)
+                    end +
                     (company.website.present? ? content_tag(:p, company.website, class: "text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]", title: company.website) : "".html_safe)
                   end
                 end
@@ -77,7 +80,12 @@
               content: ->(company) do
                 content_tag(:div, class: "flex items-center gap-2") do
                   link_to("View", admin_company_path(company), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium") +
-                  link_to("Edit", edit_admin_company_path(company), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium")
+                  link_to("Edit", edit_admin_company_path(company), class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium") +
+                  (company.disabled? ?
+                    button_to("Enable", enable_admin_company_path(company), method: :post, class: "text-green-600 hover:text-green-800 dark:text-green-400 font-medium") :
+                    button_to("Disable", disable_admin_company_path(company), method: :post, class: "text-slate-600 hover:text-slate-800 dark:text-slate-400 font-medium", data: { turbo_confirm: "Disable this company? It will be hidden from autocomplete and can be re-enabled." })
+                  ) +
+                  link_to("Delete", admin_company_path(company), method: :delete, data: { turbo_confirm: "Delete this company? This may remove associated content if it has job listings." }, class: "text-red-600 hover:text-red-800 dark:text-red-400 font-medium")
                 end
               end,
               class: "whitespace-nowrap text-sm"

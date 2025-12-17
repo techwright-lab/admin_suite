@@ -150,6 +150,40 @@
         </div>
       </div>
     <% end %>
+
+    <% if @user_resume.strengths.any? || @user_resume.domains.any? %>
+      <div class="mb-8 bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Strengths & Domains
+        </h2>
+
+        <% if @user_resume.strengths.any? %>
+          <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Strengths</h3>
+            <div class="flex flex-wrap gap-2">
+              <% @user_resume.strengths.first(12).each do |strength| %>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
+                  <%= strength %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <% if @user_resume.domains.any? %>
+          <div>
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domains</h3>
+            <div class="flex flex-wrap gap-2">
+              <% @user_resume.domains.first(12).each do |domain| %>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-dark-700 dark:text-gray-300">
+                  <%= domain %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
     <!-- Skills Review Section -->
     <div
       class="

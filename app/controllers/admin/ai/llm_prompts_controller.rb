@@ -190,7 +190,57 @@ module Admin
       #
       # @return [ActionController::Parameters] Permitted params
       def prompt_params
-        params.require(:llm_prompt).permit(:name, :description, :prompt_template, :version, :active, :type)
+        permitted = [ :name, :description, :prompt_template, :version, :active ]
+        # Only allow type on create (STI discriminator shouldn't change after creation)
+        permitted << :type if action_name == "create"
+
+        # form_with with STI subclasses uses subclass param key (e.g., :ai_job_extraction_prompt)
+        # Try common STI keys first, then fallback to :llm_prompt
+        prompt_key = find_prompt_param_key
+        params.require(prompt_key).permit(*permitted)
+      end
+
+      # Finds the correct param key for STI prompt models
+      #
+      # @return [Symbol] Param key to use
+      def find_prompt_param_key
+        # Check if we have an existing prompt with a known param_key
+        if @prompt&.persisted?
+          param_key = @prompt.model_name.param_key.to_sym
+          return param_key if params.key?(param_key)
+        end
+
+        # Check for type in params to determine expected key
+        type = params.dig(:llm_prompt, :type) || params[:prompt_type]
+        if type.present?
+          type_class = prompt_class_from_type(type)
+          param_key = type_class.model_name.param_key.to_sym
+          return param_key if params.key?(param_key)
+        end
+
+        # Check for any _prompt key
+        prompt_key = params.keys.find { |k| k.to_s.end_with?("_prompt") }
+        return prompt_key.to_sym if prompt_key
+
+        # Fallback to base key
+        :llm_prompt
+      end
+
+      # Returns prompt class from type string
+      #
+      # @param type [String] Type string
+      # @return [Class] Prompt class
+      def prompt_class_from_type(type)
+        case type.to_s
+        when "Ai::JobExtractionPrompt", "job_extraction"
+          ::Ai::JobExtractionPrompt
+        when "Ai::EmailExtractionPrompt", "email_extraction"
+          ::Ai::EmailExtractionPrompt
+        when "Ai::ResumeSkillExtractionPrompt", "resume_extraction"
+          ::Ai::ResumeSkillExtractionPrompt
+        else
+          ::Ai::LlmPrompt
+        end
       end
     end
   end

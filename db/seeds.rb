@@ -18,6 +18,7 @@ User.destroy_all
 
 load Rails.root.join("db/seeds/llm_provider_configs.rb")
 load Rails.root.join("db/seeds/llm_prompts.rb")
+load Rails.root.join("db/seeds/blog_posts.rb")
 
 # Create companies
 puts "Creating companies..."

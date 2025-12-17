@@ -1,0 +1,32 @@
+<% content_for :title, "Docs - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: "Docs",
+      description: "Browse markdown documentation from the /docs folder" %>
+
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+    <div class="p-6">
+      <% if @files.any? %>
+        <div class="space-y-2">
+          <% @files.each do |path| %>
+            <%= link_to admin_doc_path(path),
+                class: "block px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors" do %>
+              <div class="flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-slate-900 dark:text-white truncate"><%= path %></p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">docs/<%= path %></p>
+                </div>
+                <span class="text-slate-400">→</span>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-sm text-slate-600 dark:text-slate-400">No markdown docs found under <code class="font-mono">/docs</code>.</p>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+

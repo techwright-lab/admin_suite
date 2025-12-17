@@ -198,6 +198,10 @@ module Scraping
       # Only include relevant keys, not the entire result
       safe_keys = %i[
         success error confidence html_size http_status
+        cleaned_html_size content_length text_length
+        board_type company_slug job_id api_supported
+        fetch_mode rendered extractor_kind run_context
+        missing_fields selectors_tried
         extracted_fields provider model tokens_used
         title company location
       ]
@@ -258,4 +262,3 @@ module Scraping
     end
   end
 end
-

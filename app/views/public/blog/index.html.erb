@@ -1,0 +1,145 @@
+<% content_for :title, "Blog - Gleania" %>
+<% content_for :description, "Product thinking, interview strategy, and job-search workflows from Gleania." %>
+
+<%# Simple, clean hero %>
+<section class="pt-28 pb-12">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+    <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4 tracking-tight">
+      The Gleania Blog
+    </h1>
+    <p class="text-lg text-gray-400 max-w-2xl mx-auto">
+      Product thinking, interview strategy, and job-search workflows to help you land your next role.
+    </p>
+  </div>
+</section>
+
+<section class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pb-20">
+  <%# Tags row %>
+  <% if defined?(@tag_cloud) && @tag_cloud.present? %>
+    <div class="flex flex-wrap items-center gap-2 mb-10">
+      <span class="text-sm text-gray-500 mr-2">Browse:</span>
+      <% @tag_cloud.each do |tag| %>
+        <%= link_to blog_tag_path(tag.name), class: "tag-pill" do %>
+          <%= tag.name %>
+          <span class="ml-1.5 text-gray-500"><%= tag.try(:usage_count) || tag.taggings_count %></span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @posts.any? %>
+    <% featured_post = @posts.first %>
+    <% remaining_posts = @posts.drop(1) %>
+
+    <%# Featured post (first post, larger) %>
+    <article class="card-featured mb-10">
+      <div class="grid grid-cols-1 lg:grid-cols-2">
+        <% if featured_post.cover_image.attached? %>
+          <div class="aspect-video lg:aspect-auto lg:h-full overflow-hidden">
+            <%= link_to blog_path(featured_post.slug) do %>
+              <%= image_tag featured_post.cover_image_variant(size: :medium),
+                  class: "w-full h-full object-cover transition-transform duration-500 hover:scale-105",
+                  loading: "eager",
+                  alt: featured_post.title %>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="p-6 lg:p-8 flex flex-col justify-center">
+          <% if featured_post.tag_list.any? %>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <% featured_post.tag_list.first(3).each do |tag| %>
+                <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+                  <%= tag %>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+
+          <h2 class="text-2xl lg:text-3xl font-bold text-white mb-3">
+            <%= link_to featured_post.title, blog_path(featured_post.slug), class: "hover:text-primary-300 transition-colors" %>
+          </h2>
+
+          <% if featured_post.excerpt.present? %>
+            <p class="text-gray-300 mb-4 line-clamp-3"><%= featured_post.excerpt %></p>
+          <% end %>
+
+          <div class="flex items-center gap-4 text-sm text-gray-400 mt-auto">
+            <% if featured_post.author_name.present? %>
+              <span><%= featured_post.author_name %></span>
+              <span class="text-gray-600">·</span>
+            <% end %>
+            <% if featured_post.published_at.present? %>
+              <time datetime="<%= featured_post.published_at.iso8601 %>">
+                <%= featured_post.published_at.to_date.strftime("%b %-d, %Y") %>
+              </time>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <%# Remaining posts in 2-column grid %>
+    <% if remaining_posts.any? %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <% remaining_posts.each do |post| %>
+          <article class="card-blog group">
+            <%# Cover image at top %>
+            <% if post.cover_image.attached? %>
+              <div class="aspect-video overflow-hidden rounded-lg mb-4 -mx-6 -mt-6">
+                <%= link_to blog_path(post.slug), class: "block" do %>
+                  <%= image_tag post.cover_image_variant(size: :medium),
+                      class: "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105",
+                      loading: "lazy",
+                      alt: post.title %>
+                <% end %>
+              </div>
+            <% end %>
+
+            <%# Card content %>
+            <div class="flex flex-col flex-1">
+              <% if post.tag_list.any? %>
+                <div class="flex flex-wrap gap-2 mb-3">
+                  <% post.tag_list.first(2).each do |tag| %>
+                    <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+                      <%= tag %>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <h3 class="text-lg font-semibold text-white mb-2">
+                <%= link_to post.title, blog_path(post.slug), class: "hover:text-primary-300 transition-colors" %>
+              </h3>
+
+              <% if post.excerpt.present? %>
+                <p class="text-gray-400 text-sm mb-4 line-clamp-2"><%= post.excerpt %></p>
+              <% end %>
+
+              <div class="flex items-center justify-between text-sm text-gray-500 mt-auto pt-4 border-t border-white/5">
+                <% if post.published_at.present? %>
+                  <time datetime="<%= post.published_at.iso8601 %>">
+                    <%= post.published_at.to_date.strftime("%b %-d, %Y") %>
+                  </time>
+                <% end %>
+                <%= link_to blog_path(post.slug), class: "text-primary-400 hover:text-primary-300 font-medium transition-colors" do %>
+                  Read →
+                <% end %>
+              </div>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+
+  <% else %>
+    <div class="card-blog text-center py-12">
+      <p class="text-gray-400">No posts yet. Check back soon.</p>
+    </div>
+  <% end %>
+
+  <%# Newsletter at the bottom %>
+  <div class="mt-16">
+    <%= render "public/shared/newsletter_form" %>
+  </div>
+</section>

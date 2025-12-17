@@ -16,8 +16,12 @@
 class ScrapingEvent < ApplicationRecord
   EVENT_TYPES = [
     :permission_check,  # Robots.txt / rate limit check
+    :job_board_detection, # Job board/ATS detection from URL
     :html_fetch,        # Fetching HTML content
+    :js_heavy_detected, # Heuristic indicating JS-rendered content
+    :rendered_html_fetch, # Selenium/Headless rendered HTML fetch
     :nokogiri_scrape,   # Preliminary HTML parsing
+    :selectors_extraction, # Selectors-first extraction (job boards)
     :api_extraction,    # API-based extraction (Greenhouse, Lever)
     :ai_extraction,     # LLM-based extraction
     :data_update,       # Updating job listing with extracted data
@@ -39,8 +43,12 @@ class ScrapingEvent < ApplicationRecord
   # Enums
   enum :event_type, {
     permission_check: "permission_check",
+    job_board_detection: "job_board_detection",
     html_fetch: "html_fetch",
+    js_heavy_detected: "js_heavy_detected",
+    rendered_html_fetch: "rendered_html_fetch",
     nokogiri_scrape: "nokogiri_scrape",
+    selectors_extraction: "selectors_extraction",
     api_extraction: "api_extraction",
     ai_extraction: "ai_extraction",
     data_update: "data_update",
@@ -105,8 +113,12 @@ class ScrapingEvent < ApplicationRecord
   def event_type_display
     case event_type&.to_sym
     when :permission_check then "Permission Check"
+    when :job_board_detection then "Job Board Detection"
     when :html_fetch then "HTML Fetch"
+    when :js_heavy_detected then "JS-Heavy Detected"
+    when :rendered_html_fetch then "Rendered HTML Fetch"
     when :nokogiri_scrape then "HTML Parse"
+    when :selectors_extraction then "Selectors Extraction"
     when :api_extraction then "API Extraction"
     when :ai_extraction then "AI Extraction"
     when :data_update then "Data Update"
@@ -122,8 +134,12 @@ class ScrapingEvent < ApplicationRecord
   def event_icon
     case event_type&.to_sym
     when :permission_check then "shield-check"
+    when :job_board_detection then "tag"
     when :html_fetch then "cloud-download"
+    when :js_heavy_detected then "sparkles"
+    when :rendered_html_fetch then "globe-alt"
     when :nokogiri_scrape then "code"
+    when :selectors_extraction then "adjustments-horizontal"
     when :api_extraction then "server"
     when :ai_extraction then "cpu"
     when :data_update then "database"
@@ -184,4 +200,3 @@ class ScrapingEvent < ApplicationRecord
     summary.truncate(max_length)
   end
 end
-

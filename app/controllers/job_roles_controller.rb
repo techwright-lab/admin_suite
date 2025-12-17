@@ -4,14 +4,14 @@
 class JobRolesController < ApplicationController
   # GET /job_roles
   def index
-    @job_roles = JobRole.alphabetical
+    @job_roles = JobRole.enabled.alphabetical
 
     if params[:q].present?
       @job_roles = @job_roles.where("title ILIKE ?", "%#{params[:q]}%")
     end
 
-    if params[:category].present?
-      @job_roles = @job_roles.by_category(params[:category])
+    if params[:category_id].present?
+      @job_roles = @job_roles.by_category(params[:category_id])
     end
 
     @job_roles = @job_roles.limit(50)
@@ -27,14 +27,14 @@ class JobRolesController < ApplicationController
     query = params[:q].to_s.strip
 
     @job_roles = if query.present?
-      JobRole.where("title ILIKE ?", "%#{query}%")
+      JobRole.enabled.where("title ILIKE ?", "%#{query}%")
         .alphabetical
         .limit(10)
     else
-      JobRole.alphabetical.limit(10)
+      JobRole.enabled.alphabetical.limit(10)
     end
 
-    render json: @job_roles.map { |jr| { id: jr.id, title: jr.title, category: jr.category } }
+    render json: @job_roles.map { |jr| { id: jr.id, title: jr.title, category: jr.category_name } }
   end
 
   # POST /job_roles
@@ -57,6 +57,8 @@ class JobRolesController < ApplicationController
           render json: { errors: @job_role.errors.full_messages }, status: :unprocessable_entity
         end
       else
+        # If it exists but was disabled, re-enable it
+        @job_role.update!(disabled_at: nil) if @job_role.disabled?
         # Job role already exists, return it
         render json: { id: @job_role.id, title: @job_role.title, name: @job_role.title }, status: :ok
       end

@@ -53,6 +53,23 @@ module Scraping
         "article p",
         "[role='main'] p"
       ],
+      about_company: [
+        "[data-about]",
+        "[id*='about']",
+        "[class*='about']",
+        ".about",
+        ".about-us",
+        ".company-about"
+      ],
+      company_culture: [
+        "[data-culture]",
+        "[id*='culture']",
+        "[class*='culture']",
+        "[id*='values']",
+        "[class*='values']",
+        "[id*='mission']",
+        "[class*='mission']"
+      ],
       salary: [
         "[data-salary]",
         "[class*='salary']",
@@ -66,12 +83,16 @@ module Scraping
     #
     # @param [JobListing, nil] job_listing Optional job listing for logging context
     # @param [ScrapingAttempt, nil] scraping_attempt Optional scraping attempt for logging context
-    def initialize(job_listing: nil, scraping_attempt: nil)
+    def initialize(job_listing: nil, scraping_attempt: nil, fetch_mode: nil, board_type: nil, extractor_kind: "generic_html_scraping", run_context: "orchestrator")
       @job_listing = job_listing
       @scraping_attempt = scraping_attempt
       @url = job_listing&.url
       @field_results = {}
       @selectors_tried = {}
+      @fetch_mode = fetch_mode
+      @board_type = board_type
+      @extractor_kind = extractor_kind
+      @run_context = run_context
     end
 
     # Extracts structured data from HTML
@@ -85,6 +106,7 @@ module Scraping
       @url ||= url
       @start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @html_size = html_content.bytesize
+      @cleaned_html_size = Scraping::NokogiriHtmlCleanerService.new.clean(html_content).bytesize
 
       log_event("html_scraping_started")
 
@@ -102,6 +124,8 @@ module Scraping
         salary_currency: nil,
         description: extract_with_tracking(:description, doc) { extract_description(doc) },
         company_name: extract_with_tracking(:company_name, doc) { extract_company_name(doc) },
+        about_company: extract_with_tracking(:about_company, doc) { extract_about_company(doc) },
+        company_culture: extract_with_tracking(:company_culture, doc) { extract_company_culture(doc) },
         job_role_title: nil
       }
 
@@ -225,9 +249,14 @@ module Scraping
         url: @url,
         domain: domain,
         html_size: @html_size,
+        cleaned_html_size: @cleaned_html_size,
         duration_ms: @duration_ms,
         field_results: @field_results,
         selectors_tried: @selectors_tried,
+        fetch_mode: @fetch_mode,
+        board_type: @board_type,
+        extractor_kind: @extractor_kind,
+        run_context: @run_context,
         error_type: error&.class&.name,
         error_message: error&.message
       )
@@ -395,7 +424,8 @@ module Scraping
         @selectors_tried[:company_name] << selector
         element = doc.css(selector).first
         if element
-          name = element.text.strip
+          name = element["content"] || element["alt"] || element.text
+          name = name.to_s.strip
           return name if name.present? && name.length < 100
         end
       end
@@ -406,6 +436,59 @@ module Scraping
       if meta_company
         name = meta_company["content"] || meta_company["value"]
         return name.strip if name.present?
+      end
+
+      nil
+    end
+
+    def extract_about_company(doc)
+      text = extract_block_from_selectors(doc, :about_company, max_chars: 2000)
+      return text if text.present?
+
+      extract_section_by_heading(doc, /about\s+(the\s+)?company|about\s+us|who\s+we\s+are/i, max_chars: 2000)
+    end
+
+    def extract_company_culture(doc)
+      text = extract_block_from_selectors(doc, :company_culture, max_chars: 2000)
+      return text if text.present?
+
+      extract_section_by_heading(doc, /culture|values|mission|principles|how\s+we\s+work/i, max_chars: 2000)
+    end
+
+    def extract_block_from_selectors(doc, field, max_chars:)
+      FIELD_SELECTORS[field].each do |selector|
+        @selectors_tried[field] << selector
+        element = doc.css(selector).first
+        next unless element
+
+        text = element.text.to_s.squish
+        return text[0...max_chars] if text.present?
+      end
+
+      nil
+    end
+
+    def extract_section_by_heading(doc, heading_regex, max_chars:)
+      headings = doc.css("h1, h2, h3, h4, strong, b")
+      headings.each do |heading|
+        next unless heading.text.to_s.squish.match?(heading_regex)
+
+        # Collect siblings until next heading-like element
+        chunks = []
+        node = heading
+        while (node = node.next_sibling)
+          break if node.element? && node.name.to_s.match?(/\Ah[1-6]\z/i)
+          next if node.text?
+
+          text = node.text.to_s.squish
+          next if text.blank?
+
+          chunks << text
+          break if chunks.join("\n\n").length >= max_chars
+        end
+
+        combined = chunks.join("\n\n").strip
+        return combined[0...max_chars] if combined.present?
       end
 
       nil

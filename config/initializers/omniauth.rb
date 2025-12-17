@@ -2,7 +2,7 @@
 
 # OmniAuth configuration for OAuth integrations
 Rails.application.config.middleware.use OmniAuth::Builder do
-  # Google OAuth2 for Gmail and Calendar integration
+  # Google OAuth2 for Gmail integration
   provider :google_oauth2,
     Rails.application.credentials.dig(:google, :client_id),
     Rails.application.credentials.dig(:google, :client_secret),
@@ -11,8 +11,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
       scope: [
         "email",
         "profile",
-        "https://www.googleapis.com/auth/gmail.readonly",
-        "https://www.googleapis.com/auth/calendar.readonly"
+        "https://www.googleapis.com/auth/gmail.readonly"
       ].join(" "),
       prompt: "consent",
       access_type: "offline",

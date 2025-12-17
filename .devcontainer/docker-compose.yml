@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  rails-app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/rails:cached
+      - bundle-data:/usr/local/bundle
+    command: sleep infinity
+    environment:
+      - RAILS_ENV=development
+      - SELENIUM_REMOTE_URL=http://selenium:4444
+      - SELENIUM_HOST=selenium
+      - DB_HOST=postgres
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=postgres
+    depends_on:
+      - postgres
+      - selenium
+    networks:
+      - gleania-network
+
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=gleania_development
+    ports:
+      - "5432:5432"
+    networks:
+      - gleania-network
+
+  selenium:
+    image: selenium/standalone-chrome:latest
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    environment:
+      - SE_VNC_NO_PASSWORD=1
+    shm_size: '2gb'
+    networks:
+      - gleania-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4444/wd/hub/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  bundle-data:
+  postgres-data:
+
+networks:
+  gleania-network:
+    driver: bridge
+

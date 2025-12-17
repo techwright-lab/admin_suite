@@ -9,8 +9,14 @@ module Scraping
   # for LLM token limits. Uses semantic HTML5 elements and common
   # job board patterns to find the main content area.
   #
-  # @example
+  # For board-specific cleaning, use HtmlCleaners::CleanerFactory instead.
+  #
+  # @example Basic usage
   #   cleaner = Scraping::NokogiriHtmlCleanerService.new
+  #   cleaned_text = cleaner.clean(html_content)
+  #
+  # @example Board-specific cleaning
+  #   cleaner = Scraping::HtmlCleaners::CleanerFactory.cleaner_for(:ashbyhq)
   #   cleaned_text = cleaner.clean(html_content)
   class NokogiriHtmlCleanerService
     MAX_TOKENS = 25_000 # Conservative limit to stay under 30k tokens/minute
@@ -70,20 +76,51 @@ module Scraping
     # @param [Nokogiri::HTML::Document] doc The parsed HTML document
     # @return [Nokogiri::XML::Node] The main content node
     def extract_main_content(doc)
+      # Minimum content length threshold - skip elements with too little text
+      min_content_length = 100
+
       # Try semantic HTML5 elements first
       main = doc.css("main, article, [role='main']").first
-      return main if main
+      return main if main && main.text.strip.length >= min_content_length
 
       # Try common content class names
       content = doc.css(".content, #content, .main-content, .job-content, .job-description").first
-      return content if content
+      return content if content && content.text.strip.length >= min_content_length
 
-      # Try job-specific selectors
-      job_content = doc.css("[class*='job'], [id*='job'], [data-job]").first
-      return job_content if job_content
+      # Try React/SPA root containers (common for Ashby, Greenhouse, Lever, etc.)
+      # Check these BEFORE job-specific selectors as they usually contain the full content
+      react_root = doc.css("#root, #app, #__next").first
+      return react_root if react_root && react_root.text.strip.length >= min_content_length
+
+      # Try container patterns with dynamic class names (e.g., _container_xyz, _content_xyz)
+      container = doc.css("[class*='container'], [class*='content'], [class*='posting']").first
+      return container if container && container.text.strip.length >= min_content_length
+
+      # Try job-specific selectors (be careful - these can match small nav elements)
+      job_content = doc.css("[class*='job-description'], [class*='job-details'], [class*='job-posting'], [id*='job-description']").first
+      return job_content if job_content && job_content.text.strip.length >= min_content_length
+
+      # Try to find the largest text-containing div
+      body = doc.css("body").first || doc
+      largest_div = find_largest_content_div(body)
+      return largest_div if largest_div && largest_div.text.strip.length >= min_content_length
 
       # Fallback to body
-      doc.css("body").first || doc
+      body
+    end
+
+    # Finds the div with the most text content (likely the main content area)
+    #
+    # @param [Nokogiri::XML::Node] parent The parent node to search within
+    # @return [Nokogiri::XML::Node, nil] The largest content div or nil
+    def find_largest_content_div(parent)
+      return nil unless parent
+
+      divs = parent.css("div")
+      return nil if divs.empty?
+
+      # Find the div with the most text content
+      divs.max_by { |div| div.text.strip.length }
     end
 
     # Normalizes whitespace in text

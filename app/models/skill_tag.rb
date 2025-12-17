@@ -2,6 +2,8 @@
 
 # SkillTag model representing skills tracked across interviews and resumes
 class SkillTag < ApplicationRecord
+  include Disableable
+
   # Skill name aliases for normalization (maps variations to canonical names)
   SKILL_ALIASES = {
     "postgres" => "Postgresql",
@@ -24,6 +26,7 @@ class SkillTag < ApplicationRecord
   # Interview associations
   has_many :application_skill_tags, dependent: :destroy
   has_many :interview_applications, through: :application_skill_tags
+  belongs_to :category, optional: true
 
   # Resume associations
   has_many :resume_skills, dependent: :destroy
@@ -35,10 +38,18 @@ class SkillTag < ApplicationRecord
 
   normalizes :name, with: ->(name) { normalize_skill_name(name) }
 
-  scope :by_category, ->(category) { where(category: category) }
+  scope :by_category, ->(category_id) { where(category_id: category_id) }
   scope :alphabetical, -> { order(:name) }
   scope :popular, -> { joins(:application_skill_tags).group(:id).order("COUNT(application_skill_tags.id) DESC") }
   scope :from_resumes, -> { joins(:resume_skills).distinct }
+
+  def category_name
+    category&.name
+  end
+
+  def legacy_category_name
+    respond_to?(:legacy_category) ? legacy_category : nil
+  end
 
   # Returns the count of interview applications associated with this skill
   # @return [Integer] Interview application count

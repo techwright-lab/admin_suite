@@ -40,8 +40,13 @@ module Admin
     def filtered_logs
       logs = HtmlScrapingLog.includes(:scraping_attempt).recent
 
+      logs = logs.where(scraping_attempt_id: params[:scraping_attempt_id]) if params[:scraping_attempt_id].present?
       logs = logs.by_domain(params[:domain]) if params[:domain].present?
       logs = logs.where(status: params[:status]) if params[:status].present?
+      logs = logs.where(fetch_mode: params[:fetch_mode]) if params[:fetch_mode].present?
+      logs = logs.where(board_type: params[:board_type]) if params[:board_type].present?
+      logs = logs.where(extractor_kind: params[:extractor_kind]) if params[:extractor_kind].present?
+      logs = logs.where(run_context: params[:run_context]) if params[:run_context].present?
 
       if params[:date_from].present?
         logs = logs.where("created_at >= ?", Date.parse(params[:date_from]).beginning_of_day)
@@ -57,7 +62,7 @@ module Admin
     #
     # @return [Hash] Filter params
     def filter_params
-      params.permit(:domain, :status, :date_from, :date_to)
+      params.permit(:domain, :status, :date_from, :date_to, :scraping_attempt_id, :fetch_mode, :board_type, :extractor_kind, :run_context)
     end
 
     # Calculates overview statistics

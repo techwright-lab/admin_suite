@@ -197,6 +197,8 @@
       >
         <% if @applications.any? %>
           <% @applications.each do |application| %>
+            <% display_company = application.display_company %>
+            <% display_job_role = application.display_job_role %>
             <tr
               class="
                 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors
@@ -207,8 +209,8 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
-                    <% if application.company.logo_url.present? %>
-                      <%= image_tag application.company.logo_url, alt: application.company.name, class: "h-10 w-10 rounded-lg object-cover" %>
+                    <% if display_company.logo_url.present? %>
+                      <%= image_tag display_company.logo_url, alt: display_company.name, class: "h-10 w-10 rounded-lg object-cover" %>
                     <% else %>
                       <div
                         class="
@@ -217,21 +219,21 @@
                         "
                       >
                         <span class="text-sm font-bold text-gray-600 dark:text-gray-400">
-                          <%= application.company.name[0].upcase %>
+                          <%= display_company.name[0].upcase %>
                         </span>
                       </div>
                     <% end %>
                   </div>
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900 dark:text-white">
-                      <%= application.company.name %>
+                      <%= display_company.name %>
                     </div>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900 dark:text-white">
-                  <%= application.job_role.title %>
+                  <%= display_job_role.title %>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">

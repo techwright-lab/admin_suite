@@ -13,6 +13,6 @@ module TurnstileHelper
   #
   # @return [Boolean]
   def turnstile_configured?
-    turnstile_site_key.present?
+    turnstile_site_key.present? && Setting.turnstile_enabled?
   end
 end

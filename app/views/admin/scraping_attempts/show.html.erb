@@ -3,17 +3,44 @@
 <div class="px-4 sm:px-6 lg:px-8">
   <!-- Header -->
   <div class="mb-6">
-    <div class="flex items-center gap-3 mb-2">
-      <%= link_to admin_scraping_attempts_path, class: "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300" do %>
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-      <% end %>
-      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Scraping Attempt</h1>
-      <% status_colors = { "completed" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", "failed" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", "dead_letter" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400", "pending" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300", "fetching" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400", "extracting" => "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400", "retrying" => "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" } %>
-      <span class="px-3 py-1 text-sm font-semibold rounded-full <%= status_colors[@attempt.status] || 'bg-slate-100 text-slate-800' %>">
-        <%= @attempt.status.titleize %>
-      </span>
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-3">
+        <%= link_to admin_scraping_attempts_path, class: "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300" do %>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        <% end %>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Scraping Attempt</h1>
+        <% status_colors = { "completed" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", "failed" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", "dead_letter" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400", "pending" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300", "fetching" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400", "extracting" => "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400", "retrying" => "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" } %>
+        <span class="px-3 py-1 text-sm font-semibold rounded-full <%= status_colors[@attempt.status] || 'bg-slate-100 text-slate-800' %>">
+          <%= @attempt.status.titleize %>
+        </span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2">
+        <% if @attempt.failed? %>
+          <%= button_to retry_attempt_admin_scraping_attempt_path(@attempt),
+              method: :post,
+              class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+              data: { turbo_confirm: "Queue a retry job for this listing?" } do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Retry
+          <% end %>
+        <% elsif !@attempt.completed? %>
+          <%= button_to mark_failed_admin_scraping_attempt_path(@attempt),
+              method: :post,
+              class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+              data: { turbo_confirm: "Mark this stuck attempt as failed? This will allow it to be retried." } do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Mark Failed
+          <% end %>
+        <% end %>
+      </div>
     </div>
     <p class="text-sm text-slate-500 dark:text-slate-400">
       <%= @attempt.created_at.strftime("%B %d, %Y at %H:%M:%S UTC") %> (<%= time_ago_in_words(@attempt.created_at) %> ago)
@@ -192,59 +219,62 @@
   </div>
 
   <!-- HTML Scraping Results -->
-  <% if @attempt.html_scraping_log.present? %>
-    <% html_log = @attempt.html_scraping_log %>
+  <% if @html_scraping_logs.present? && @html_scraping_logs.any? %>
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
       <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <h2 class="text-base font-semibold text-slate-900 dark:text-white">HTML Scraping Results</h2>
-          <span class="px-2 py-0.5 text-xs font-semibold rounded-full <%= html_log.status_badge_color %>">
-            <%= html_log.status.titleize %>
+          <span class="text-xs text-slate-500 dark:text-slate-400">
+            <%= @html_scraping_logs.count %> log<%= @html_scraping_logs.count == 1 ? "" : "s" %>
           </span>
         </div>
-        <%= link_to "Full Details", admin_html_scraping_log_path(html_log), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
+        <%= link_to "View All Logs", admin_html_scraping_logs_path(scraping_attempt_id: @attempt.id), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline" %>
       </div>
       
-      <!-- Quick Stats -->
-      <div class="grid grid-cols-4 gap-4 p-4 border-b border-slate-200 dark:border-slate-700">
-        <div class="text-center">
-          <p class="text-2xl font-bold <%= (html_log.extraction_rate || 0) >= 0.7 ? 'text-green-600 dark:text-green-400' : (html_log.extraction_rate || 0) >= 0.4 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400' %>">
-            <%= html_log.extraction_rate_display %>
-          </p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Extraction Rate</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= html_log.fields_extracted %>/<%= html_log.fields_attempted %></p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Fields Extracted</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= html_log.formatted_duration %></p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Duration</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-slate-900 dark:text-white"><%= number_to_human_size(html_log.html_size || 0) %></p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">HTML Size</p>
-        </div>
-      </div>
-      
-      <!-- Field Results Grid -->
       <div class="p-4">
-        <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-3">Field-by-Field Results</h4>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          <% html_log.field_results.each do |field, result| %>
-            <div class="flex items-center gap-2 p-2 rounded-lg <%= result['success'] ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20' %>">
-              <% if result['success'] %>
-                <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                </svg>
-              <% else %>
-                <svg class="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                </svg>
-              <% end %>
-              <span class="text-xs font-medium <%= result['success'] ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300' %> truncate" title="<%= field.to_s.titleize %>">
-                <%= field.to_s.titleize %>
-              </span>
+        <div class="space-y-4">
+          <% @html_scraping_logs.each do |html_log| %>
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full <%= html_log.status_badge_color %>">
+                    <%= html_log.status.titleize %>
+                  </span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <%= html_log.created_at.strftime("%b %d, %H:%M") %>
+                  </span>
+                  <% if html_log.fetch_mode.present? %>
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                      <%= html_log.fetch_mode %>
+                    </span>
+                  <% end %>
+                  <% if html_log.board_type.present? %>
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                      <%= html_log.board_type %>
+                    </span>
+                  <% end %>
+                </div>
+                <%= link_to "Details", admin_html_scraping_log_path(html_log), class: "text-xs text-amber-600 dark:text-amber-400 hover:underline flex-shrink-0" %>
+              </div>
+
+              <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Extraction Rate</p>
+                  <p class="text-sm font-semibold text-slate-900 dark:text-white"><%= html_log.extraction_rate_display %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Fields</p>
+                  <p class="text-sm font-semibold text-slate-900 dark:text-white"><%= html_log.fields_extracted %>/<%= html_log.fields_attempted %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Duration</p>
+                  <p class="text-sm font-semibold text-slate-900 dark:text-white"><%= html_log.formatted_duration %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">HTML Size</p>
+                  <p class="text-sm font-semibold text-slate-900 dark:text-white"><%= number_to_human_size(html_log.html_size || 0) %></p>
+                </div>
+              </div>
             </div>
           <% end %>
         </div>
@@ -406,6 +436,7 @@
   <% end %>
 </div>
 
+
 <!-- Raw HTML Modal (simplified, actual modal would need JS) -->
 <% if @scraped_data %>
   <div id="raw-html-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" data-controller="modal">
@@ -427,4 +458,3 @@
     </div>
   </div>
 <% end %>
-

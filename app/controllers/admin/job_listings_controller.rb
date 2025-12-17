@@ -11,20 +11,23 @@ module Admin
 
     PER_PAGE = 25
 
-    before_action :set_job_listing, only: [ :show, :edit, :update, :destroy ]
+    before_action :set_job_listing, only: [ :show, :edit, :update, :destroy, :disable, :enable ]
 
     # GET /admin/job_listings
     def index
       @pagy, @job_listings = paginate(filtered_listings)
       @stats = calculate_stats
       @filters = filter_params
+
+      @selected_company = Company.find_by(id: params[:company_id]) if params[:company_id].present?
+      @selected_job_role = JobRole.find_by(id: params[:job_role_id]) if params[:job_role_id].present?
     end
 
     # GET /admin/job_listings/:id
     def show
       @scraping_attempts = @job_listing.scraping_attempts.recent.limit(5)
       @latest_attempt = @scraping_attempts.first
-      @html_scraping_log = @latest_attempt&.html_scraping_log
+    @html_scraping_log = @latest_attempt&.latest_html_scraping_log
       @llm_api_logs = @job_listing.llm_api_logs.order(created_at: :desc).limit(5)
     end
 
@@ -39,6 +42,18 @@ module Admin
       else
         render :edit, status: :unprocessable_entity
       end
+    end
+
+    # POST /admin/job_listings/:id/disable
+    def disable
+      @job_listing.disable! unless @job_listing.disabled?
+      redirect_back fallback_location: admin_job_listing_path(@job_listing), notice: "Job listing disabled."
+    end
+
+    # POST /admin/job_listings/:id/enable
+    def enable
+      @job_listing.enable! if @job_listing.disabled?
+      redirect_back fallback_location: admin_job_listing_path(@job_listing), notice: "Job listing enabled."
     end
 
     # DELETE /admin/job_listings/:id
@@ -65,6 +80,7 @@ module Admin
       listings = listings.where(status: params[:status]) if params[:status].present?
       listings = listings.where(remote_type: params[:remote_type]) if params[:remote_type].present?
       listings = listings.joins(:company).where(companies: { id: params[:company_id] }) if params[:company_id].present?
+      listings = listings.joins(:job_role).where(job_roles: { id: params[:job_role_id] }) if params[:job_role_id].present?
 
       if params[:search].present?
         search_term = "%#{params[:search]}%"
@@ -107,7 +123,7 @@ module Admin
     #
     # @return [Hash] Filter params
     def filter_params
-      params.permit(:status, :remote_type, :company_id, :search, :extraction_status, :page)
+      params.permit(:status, :remote_type, :company_id, :job_role_id, :search, :extraction_status, :page)
     end
 
     # Strong params for job listing

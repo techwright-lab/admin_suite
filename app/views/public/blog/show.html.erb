@@ -1,0 +1,253 @@
+<% content_for :title, "#{@post.title} - Gleania" %>
+<% content_for :description, (@post.excerpt.presence || "Read #{@post.title} on the Gleania blog.") %>
+
+<% content_for :head do %>
+  <% json_ld = {
+    "@context" => "https://schema.org",
+    "@type" => "BlogPosting",
+    "headline" => @post.title,
+    "description" => @post.excerpt.presence || @post.title,
+    "datePublished" => @post.published_at&.iso8601,
+    "dateModified" => @post.updated_at&.iso8601,
+    "author" => {
+      "@type" => "Person",
+      "name" => (@post.author_name.presence || "Gleania Team")
+    },
+    "publisher" => {
+      "@type" => "Organization",
+      "name" => "Gleania",
+      "logo" => {
+        "@type" => "ImageObject",
+        "url" => asset_url("logo/logo.png")
+      }
+    },
+    "mainEntityOfPage" => {
+      "@type" => "WebPage",
+      "@id" => blog_url(@post.slug)
+    }
+  } %>
+
+  <% if @post.cover_image.attached? %>
+    <% image = @post.cover_image_variant(size: :og) %>
+    <% image_url = rails_representation_url(image, only_path: false) rescue rails_blob_url(@post.cover_image, only_path: false) %>
+    <% json_ld["image"] = [ image_url ] %>
+  <% end %>
+
+  <script type="application/ld+json"><%= raw(ERB::Util.json_escape(json_ld.to_json)) %></script>
+<% end %>
+
+<%# Reading progress bar %>
+<div data-controller="reading-progress" class="fixed top-0 left-0 right-0 h-1 z-50">
+  <div data-reading-progress-target="bar" class="h-full bg-gradient-to-r from-primary-400 to-primary-600 transition-[width]"></div>
+</div>
+
+<%# Hero section with cover image and overlaid header %>
+<% if @post.cover_image.attached? %>
+  <div class="relative w-full pt-24">
+    <%# Cover image container %>
+    <div class="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="relative aspect-[16/9] sm:aspect-[21/9] max-h-[500px] w-full overflow-hidden rounded-2xl">
+        <%# Image %>
+        <%= image_tag @post.cover_image_variant(size: :large),
+            class: "w-full h-full object-cover",
+            loading: "eager",
+            fetchpriority: "high",
+            alt: @post.title %>
+        
+        <%# Gradient overlay %>
+        <div class="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/60 to-transparent"></div>
+        
+        <%# Header content overlaid at bottom %>
+        <div class="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
+          <div class="max-w-3xl mx-auto text-center">
+            <% if @post.tag_list.any? %>
+              <div class="flex flex-wrap justify-center gap-2 mb-4">
+                <% @post.tag_list.each do |tag| %>
+                  <%= link_to blog_tag_path(tag), class: "tag-pill-light" do %>
+                    <%= tag %>
+                  <% end %>
+                <% end %>
+              </div>
+            <% end %>
+
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 tracking-tight leading-tight drop-shadow-lg">
+              <%= @post.title %>
+            </h1>
+
+            <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-gray-200">
+              <% if @post.author_name.present? %>
+                <span>By <span class="text-white font-medium"><%= @post.author_name %></span></span>
+                <span class="text-gray-400">·</span>
+              <% end %>
+              <% if @post.published_at.present? %>
+                <time datetime="<%= @post.published_at.iso8601 %>">
+                  <%= @post.published_at.to_date.strftime("%B %-d, %Y") %>
+                </time>
+              <% end %>
+              <% if defined?(@reading_time_minutes) && @reading_time_minutes.present? %>
+                <span class="text-gray-400">·</span>
+                <span><%= @reading_time_minutes %> min read</span>
+              <% end %>
+            </div>
+            
+            <%# Share buttons %>
+            <div class="flex items-center justify-center gap-2 mt-4">
+              <% share_url = blog_url(@post.slug) %>
+              <% share_title = @post.title %>
+              
+              <%= link_to "https://twitter.com/intent/tweet?url=#{CGI.escape(share_url)}&text=#{CGI.escape(share_title)}",
+                  target: "_blank",
+                  rel: "noopener",
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-colors",
+                  title: "Share on X" do %>
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                Share
+              <% end %>
+              
+              <%= link_to "https://www.linkedin.com/sharing/share-offsite/?url=#{CGI.escape(share_url)}",
+                  target: "_blank",
+                  rel: "noopener",
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-colors",
+                  title: "Share on LinkedIn" do %>
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                Share
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <%# Excerpt below the image %>
+    <% if @post.excerpt.present? %>
+      <div class="mt-8 mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
+        <p class="text-lg text-gray-300 leading-relaxed">
+          <%= @post.excerpt %>
+        </p>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <%# No cover image - simple header %>
+  <header class="pt-28 pb-10">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
+      <% if @post.tag_list.any? %>
+        <div class="flex flex-wrap justify-center gap-2 mb-4">
+          <% @post.tag_list.each do |tag| %>
+            <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+              <%= tag %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight leading-tight">
+        <%= @post.title %>
+      </h1>
+
+      <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-gray-400">
+        <% if @post.author_name.present? %>
+          <span>By <span class="text-gray-300"><%= @post.author_name %></span></span>
+          <span class="text-gray-600">·</span>
+        <% end %>
+        <% if @post.published_at.present? %>
+          <time datetime="<%= @post.published_at.iso8601 %>">
+            <%= @post.published_at.to_date.strftime("%B %-d, %Y") %>
+          </time>
+        <% end %>
+        <% if defined?(@reading_time_minutes) && @reading_time_minutes.present? %>
+          <span class="text-gray-600">·</span>
+          <span><%= @reading_time_minutes %> min read</span>
+        <% end %>
+      </div>
+
+      <% if @post.excerpt.present? %>
+        <p class="mt-6 text-lg text-gray-300 leading-relaxed max-w-2xl mx-auto">
+          <%= @post.excerpt %>
+        </p>
+      <% end %>
+    </div>
+  </header>
+<% end %>
+
+<%# Main content area %>
+<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 pb-20">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+    <%# Article content %>
+    <main class="lg:col-span-8">
+      <article class="article-prose max-w-none">
+        <%= raw @content_html %>
+      </article>
+
+      <%# Share section %>
+      <div class="mt-12 pt-8 border-t border-white/10">
+        <p class="text-sm text-gray-400 mb-4">Share this article</p>
+        <div class="flex flex-wrap items-center gap-3">
+          <% share_url = blog_url(@post.slug) %>
+          <% share_title = @post.title %>
+
+          <%= link_to "https://twitter.com/intent/tweet?url=#{CGI.escape(share_url)}&text=#{CGI.escape(share_title)}",
+              target: "_blank",
+              rel: "noopener",
+              class: "inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" do %>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Share on X
+          <% end %>
+
+          <%= link_to "https://www.linkedin.com/sharing/share-offsite/?url=#{CGI.escape(share_url)}",
+              target: "_blank",
+              rel: "noopener",
+              class: "inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" do %>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            LinkedIn
+          <% end %>
+
+          <button
+            type="button"
+            data-controller="copy-link"
+            data-copy-link-url-value="<%= share_url %>"
+            data-action="click->copy-link#copy"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+            Copy link
+          </button>
+        </div>
+      </div>
+
+      <%# Newsletter %>
+      <div class="mt-12">
+        <%= render "public/shared/newsletter_form" %>
+      </div>
+
+      <%# Back link %>
+      <div class="mt-10">
+        <%= link_to blog_index_path, class: "inline-flex items-center gap-2 text-sm text-gray-400 hover:text-primary-300 transition-colors" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Back to Blog
+        <% end %>
+      </div>
+    </main>
+
+    <%# Sidebar with TOC %>
+    <aside class="lg:col-span-4">
+      <% if @toc.present? %>
+        <div class="lg:sticky lg:top-24 toc-sidebar">
+          <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">On this page</h2>
+          <nav>
+            <% @toc.each do |item| %>
+              <% indent_class = case item[:level].to_i
+                 when 3 then "pl-3"
+                 when 4 then "pl-6"
+                 else ""
+                 end %>
+              <a href="#<%= item[:id] %>" class="toc-link <%= indent_class %>">
+                <%= item[:text] %>
+              </a>
+            <% end %>
+          </nav>
+        </div>
+      <% end %>
+    </aside>
+  </div>
+</div>

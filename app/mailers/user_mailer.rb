@@ -4,7 +4,7 @@ class UserMailer < ApplicationMailer
   def verify_email(user)
     @user = user
     @verification_url = email_verification_url(@user.generate_token_for(:email_verification))
-    
+
     mail(
       to: user.email_address,
       subject: "Verify your Gleania account"
@@ -15,11 +15,10 @@ class UserMailer < ApplicationMailer
   # @param user [User] The newly verified user
   def welcome(user)
     @user = user
-    
+
     mail(
       to: user.email_address,
       subject: "Welcome to Gleania! 🎉"
     )
   end
 end
-

@@ -2,6 +2,8 @@
 
 # Company model representing companies users apply to
 class Company < ApplicationRecord
+  include Disableable
+
   has_many :job_listings, dependent: :destroy
   has_many :interview_applications, dependent: :nullify
   has_many :users_with_current_company, class_name: "User", foreign_key: "current_company_id", dependent: :nullify

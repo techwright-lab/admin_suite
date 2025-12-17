@@ -6,6 +6,8 @@ class RegistrationsController < ApplicationController
   # GET /registrations/new
   # Show registration form
   def new
+    redirect_to root_path, alert: "Sign up is disabled." unless Setting.user_sign_up_enabled?
+
     @user = User.new
   end
 
@@ -34,13 +36,15 @@ class RegistrationsController < ApplicationController
 
   private
     def registration_params
-      params.expect(user: [ :email_address, :password, :password_confirmation, :name ])
+      params.expect(user: [ :email_address, :password, :password_confirmation, :name, :terms_accepted, :marketing_opt_in ])
     end
 
     # Verifies Turnstile token if configured
     #
     # @return [Boolean]
     def verify_turnstile_token
+      return true if Rails.env.development? || Rails.env.test?
+      return true unless Setting.turnstile_enabled?
       return true unless turnstile_configured?
 
       token = params[:cf_turnstile_response]

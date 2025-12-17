@@ -69,6 +69,12 @@ module Scraping
     #
     # @return [String, nil] Job ID or nil
     def job_id
+      # Lever URLs are typically /<company>/<job-id>
+      if detect == :lever
+        segments = @uri.path.to_s.split("/").reject(&:blank?)
+        return segments[1] if segments.length >= 2
+      end
+
       # Try to find job ID in common patterns
       patterns = [
         %r{/jobs?/(\d+)},          # /jobs/123

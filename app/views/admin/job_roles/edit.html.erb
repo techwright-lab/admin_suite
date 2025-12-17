@@ -44,9 +44,20 @@
       </div>
 
       <div>
-        <%= f.label :category, "Category", class: "form-label" %>
-        <%= f.text_field :category, class: "form-input", placeholder: "e.g., Engineering, Product, Design" %>
-        <p class="form-help-text">Optional category for grouping job roles</p>
+        <%= render "shared/autocomplete",
+          form: f,
+          field_name: :category_id,
+          label: "Category",
+          placeholder: "Search or create category...",
+          autocomplete_url: autocomplete_categories_path(kind: "job_role"),
+          create_url: categories_path,
+          modal_id: "job-role-category-modal",
+          value: @job_role.category_id,
+          display_value: @job_role.category_name || @job_role.legacy_category_name,
+          required: false,
+          help_text: "Optional category for grouping job roles",
+          kind: "job_role",
+          wrapper_class: "mb-0" %>
       </div>
 
       <div>
@@ -62,4 +73,3 @@
     <% end %>
   </div>
 </div>
-

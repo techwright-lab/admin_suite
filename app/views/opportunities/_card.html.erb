@@ -23,6 +23,14 @@
         <p class="text-lg text-gray-600 dark:text-gray-300">
           <%= opportunity.job_role_title || "Position" %>
         </p>
+
+        <% if opportunity.fit_assessment&.computed? %>
+          <div class="mt-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+              Fit <%= opportunity.fit_assessment.score %>/100
+            </span>
+          </div>
+        <% end %>
       </div>
     </div>
 
@@ -245,6 +253,7 @@
       <%= button_to ignore_opportunity_path(opportunity), 
           method: :post,
           class: "flex-1 inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200",
+          form: { data: { turbo_stream: true } },
           data: { 
             turbo: true,
             turbo_method: :post,
@@ -266,9 +275,31 @@
         Ignore
       <% end %>
 
+      <%= button_to saved_jobs_path,
+          method: :post,
+          params: { saved_job: { opportunity_id: opportunity.id } },
+          class: "flex-1 inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200",
+          data: { turbo: true } do %>
+        <svg
+          class="w-5 h-5 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-4-7 4V5z"
+          />
+        </svg>
+        Save
+      <% end %>
+
       <%= button_to apply_opportunity_path(opportunity),
           method: :post,
           class: "flex-1 inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200",
+          form: { data: { turbo_stream: true } },
           data: { 
             turbo: true,
             turbo_method: :post,

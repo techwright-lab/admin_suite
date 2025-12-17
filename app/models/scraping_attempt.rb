@@ -15,13 +15,13 @@ class ScrapingAttempt < ApplicationRecord
     :manual        # Admin manually fixed
   ].freeze
 
-  EXTRACTION_METHODS = [ :api, :ai ].freeze
+  EXTRACTION_METHODS = [ :api, :ai, :html ].freeze
 
   belongs_to :job_listing
   has_one :scraped_job_listing_data, dependent: :nullify
   has_many :llm_api_logs, class_name: "Ai::LlmApiLog", as: :loggable, dependent: :destroy
   has_many :scraping_events, dependent: :destroy
-  has_one :html_scraping_log, dependent: :destroy
+  has_many :html_scraping_logs, dependent: :destroy
 
   # Define enum for status to map integer values to state names
   enum :status, {
@@ -129,6 +129,13 @@ class ScrapingAttempt < ApplicationRecord
   # @return [ScrapedJobListingData, nil] Cached HTML data or nil
   def cached_html_data
     scraped_job_listing_data || ScrapedJobListingData.find_valid_for_url(url, job_listing: job_listing)
+  end
+
+  # Convenience accessor for the most recent HTML scraping log
+  #
+  # @return [HtmlScrapingLog, nil]
+  def latest_html_scraping_log
+    html_scraping_logs.order(created_at: :desc).first
   end
 
   # Returns formatted duration

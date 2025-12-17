@@ -20,6 +20,7 @@ class InterviewApplication < ApplicationRecord
   has_one :company_feedback, dependent: :destroy, foreign_key: :interview_application_id
   has_many :synced_emails, dependent: :nullify
   has_one :opportunity, dependent: :nullify
+  has_one :fit_assessment, as: :fittable, dependent: :destroy
 
   validates :user, presence: true
   validates :company, presence: true
@@ -95,7 +96,44 @@ class InterviewApplication < ApplicationRecord
   # Returns a short summary for display in cards
   # @return [String] Summary text
   def card_summary
-    ai_summary.presence || "#{company.name} - #{job_role.title}"
+    ai_summary.presence || "#{display_company.name} - #{display_job_role.title}"
+  end
+
+  # Returns the best available company for display
+  #
+  # Prefers the job_listing's company when extraction has completed and
+  # produced a non-placeholder result. Falls back to the application's
+  # own company association.
+  #
+  # @return [Company] The company to display
+  def display_company
+    # If we have a job listing with extraction completed and valid company, use it
+    if job_listing&.extraction_completed? && job_listing.company.present?
+      jl_company = job_listing.company
+      # Prefer job_listing's company unless it's also a placeholder
+      unless placeholder_company?(jl_company)
+        return jl_company
+      end
+    end
+
+    # Fall back to application's own company
+    company
+  end
+
+  # Returns the best available job role for display
+  #
+  # @return [JobRole] The job role to display
+  def display_job_role
+    # If we have a job listing with extraction completed and valid job role, use it
+    if job_listing&.extraction_completed? && job_listing.job_role.present?
+      jl_role = job_listing.job_role
+      unless placeholder_job_role?(jl_role)
+        return jl_role
+      end
+    end
+
+    # Fall back to application's own job role
+    job_role
   end
 
   # Checks if this application has any interview rounds
@@ -153,6 +191,19 @@ class InterviewApplication < ApplicationRecord
   end
 
   private
+
+  PLACEHOLDER_COMPANY_NAMES = [ "unknown company", "unknown" ].freeze
+  PLACEHOLDER_JOB_ROLES = [ "unknown position", "unknown role", "unknown" ].freeze
+
+  def placeholder_company?(comp)
+    return true if comp.nil?
+    PLACEHOLDER_COMPANY_NAMES.any? { |p| comp.name&.downcase&.include?(p) }
+  end
+
+  def placeholder_job_role?(role)
+    return true if role.nil?
+    PLACEHOLDER_JOB_ROLES.any? { |p| role.title&.downcase&.include?(p) }
+  end
 
   def set_uuid
     self.uuid = SecureRandom.uuid

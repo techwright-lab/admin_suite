@@ -11,7 +11,7 @@ module Admin
 
     PER_PAGE = 30
 
-    before_action :set_skill_tag, only: [ :show, :edit, :update, :destroy ]
+    before_action :set_skill_tag, only: [ :show, :edit, :update, :destroy, :disable, :enable, :merge, :merge_into ]
 
     # GET /admin/skill_tags
     #
@@ -20,6 +20,8 @@ module Admin
       @pagy, @skill_tags = paginate(filtered_skill_tags)
       @stats = calculate_stats
       @filters = filter_params
+
+      @selected_category = Category.find_by(id: params[:category_id]) if params[:category_id].present?
     end
 
     # GET /admin/skill_tags/:id
@@ -28,6 +30,7 @@ module Admin
     def show
       @interview_applications = @skill_tag.interview_applications.recent.limit(10)
       @usage_count = @skill_tag.interview_applications.count
+      @duplicate_suggestions = Dedup::FindSkillTagDuplicatesService.new(skill_tag: @skill_tag).run
     end
 
     # GET /admin/skill_tags/new
@@ -59,6 +62,36 @@ module Admin
       end
     end
 
+    # POST /admin/skill_tags/:id/disable
+    def disable
+      @skill_tag.disable! unless @skill_tag.disabled?
+      redirect_back fallback_location: admin_skill_tag_path(@skill_tag), notice: "Skill tag disabled."
+    end
+
+    # POST /admin/skill_tags/:id/enable
+    def enable
+      @skill_tag.enable! if @skill_tag.disabled?
+      redirect_back fallback_location: admin_skill_tag_path(@skill_tag), notice: "Skill tag enabled."
+    end
+
+    # GET /admin/skill_tags/:id/merge
+    def merge
+      @selected_target_skill_tag = SkillTag.find_by(id: params[:target_skill_tag_id]) if params[:target_skill_tag_id].present?
+    end
+
+    # POST /admin/skill_tags/:id/merge_into
+    def merge_into
+      target = SkillTag.find(params[:target_skill_tag_id])
+
+      Dedup::MergeSkillTagService.new(source_skill_tag: @skill_tag, target_skill_tag: target).run
+
+      redirect_to admin_skill_tag_path(target), notice: "Skill tag merged into #{target.name}."
+    rescue ActiveRecord::RecordNotFound
+      redirect_back fallback_location: merge_admin_skill_tag_path(@skill_tag), alert: "Target skill tag not found."
+    rescue ArgumentError => e
+      redirect_back fallback_location: merge_admin_skill_tag_path(@skill_tag), alert: e.message
+    end
+
     # DELETE /admin/skill_tags/:id
     def destroy
       @skill_tag.destroy
@@ -83,14 +116,14 @@ module Admin
       skill_tags = SkillTag.all
 
       # Filter by category
-      if params[:category].present?
-        skill_tags = skill_tags.where(category: params[:category])
+      if params[:category_id].present?
+        skill_tags = skill_tags.where(category_id: params[:category_id])
       end
 
       # Search by name or category
       if params[:search].present?
         search_term = "%#{params[:search]}%"
-        skill_tags = skill_tags.where("name ILIKE :q OR category ILIKE :q", q: search_term)
+        skill_tags = skill_tags.left_joins(:category).where("skill_tags.name ILIKE :q OR categories.name ILIKE :q", q: search_term)
       end
 
       # Sort
@@ -98,7 +131,7 @@ module Admin
       when "name"
         skill_tags = skill_tags.order(:name)
       when "category"
-        skill_tags = skill_tags.order(:category, :name)
+        skill_tags = skill_tags.left_joins(:category).order(Arel.sql("categories.name NULLS LAST"), :name)
       when "popular"
         skill_tags = skill_tags.popular
       when "recent"
@@ -118,7 +151,7 @@ module Admin
 
       {
         total: base.count,
-        with_category: base.where.not(category: [ nil, "" ]).count,
+        with_category: base.where.not(category_id: nil).count,
         with_usage: base.joins(:interview_applications).distinct.count,
         unused: base.left_joins(:interview_applications).where(interview_applications: { id: nil }).count
       }
@@ -128,14 +161,14 @@ module Admin
     #
     # @return [Hash]
     def filter_params
-      params.permit(:search, :category, :sort, :page)
+      params.permit(:search, :category_id, :sort, :page)
     end
 
     # Strong params for skill tag
     #
     # @return [ActionController::Parameters] Permitted params
     def skill_tag_params
-      params.require(:skill_tag).permit(:name, :category)
+      params.require(:skill_tag).permit(:name, :category_id)
     end
   end
 end

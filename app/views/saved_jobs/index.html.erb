@@ -1,0 +1,104 @@
+<% content_for :title, "Saved Jobs" %>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6 flex items-start justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Saved Jobs</h1>
+      <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        Bookmarked opportunities and links you want to revisit.
+      </p>
+    </div>
+  </div>
+
+  <!-- Save by URL -->
+  <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">Save a job link</h2>
+    <%= form_with model: SavedJob.new, url: saved_jobs_path, method: :post, class: "flex flex-col sm:flex-row gap-3" do |f| %>
+      <%= f.text_field :url,
+        placeholder: "https://...",
+        class: "flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent" %>
+
+      <%= f.submit "Save",
+        class: "px-4 py-2 text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors cursor-pointer" %>
+    <% end %>
+  </div>
+
+  <% if @saved_jobs.any? %>
+    <div class="space-y-4">
+      <% @saved_jobs.each do |saved_job| %>
+        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <p class="text-base font-semibold text-gray-900 dark:text-white truncate">
+                <%= saved_job.title.presence || saved_job.job_role_title.presence || saved_job.opportunity&.display_title || "Saved job" %>
+              </p>
+
+              <% if saved_job.company_name.present? || saved_job.opportunity&.company_name.present? %>
+                <p class="text-sm text-gray-600 dark:text-gray-400 truncate">
+                  <%= saved_job.company_name.presence || saved_job.opportunity&.company_name %>
+                </p>
+              <% end %>
+
+              <% if saved_job.effective_url.present? %>
+                <a
+                  href="<%= saved_job.effective_url %>"
+                  target="_blank"
+                  rel="noopener"
+                  class="mt-2 inline-block text-xs text-primary-600 dark:text-primary-400 hover:underline truncate max-w-full"
+                >
+                  <%= saved_job.effective_url.truncate(80) %>
+                </a>
+              <% end %>
+
+              <% if saved_job.fit_assessment&.computed? %>
+                <div class="mt-3 flex items-center gap-2">
+                  <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Fit</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+                    <%= saved_job.fit_assessment.score %>/100
+                  </span>
+                </div>
+              <% end %>
+
+              <% if saved_job.notes.present? %>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                  <%= saved_job.notes %>
+                </p>
+              <% end %>
+            </div>
+
+            <div class="flex flex-col gap-2 flex-shrink-0">
+              <%= button_to convert_saved_job_path(saved_job),
+                method: :post,
+                class: "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors",
+                disabled: saved_job.converted_at.present? do %>
+                <%= saved_job.converted_at.present? ? "Converted" : "Convert" %>
+              <% end %>
+
+              <%= button_to saved_job_path(saved_job),
+                method: :delete,
+                class: "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-800 hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors" do %>
+                Remove
+              <% end %>
+            </div>
+          </div>
+
+          <% if saved_job.opportunity.present? %>
+            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <%= link_to opportunity_path(saved_job.opportunity),
+                class: "text-xs text-gray-500 dark:text-gray-400 hover:underline" do %>
+                View source opportunity
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-10 text-center">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        No saved jobs yet. Save an opportunity from the stack, or paste a link above.
+      </p>
+    </div>
+  <% end %>
+</div>
+

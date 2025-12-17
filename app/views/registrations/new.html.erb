@@ -65,6 +65,32 @@
           class: "form-input" %>
     </div>
 
+    <!-- Terms & Privacy Policy -->
+    <div class="space-y-3 pt-2">
+      <div class="flex items-start gap-3">
+        <%= form.check_box :terms_accepted, 
+            class: "mt-1 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 dark:bg-gray-700",
+            required: true %>
+        <label for="user_terms_accepted" class="text-sm text-gray-600 dark:text-gray-400">
+          I agree to the 
+          <%= link_to "Terms of Service", terms_path, target: "_blank", class: "text-primary-600 dark:text-primary-400 hover:underline" %> 
+          and 
+          <%= link_to "Privacy Policy", privacy_path, target: "_blank", class: "text-primary-600 dark:text-primary-400 hover:underline" %>
+          <span class="text-red-500">*</span>
+        </label>
+      </div>
+
+      <!-- Marketing Opt-in -->
+      <div class="flex items-start gap-3">
+        <%= form.check_box :marketing_opt_in, 
+            class: "mt-1 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 dark:bg-gray-700" %>
+        <label for="user_marketing_opt_in" class="text-sm text-gray-600 dark:text-gray-400">
+          I'd like to receive occasional updates about new features, tips, and promotions from Gleania
+          <span class="text-gray-400 dark:text-gray-500">(optional)</span>
+        </label>
+      </div>
+    </div>
+
     <!-- Error messages -->
     <% if @user.errors.any? %>
       <div
@@ -140,6 +166,12 @@
 
   <!-- Google OAuth sign-up -->
   <div>
+    <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-3">
+      By signing up with Google, you agree to our 
+      <%= link_to "Terms", terms_path, target: "_blank", class: "text-primary-600 dark:text-primary-400 hover:underline" %> 
+      and 
+      <%= link_to "Privacy Policy", privacy_path, target: "_blank", class: "text-primary-600 dark:text-primary-400 hover:underline" %>.
+    </p>
     <%= button_to "/auth/google_oauth2", method: :post, data: { turbo: false }, class: "
       w-full inline-flex justify-center items-center py-3 px-4 border
       border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white

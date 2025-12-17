@@ -27,6 +27,8 @@ class HtmlScrapingLog < ApplicationRecord
     salary_currency
     description
     company_name
+    about_company
+    company_culture
     requirements
     responsibilities
     benefits
@@ -189,7 +191,6 @@ class HtmlScrapingLog < ApplicationRecord
                     :partial
     else
                     :failed
-                  end
+    end
   end
 end
-

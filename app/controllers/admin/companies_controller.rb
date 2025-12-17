@@ -11,7 +11,7 @@ module Admin
 
     PER_PAGE = 30
 
-    before_action :set_company, only: [ :show, :edit, :update, :destroy ]
+    before_action :set_company, only: [ :show, :edit, :update, :destroy, :disable, :enable, :merge, :merge_into ]
 
     # GET /admin/companies
     #
@@ -30,6 +30,7 @@ module Admin
       @interview_applications = @company.interview_applications.recent.limit(10)
       @current_employees = @company.users_with_current_company.limit(10)
       @users_targeting = @company.users_targeting.limit(10)
+      @duplicate_suggestions = Dedup::FindCompanyDuplicatesService.new(company: @company).run
     end
 
     # GET /admin/companies/new
@@ -61,8 +62,46 @@ module Admin
       end
     end
 
+    # POST /admin/companies/:id/disable
+    def disable
+      @company.disable! unless @company.disabled?
+      redirect_back fallback_location: admin_company_path(@company), notice: "Company disabled."
+    end
+
+    # POST /admin/companies/:id/enable
+    def enable
+      @company.enable! if @company.disabled?
+      redirect_back fallback_location: admin_company_path(@company), notice: "Company enabled."
+    end
+
+    # GET /admin/companies/:id/merge
+    def merge
+      @selected_target_company = Company.find_by(id: params[:target_company_id]) if params[:target_company_id].present?
+    end
+
+    # POST /admin/companies/:id/merge_into
+    def merge_into
+      target = Company.find(params[:target_company_id])
+
+      Dedup::MergeCompanyService.new(source_company: @company, target_company: target).run
+
+      redirect_to admin_company_path(target), notice: "Company merged into #{target.name}."
+    rescue ActiveRecord::RecordNotFound
+      redirect_back fallback_location: merge_admin_company_path(@company), alert: "Target company not found."
+    rescue ArgumentError => e
+      redirect_back fallback_location: merge_admin_company_path(@company), alert: e.message
+    end
+
     # DELETE /admin/companies/:id
     def destroy
+      if @company.job_listings.exists?
+        redirect_back(
+          fallback_location: admin_company_path(@company),
+          alert: "Can't delete a company with job listings. Disable it instead (or merge duplicates)."
+        )
+        return
+      end
+
       @company.destroy
       redirect_to admin_companies_path, notice: "Company deleted.", status: :see_other
     end

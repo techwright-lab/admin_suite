@@ -52,6 +52,9 @@ module Resumes
       # Step 6: Aggregate user skills
       aggregate_user_skills
 
+      # Persist resume-derived strengths/domains for later display.
+      persist_strengths_and_domains(skill_result)
+
       # Mark analysis as complete
       user_resume.complete_analysis!(summary: skill_result[:summary])
 
@@ -206,6 +209,26 @@ module Resumes
       user_resume.skill_tags.each do |skill_tag|
         aggregation_service.aggregate_skill(skill_tag)
       end
+    end
+
+    # Persists resume-derived strengths and domains returned by the extractor.
+    #
+    # @param skill_result [Hash]
+    # @return [void]
+    def persist_strengths_and_domains(skill_result)
+      strengths = Array(skill_result[:strengths])
+        .map { |s| s.to_s.strip }
+        .reject(&:blank?)
+        .uniq
+
+      domains = Array(skill_result[:domains])
+        .map { |d| d.to_s.strip }
+        .reject(&:blank?)
+        .uniq
+
+      user_resume.update!(strengths: strengths, domains: domains)
+    rescue StandardError => e
+      Rails.logger.warn("Failed to persist strengths/domains: #{e.message}")
     end
 
     # Builds success result

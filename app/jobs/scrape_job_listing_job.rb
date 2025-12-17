@@ -42,6 +42,9 @@ class ScrapeJobListingJob < ApplicationJob
         job_listing_id: job_listing.id,
         url: job_listing.url
       }.to_json)
+
+      # Job listing details may have changed; recompute fit scores for dependent items.
+      RecomputeFitAssessmentsForJobListingJob.perform_later(job_listing.id)
     else
       handle_extraction_failure(job_listing)
     end

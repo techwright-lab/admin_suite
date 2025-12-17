@@ -1,0 +1,112 @@
+<% content_for :title, "Archived Jobs" %>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Archived Jobs</h1>
+    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+      Things you ignored or removed. You can restore them anytime.
+    </p>
+  </div>
+
+  <div class="space-y-8">
+    <section>
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">
+        Archived Opportunities
+      </h2>
+
+      <% if @archived_opportunities.any? %>
+        <div class="space-y-3">
+          <% @archived_opportunities.each do |opportunity| %>
+            <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="text-base font-semibold text-gray-900 dark:text-white truncate">
+                    <%= opportunity.display_title %>
+                  </p>
+                  <% if opportunity.archived_reason.present? %>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Reason: <%= opportunity.archived_reason.humanize %>
+                    </p>
+                  <% end %>
+                  <% if opportunity.archived_at.present? %>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Archived <%= time_ago_in_words(opportunity.archived_at) %> ago
+                    </p>
+                  <% end %>
+                </div>
+
+                <div class="flex flex-col gap-2 flex-shrink-0">
+                  <%= button_to restore_opportunity_path(opportunity),
+                    method: :post,
+                    class: "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors" do %>
+                    Restore
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-10 text-center">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            No archived opportunities.
+          </p>
+        </div>
+      <% end %>
+    </section>
+
+    <section>
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">
+        Archived Saved Jobs
+      </h2>
+
+      <% if @archived_saved_jobs.any? %>
+        <div class="space-y-3">
+          <% @archived_saved_jobs.each do |saved_job| %>
+            <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="text-base font-semibold text-gray-900 dark:text-white truncate">
+                    <%= saved_job.title.presence || saved_job.job_role_title.presence || saved_job.opportunity&.display_title || "Saved job" %>
+                  </p>
+                  <% if saved_job.company_name.present? || saved_job.opportunity&.company_name.present? %>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate">
+                      <%= saved_job.company_name.presence || saved_job.opportunity&.company_name %>
+                    </p>
+                  <% end %>
+                  <% if saved_job.archived_reason.present? %>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Reason: <%= saved_job.archived_reason.humanize %>
+                    </p>
+                  <% end %>
+                  <% if saved_job.archived_at.present? %>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Archived <%= time_ago_in_words(saved_job.archived_at) %> ago
+                    </p>
+                  <% end %>
+                </div>
+
+                <div class="flex flex-col gap-2 flex-shrink-0">
+                  <%= button_to restore_saved_job_path(saved_job),
+                    method: :post,
+                    class: "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors" do %>
+                    Restore
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-10 text-center">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            No archived saved jobs.
+          </p>
+        </div>
+      <% end %>
+    </section>
+  </div>
+</div>
+
+
+
