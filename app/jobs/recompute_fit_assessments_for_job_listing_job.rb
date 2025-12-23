@@ -25,4 +25,3 @@ class RecomputeFitAssessmentsForJobListingJob < ApplicationJob
     end
   end
 end
-

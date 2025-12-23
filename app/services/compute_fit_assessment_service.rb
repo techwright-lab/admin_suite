@@ -175,4 +175,3 @@ class ComputeFitAssessmentService
     Digest::SHA256.hexdigest([ ALGORITHM_VERSION, job_text.to_s, skills_part ].join("\n"))
   end
 end
-

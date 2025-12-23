@@ -17,6 +17,3 @@ class AddArchivingToOpportunitiesAndSavedJobs < ActiveRecord::Migration[8.1]
     add_index :saved_jobs, :archived_at
   end
 end
-
-
-

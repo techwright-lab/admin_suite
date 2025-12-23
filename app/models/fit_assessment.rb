@@ -43,4 +43,3 @@ class FitAssessment < ApplicationRecord
     errors.add(:user, "must match the fittable's owner")
   end
 end
-

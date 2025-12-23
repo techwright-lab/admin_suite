@@ -23,4 +23,3 @@ class RecomputeFitAssessmentsForUserJob < ApplicationJob
     end
   end
 end
-

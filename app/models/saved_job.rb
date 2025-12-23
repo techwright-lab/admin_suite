@@ -90,4 +90,3 @@ class SavedJob < ApplicationRecord
     errors.add(:url, "must be a valid HTTP/HTTPS URL")
   end
 end
-

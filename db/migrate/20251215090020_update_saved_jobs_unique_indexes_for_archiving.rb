@@ -18,6 +18,3 @@ class UpdateSavedJobsUniqueIndexesForArchiving < ActiveRecord::Migration[8.1]
       name: "index_saved_jobs_on_user_and_url_unique"
   end
 end
-
-
-

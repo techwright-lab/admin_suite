@@ -32,6 +32,3 @@ class OpportunitiesControllerTest < ActionDispatch::IntegrationTest
     assert_nil opportunity.archived_at
   end
 end
-
-
-

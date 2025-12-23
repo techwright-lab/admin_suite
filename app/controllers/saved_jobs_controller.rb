@@ -102,4 +102,3 @@ class SavedJobsController < ApplicationController
     end
   end
 end
-

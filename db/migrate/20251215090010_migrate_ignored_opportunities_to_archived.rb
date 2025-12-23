@@ -21,6 +21,3 @@ class MigrateIgnoredOpportunitiesToArchived < ActiveRecord::Migration[8.1]
     SQL
   end
 end
-
-
-

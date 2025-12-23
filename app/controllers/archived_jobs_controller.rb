@@ -11,6 +11,3 @@ class ArchivedJobsController < ApplicationController
       .order(archived_at: :desc)
   end
 end
-
-
-

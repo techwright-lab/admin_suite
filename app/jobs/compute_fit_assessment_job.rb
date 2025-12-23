@@ -16,4 +16,3 @@ class ComputeFitAssessmentJob < ApplicationJob
     ComputeFitAssessmentService.new(user: user, fittable: fittable).call
   end
 end
-
