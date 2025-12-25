@@ -1,0 +1,31 @@
+<turbo-frame id="assistant_widget" class="block h-full">
+  <%= turbo_stream_from "assistant_thread_#{@thread.id}" %>
+
+  <div class="h-full flex flex-col bg-white dark:bg-gray-900" data-controller="assistant-widget" data-assistant-widget-thread-id-value="<%= @thread.id %>">
+    <!-- Messages Area -->
+    <div class="flex-1 overflow-y-auto" data-assistant-widget-target="messagesContainer">
+      <div class="px-4 py-3 space-y-3" id="widget_<%= dom_id(@thread, :messages) %>">
+        <% if @messages.empty? %>
+          <div class="text-center py-8">
+            <div class="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white mb-1">How can I help?</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Ask about interviews, applications, or career advice</p>
+          </div>
+        <% else %>
+          <% @messages.each do |message| %>
+            <%= render "assistant/threads/message", message: message %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Composer -->
+    <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-50 dark:bg-gray-800">
+      <%= render "assistant/threads/composer", thread: @thread %>
+    </div>
+  </div>
+</turbo-frame>

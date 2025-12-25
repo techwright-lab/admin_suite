@@ -83,9 +83,6 @@ group :test do
   gem "database_cleaner-active_record"
 end
 
-# Admin Toolkit
-gem "avo", ">= 3"
-
 gem "stackprof"
 gem "sentry-ruby"
 gem "sentry-rails"
@@ -191,3 +188,7 @@ gem "acts-as-taggable-on"
 gem "commonmarker"
 gem "meta-tags"
 gem "mailkick"
+
+gem "rouge", "~> 4.6"
+
+gem "redcarpet", "~> 3.6"

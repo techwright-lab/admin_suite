@@ -46,6 +46,8 @@ module Ai
       job_extraction
       email_extraction
       resume_extraction
+      assistant_chat
+      assistant_tool_call
     ].freeze
 
     # Status values
@@ -307,7 +309,3 @@ module Ai
     end
   end
 end
-
-
-
-

@@ -1,0 +1,10 @@
+<%# Append user message %>
+<%= turbo_stream.append dom_id(@thread, :messages), partial: "assistant/threads/message", locals: { message: @user_message } %>
+
+<% if @show_thinking %>
+  <%# Show thinking indicator while waiting for LLM response %>
+  <%= turbo_stream.append dom_id(@thread, :messages), partial: "assistant/threads/thinking", locals: { trace_id: @trace_id } %>
+<% elsif @assistant_message.present? %>
+  <%# For duplicate requests, show the cached assistant message %>
+  <%= turbo_stream.append dom_id(@thread, :messages), partial: "assistant/threads/message", locals: { message: @assistant_message } %>
+<% end %>

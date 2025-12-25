@@ -1,0 +1,31 @@
+<% content_for :title, "Edit #{resource_config.human_name} - Developer Portal" %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6">
+    <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+      <%= link_to "Dashboard", internal_developer_root_path, class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <%= link_to resource_config.human_name_plural, url_for(action: :index), class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <%= link_to @resource.respond_to?(:name) ? @resource.name.truncate(20) : "##{@resource.id}", url_for(action: :show, id: @resource.id), class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span class="text-slate-900 dark:text-white">Edit</span>
+    </nav>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Edit <%= resource_config.human_name %></h1>
+  </div>
+
+  <!-- Form -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="p-6">
+      <%= render "internal/developer/shared/form", resource: @resource %>
+    </div>
+  </div>
+</div>
+

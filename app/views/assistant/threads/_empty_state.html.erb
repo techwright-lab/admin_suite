@@ -1,0 +1,55 @@
+<%# locals: thread %>
+<div class="flex flex-col items-center justify-center py-12 text-center">
+  <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mb-4">
+    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+    </svg>
+  </div>
+  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Start a conversation</h3>
+  <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6">
+    Ask me about your job applications, interview prep, or career strategy.
+  </p>
+  
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
+    <button 
+      type="button"
+      class="text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors group"
+      data-action="click->assistant-chat#insertPrompt"
+      data-prompt="What should I focus on for my upcoming interviews?"
+    >
+      <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300">Interview prep</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Get tips for upcoming interviews</div>
+    </button>
+    
+    <button 
+      type="button"
+      class="text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors group"
+      data-action="click->assistant-chat#insertPrompt"
+      data-prompt="Show me a summary of my current job applications"
+    >
+      <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300">Application status</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Review your pipeline</div>
+    </button>
+    
+    <button 
+      type="button"
+      class="text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors group"
+      data-action="click->assistant-chat#insertPrompt"
+      data-prompt="What skills should I highlight based on my resume?"
+    >
+      <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300">Skills analysis</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Review your strengths</div>
+    </button>
+    
+    <button 
+      type="button"
+      class="text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors group"
+      data-action="click->assistant-chat#insertPrompt"
+      data-prompt="What are my next steps to improve my job search?"
+    >
+      <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300">Next steps</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Get actionable advice</div>
+    </button>
+  </div>
+</div>
+

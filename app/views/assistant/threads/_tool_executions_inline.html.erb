@@ -1,0 +1,29 @@
+<%# locals: thread, tool_proposals, tool_executions %>
+<% if tool_proposals.any? %>
+  <div class="flex-shrink-0 border-t border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-3">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <span class="text-xs font-medium text-amber-700 dark:text-amber-300">
+          <%= pluralize(tool_proposals.count, "pending action") %>
+        </span>
+      </div>
+      <div class="space-y-2">
+        <% tool_proposals.first(3).each do |te| %>
+          <div class="flex items-center justify-between gap-3 text-sm">
+            <span class="text-amber-800 dark:text-amber-200 font-mono text-xs truncate"><%= te.tool_key %></span>
+            <div class="flex items-center gap-2">
+              <% if te.requires_confirmation? && te.approved_by_id.nil? %>
+                <%= button_to "Approve", approve_assistant_thread_tool_execution_path(thread, te), method: :post, class: "px-2 py-1 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors" %>
+              <% else %>
+                <%= button_to "Run", enqueue_assistant_thread_tool_execution_path(thread, te), method: :post, class: "px-2 py-1 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <div class="hidden"></div>
+<% end %>
+

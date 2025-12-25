@@ -1,0 +1,260 @@
+<% content_for :title, "Assistant Portal - Developer" %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="mb-8">
+    <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+      <%= link_to "Developer Portal", internal_developer_root_path, class: "hover:text-violet-600 dark:hover:text-violet-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span class="text-slate-900 dark:text-white">Assistant Portal</span>
+    </nav>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30">
+        <svg class="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Assistant Portal</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Chat, Tools & Memory Management</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Health & Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+    <!-- Assistant Health -->
+    <%= health_card("Assistant System", @health[:status], metrics: {
+      "24h threads" => @health[:threads_24h],
+      "24h tool runs" => @health[:executions_24h],
+      "success rate" => "#{@health[:success_rate]}%",
+      "pending" => @health[:pending]
+    }) %>
+
+    <!-- Threads Chart -->
+    <%= chart_card("Threads (7 days)", @charts[:threads], 
+          color: :violet, 
+          total: Assistant::ChatThread.where("created_at > ?", 7.days.ago).count) %>
+
+    <!-- Tool Executions Chart -->
+    <%= chart_card("Tool Runs (7 days)", @charts[:executions], 
+          color: :indigo, 
+          total: Assistant::ToolExecution.where("created_at > ?", 7.days.ago).count) %>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+    <%= stat_card("Threads", @stats[:threads]) %>
+    <%= stat_card("Open", @stats[:open_threads], color: :green) %>
+    <%= stat_card("Tools", @stats[:tools]) %>
+    <%= stat_card("Active Tools", @stats[:active_tools], color: :green) %>
+    <%= stat_card("Executions", @stats[:tool_executions]) %>
+    <%= stat_card("Pending", @stats[:pending_approvals], color: :amber) %>
+    <%= stat_card("Memories", @stats[:user_memories]) %>
+    <%= stat_card("Resources", @stats[:total_resources], color: :violet) %>
+  </div>
+
+  <% if @stats[:pending_approvals] > 0 %>
+    <!-- Pending Approvals Alert -->
+    <div class="mb-8 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50 p-6">
+      <div class="flex items-start gap-4">
+        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50">
+          <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="font-semibold text-amber-900 dark:text-amber-100">Pending Approvals</h3>
+          <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
+            There are <%= @stats[:pending_approvals] %> tool execution(s) waiting for approval.
+          </p>
+          <%= link_to internal_developer_assistant_tool_executions_path(status: "pending_approval"), class: "inline-flex items-center gap-2 mt-3 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors" do %>
+            Review Pending
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Recent Activity Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+    <!-- Recent Threads -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="font-semibold text-slate-900 dark:text-white">Recent Threads</h3>
+        <%= link_to "View all →", internal_developer_assistant_threads_path, class: "text-sm text-violet-600 dark:text-violet-400 hover:underline" %>
+      </div>
+      <div class="divide-y divide-slate-100 dark:divide-slate-700">
+        <% @recent[:threads].each do |thread| %>
+          <%= link_to internal_developer_assistant_thread_path(thread), class: "block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50" do %>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm font-medium text-slate-900 dark:text-white truncate"><%= thread.title.presence || "Untitled Thread" %></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400"><%= thread.user&.email_address.to_s.truncate(25) %></div>
+              </div>
+              <div class="text-xs text-slate-400"><%= time_ago_in_words(thread.created_at) %></div>
+            </div>
+          <% end %>
+        <% end %>
+        <% if @recent[:threads].empty? %>
+          <div class="px-4 py-6 text-center text-sm text-slate-500">No recent threads</div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Recent Executions -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="font-semibold text-slate-900 dark:text-white">Recent Tool Runs</h3>
+        <%= link_to "View all →", internal_developer_assistant_tool_executions_path, class: "text-sm text-violet-600 dark:text-violet-400 hover:underline" %>
+      </div>
+      <div class="divide-y divide-slate-100 dark:divide-slate-700">
+        <% @recent[:executions].each do |exec| %>
+          <%= link_to internal_developer_assistant_tool_execution_path(exec), class: "block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50" do %>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full <%= exec.status == 'completed' ? 'bg-green-500' : exec.status == 'failed' ? 'bg-red-500' : 'bg-amber-500' %>"></span>
+                <span class="text-sm font-medium text-slate-900 dark:text-white"><%= exec.tool_key || "Unknown" %></span>
+              </div>
+              <div class="text-xs text-slate-400"><%= time_ago_in_words(exec.created_at) %></div>
+            </div>
+          <% end %>
+        <% end %>
+        <% if @recent[:executions].empty? %>
+          <div class="px-4 py-6 text-center text-sm text-slate-500">No recent executions</div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Pending Approvals -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl border <%= @recent[:pending_approvals].any? ? 'border-amber-200 dark:border-amber-800/50' : 'border-slate-200 dark:border-slate-700' %> overflow-hidden">
+      <div class="px-4 py-3 border-b <%= @recent[:pending_approvals].any? ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20' : 'border-slate-200 dark:border-slate-700' %> flex items-center justify-between">
+        <h3 class="font-semibold <%= @recent[:pending_approvals].any? ? 'text-amber-900 dark:text-amber-100' : 'text-slate-900 dark:text-white' %>">Pending Approvals</h3>
+        <% if @recent[:pending_approvals].any? %>
+          <%= link_to "Review all →", internal_developer_assistant_tool_executions_path(status: "pending_approval"), class: "text-sm text-amber-600 dark:text-amber-400 hover:underline" %>
+        <% end %>
+      </div>
+      <div class="divide-y divide-slate-100 dark:divide-slate-700">
+        <% @recent[:pending_approvals].each do |exec| %>
+          <%= link_to internal_developer_assistant_tool_execution_path(exec), class: "block px-4 py-3 hover:bg-amber-50 dark:hover:bg-amber-900/10" do %>
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-sm font-medium text-slate-900 dark:text-white"><%= exec.tool_key || "Unknown" %></span>
+                <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Needs Review</span>
+              </div>
+              <div class="text-xs text-slate-400"><%= time_ago_in_words(exec.created_at) %></div>
+            </div>
+          <% end %>
+        <% end %>
+        <% if @recent[:pending_approvals].empty? %>
+          <div class="px-4 py-6 text-center text-sm text-green-600 dark:text-green-400">
+            <svg class="w-6 h-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            All caught up!
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Section -->
+  <div class="mb-8">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Chat</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <%= link_to internal_developer_assistant_threads_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">Threads</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= @stats[:threads] %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Chat conversations</p>
+      <% end %>
+
+      <%= link_to internal_developer_assistant_turns_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">Turns</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= Assistant::Turn.count %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Conversation turns</p>
+      <% end %>
+
+      <%= link_to internal_developer_assistant_events_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">Events</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= Assistant::Ops::Event.count %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">System events</p>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Tools Section -->
+  <div class="mb-8">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Tools</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <%= link_to internal_developer_assistant_tools_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">Tools</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= @stats[:tools] %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Tool definitions and configuration</p>
+        <div class="flex gap-2 mt-3">
+          <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            <%= @stats[:active_tools] %> Active
+          </span>
+        </div>
+      <% end %>
+
+      <%= link_to internal_developer_assistant_tool_executions_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">Tool Executions</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= @stats[:tool_executions] %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Tool execution history</p>
+        <div class="flex gap-2 mt-3">
+          <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            <%= @health[:successful] %> Success (24h)
+          </span>
+          <span class="px-2 py-1 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+            <%= @health[:failed] %> Failed (24h)
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Memory Section -->
+  <div class="mb-8">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Memory</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <%= link_to internal_developer_assistant_memory_proposals_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">Memory Proposals</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= Assistant::Memory::MemoryProposal.count %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Proposed memories</p>
+      <% end %>
+
+      <%= link_to internal_developer_assistant_thread_summaries_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">Thread Summaries</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= Assistant::Memory::ThreadSummary.count %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Conversation summaries</p>
+      <% end %>
+
+      <%= link_to internal_developer_assistant_user_memories_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-violet-300 dark:hover:border-violet-700 transition-colors" do %>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">User Memories</h3>
+          <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= @stats[:user_memories] %></span>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Stored user memories</p>
+      <% end %>
+    </div>
+  </div>
+</div>

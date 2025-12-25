@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_16_214112) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_24_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,171 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_16_214112) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "assistant_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "event_type", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "severity", default: "info", null: false
+    t.bigint "thread_id", null: false
+    t.string "trace_id", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", null: false
+    t.index ["event_type", "created_at"], name: "index_assistant_events_on_event_type_and_created_at"
+    t.index ["thread_id", "created_at"], name: "index_assistant_events_on_thread_id_and_created_at"
+    t.index ["thread_id"], name: "index_assistant_events_on_thread_id"
+    t.index ["trace_id"], name: "index_assistant_events_on_trace_id"
+    t.index ["uuid"], name: "index_assistant_events_on_uuid", unique: true
+  end
+
+  create_table "assistant_memory_proposals", force: :cascade do |t|
+    t.datetime "confirmed_at"
+    t.bigint "confirmed_by_id"
+    t.datetime "created_at", null: false
+    t.bigint "llm_api_log_id"
+    t.jsonb "proposed_items", default: [], null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "thread_id", null: false
+    t.string "trace_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", null: false
+    t.index ["confirmed_by_id"], name: "index_assistant_memory_proposals_on_confirmed_by_id"
+    t.index ["llm_api_log_id"], name: "index_assistant_memory_proposals_on_llm_api_log_id"
+    t.index ["thread_id"], name: "index_assistant_memory_proposals_on_thread_id"
+    t.index ["trace_id"], name: "index_assistant_memory_proposals_on_trace_id"
+    t.index ["user_id", "status"], name: "index_assistant_memory_proposals_on_user_id_and_status"
+    t.index ["user_id"], name: "index_assistant_memory_proposals_on_user_id"
+    t.index ["uuid"], name: "index_assistant_memory_proposals_on_uuid", unique: true
+  end
+
+  create_table "assistant_messages", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.string "role", null: false
+    t.bigint "thread_id", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", null: false
+    t.index ["thread_id", "created_at"], name: "index_assistant_messages_on_thread_id_and_created_at"
+    t.index ["thread_id"], name: "index_assistant_messages_on_thread_id"
+    t.index ["uuid"], name: "index_assistant_messages_on_uuid", unique: true
+  end
+
+  create_table "assistant_thread_summaries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "last_summarized_message_id"
+    t.bigint "llm_api_log_id"
+    t.text "summary_text", default: "", null: false
+    t.integer "summary_version", default: 1, null: false
+    t.bigint "thread_id", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", null: false
+    t.index ["last_summarized_message_id"], name: "index_assistant_thread_summaries_on_last_summarized_message_id"
+    t.index ["llm_api_log_id"], name: "index_assistant_thread_summaries_on_llm_api_log_id"
+    t.index ["thread_id"], name: "index_assistant_thread_summaries_on_thread_id", unique: true
+    t.index ["uuid"], name: "index_assistant_thread_summaries_on_uuid", unique: true
+  end
+
+  create_table "assistant_threads", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "last_activity_at"
+    t.string "status", default: "open", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", null: false
+    t.index ["user_id", "last_activity_at"], name: "index_assistant_threads_on_user_id_and_last_activity_at"
+    t.index ["user_id"], name: "index_assistant_threads_on_user_id"
+    t.index ["uuid"], name: "index_assistant_threads_on_uuid", unique: true
+  end
+
+  create_table "assistant_tool_executions", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.bigint "approved_by_id"
+    t.jsonb "args", default: {}, null: false
+    t.bigint "assistant_message_id", null: false
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.datetime "finished_at"
+    t.string "idempotency_key"
+    t.bigint "replay_of_id"
+    t.uuid "replay_request_uuid"
+    t.boolean "requires_confirmation", default: false, null: false
+    t.jsonb "result", default: {}, null: false
+    t.datetime "started_at"
+    t.string "status", default: "proposed", null: false
+    t.bigint "thread_id", null: false
+    t.string "tool_key", null: false
+    t.string "trace_id", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", null: false
+    t.index ["approved_by_id"], name: "index_assistant_tool_executions_on_approved_by_id"
+    t.index ["assistant_message_id"], name: "index_assistant_tool_executions_on_assistant_message_id"
+    t.index ["replay_of_id", "replay_request_uuid"], name: "idx_assistant_tool_executions_replay_idempotency", unique: true, where: "((replay_of_id IS NOT NULL) AND (replay_request_uuid IS NOT NULL))"
+    t.index ["replay_of_id"], name: "index_assistant_tool_executions_on_replay_of_id"
+    t.index ["thread_id", "idempotency_key"], name: "idx_on_thread_id_idempotency_key_3a3fdc6f78", unique: true
+    t.index ["thread_id"], name: "index_assistant_tool_executions_on_thread_id"
+    t.index ["trace_id"], name: "index_assistant_tool_executions_on_trace_id"
+    t.index ["uuid"], name: "index_assistant_tool_executions_on_uuid", unique: true
+  end
+
+  create_table "assistant_tools", force: :cascade do |t|
+    t.jsonb "arg_schema", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.text "description", default: "", null: false
+    t.boolean "enabled", default: true, null: false
+    t.string "executor_class", null: false
+    t.string "name", null: false
+    t.jsonb "rate_limit", default: {}, null: false
+    t.boolean "requires_confirmation", default: false, null: false
+    t.string "risk_level", default: "read_only", null: false
+    t.integer "timeout_ms", default: 5000, null: false
+    t.string "tool_key", null: false
+    t.datetime "updated_at", null: false
+    t.index ["enabled"], name: "index_assistant_tools_on_enabled"
+    t.index ["tool_key"], name: "index_assistant_tools_on_tool_key", unique: true
+  end
+
+  create_table "assistant_turns", force: :cascade do |t|
+    t.bigint "assistant_message_id", null: false
+    t.uuid "client_request_uuid"
+    t.jsonb "context_snapshot", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.integer "latency_ms"
+    t.bigint "llm_api_log_id", null: false
+    t.string "status", default: "success", null: false
+    t.bigint "thread_id", null: false
+    t.string "trace_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_message_id", null: false
+    t.uuid "uuid", null: false
+    t.index ["assistant_message_id"], name: "index_assistant_turns_on_assistant_message_id"
+    t.index ["llm_api_log_id"], name: "index_assistant_turns_on_llm_api_log_id"
+    t.index ["thread_id", "client_request_uuid"], name: "idx_assistant_turns_thread_client_request_uuid", unique: true, where: "(client_request_uuid IS NOT NULL)"
+    t.index ["thread_id"], name: "index_assistant_turns_on_thread_id"
+    t.index ["trace_id"], name: "index_assistant_turns_on_trace_id"
+    t.index ["user_message_id"], name: "index_assistant_turns_on_user_message_id"
+    t.index ["uuid"], name: "index_assistant_turns_on_uuid", unique: true
+  end
+
+  create_table "assistant_user_memories", force: :cascade do |t|
+    t.float "confidence", default: 1.0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at"
+    t.string "key", null: false
+    t.datetime "last_confirmed_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "source", default: "user", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", null: false
+    t.jsonb "value", default: {}, null: false
+    t.index ["expires_at"], name: "index_assistant_user_memories_on_expires_at"
+    t.index ["user_id", "key"], name: "index_assistant_user_memories_on_user_id_and_key", unique: true
+    t.index ["user_id"], name: "index_assistant_user_memories_on_user_id"
+    t.index ["uuid"], name: "index_assistant_user_memories_on_uuid", unique: true
   end
 
   create_table "blog_posts", force: :cascade do |t|
@@ -789,6 +954,24 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_16_214112) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "assistant_events", "assistant_threads", column: "thread_id"
+  add_foreign_key "assistant_memory_proposals", "assistant_threads", column: "thread_id"
+  add_foreign_key "assistant_memory_proposals", "llm_api_logs"
+  add_foreign_key "assistant_memory_proposals", "users"
+  add_foreign_key "assistant_memory_proposals", "users", column: "confirmed_by_id"
+  add_foreign_key "assistant_messages", "assistant_threads", column: "thread_id"
+  add_foreign_key "assistant_thread_summaries", "assistant_messages", column: "last_summarized_message_id"
+  add_foreign_key "assistant_thread_summaries", "assistant_threads", column: "thread_id"
+  add_foreign_key "assistant_thread_summaries", "llm_api_logs"
+  add_foreign_key "assistant_threads", "users"
+  add_foreign_key "assistant_tool_executions", "assistant_messages"
+  add_foreign_key "assistant_tool_executions", "assistant_threads", column: "thread_id"
+  add_foreign_key "assistant_tool_executions", "users", column: "approved_by_id"
+  add_foreign_key "assistant_turns", "assistant_messages"
+  add_foreign_key "assistant_turns", "assistant_messages", column: "user_message_id"
+  add_foreign_key "assistant_turns", "assistant_threads", column: "thread_id"
+  add_foreign_key "assistant_turns", "llm_api_logs"
+  add_foreign_key "assistant_user_memories", "users"
   add_foreign_key "company_feedbacks", "interview_applications"
   add_foreign_key "connected_accounts", "users"
   add_foreign_key "email_senders", "companies"

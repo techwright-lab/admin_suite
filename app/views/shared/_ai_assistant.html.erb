@@ -1,94 +1,69 @@
 <!-- AI Assistant Floating Button & Drawer -->
-<div data-controller="ai-assistant" class="fixed bottom-6 right-6 z-40">
+<div data-controller="ai-assistant" class="fixed bottom-6 right-6 z-50">
   <!-- Floating Button -->
   <button
     data-action="click->ai-assistant#toggle"
     data-ai-assistant-target="button"
-    class="w-14 h-14 bg-gradient-brand rounded-full shadow-lg hover:shadow-xl transition-shadow duration-200 flex items-center justify-center group"
-    title="Ask Gleania"
+    class="w-14 h-14 gradient-brand rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center"
+    title="Ask Gleania (Cmd+J)"
   >
     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
     </svg>
   </button>
 
-  <!-- Drawer (Hidden by default) -->
+  <!-- Backdrop (mobile) -->
+  <div
+    data-ai-assistant-target="backdrop"
+    data-action="click->ai-assistant#close"
+    class="hidden fixed inset-0 bg-black/50 md:hidden"
+  ></div>
+
+  <!-- Drawer -->
   <div
     data-ai-assistant-target="drawer"
-    class="hidden fixed bottom-0 right-0 w-full md:w-96 h-[600px] md:h-[700px] bg-white dark:bg-dark-900 border border-gray-200 dark:border-gray-700 rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none shadow-2xl"
+    data-action="keydown.escape->ai-assistant#close"
+    class="fixed bottom-0 right-0 w-full md:w-[420px] h-[85vh] md:h-[600px] md:bottom-24 md:right-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden transform translate-y-full md:translate-y-0 md:translate-x-full md:opacity-0 transition-all duration-300 ease-out"
+    tabindex="-1"
   >
-    <!-- Drawer Header -->
-    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-brand">
-      <div class="flex items-center">
-        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+    <!-- Header -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 gradient-brand text-white">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
           </svg>
         </div>
         <div>
-          <h3 class="text-white font-semibold">Ask Gleania</h3>
-          <p class="text-white/80 text-xs">Your interview assistant</p>
+          <div class="text-sm font-semibold">Gleania</div>
+          <div class="text-[10px] opacity-80">Your interview assistant</div>
         </div>
       </div>
-      <button
-        data-action="click->ai-assistant#toggle"
-        class="text-white/80 hover:text-white transition-colors"
-      >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Messages Area -->
-    <div
-      data-ai-assistant-target="messages"
-      class="flex-1 overflow-y-auto p-4 space-y-4"
-      style="height: calc(100% - 140px);"
-    >
-      <!-- Welcome Message -->
-      <div class="flex items-start">
-        <div class="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-          <svg class="w-4 h-4 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      <div class="flex items-center gap-1">
+        <%= link_to assistant_root_path, class: "p-2 hover:bg-white/10 rounded-lg transition-colors", title: "Open full chat" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
-        </div>
-        <div class="flex-1 bg-gray-100 dark:bg-dark-800 rounded-lg p-3">
-          <p class="text-sm text-gray-900 dark:text-white">
-            Hi! I'm Gleania, your interview assistant. I can help you with:
-          </p>
-          <ul class="mt-2 space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <li>• Summarize your recent interviews</li>
-            <li>• Generate thank-you emails</li>
-            <li>• Suggest interview preparation topics</li>
-            <li>• Identify skills to focus on</li>
-          </ul>
-          <p class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-            Try asking me something like "Summarize my last 3 interviews"
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Input Area -->
-    <div class="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-dark-900 border-t border-gray-200 dark:border-gray-700">
-      <form data-action="submit->ai-assistant#ask" class="flex items-center gap-2">
-        <input
-          type="text"
-          data-ai-assistant-target="input"
-          placeholder="Ask me anything..."
-          class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-dark-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-        />
-        <button
-          type="submit"
-          class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+        <% end %>
+        <button data-action="click->ai-assistant#close" class="p-2 hover:bg-white/10 rounded-lg transition-colors" title="Close (Esc)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
-      </form>
+      </div>
     </div>
+
+    <!-- Content -->
+    <turbo-frame id="assistant_widget" src="<%= assistant_widget_path %>" class="block h-[calc(100%-57px)]">
+      <!-- Loading State -->
+      <div class="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+        <div class="flex gap-1 mb-3">
+          <span class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms;"></span>
+          <span class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms;"></span>
+          <span class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms;"></span>
+        </div>
+        <span class="text-sm">Loading assistant...</span>
+      </div>
+    </turbo-frame>
   </div>
 </div>
-

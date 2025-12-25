@@ -1,0 +1,101 @@
+<% content_for :title, "Merge #{resource_config.human_name} - Developer Portal" %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6">
+    <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+      <%= link_to "Dashboard", internal_developer_root_path, class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <%= link_to resource_config.human_name_plural, url_for(action: :index), class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span class="text-slate-900 dark:text-white">Merge</span>
+    </nav>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Merge <%= resource_config.human_name %></h1>
+    <p class="text-slate-500 dark:text-slate-400 mt-1">
+      Merge "<%= @resource.respond_to?(:name) ? @resource.name : "##{@resource.id}" %>" into another <%= resource_config.human_name.downcase %>.
+    </p>
+  </div>
+
+  <!-- Source Info -->
+  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
+    <div class="flex items-start gap-3">
+      <svg class="w-5 h-5 text-amber-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <div>
+        <h3 class="font-medium text-amber-800 dark:text-amber-200">Warning: This action cannot be undone</h3>
+        <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
+          All references to this <%= resource_config.human_name.downcase %> will be transferred to the target, and this record will be deleted.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Merge Form -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="p-6">
+      <%= form_with url: url_for(action: :merge_into, id: @resource.id), method: :post, class: "space-y-6" do |f| %>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Source (will be deleted)
+          </label>
+          <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+            <span class="font-medium text-slate-900 dark:text-white">
+              <%= @resource.respond_to?(:name) ? @resource.name : @resource.respond_to?(:title) ? @resource.title : "##{@resource.id}" %>
+            </span>
+            <span class="text-slate-500 dark:text-slate-400 text-sm ml-2">(ID: <%= @resource.id %>)</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="target_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Merge into (target)
+          </label>
+          <%
+            options_data = @merge_candidates.map do |candidate|
+              label = candidate.respond_to?(:name) ? candidate.name : candidate.respond_to?(:title) ? candidate.title : "##{candidate.id}"
+              { value: candidate.id, label: "#{label} (ID: #{candidate.id})" }
+            end
+          %>
+          <div data-controller="searchable-select"
+               data-searchable-select-options-value="<%= options_data.to_json %>"
+               data-searchable-select-creatable-value="false"
+               class="relative">
+            <input type="hidden" name="target_id" id="target_id" required
+                   data-searchable-select-target="input">
+            <input type="text" 
+                   class="form-input w-full"
+                   placeholder="Search for a <%= resource_config.human_name.downcase %>..."
+                   autocomplete="off"
+                   data-searchable-select-target="search"
+                   data-action="input->searchable-select#search focus->searchable-select#open keydown->searchable-select#navigate">
+            <div class="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"
+                 data-searchable-select-target="dropdown">
+            </div>
+          </div>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            All references will be moved to this <%= resource_config.human_name.downcase %>.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <%= link_to "Cancel", url_for(action: :show, id: @resource.id), 
+              class: "px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" %>
+          <%= f.button class: "px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors", data: { turbo_confirm: "Are you sure you want to merge these records? This cannot be undone." } do %>
+            <span class="inline-flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+              </svg>
+              Merge Records
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+

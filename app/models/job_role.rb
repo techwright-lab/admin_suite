@@ -31,4 +31,65 @@ class JobRole < ApplicationRecord
   def category_name
     category&.name
   end
+
+  # Merges a source job role into a target job role
+  #
+  # @param source [JobRole] The job role to be merged (will be deleted)
+  # @param target [JobRole] The job role to merge into
+  # @return [Hash] Result hash with :success, :message/:error keys
+  def self.merge_job_roles(source, target)
+    if source == target
+      return { success: false, error: "Cannot merge a job role into itself." }
+    end
+
+    if source.nil? || target.nil?
+      return { success: false, error: "Source or target job role not found." }
+    end
+
+    stats = {
+      job_listings: 0,
+      interview_applications: 0,
+      users_current: 0,
+      user_targets: 0
+    }
+
+    transaction do
+      # Transfer job_listings
+      stats[:job_listings] = JobListing.where(job_role: source).update_all(job_role_id: target.id)
+
+      # Transfer interview_applications
+      stats[:interview_applications] = InterviewApplication.where(job_role: source).update_all(job_role_id: target.id)
+
+      # Transfer users with current_job_role
+      stats[:users_current] = User.where(current_job_role_id: source.id).update_all(current_job_role_id: target.id)
+
+      # Handle duplicate user_target_job_roles
+      duplicate_target_ids = UserTargetJobRole.where(job_role: source)
+        .joins("INNER JOIN user_target_job_roles utjr2 ON user_target_job_roles.user_id = utjr2.user_id")
+        .where("utjr2.job_role_id = ?", target.id)
+        .pluck(:id)
+      UserTargetJobRole.where(id: duplicate_target_ids).delete_all
+
+      # Transfer remaining user_target_job_roles
+      stats[:user_targets] = UserTargetJobRole.where(job_role: source).update_all(job_role_id: target.id)
+
+      # Delete the source job role
+      source.destroy!
+    end
+
+    {
+      success: true,
+      message: "Transferred #{stats[:job_listings]} job listings, #{stats[:interview_applications]} applications, " \
+               "#{stats[:users_current]} current users, and #{stats[:user_targets]} target users."
+    }
+  rescue ActiveRecord::RecordNotUnique => e
+    Rails.logger.error("JobRole merge failed due to duplicate key: #{e.message}")
+    { success: false, error: "Merge failed: Some records already exist on the target job role." }
+  rescue ActiveRecord::RecordNotDestroyed => e
+    Rails.logger.error("JobRole merge failed - could not delete source: #{e.message}")
+    { success: false, error: "Merge failed: Could not delete the source job role. #{e.record.errors.full_messages.join(', ')}" }
+  rescue => e
+    Rails.logger.error("JobRole merge failed: #{e.class} - #{e.message}")
+    { success: false, error: "Merge failed: #{e.message}" }
+  end
 end

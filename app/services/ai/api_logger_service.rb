@@ -197,6 +197,11 @@ module Ai
     def build_response_payload(result)
       payload = {}
 
+      # For assistant operations, store the full text response for debugging/replay.
+      if @operation_type.to_s.start_with?("assistant_") && result[:content].present?
+        payload[:text] = truncate_for_storage(result[:content], 10_000)
+      end
+
       # Core extraction fields for job extraction
       job_extraction_fields = %i[
         title company job_role description about_company company_culture

@@ -16,6 +16,14 @@ module Gleania
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
 
+    # Domain-oriented code organization
+    # Add app/domains as a Zeitwerk root so app/domains/assistant/** maps to Assistant::*
+    config.autoload_paths << Rails.root.join("app/domains")
+    config.eager_load_paths << Rails.root.join("app/domains")
+
+    # Admin framework is configured in config/initializers/admin_autoload.rb
+    # using Zeitwerk's push_dir with namespace mapping
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

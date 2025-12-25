@@ -1,0 +1,66 @@
+<%# Generic form for resources based on form_config %>
+
+<%= form_with model: resource, url: resource.new_record? ? url_for(action: :create) : url_for(action: :update, id: resource.id), local: true, class: "space-y-6" do |f| %>
+  <% if resource.errors.any? %>
+    <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+            <%= pluralize(resource.errors.count, "error") %> prohibited this record from being saved:
+          </h3>
+          <ul class="mt-2 text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+            <% resource.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% in_row = false %>
+  <% resource_config.form_config&.fields_list&.each do |field| %>
+    <% case field %>
+    <% when Admin::Base::Resource::SectionDefinition %>
+      <div class="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
+        <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-1"><%= field.title %></h3>
+        <% if field.description.present? %>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-4"><%= field.description %></p>
+        <% end %>
+      </div>
+    <% when Admin::Base::Resource::SectionEnd %>
+      <%# Section end marker %>
+    <% when Admin::Base::Resource::RowDefinition %>
+      <% in_row = true %>
+      <div class="grid grid-cols-<%= field.cols %> gap-4">
+    <% when Admin::Base::Resource::RowEnd %>
+      </div>
+      <% in_row = false %>
+    <% when Admin::Base::Resource::FieldDefinition %>
+      <%= render_form_field(f, field, resource) %>
+    <% end %>
+  <% end %>
+
+  <% if resource_config.form_config&.fields_list.blank? %>
+    <!-- Default fields if no form config -->
+    <% resource.class.column_names.reject { |c| %w[id created_at updated_at].include?(c) }.each do |column| %>
+      <div class="form-group">
+        <%= f.label column, class: "form-label" %>
+        <%= f.text_field column, class: "form-input w-full" %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
+    <%= link_to "Cancel", resource.new_record? ? url_for(action: :index) : url_for(action: :show, id: resource.id), class: "px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" %>
+    <%= f.button class: "px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors", data: { disable_with: "Saving..." } do %>
+      <%= resource.new_record? ? "Create #{resource_config.human_name}" : "Save Changes" %>
+    <% end %>
+  </div>
+<% end %>
+
+<%# Helper methods are defined in Internal::Developer::BaseHelper %>
+

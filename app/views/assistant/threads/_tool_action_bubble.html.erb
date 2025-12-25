@@ -1,0 +1,98 @@
+<%# locals: thread, tool_execution %>
+<%# Tool action displayed as a chat bubble for approval/execution %>
+<div id="<%= dom_id(tool_execution) %>" class="flex justify-start">
+  <div class="max-w-[85%] bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-2xl px-4 py-3">
+    <div class="flex items-start gap-3">
+      <!-- Icon -->
+      <div class="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center">
+        <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      
+      <div class="flex-1 min-w-0">
+        <!-- Header -->
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xs font-semibold text-amber-700 dark:text-amber-300">Action Required</span>
+          <span class="text-xs text-amber-500 dark:text-amber-400">·</span>
+          <span class="text-xs text-amber-500 dark:text-amber-400"><%= time_ago_in_words(tool_execution.created_at) %> ago</span>
+        </div>
+        
+        <!-- Tool name -->
+        <div class="mb-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-200">
+            <%= tool_execution.tool_key %>
+          </span>
+        </div>
+        
+        <!-- Description -->
+        <p class="text-sm text-amber-700 dark:text-amber-300 mb-3">
+          <% case tool_execution.tool_key %>
+          <% when /update|edit|modify/i %>
+            Gleania wants to update your data.
+          <% when /create|add/i %>
+            Gleania wants to create new content.
+          <% when /delete|remove/i %>
+            Gleania wants to delete something.
+          <% when /send|email/i %>
+            Gleania wants to send a message.
+          <% else %>
+            Gleania needs your approval to perform this action.
+          <% end %>
+        </p>
+        
+        <!-- Actions -->
+        <div class="flex items-center gap-2">
+          <% if tool_execution.requires_confirmation? && tool_execution.approved_by_id.nil? %>
+            <%= button_to approve_assistant_thread_tool_execution_path(thread, tool_execution), 
+                method: :post, 
+                class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors" do %>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Approve
+            <% end %>
+            <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800 rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Decline
+            </button>
+          <% elsif tool_execution.status == "proposed" %>
+            <%= button_to enqueue_assistant_thread_tool_execution_path(thread, tool_execution), 
+                method: :post, 
+                class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors" do %>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Run
+            <% end %>
+          <% elsif tool_execution.status.in?(%w[queued running]) %>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+              <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              <%= tool_execution.status == "queued" ? "Queued..." : "Running..." %>
+            </span>
+          <% elsif tool_execution.status == "success" %>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-600 dark:text-green-400">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Completed
+            </span>
+          <% elsif tool_execution.status.in?(%w[error cancelled]) %>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <%= tool_execution.status == "cancelled" ? "Cancelled" : "Failed" %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

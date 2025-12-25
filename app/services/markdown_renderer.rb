@@ -1,113 +1,150 @@
 # frozen_string_literal: true
 
-# Ensure markdown and HTML parsing libraries are loaded in all environments.
-require "commonmarker"
-require "nokogiri"
+require "redcarpet"
+require "rouge"
+require "rouge/plugins/redcarpet"
 
-# MarkdownRenderer converts markdown text into safe HTML and extracts a table of contents.
+# MarkdownRenderer converts markdown text into safe HTML with syntax highlighting.
 #
-# Uses CommonMarker for parsing and Nokogiri to add stable heading anchors.
+# Uses Redcarpet for markdown parsing, Rouge for syntax highlighting,
+# and extracts a table of contents from headings.
 #
-# @example
-#   rendered = MarkdownRenderer.new(markdown).render
-#   rendered[:html] # => safe HTML string
-#   rendered[:toc]  # => [{level: 2, id: "section", text: "Section"}, ...]
-#   rendered[:reading_time_minutes] # => Integer
+# @example Basic usage (static method)
+#   html = MarkdownRenderer.render(markdown_text)
+#
+# @example With TOC extraction (instance method)
+#   renderer = MarkdownRenderer.new(markdown)
+#   result = renderer.render
+#   result[:html] # => safe HTML string with syntax-highlighted code
+#   result[:toc]  # => [{level: 2, id: "section", text: "Section"}, ...]
+#   result[:reading_time_minutes] # => Integer
+#
 class MarkdownRenderer
-  # @return [String]
   attr_reader :markdown
 
-  # @param markdown [String]
   def initialize(markdown)
     @markdown = markdown.to_s
   end
 
-  # Renders markdown to sanitized HTML and extracts TOC headings.
-  #
+  # Instance method for rendering with TOC extraction
   # @return [Hash{Symbol=>Object}]
   def render
-    html = Commonmarker.to_html(markdown)
-
-    fragment = Nokogiri::HTML::DocumentFragment.parse(html)
-    toc = add_heading_ids_and_build_toc!(fragment)
-
-    rendered_html = sanitize_html(fragment.to_html)
+    result = self.class.render_with_toc(markdown)
 
     {
-      html: rendered_html,
-      toc: toc,
+      html: result[:html],
+      toc: result[:toc],
       reading_time_minutes: reading_time_minutes
     }
   end
 
+  # Static method for simple HTML rendering
+  # @param text [String] The markdown text to render
+  # @return [String] Safe HTML string
+  def self.render(text)
+    renderer = HtmlRenderer.new
+    markdown = Redcarpet::Markdown.new(renderer, markdown_extensions)
+    markdown.render(text).html_safe
+  end
+
+  # Static method for rendering with TOC extraction
+  # @param text [String] The markdown text to render
+  # @return [Hash{Symbol=>Object}]
+  def self.render_with_toc(text)
+    renderer = HtmlRenderer.new
+    markdown = Redcarpet::Markdown.new(renderer, markdown_extensions)
+    html = markdown.render(text).html_safe
+    { html: html, toc: renderer.toc_items }
+  end
+
   private
 
-  # Adds stable IDs to headings and returns a TOC structure.
-  #
-  # @param fragment [Nokogiri::HTML::DocumentFragment]
-  # @return [Array<Hash>]
-  def add_heading_ids_and_build_toc!(fragment)
-    used_ids = Hash.new(0)
-    toc = []
-
-    fragment.css("h2, h3, h4").each do |node|
-      text = node.text.to_s.strip
-      next if text.blank?
-
-      base = text.parameterize
-      base = "section" if base.blank?
-      used_ids[base] += 1
-      id = used_ids[base] > 1 ? "#{base}-#{used_ids[base]}" : base
-
-      node["id"] ||= id
-
-      toc << {
-        level: node.name.delete_prefix("h").to_i,
-        id: node["id"],
-        text: text
-      }
-    end
-
-    toc
-  end
-
-  # Sanitizes HTML output.
-  #
-  # @param html [String]
-  # @return [String] safe HTML
-  def sanitize_html(html)
-    ActionController::Base.helpers.sanitize(
-      html,
-      tags: allowed_tags,
-      attributes: allowed_attributes
-    )
-  end
-
-  def allowed_tags
-    %w[
-      h1 h2 h3 h4 h5 h6
-      p br
-      ul ol li
-      strong em b i
-      code pre
-      a
-      blockquote hr
-      table thead tbody tr th td
-      span div
-    ]
-  end
-
-  def allowed_attributes
-    %w[class href target rel id]
+  def self.markdown_extensions
+    {
+      autolink: true,
+      tables: true,
+      fenced_code_blocks: true,
+      strikethrough: true,
+      highlight: true,
+      superscript: true,
+      underline: true,
+      no_intra_emphasis: true,
+      space_after_headers: true,
+      lax_spacing: true
+    }
   end
 
   # Rough reading time estimate assuming 200 wpm.
-  #
   # @return [Integer]
   def reading_time_minutes
     words = markdown.scan(/\b[\p{L}\p{N}']+\b/).size
     [ (words / 200.0).ceil, 1 ].max
   end
+
+  # Inner HTML renderer class with Rouge syntax highlighting
+  class HtmlRenderer < Redcarpet::Render::HTML
+    include Rouge::Plugins::Redcarpet
+
+    # @return [Array<Hash>] Table of contents entries collected during rendering
+    attr_reader :toc_items
+
+    def initialize(extensions = {})
+      super(extensions.merge(
+        hard_wrap: true,
+        link_attributes: { target: "_blank", rel: "noopener noreferrer" },
+        with_toc_data: true
+      ))
+      @toc_items = []
+      @heading_ids = Hash.new(0)
+    end
+
+    # Custom block code rendering with Rouge using CSS classes
+    def block_code(code, language)
+      language ||= "text"
+      lexer = Rouge::Lexer.find_fancy(language, code) || Rouge::Lexers::PlainText.new
+
+      # Use HTML formatter with CSS classes (not inline styles)
+      formatter = Rouge::Formatters::HTML.new
+      highlighted = formatter.format(lexer.lex(code))
+
+      lang_label = language != "text" ? %(<span class="code-lang">#{language}</span>) : ""
+      %(<div class="code-block">#{lang_label}<pre class="highlight #{language}"><code>#{highlighted}</code></pre></div>)
+    end
+
+    # Add classes to paragraphs for styling
+    def paragraph(text)
+      %(<p>#{text}</p>\n)
+    end
+
+    # Style blockquotes
+    def block_quote(quote)
+      %(<blockquote>#{quote}</blockquote>\n)
+    end
+
+    # Add anchor links to headers and collect TOC
+    def header(text, header_level)
+      base_slug = text.downcase.strip.gsub(/\s+/, "-").gsub(/[^\w-]/, "")
+      base_slug = "section" if base_slug.blank?
+
+      @heading_ids[base_slug] += 1
+      slug = @heading_ids[base_slug] > 1 ? "#{base_slug}-#{@heading_ids[base_slug]}" : base_slug
+
+      # Collect TOC items for h2, h3, h4
+      if header_level >= 2 && header_level <= 4
+        @toc_items << { level: header_level, id: slug, text: text }
+      end
+
+      %(<h#{header_level} id="#{slug}">#{text}</h#{header_level}>\n)
+    end
+
+    # Style horizontal rules
+    def hrule
+      %(<hr class="my-8">\n)
+    end
+
+    # Style tables
+    def table(header, body)
+      %(<table class="doc-table"><thead>#{header}</thead><tbody>#{body}</tbody></table>\n)
+    end
+  end
 end
-
-

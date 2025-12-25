@@ -1,0 +1,59 @@
+<% content_for :title, "#{@thread.display_title} - Gleania" %>
+<% content_for :full_bleed, true %>
+
+<%= turbo_stream_from "assistant_thread_#{@thread.id}" %>
+
+<div class="h-full flex flex-col" data-controller="assistant-chat" data-assistant-chat-thread-id-value="<%= @thread.id %>">
+  <!-- Header -->
+  <div class="flex-shrink-0 px-4 sm:px-6 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <%= link_to assistant_root_path, class: "hover:text-primary-600 dark:hover:text-primary-400 transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          <% end %>
+          <span class="truncate"><%= @thread.display_title %></span>
+        </div>
+      </div>
+      <%= button_to assistant_threads_path, method: :post, class: "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span class="hidden sm:inline">New chat</span>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Messages Area - flex-1 with proper bottom margin for composer -->
+  <div class="flex-1 overflow-y-auto" id="<%= dom_id(@thread, :messages_container) %>" data-assistant-chat-target="messagesContainer">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 space-y-4" id="<%= dom_id(@thread, :messages) %>">
+      <% if @messages.empty? %>
+        <%= render "empty_state", thread: @thread %>
+      <% else %>
+        <% @messages.each do |message| %>
+          <%= render "message", message: message %>
+        <% end %>
+      <% end %>
+      
+      <%# Tool proposals as inline chat bubbles %>
+      <% @tool_proposals.each do |te| %>
+        <%= render "tool_action_bubble", thread: @thread, tool_execution: te %>
+      <% end %>
+    </div>
+    
+    <%# Spacer to ensure content doesn't hide behind composer %>
+    <div class="h-24"></div>
+  </div>
+
+  <!-- Composer - sticky at bottom within the flex container -->
+  <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900" id="<%= dom_id(@thread, :composer_area) %>">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-3">
+      <%= render "composer", thread: @thread %>
+    </div>
+  </div>
+</div>
+
+<%# Hidden placeholder for turbo stream updates %>
+<div id="<%= dom_id(@thread, :tool_executions) %>" class="hidden"></div>

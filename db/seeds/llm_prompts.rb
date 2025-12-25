@@ -34,6 +34,36 @@ resume_prompt = Ai::ResumeSkillExtractionPrompt.find_or_create_by!(name: "Resume
 end
 puts "  - Created: #{resume_prompt.name} (active: #{resume_prompt.active})"
 
+# Create Assistant System Prompt
+assistant_system_prompt = Ai::AssistantSystemPrompt.find_or_create_by!(name: "Assistant System Prompt - Default") do |prompt|
+  prompt.description = "Default system prompt for the in-app assistant (Gleania). Controls tone, safety rules, and response formatting."
+  prompt.prompt_template = Ai::AssistantSystemPrompt.default_prompt_template
+  prompt.variables = Ai::AssistantSystemPrompt.default_variables
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{assistant_system_prompt.name} (active: #{assistant_system_prompt.active})"
+
+# Create Assistant Thread Summary Prompt
+thread_summary_prompt = Ai::AssistantThreadSummaryPrompt.find_or_create_by!(name: "Assistant Thread Summary - Default") do |prompt|
+  prompt.description = "Prompt template for summarizing assistant chat threads to preserve context across long conversations."
+  prompt.prompt_template = Ai::AssistantThreadSummaryPrompt.default_prompt_template
+  prompt.variables = Ai::AssistantThreadSummaryPrompt.default_variables
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{thread_summary_prompt.name} (active: #{thread_summary_prompt.active})"
+
+# Create Assistant Memory Proposal Prompt
+memory_proposal_prompt = Ai::AssistantMemoryProposalPrompt.find_or_create_by!(name: "Assistant Memory Proposal - Default") do |prompt|
+  prompt.description = "Prompt template for extracting durable user preferences, goals, and constraints to remember across chats."
+  prompt.prompt_template = Ai::AssistantMemoryProposalPrompt.default_prompt_template
+  prompt.variables = Ai::AssistantMemoryProposalPrompt.default_variables
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{memory_proposal_prompt.name} (active: #{memory_proposal_prompt.active})"
+
 puts "LLM Prompts created: #{Ai::LlmPrompt.count} total"
 
 

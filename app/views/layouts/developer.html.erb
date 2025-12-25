@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Developer Portal - Gleania" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Gleania Developer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "rouge", "data-turbo-track": "reload" %>
+    
+    <%# EasyMDE Markdown Editor %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css" data-turbo-track="reload">
+    <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js" data-turbo-track="reload"></script>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-slate-50 dark:bg-slate-900">
+    <div class="flex h-screen overflow-hidden" data-controller="sidebar">
+      
+      <!-- Sidebar -->
+      <div class="hidden lg:flex lg:flex-shrink-0">
+        <%= render "internal/developer/shared/sidebar" %>
+      </div>
+
+      <!-- Mobile sidebar overlay -->
+      <div data-sidebar-target="overlay" 
+           class="hidden fixed inset-0 z-40 bg-slate-600 bg-opacity-75 lg:hidden"
+           data-action="click->sidebar#close">
+      </div>
+
+      <!-- Mobile sidebar -->
+      <div data-sidebar-target="mobileSidebar"
+           class="hidden fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out lg:hidden">
+        <%= render "internal/developer/shared/sidebar" %>
+      </div>
+
+      <!-- Main content area -->
+      <div class="flex flex-col flex-1 overflow-hidden">
+        
+        <!-- Top bar -->
+        <%= render "internal/developer/shared/topbar" %>
+
+        <!-- Main content -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+          
+          <!-- Flash messages -->
+          <%= render "shared/flash" %>
+
+          <!-- Page content -->
+          <div class="py-6">
+            <%= yield %>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
+
