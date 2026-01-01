@@ -16,10 +16,8 @@ module Ai
     # @return [String] Default prompt template
     def self.default_prompt_template
       <<~PROMPT
-        You are an expert at extracting job opportunity information from recruiter emails.
-
         Analyze the following email content and extract structured information about the job opportunity.
-        The email may be a direct message from a recruiter, a forwarded message from LinkedIn, or a referral.
+        The email may be a direct message from a recruiter, a forwarded or a direct message from LinkedIn, or a referral.
 
         EMAIL SUBJECT: {{subject}}
 
@@ -43,7 +41,10 @@ module Ai
           "key_details": "A brief summary of important details like: location, remote/hybrid/onsite, salary range, tech stack, company stage, team size, etc.",
           "is_forwarded": true/false,
           "original_source": "linkedin|email|referral|other",
-          "confidence_score": 0.0 to 1.0
+          "confidence_score": 0.0 to 1.0, # Confidence score for the overall extraction
+          "potential_opportunity": true/false, # Whether this is a potential opportunity or just a generic/newletter type email
+          "potential_opportunity_confidence_score": 0.0 to 1.0, # Confidence score for the potential opportunity
+          "potential_opportunity_confidence_reasoning": "The reasoning for why this is a potential opportunity or not, if potential_opportunity is false, this should be null"
         }
 
         Guidelines:
@@ -69,7 +70,3 @@ module Ai
     end
   end
 end
-
-
-
-

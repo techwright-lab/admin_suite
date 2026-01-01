@@ -13,7 +13,14 @@
       <div class="flex-1 min-w-0">
         <!-- Header -->
         <div class="flex items-center gap-2 mb-1">
-          <span class="text-xs font-semibold text-amber-700 dark:text-amber-300">Action Required</span>
+          <% status_label =
+            if tool_execution.status.in?(%w[queued running])
+              (tool_execution.status == "queued" ? "Queued" : "Running")
+            else
+              "Action Required"
+            end
+          %>
+          <span class="text-xs font-semibold text-amber-700 dark:text-amber-300"><%= status_label %></span>
           <span class="text-xs text-amber-500 dark:text-amber-400">·</span>
           <span class="text-xs text-amber-500 dark:text-amber-400"><%= time_ago_in_words(tool_execution.created_at) %> ago</span>
         </div>
@@ -25,6 +32,89 @@
           </span>
         </div>
         
+        <%# Action preview / details to help the user understand what they're approving %>
+        <% args = tool_execution.args.is_a?(Hash) ? tool_execution.args : {} %>
+        <% details_lines = [] %>
+        <% case tool_execution.tool_key.to_s %>
+        <% when "add_target_company" %>
+          <% items = args["companies"] || args[:companies] %>
+          <% if items.is_a?(Array) %>
+            <% details_lines << "Add target companies:" %>
+            <% items.first(8).each do |it| %>
+              <% it = it.is_a?(Hash) ? it : {} %>
+              <% name = (it["company_name"] || it[:company_name]).to_s.presence || "Company ##{(it["company_id"] || it[:company_id]).to_s.presence || "?"}" %>
+              <% pr = (it["priority"] || it[:priority]).to_s.presence %>
+              <% details_lines << "- #{name}#{pr.present? ? " (priority #{pr})" : ""}" %>
+            <% end %>
+            <% details_lines << "…and more" if items.length > 8 %>
+          <% else %>
+            <% name = (args["company_name"] || args[:company_name]).to_s.presence || "Company ##{(args["company_id"] || args[:company_id]).to_s.presence || "?"}" %>
+            <% pr = (args["priority"] || args[:priority]).to_s.presence %>
+            <% details_lines << "Add target company: #{name}#{pr.present? ? " (priority #{pr})" : ""}" %>
+          <% end %>
+        <% when "add_target_job_role" %>
+          <% items = args["job_roles"] || args[:job_roles] %>
+          <% if items.is_a?(Array) %>
+            <% details_lines << "Add target job roles:" %>
+            <% items.first(8).each do |it| %>
+              <% it = it.is_a?(Hash) ? it : {} %>
+              <% title = (it["job_role_title"] || it[:job_role_title]).to_s.presence || "JobRole ##{(it["job_role_id"] || it[:job_role_id]).to_s.presence || "?"}" %>
+              <% pr = (it["priority"] || it[:priority]).to_s.presence %>
+              <% details_lines << "- #{title}#{pr.present? ? " (priority #{pr})" : ""}" %>
+            <% end %>
+            <% details_lines << "…and more" if items.length > 8 %>
+          <% else %>
+            <% title = (args["job_role_title"] || args[:job_role_title]).to_s.presence || "JobRole ##{(args["job_role_id"] || args[:job_role_id]).to_s.presence || "?"}" %>
+            <% pr = (args["priority"] || args[:priority]).to_s.presence %>
+            <% details_lines << "Add target job role: #{title}#{pr.present? ? " (priority #{pr})" : ""}" %>
+          <% end %>
+        <% when "remove_target_company" %>
+          <% items = args["companies"] || args[:companies] %>
+          <% if items.is_a?(Array) %>
+            <% details_lines << "Remove target companies:" %>
+            <% items.first(8).each do |it| %>
+              <% it = it.is_a?(Hash) ? it : {} %>
+              <% name = (it["company_name"] || it[:company_name]).to_s.presence || "Company ##{(it["company_id"] || it[:company_id]).to_s.presence || "?"}" %>
+              <% details_lines << "- #{name}" %>
+            <% end %>
+            <% details_lines << "…and more" if items.length > 8 %>
+          <% else %>
+            <% name = (args["company_name"] || args[:company_name]).to_s.presence || "Company ##{(args["company_id"] || args[:company_id]).to_s.presence || "?"}" %>
+            <% details_lines << "Remove target company: #{name}" %>
+          <% end %>
+        <% when "remove_target_job_role" %>
+          <% items = args["job_roles"] || args[:job_roles] %>
+          <% if items.is_a?(Array) %>
+            <% details_lines << "Remove target job roles:" %>
+            <% items.first(8).each do |it| %>
+              <% it = it.is_a?(Hash) ? it : {} %>
+              <% title = (it["job_role_title"] || it[:job_role_title]).to_s.presence || "JobRole ##{(it["job_role_id"] || it[:job_role_id]).to_s.presence || "?"}" %>
+              <% details_lines << "- #{title}" %>
+            <% end %>
+            <% details_lines << "…and more" if items.length > 8 %>
+          <% else %>
+            <% title = (args["job_role_title"] || args[:job_role_title]).to_s.presence || "JobRole ##{(args["job_role_id"] || args[:job_role_id]).to_s.presence || "?"}" %>
+            <% details_lines << "Remove target job role: #{title}" %>
+          <% end %>
+        <% when "list_target_companies" %>
+          <% lim = (args["limit"] || args[:limit]).to_s.presence %>
+          <% details_lines << "List your current target companies#{lim.present? ? " (limit #{lim})" : ""}." %>
+        <% when "list_target_job_roles" %>
+          <% lim = (args["limit"] || args[:limit]).to_s.presence %>
+          <% details_lines << "List your current target job roles#{lim.present? ? " (limit #{lim})" : ""}." %>
+        <% else %>
+          <% if args.present? %>
+            <% details_lines << "Args:" %>
+            <% details_lines << JSON.pretty_generate(args).to_s.truncate(600) %>
+          <% end %>
+        <% end %>
+
+        <% if details_lines.any? %>
+          <div class="mb-3">
+            <pre class="text-xs whitespace-pre-wrap bg-white/60 dark:bg-black/20 border border-amber-200/60 dark:border-amber-800/60 rounded-lg p-2"><%= details_lines.join("\n") %></pre>
+          </div>
+        <% end %>
+
         <!-- Description -->
         <p class="text-sm text-amber-700 dark:text-amber-300 mb-3">
           <% case tool_execution.tool_key %>
@@ -95,4 +185,3 @@
     </div>
   </div>
 </div>
-

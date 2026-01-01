@@ -8,6 +8,7 @@ module Assistant
     include Assistant::HasUuid
 
     STATUSES = %w[proposed queued running success error cancelled].freeze
+    PROVIDERS = %w[openai anthropic ollama].freeze
 
     belongs_to :thread,
       class_name: "Assistant::ChatThread",
@@ -25,5 +26,6 @@ module Assistant
     validates :tool_key, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
     validates :trace_id, presence: true
+    validates :provider_name, inclusion: { in: PROVIDERS }, allow_blank: true
   end
 end

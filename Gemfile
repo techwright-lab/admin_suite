@@ -192,3 +192,6 @@ gem "mailkick"
 gem "rouge", "~> 4.6"
 
 gem "redcarpet", "~> 3.6"
+
+# Runtime contracts / schema validation (use at boundaries like LLM tool calls/results)
+gem "dry-schema"

@@ -10,7 +10,7 @@ module Assistant
       @thread = ChatThread.where(user: Current.user).find_by!(uuid: params[:uuid])
       @messages = @thread.messages.order(:created_at)
       @tool_executions = @thread.tool_executions.order(created_at: :desc)
-      @tool_proposals = @tool_executions.select { |te| te.status == "proposed" }
+      @tool_action_items = @tool_executions.select { |te| te.status.in?(%w[proposed queued running]) }
     end
 
     def create

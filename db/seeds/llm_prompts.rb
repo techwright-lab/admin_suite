@@ -65,7 +65,3 @@ end
 puts "  - Created: #{memory_proposal_prompt.name} (active: #{memory_proposal_prompt.active})"
 
 puts "LLM Prompts created: #{Ai::LlmPrompt.count} total"
-
-
-
-

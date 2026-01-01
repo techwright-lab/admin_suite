@@ -16,14 +16,13 @@ module Ai
     # @return [String] Default prompt template
     def self.default_prompt_template
       <<~PROMPT
-        You are an expert at extracting structured job listing data from HTML.
-
         Extract the following information from this job listing HTML and return it as JSON:
 
         Required fields:
         - title: Job title
         - company: Company name (the organization posting the job)
         - job_role: Job role/title (can be the same as title or a normalized version)
+        - job_board: The job board where the job listing was found (e.g. "LinkedIn", "Greenhouse", "Lever", "Indeed", "Glassdoor", "Workable", "Jobvite", "ICIMS", "SmartRecruiters", "BambooHR", "AshbyHQ", "Other")
         - description: Full job description (text only, no HTML)
         - requirements: Required qualifications and skills
         - responsibilities: Key responsibilities and duties
@@ -54,6 +53,12 @@ module Ai
       PROMPT
     end
 
+    def self.default_system_prompt
+      <<~PROMPT
+        You are an expert at extracting structured job listing data from HTML. You are given a job listing URL and the HTML content of the job listing. You need to extract the structured data from the HTML content.
+      PROMPT
+    end
+
     # Returns the expected variables for this prompt type
     #
     # @return [Hash] Variable definitions
@@ -65,7 +70,3 @@ module Ai
     end
   end
 end
-
-
-
-

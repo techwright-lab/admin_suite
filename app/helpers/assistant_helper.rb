@@ -32,4 +32,3 @@ module AssistantHelper
     content_tag(:div, html, class: "chat-prose")
   end
 end
-

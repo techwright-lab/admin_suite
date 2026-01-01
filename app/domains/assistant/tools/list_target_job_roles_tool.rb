@@ -33,4 +33,3 @@ module Assistant
     end
   end
 end
-

@@ -20,9 +20,12 @@ end
 namespace :assistant do
   root to: "threads#index"
 
+  # Widget routes
   get :widget, to: "widgets#show"
+  get "widget/threads", to: "widgets#threads", as: :widget_threads
+  post "widget/new_thread", to: "widgets#new_thread", as: :widget_new_thread
 
-  resources :threads, only: [ :index, :show, :create ], param: :uuid do
+  resources :threads, only: [ :index, :show, :create, :new ], param: :uuid do
     resources :messages, only: [ :create ]
 
     resources :tool_executions, only: [], param: :uuid do

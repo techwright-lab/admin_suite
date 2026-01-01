@@ -8,6 +8,7 @@ module Assistant
     include Assistant::HasUuid
 
     STATUSES = %w[success error].freeze
+    PROVIDERS = %w[openai anthropic ollama].freeze
 
     belongs_to :thread,
       class_name: "Assistant::ChatThread",
@@ -25,5 +26,10 @@ module Assistant
 
     validates :trace_id, presence: true
     validates :status, presence: true, inclusion: { in: STATUSES }
+    validates :provider_name, inclusion: { in: PROVIDERS }, allow_blank: true
+
+    def to_param
+      uuid
+    end
   end
 end

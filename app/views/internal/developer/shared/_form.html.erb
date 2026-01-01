@@ -1,6 +1,6 @@
 <%# Generic form for resources based on form_config %>
 
-<%= form_with model: resource, url: resource.new_record? ? url_for(action: :create) : url_for(action: :update, id: resource.id), local: true, class: "space-y-6" do |f| %>
+<%= form_with model: resource, url: resource.new_record? ? url_for(action: :create) : url_for(action: :update, id: resource.to_param), local: true, class: "space-y-6" do |f| %>
   <% if resource.errors.any? %>
     <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
       <div class="flex items-start gap-3">
@@ -36,8 +36,8 @@
     <% when Admin::Base::Resource::RowDefinition %>
       <% in_row = true %>
       <div class="grid grid-cols-<%= field.cols %> gap-4">
-    <% when Admin::Base::Resource::RowEnd %>
       </div>
+    <% when Admin::Base::Resource::RowEnd %>
       <% in_row = false %>
     <% when Admin::Base::Resource::FieldDefinition %>
       <%= render_form_field(f, field, resource) %>
@@ -55,7 +55,7 @@
   <% end %>
 
   <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
-    <%= link_to "Cancel", resource.new_record? ? url_for(action: :index) : url_for(action: :show, id: resource.id), class: "px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" %>
+    <%= link_to "Cancel", resource.new_record? ? url_for(action: :index) : url_for(action: :show, id: resource.to_param), class: "px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" %>
     <%= f.button class: "px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors", data: { disable_with: "Saving..." } do %>
       <%= resource.new_record? ? "Create #{resource_config.human_name}" : "Save Changes" %>
     <% end %>
@@ -63,4 +63,3 @@
 <% end %>
 
 <%# Helper methods are defined in Internal::Developer::BaseHelper %>
-

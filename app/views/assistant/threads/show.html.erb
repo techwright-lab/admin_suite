@@ -36,15 +36,13 @@
           <%= render "message", message: message %>
         <% end %>
       <% end %>
-      
-      <%# Tool proposals as inline chat bubbles %>
-      <% @tool_proposals.each do |te| %>
-        <%= render "tool_action_bubble", thread: @thread, tool_execution: te %>
-      <% end %>
     </div>
+
+    <%# Tool actions live outside the messages list so new messages append below correctly. %>
+    <%= render "tool_proposals", thread: @thread, tool_executions: @tool_action_items %>
     
-    <%# Spacer to ensure content doesn't hide behind composer %>
-    <div class="h-24"></div>
+    <%# Large spacer to allow ChatGPT-style scroll (last message can reach top of viewport) %>
+    <div class="min-h-[60vh]"></div>
   </div>
 
   <!-- Composer - sticky at bottom within the flex container -->
@@ -54,6 +52,3 @@
     </div>
   </div>
 </div>
-
-<%# Hidden placeholder for turbo stream updates %>
-<div id="<%= dom_id(@thread, :tool_executions) %>" class="hidden"></div>

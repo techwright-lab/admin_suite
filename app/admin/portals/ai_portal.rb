@@ -9,7 +9,7 @@ module Admin
     # - Tool executions and management
     # - User memories and proposals
     # - LLM configuration and logs
-    class AIPortal < Admin::Base::Portal
+    class AiPortal < Admin::Base::Portal
       name "AI"
       icon :sparkles
       path_prefix "/admin/ai"
@@ -41,4 +41,3 @@ module Admin
     end
   end
 end
-

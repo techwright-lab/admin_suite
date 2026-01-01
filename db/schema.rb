@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_24_050000) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_28_080000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -129,6 +129,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_24_050000) do
     t.text "error"
     t.datetime "finished_at"
     t.string "idempotency_key"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "provider_name"
+    t.string "provider_tool_call_id"
     t.bigint "replay_of_id"
     t.uuid "replay_request_uuid"
     t.boolean "requires_confirmation", default: false, null: false
@@ -142,6 +145,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_24_050000) do
     t.uuid "uuid", null: false
     t.index ["approved_by_id"], name: "index_assistant_tool_executions_on_approved_by_id"
     t.index ["assistant_message_id"], name: "index_assistant_tool_executions_on_assistant_message_id"
+    t.index ["metadata"], name: "index_assistant_tool_executions_on_metadata", using: :gin
+    t.index ["provider_name"], name: "index_assistant_tool_executions_on_provider_name"
+    t.index ["provider_tool_call_id"], name: "index_assistant_tool_executions_on_provider_tool_call_id"
     t.index ["replay_of_id", "replay_request_uuid"], name: "idx_assistant_tool_executions_replay_idempotency", unique: true, where: "((replay_of_id IS NOT NULL) AND (replay_request_uuid IS NOT NULL))"
     t.index ["replay_of_id"], name: "index_assistant_tool_executions_on_replay_of_id"
     t.index ["thread_id", "idempotency_key"], name: "idx_on_thread_id_idempotency_key_3a3fdc6f78", unique: true
@@ -174,6 +180,8 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_24_050000) do
     t.datetime "created_at", null: false
     t.integer "latency_ms"
     t.bigint "llm_api_log_id", null: false
+    t.string "provider_name"
+    t.jsonb "provider_state", default: {}, null: false
     t.string "status", default: "success", null: false
     t.bigint "thread_id", null: false
     t.string "trace_id", null: false
@@ -182,6 +190,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_24_050000) do
     t.uuid "uuid", null: false
     t.index ["assistant_message_id"], name: "index_assistant_turns_on_assistant_message_id"
     t.index ["llm_api_log_id"], name: "index_assistant_turns_on_llm_api_log_id"
+    t.index ["provider_name"], name: "index_assistant_turns_on_provider_name"
     t.index ["thread_id", "client_request_uuid"], name: "idx_assistant_turns_thread_client_request_uuid", unique: true, where: "(client_request_uuid IS NOT NULL)"
     t.index ["thread_id"], name: "index_assistant_turns_on_thread_id"
     t.index ["trace_id"], name: "index_assistant_turns_on_trace_id"
@@ -520,6 +529,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_24_050000) do
     t.text "description"
     t.string "name", null: false
     t.text "prompt_template", null: false
+    t.text "system_prompt"
     t.string "type", null: false
     t.datetime "updated_at", null: false
     t.jsonb "variables", default: {}

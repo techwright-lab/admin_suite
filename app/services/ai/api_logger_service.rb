@@ -113,6 +113,24 @@ module Ai
 
         @log.save!
 
+        # Notify with rich context for easier debugging (thread/trace/log ids, etc).
+        # This is intentionally best-effort so logging never hides the original exception.
+        begin
+          Ai::ErrorReporter.notify(
+            e,
+            operation: @operation_type,
+            provider: @provider,
+            model: @model,
+            user: @loggable.is_a?(User) ? @loggable : nil,
+            thread: @loggable.is_a?(Assistant::ChatThread) ? @loggable : nil,
+            trace_id: nil,
+            llm_api_log_id: @log.id,
+            extra: { llm_prompt_id: @llm_prompt&.id, loggable_type: @loggable&.class&.name, loggable_id: @loggable&.id }
+          )
+        rescue StandardError
+          # best-effort only
+        end
+
         # Re-raise the exception
         raise
       end

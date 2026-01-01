@@ -1,0 +1,89 @@
+<% content_for :title, "Assistant Event ##{@event.id} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-5xl">
+  <%= render "admin/shared/page_header",
+      title: @event.event_type,
+      description: "Event ##{@event.id}",
+      breadcrumbs: [
+        { label: "Assistant Events", path: admin_assistant_events_path },
+        { label: "##{@event.id}" }
+      ] %>
+
+  <p class="text-sm text-slate-500 dark:text-slate-400 font-mono break-all mb-6"><%= @event.trace_id %></p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Payload</h2>
+        <pre class="text-xs bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-lg p-3 overflow-x-auto max-h-96 overflow-y-auto"><%= JSON.pretty_generate(@event.payload || {}) %></pre>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Event Details</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Severity</dt>
+            <dd class="mt-1">
+              <% severity_colors = {
+                "debug" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300",
+                "info" => "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+                "warn" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400",
+                "error" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+              } %>
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= severity_colors[@event.severity] || 'bg-slate-100 text-slate-800' %>">
+                <%= @event.severity&.upcase %>
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Created at</dt>
+            <dd class="mt-1 text-sm text-slate-900 dark:text-white"><%= @event.created_at.strftime("%Y-%m-%d %H:%M:%S") %></dd>
+          </div>
+        </dl>
+      </div>
+
+      <%= render "admin/shared/info_card",
+          title: "Related Objects",
+          data: {
+            "Thread" => @event.thread_id.present? ? link_to("##{@event.thread_id}", admin_assistant_thread_path(@event.thread_id, trace_id: @event.trace_id), class: "text-amber-600 dark:text-amber-400 hover:underline") : "—"
+          } %>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Quick Links</h3>
+        <div class="space-y-2 text-sm">
+          <% if @event.thread_id.present? %>
+            <%= link_to admin_assistant_thread_path(@event.thread_id, trace_id: @event.trace_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              View Thread (with trace)
+            <% end %>
+          <% end %>
+          <%= link_to admin_assistant_events_path(trace_id: @event.trace_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            All events for this trace
+          <% end %>
+          <%= link_to admin_assistant_tool_executions_path(trace_id: @event.trace_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Tool executions for this trace
+          <% end %>
+          <%= link_to admin_assistant_turns_path(trace_id: @event.trace_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Turns for this trace
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

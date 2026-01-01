@@ -63,7 +63,7 @@ module Admin
         end
 
         main do
-          panel :tool, title: "Tool Information", fields: [ :tool_key, :trace_id ]
+          panel :tool, title: "Tool Information", fields: [ :tool_key, :trace_id, :provider_name, :provider_tool_call_id ]
           panel :data, title: "Arguments & Result", render: :tool_args_preview
         end
       end

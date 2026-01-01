@@ -1,7 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Controller for the assistant chat page.
-// Handles auto-scrolling, keyboard shortcuts, and prompt suggestions.
+// Controller for the assistant chat page (full page view).
+//
+// Only scrolls to bottom on:
+// - Initial load (to show latest messages)
+// - User submitting a new message (handled by composer controller)
+//
+// Does NOT auto-scroll when assistant responses arrive, so users can read
+// previous content without being interrupted.
 //
 // Example:
 // <div data-controller="assistant-chat" data-assistant-chat-thread-id-value="123">
@@ -14,33 +20,17 @@ export default class extends Controller {
   }
 
   connect() {
-    // Initial scroll to bottom
+    // Initial scroll to bottom (instant, no animation)
     this.scrollToBottom(false)
-    this.setupMutationObserver()
     this.setupKeyboardShortcuts()
-    
-    // Also scroll when turbo stream appends content
-    document.addEventListener("turbo:before-stream-render", this.handleTurboStream.bind(this))
   }
 
   disconnect() {
-    if (this.observer) {
-      this.observer.disconnect()
-    }
     document.removeEventListener("keydown", this.handleGlobalKeydown)
-    document.removeEventListener("turbo:before-stream-render", this.handleTurboStream.bind(this))
-  }
-
-  // Handle turbo stream events to scroll after content is added
-  handleTurboStream(event) {
-    const action = event.target.getAttribute("action")
-    if (action === "append" || action === "replace") {
-      // Use setTimeout to ensure DOM is updated
-      setTimeout(() => this.scrollToBottom(true), 50)
-    }
   }
 
   // Scroll to the bottom of the messages container
+  // Called by composer controller after user submits a message
   // @param smooth - whether to use smooth scrolling
   scrollToBottom(smooth = true) {
     if (this.hasMessagesContainerTarget) {
@@ -58,40 +48,6 @@ export default class extends Controller {
         }
       })
     }
-  }
-
-  // Watch for new messages and auto-scroll
-  setupMutationObserver() {
-    if (!this.hasMessagesContainerTarget) return
-
-    this.observer = new MutationObserver((mutations) => {
-      let shouldScroll = false
-      
-      for (const mutation of mutations) {
-        // Check if nodes were added
-        if (mutation.addedNodes.length > 0) {
-          shouldScroll = true
-          break
-        }
-        // Also check for attribute changes (like replacing content)
-        if (mutation.type === "attributes") {
-          shouldScroll = true
-          break
-        }
-      }
-      
-      if (shouldScroll) {
-        this.scrollToBottom(true)
-      }
-    })
-
-    // Watch the entire container for changes, including subtree
-    this.observer.observe(this.messagesContainerTarget, { 
-      childList: true, 
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["id", "class"]
-    })
   }
 
   // Setup global keyboard shortcuts

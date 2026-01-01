@@ -1,29 +1,40 @@
 import { Controller } from "@hotwired/stimulus"
 
-// AI assistant floating drawer controller.
+// AI assistant side panel controller.
+//
+// The panel is integrated into the page layout (not a modal overlay).
+// It slides in from the right edge, pushing/shrinking the main content.
 //
 // Features:
-// - Toggle drawer open/close
-// - Smooth animations
+// - Slide-in side panel (no backdrop)
+// - Smooth width transition
 // - Escape key to close
+// - Click outside to close
 // - Global keyboard shortcut (Cmd+J)
 // - Persist state in sessionStorage
 //
 // Example:
-// <div data-controller="ai-assistant">
-//   <button data-action="click->ai-assistant#toggle"></button>
-//   <div data-ai-assistant-target="drawer" class="hidden"></div>
-// </div>
+// <body data-controller="ai-assistant">
+//   <div data-ai-assistant-target="mainContent">...</div>
+//   <aside data-ai-assistant-target="panel" class="w-0">...</aside>
+//   <button data-ai-assistant-target="button" data-action="click->ai-assistant#toggle"></button>
+// </body>
 export default class extends Controller {
-  static targets = ["drawer", "button", "backdrop"]
+  static targets = ["panel", "button", "mainContent"]
+
+  // Panel width classes
+  static panelOpenClasses = ["w-[420px]", "lg:w-[480px]"]
+  static panelClosedClasses = ["w-0"]
 
   connect() {
     this.setupKeyboardShortcut()
+    this.setupOutsideClickHandler()
     this.restoreState()
   }
 
   disconnect() {
     document.removeEventListener("keydown", this.handleGlobalKeydown)
+    document.removeEventListener("click", this.handleOutsideClick)
   }
 
   toggle(event) {
@@ -37,45 +48,51 @@ export default class extends Controller {
   }
 
   open() {
-    if (this.hasBackdropTarget) {
-      this.backdropTarget.classList.remove("hidden")
-    }
+    if (!this.hasPanelTarget) return
     
-    // Show drawer and trigger animation
-    this.drawerTarget.classList.remove("translate-y-full", "md:translate-x-full", "md:opacity-0")
-    this.drawerTarget.classList.add("translate-y-0", "md:translate-x-0", "md:opacity-100")
+    // Expand panel width
+    this.constructor.panelClosedClasses.forEach(cls => {
+      this.panelTarget.classList.remove(cls)
+    })
+    this.constructor.panelOpenClasses.forEach(cls => {
+      this.panelTarget.classList.add(cls)
+    })
     
-    // Focus the drawer for keyboard events
-    this.drawerTarget.focus()
+    // Focus the panel for keyboard events
+    this.panelTarget.focus()
     
     // Hide the floating button
     if (this.hasButtonTarget) {
-      this.buttonTarget.classList.add("scale-0", "opacity-0")
+      this.buttonTarget.classList.add("scale-0", "opacity-0", "pointer-events-none")
     }
     
     this.saveState(true)
   }
 
   close() {
-    if (this.hasBackdropTarget) {
-      this.backdropTarget.classList.add("hidden")
-    }
+    if (!this.hasPanelTarget) return
     
-    // Hide drawer with animation
-    this.drawerTarget.classList.add("translate-y-full", "md:translate-x-full", "md:opacity-0")
-    this.drawerTarget.classList.remove("translate-y-0", "md:translate-x-0", "md:opacity-100")
+    // Collapse panel width
+    this.constructor.panelOpenClasses.forEach(cls => {
+      this.panelTarget.classList.remove(cls)
+    })
+    this.constructor.panelClosedClasses.forEach(cls => {
+      this.panelTarget.classList.add(cls)
+    })
     
     // Show the floating button
     if (this.hasButtonTarget) {
-      this.buttonTarget.classList.remove("scale-0", "opacity-0")
+      this.buttonTarget.classList.remove("scale-0", "opacity-0", "pointer-events-none")
     }
     
     this.saveState(false)
   }
 
   isOpen() {
-    return !this.drawerTarget.classList.contains("translate-y-full") && 
-           !this.drawerTarget.classList.contains("md:translate-x-full")
+    if (!this.hasPanelTarget) return false
+    return this.constructor.panelOpenClasses.some(cls => 
+      this.panelTarget.classList.contains(cls)
+    )
   }
 
   // Setup global keyboard shortcut (Cmd/Ctrl + J)
@@ -89,6 +106,24 @@ export default class extends Controller {
     }
     
     document.addEventListener("keydown", this.handleGlobalKeydown)
+  }
+
+  // Setup click outside handler to close panel
+  setupOutsideClickHandler() {
+    this.handleOutsideClick = (event) => {
+      if (!this.isOpen()) return
+      
+      // Don't close if clicking inside the panel
+      if (this.hasPanelTarget && this.panelTarget.contains(event.target)) return
+      
+      // Don't close if clicking the toggle button
+      if (this.hasButtonTarget && this.buttonTarget.contains(event.target)) return
+      
+      // Close the panel
+      this.close()
+    }
+    
+    document.addEventListener("click", this.handleOutsideClick)
   }
 
   // Save state to sessionStorage

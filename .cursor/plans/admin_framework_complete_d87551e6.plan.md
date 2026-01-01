@@ -329,5 +329,3 @@ Enhanced existing `file_upload_controller.js`:
 ---
 
 ## Benefits Summary
-
-| Aspect | Before | After ||--------|--------|-------|| New resource | ~200 lines boilerplate | ~50 lines declarative || Boolean field | Checkbox | Toggle switch || Association select | Basic dropdown | Searchable + creatable || Rich content | Textarea | Markdown or Trix |

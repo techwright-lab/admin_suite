@@ -26,6 +26,7 @@ class Setting < ApplicationRecord
     careerjet_enabled
     js_rendering_enabled
     turnstile_enabled
+    helicone_enabled
   ]
 
   CACHE_KEY = "settings"

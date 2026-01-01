@@ -1,0 +1,99 @@
+<% content_for :title, "Memory Proposals - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8">
+  <%= render "admin/shared/page_header",
+      title: "Memory Proposals",
+      description: "View memory proposals generated during assistant interactions." %>
+
+  <!-- Stats Grid -->
+  <%= render "admin/shared/stats_grid",
+    stats: @stats,
+    colors: {
+      total: "text-slate-900 dark:text-white",
+      pending: "text-amber-600 dark:text-amber-400",
+      accepted: "text-green-600 dark:text-green-400",
+      rejected: "text-red-600 dark:text-red-400",
+      created_last_24h: "text-blue-600 dark:text-blue-400"
+    },
+    grid_class: "grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6" %>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Filters Sidebar -->
+    <%= render "admin/shared/filter_sidebar",
+      url: admin_assistant_memory_proposals_path,
+      filters: [
+        { type: :select, name: :status, label: "Status", options: [["All Statuses", ""]] + Assistant::Memory::MemoryProposal::STATUSES.map { |v| [v.titleize, v] }, value: params[:status] },
+        { type: :number, name: :user_id, label: "User ID", placeholder: "123", value: params[:user_id] },
+        { type: :number, name: :thread_id, label: "Thread ID", placeholder: "456", value: params[:thread_id] },
+        { type: :text, name: :trace_id, label: "Trace ID", placeholder: "uuid...", value: params[:trace_id] }
+      ] %>
+
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-900">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">User</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Thread</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Items</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Created</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+              <% @proposals.each do |proposal| %>
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <div class="text-sm font-medium text-slate-900 dark:text-white">#<%= proposal.id %></div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-[100px]" title="<%= proposal.trace_id %>"><%= proposal.trace_id.truncate(15) %></div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="text-sm text-slate-900 dark:text-white"><%= proposal.user&.email_address&.truncate(25) || "—" %></div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">ID: <%= proposal.user_id %></div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm">
+                    <%= link_to "##{proposal.thread_id}", admin_assistant_thread_path(proposal.thread_id), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium" %>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <% status_colors = {
+                      "pending" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400",
+                      "accepted" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                      "rejected" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+                      "expired" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300"
+                    } %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= status_colors[proposal.status] || 'bg-slate-100 text-slate-800' %>">
+                      <%= proposal.status&.titleize %>
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <%= proposal.proposed_items&.count || 0 %> items
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <div><%= proposal.created_at.strftime("%b %d, %H:%M") %></div>
+                    <div class="text-xs"><%= time_ago_in_words(proposal.created_at) %> ago</div>
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm">
+                    <%= link_to "View", admin_assistant_memory_proposal_path(proposal), class: "text-amber-600 hover:text-amber-800 dark:text-amber-400 font-medium" %>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @proposals.empty? %>
+                <tr>
+                  <td colspan="7" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                    No memory proposals found
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <%= render "admin/shared/pagination", pagy: @pagy %>
+      </div>
+    </div>
+  </div>
+</div>

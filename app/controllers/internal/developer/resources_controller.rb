@@ -8,6 +8,8 @@ module Internal
     # Can be inherited by specific resource controllers or used directly.
     class ResourcesController < BaseController
       include Pagy::Backend
+      include Pagy::Frontend
+      include Rails.application.routes.url_helpers
 
       before_action :set_resource, if: -> { params[:id].present? && action_name != "index" && action_name != "new" && action_name != "create" }
 
@@ -98,7 +100,12 @@ module Internal
           return
         end
 
-        records = resource_class.where(id: ids)
+        model = resource_class
+        if ids.all? { |id| uuid_param?(id) } && model.column_names.include?("uuid")
+          records = model.where(uuid: ids)
+        else
+          records = model.where(id: ids)
+        end
         executor = Admin::Base::ActionExecutor.new(resource_config, records, action_name, bulk: true)
         result = executor.execute
 
@@ -138,7 +145,20 @@ module Internal
       #
       # @return [void]
       def set_resource
-        @resource = resource_config.model_class.find(params[:id])
+        model = resource_config.model_class
+        @resource = find_resource(model, params[:id])
+      end
+
+      def find_resource(model, param)
+        if uuid_param?(param) && model.column_names.include?("uuid")
+          model.find_by!(uuid: param)
+        else
+          model.find(param)
+        end
+      end
+
+      def uuid_param?(value)
+        value.to_s.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i)
       end
 
       # Returns the base collection with any default scopes
@@ -264,7 +284,15 @@ module Internal
           field.name
         end&.compact || []
 
-        params.require(resource_class.model_name.param_key).permit(permitted_fields)
+        # Handle STI: the form is built from the concrete record class (e.g. Ai::AssistantSystemPrompt)
+        # but the resource config may be the base class (e.g. Ai::LlmPrompt).
+        param_keys = [
+          (@resource&.class&.model_name&.param_key if defined?(@resource)),
+          resource_class.model_name.param_key
+        ].compact.uniq
+
+        key = param_keys.find { |k| params.key?(k) }
+        params.require(key).permit(permitted_fields)
       end
 
       # Returns the URL for a resource
@@ -272,7 +300,7 @@ module Internal
       # @param record [ActiveRecord::Base] Record
       # @return [String]
       def resource_url(record)
-        url_for(controller: controller_path, action: :show, id: record.id)
+        url_for(controller: controller_path, action: :show, id: record.to_param)
       end
 
       # Returns the URL for the collection
@@ -284,4 +312,3 @@ module Internal
     end
   end
 end
-

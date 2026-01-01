@@ -11,7 +11,7 @@ module Admin
       section :logs
 
       index do
-        sortable :created_at, default: :created_at
+        sortable :created_at, default: :created_at, direction: :desc
         paginate 30
 
         stats do
@@ -28,7 +28,7 @@ module Admin
           column :status
           column :latency, ->(log) { log.latency_ms ? "#{log.latency_ms}ms" : "—" }
           column :tokens, ->(log) { "#{log.input_tokens || 0} / #{log.output_tokens || 0}" }, header: "In/Out Tokens"
-          column :created_at, ->(log) { log.created_at.strftime("%b %d, %H:%M:%S") }
+          column :created_at, ->(log) { log.created_at.strftime("%b %d, %H:%M:%S") }, sortable: true
         end
 
         filters do

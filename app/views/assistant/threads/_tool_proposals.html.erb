@@ -1,0 +1,6 @@
+<%# locals: thread, tool_executions %>
+<div class="max-w-3xl mx-auto px-4 sm:px-6 pb-4 space-y-4" id="<%= dom_id(thread, :tool_executions) %>">
+  <% tool_executions.each do |te| %>
+    <%= render "assistant/threads/tool_action_bubble", thread: thread, tool_execution: te %>
+  <% end %>
+</div>

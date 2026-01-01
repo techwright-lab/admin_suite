@@ -15,7 +15,7 @@ module Ai
     # @return [String] Default prompt template
     def self.default_prompt_template
       <<~PROMPT
-        Analyze the following resume/CV text and extract all professional skills, competencies, work history, and areas of expertise.
+        Analyze the following resume/Curriculum Vitae text and extract all professional skills, competencies, work history, and areas of expertise.
 
         For each skill identified, provide:
         1. **name**: The skill name (use common industry terminology, e.g., "Ruby on Rails" not "RoR")
@@ -74,6 +74,12 @@ module Ai
 
         RESUME TEXT:
         {{resume_text}}
+      PROMPT
+    end
+
+    def self.default_system_prompt
+      <<~PROMPT
+        You are an expert at extracting skills, strengths, domains, competencies, work history, and areas of expertise from unstructured text extracted from a resume or Curriculum Vitae, then converting it into structured json response.
       PROMPT
     end
 

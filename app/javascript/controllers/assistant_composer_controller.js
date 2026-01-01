@@ -2,6 +2,12 @@ import { Controller } from "@hotwired/stimulus"
 
 // Assistant composer controller with keyboard support and auto-resize.
 //
+// Scroll behavior (ChatGPT-style):
+// - After user's message is added to DOM, scroll it to the TOP of the view
+// - This leaves maximum space below for the assistant's response
+// - Response fills in below without interrupting the user's view
+// - Requires a large spacer (60vh+) at the bottom of messages container
+//
 // Features:
 // - Enter to submit, Shift+Enter for new line
 // - Auto-resize textarea as content grows
@@ -26,37 +32,50 @@ export default class extends Controller {
   submitStart() {
     this.generateRequestId()
     this.disableForm()
-    // Scroll to bottom immediately when user submits
-    this.scrollToBottom()
   }
 
-  // Handle form submission end
+  // Handle form submission end - Turbo has processed the response and updated DOM
   submitEnd() {
     this.enableForm()
     this.clearInput()
     this.generateRequestId()
-    // Multiple scroll attempts to handle async DOM updates
-    this.scrollToBottom()
-    setTimeout(() => this.scrollToBottom(), 100)
-    setTimeout(() => this.scrollToBottom(), 300)
+    
+    // Small delay to ensure DOM is fully updated after Turbo Stream processing
+    requestAnimationFrame(() => {
+      setTimeout(() => this.scrollUserMessageToTop(), 100)
+    })
   }
 
-  // Scroll the messages container to bottom
-  scrollToBottom() {
-    // Find the messages container (works for both main chat and widget)
+  // Scroll the last user message to the top of the scrollable container (ChatGPT-style)
+  scrollUserMessageToTop() {
+    // Find the scrollable container
     const container = document.querySelector("[data-assistant-chat-target='messagesContainer']") ||
                       document.querySelector("[data-assistant-widget-target='messagesContainer']")
-    if (container) {
-      // Force layout calculation
-      container.offsetHeight
-      
-      requestAnimationFrame(() => {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: "smooth"
-        })
-      })
+    
+    if (!container) return
+
+    // Find all user messages anywhere in the container
+    const userMessages = container.querySelectorAll("[data-role='user']")
+    if (userMessages.length === 0) return
+    
+    const lastUserMessage = userMessages[userMessages.length - 1]
+
+    // Calculate the message's offsetTop by walking up the offsetParent chain
+    let offsetTop = 0
+    let element = lastUserMessage
+    
+    while (element && element !== container && element !== document.body) {
+      offsetTop += element.offsetTop
+      element = element.offsetParent
     }
+    
+    // Scroll to put the message at the top (with 16px padding)
+    const targetScroll = Math.max(0, offsetTop - 16)
+    
+    container.scrollTo({
+      top: targetScroll,
+      behavior: "smooth"
+    })
   }
 
   // Handle keyboard events

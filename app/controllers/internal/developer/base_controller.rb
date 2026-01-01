@@ -9,6 +9,7 @@ module Internal
     # - Layout configuration
     # - Resource discovery and resolution
     class BaseController < ApplicationController
+      include ActionView::RecordIdentifier
       before_action :require_admin!
       layout "developer"
 
@@ -116,4 +117,3 @@ module Internal
     end
   end
 end
-

@@ -1,0 +1,122 @@
+<% content_for :title, "Memory Proposal ##{@proposal.id} - Admin" %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-5xl">
+  <%= render "admin/shared/page_header",
+      title: "Memory Proposal ##{@proposal.id}",
+      description: "Proposal for storing user memories",
+      breadcrumbs: [
+        { label: "Memory Proposals", path: admin_assistant_memory_proposals_path },
+        { label: "##{@proposal.id}" }
+      ] %>
+
+  <p class="text-sm text-slate-500 dark:text-slate-400 font-mono break-all mb-6"><%= @proposal.trace_id %></p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Proposal Details -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Proposal Details</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div>
+            <dt class="text-slate-500 dark:text-slate-400">Status</dt>
+            <dd class="mt-1 font-medium">
+              <% status_colors = {
+                "pending" => "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400",
+                "accepted" => "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                "rejected" => "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+                "expired" => "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300"
+              } %>
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= status_colors[@proposal.status] || 'bg-slate-100 text-slate-800' %>">
+                <%= @proposal.status&.titleize %>
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-slate-500 dark:text-slate-400">Proposed Items</dt>
+            <dd class="mt-1 font-medium text-slate-900 dark:text-white"><%= @proposal.proposed_items&.count || 0 %> items</dd>
+          </div>
+          <div>
+            <dt class="text-slate-500 dark:text-slate-400">Created at</dt>
+            <dd class="mt-1 font-medium text-slate-900 dark:text-white"><%= @proposal.created_at.strftime("%Y-%m-%d %H:%M:%S") %></dd>
+          </div>
+          <% if @proposal.confirmed_at.present? %>
+            <div>
+              <dt class="text-slate-500 dark:text-slate-400">Confirmed at</dt>
+              <dd class="mt-1 font-medium text-slate-900 dark:text-white"><%= @proposal.confirmed_at.strftime("%Y-%m-%d %H:%M:%S") %></dd>
+            </div>
+          <% end %>
+          <% if @proposal.confirmed_by.present? %>
+            <div>
+              <dt class="text-slate-500 dark:text-slate-400">Confirmed by</dt>
+              <dd class="mt-1 font-medium text-slate-900 dark:text-white"><%= @proposal.confirmed_by.email_address %></dd>
+            </div>
+          <% end %>
+        </dl>
+      </div>
+
+      <!-- Proposed Items -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Proposed Items</h2>
+        <% if @proposal.proposed_items.present? && @proposal.proposed_items.any? %>
+          <div class="space-y-4">
+            <% @proposal.proposed_items.each_with_index do |item, index| %>
+              <div class="p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-slate-900 dark:text-white">Item #<%= index + 1 %></span>
+                </div>
+                <pre class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 overflow-x-auto"><%= JSON.pretty_generate(item) %></pre>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-slate-500 dark:text-slate-400">No proposed items.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+      <%= render "admin/shared/info_card",
+          title: "Related Objects",
+          data: {
+            "User" => @proposal.user.present? ? @proposal.user.email_address : "—",
+            "User ID" => "##{@proposal.user_id}",
+            "Thread" => link_to("##{@proposal.thread_id}", admin_assistant_thread_path(@proposal.thread_id, trace_id: @proposal.trace_id), class: "text-amber-600 dark:text-amber-400 hover:underline"),
+            "LLM Log" => @proposal.llm_api_log_id.present? ? link_to("##{@proposal.llm_api_log_id}", admin_ai_llm_api_log_path(@proposal.llm_api_log_id), class: "text-amber-600 dark:text-amber-400 hover:underline") : "—"
+          } %>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Quick Links</h3>
+        <div class="space-y-2 text-sm">
+          <%= link_to admin_assistant_thread_path(@proposal.thread_id, trace_id: @proposal.trace_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            View Thread (with trace)
+          <% end %>
+          <%= link_to admin_assistant_user_memories_path(user_id: @proposal.user_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            User's stored memories
+          <% end %>
+          <%= link_to admin_assistant_memory_proposals_path(user_id: @proposal.user_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            All proposals for this user
+          <% end %>
+          <% if @proposal.llm_api_log_id.present? %>
+            <%= link_to admin_ai_llm_api_log_path(@proposal.llm_api_log_id), class: "flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              View LLM API Log
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

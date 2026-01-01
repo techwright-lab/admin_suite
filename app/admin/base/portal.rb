@@ -83,7 +83,9 @@ module Admin
         # Called when a subclass is created
         def inherited(subclass)
           super
-          registered_portals << subclass unless subclass.name&.include?("Base")
+          # Use to_s to get class name to avoid conflict with our custom name(value) method
+          class_name = subclass.to_s
+          registered_portals << subclass unless class_name.include?("Base")
         end
 
         # Finds a portal by identifier
