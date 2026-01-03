@@ -70,7 +70,39 @@
 
           <!-- Message Body -->
           <div class="px-3 py-2">
-            <% if clean_body.present? %>
+            <% if email.has_html_body? %>
+              <!-- HTML email content -->
+              <% if is_long %>
+                <!-- Collapsed view (plain text preview) -->
+                <div data-expandable-target="collapsed">
+                  <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    <%= clean_body.truncate(250) %>
+                  </p>
+                  <button type="button" 
+                          class="mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          data-action="click->expandable#toggle">
+                    Show full email...
+                  </button>
+                </div>
+                <!-- Expanded view (full HTML) -->
+                <div class="hidden" data-expandable-target="expanded">
+                  <div class="email-html-content prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                    <%= email.safe_html_body.html_safe %>
+                  </div>
+                  <button type="button" 
+                          class="mt-2 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          data-action="click->expandable#toggle">
+                    Show less
+                  </button>
+                </div>
+              <% else %>
+                <!-- Short HTML email - show full content -->
+                <div class="email-html-content prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                  <%= email.safe_html_body.html_safe %>
+                </div>
+              <% end %>
+            <% elsif clean_body.present? %>
+              <!-- Plain text email -->
               <% if is_long %>
                 <!-- Collapsed view -->
                 <div data-expandable-target="collapsed">

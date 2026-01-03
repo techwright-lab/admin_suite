@@ -8,7 +8,7 @@
 #   email.process!
 #
 class SyncedEmail < ApplicationRecord
-  STATUSES = %i[pending processed ignored failed].freeze
+  STATUSES = %i[pending processed ignored failed auto_ignored].freeze
   EMAIL_TYPES = %w[
     application_confirmation
     interview_invite
@@ -73,13 +73,15 @@ class SyncedEmail < ApplicationRecord
   }
   scope :potential_opportunities, -> { where(email_type: OPPORTUNITY_TYPES) }
   scope :relevant, -> {
-    not_ignored.where(
+    visible.where(
       "email_type IN (?) OR email_type IN (?) OR interview_application_id IS NOT NULL",
       INTERVIEW_TYPES,
       OPPORTUNITY_TYPES
     )
   }
   scope :not_ignored, -> { where.not(status: :ignored) }
+  scope :not_auto_ignored, -> { where.not(status: :auto_ignored) }
+  scope :visible, -> { where.not(status: [ :ignored, :auto_ignored ]) }
 
   # Callbacks
   before_save :link_or_create_sender
@@ -111,6 +113,7 @@ class SyncedEmail < ApplicationRecord
       email_date: message_data[:date],
       snippet: message_data[:snippet],
       body_preview: message_data[:body_preview],
+      body_html: message_data[:body_html],
       labels: message_data[:labels] || [],
       status: :pending
     )
@@ -306,6 +309,36 @@ class SyncedEmail < ApplicationRecord
     return "(No subject)" if subject.blank?
 
     subject.gsub(/^(re:|fwd?:)\s*/i, "").strip.presence || "(No subject)"
+  end
+
+  # Checks if this email has HTML content
+  #
+  # @return [Boolean]
+  def has_html_body?
+    body_html.present?
+  end
+
+  # Returns the best available body content for display
+  # Prefers plain text for simple display, but HTML is available for rich rendering
+  #
+  # @return [String]
+  def display_body
+    body_preview.presence || snippet.presence || ""
+  end
+
+  # Returns sanitized HTML body safe for rendering
+  # Removes potentially dangerous tags/attributes while preserving formatting
+  #
+  # @return [String, nil]
+  def safe_html_body
+    return nil unless body_html.present?
+
+    # Use Rails sanitizer with safe list of tags
+    ActionController::Base.helpers.sanitize(
+      body_html,
+      tags: %w[p br div span a ul ol li strong b em i u h1 h2 h3 h4 h5 h6 blockquote pre code table tr td th thead tbody hr img],
+      attributes: %w[href src alt title class style target]
+    )
   end
 
   private

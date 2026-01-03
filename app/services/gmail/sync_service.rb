@@ -72,6 +72,52 @@ class Gmail::SyncService
     "ziprecruiter.com"
   ].freeze
 
+  # Patterns that indicate an email is NOT job-related (marketing, newsletters, etc.)
+  IRRELEVANT_PATTERNS = [
+    /unsubscribe.*preferences/i,
+    /weekly\s+digest/i,
+    /daily\s+digest/i,
+    /newsletter/i,
+    /marketing\s+email/i,
+    /promotional/i,
+    /you\s+might\s+like/i,
+    /trending\s+(jobs?|posts?|articles?)/i,
+    /people\s+you\s+may\s+know/i,
+    /people\s+viewed\s+your\s+profile/i,
+    /who\s+viewed\s+your\s+profile/i,
+    /your\s+network\s+updates?/i,
+    /connection\s+request/i,
+    /wants\s+to\s+connect/i,
+    /endorsed\s+you/i,
+    /congratulate/i,
+    /work\s+anniversary/i,
+    /birthday/i,
+    /new\s+job\s+alert/i,
+    /jobs?\s+you\s+may\s+be\s+interested/i,
+    /similar\s+jobs?/i,
+    /job\s+recommendations?/i,
+    /security\s+alert/i,
+    /password\s+reset/i,
+    /verify\s+your\s+email/i,
+    /confirm\s+your\s+email/i,
+    /account\s+update/i,
+    /privacy\s+policy/i,
+    /terms\s+of\s+service/i
+  ].freeze
+
+  # Subjects that indicate generic platform notifications (not direct recruiter contact)
+  NOTIFICATION_SUBJECTS = [
+    /^you\s+have\s+\d+\s+new/i,
+    /^your\s+daily\s+job/i,
+    /^your\s+weekly/i,
+    /^new\s+jobs?\s+for\s+you/i,
+    /^jobs?\s+matching\s+your/i,
+    /^people\s+are\s+looking/i,
+    /^who'?s\s+viewed/i,
+    /^you\s+appeared\s+in/i,
+    /^\d+\s+new\s+(jobs?|messages?|notifications?)/i
+  ].freeze
+
   # @return [ConnectedAccount] The connected account
   attr_reader :connected_account
 
@@ -182,30 +228,113 @@ class Gmail::SyncService
   end
 
   # Builds the Gmail search query
+  # Refined to reduce irrelevant emails while still catching relevant ones
   #
   # @return [String]
   def build_search_query
     # Search for emails from the last 30 days
     after_date = 30.days.ago.strftime("%Y/%m/%d")
 
-    # Build keyword query for interview-related emails
+    # Build keyword query for interview-related emails (high signal)
     interview_keyword_query = INTERVIEW_KEYWORDS.map { |kw| "\"#{kw}\"" }.join(" OR ")
 
     # Build keyword query for recruiter outreach
     outreach_keyword_query = RECRUITER_OUTREACH_KEYWORDS.map { |kw| "\"#{kw}\"" }.join(" OR ")
 
-    # Build domain query for ATS systems
+    # Build domain query for ATS systems (these are always relevant)
     ats_domain_query = RECRUITER_DOMAINS.map { |d| "from:#{d}" }.join(" OR ")
 
-    # Build domain query for outreach platforms (LinkedIn, job boards)
-    outreach_domain_query = OUTREACH_DOMAINS.map { |d| "from:#{d}" }.join(" OR ")
+    # Exclusions to filter out noise
+    exclusions = [
+      "-subject:\"unsubscribe\"",
+      "-subject:\"newsletter\"",
+      "-subject:\"digest\"",
+      "-subject:\"weekly jobs\"",
+      "-subject:\"daily jobs\"",
+      "-subject:\"job alert\"",
+      "-subject:\"jobs for you\"",
+      "-subject:\"people you may know\"",
+      "-subject:\"who viewed your profile\"",
+      "-subject:\"connection request\"",
+      "-from:noreply",
+      "-from:no-reply",
+      "-from:notifications@",
+      "-from:marketing@"
+    ].join(" ")
 
-    # Combine all queries - look for keyword matches OR from known systems
-    # Only in inbox, exclude spam and trash
+    # Combine all queries - look for keyword matches OR from ATS systems
+    # Note: We removed OUTREACH_DOMAINS (LinkedIn, Indeed, etc.) from the OR clause
+    # because they generate too much noise. Instead, we rely on keywords to catch
+    # relevant recruiter outreach from those platforms.
     all_keywords = "(#{interview_keyword_query} OR #{outreach_keyword_query})"
-    all_domains = "(#{ats_domain_query} OR #{outreach_domain_query})"
+    ats_only = "(#{ats_domain_query})"
 
-    "after:#{after_date} in:inbox -in:spam -in:trash (#{all_keywords} OR #{all_domains})"
+    # Also fetch emails from companies user has applied to or is targeting
+    # These are always relevant regardless of keywords
+    user_domains = user_company_email_domains
+    user_company_query = user_domains.any? ? " OR (#{user_domains.map { |d| "from:#{d}" }.join(' OR ')})" : ""
+
+    "after:#{after_date} in:inbox -in:spam -in:trash #{exclusions} (#{all_keywords} OR #{ats_only}#{user_company_query})"
+  end
+
+  # Returns email domains for companies the user has applied to or is targeting
+  # These companies are always relevant for email sync
+  #
+  # @return [Array<String>] List of email domains
+  def user_company_email_domains
+    @user_company_email_domains ||= begin
+      # Get companies from applications and targets
+      applied_companies = user.interview_applications
+        .includes(:company)
+        .where(status: :active)
+        .map(&:company)
+        .compact
+
+      target_companies = user.target_companies.to_a
+
+      # Combine and dedupe
+      all_companies = (applied_companies + target_companies).uniq
+
+      # Extract domains from company websites
+      all_companies.filter_map do |company|
+        extract_domain_from_company(company)
+      end.uniq
+    end
+  end
+
+  # Extracts email domain from a company's website
+  #
+  # @param company [Company] The company
+  # @return [String, nil] The domain (e.g., "google.com")
+  def extract_domain_from_company(company)
+    return nil unless company.website.present?
+
+    # Parse website URL to get domain
+    url = company.website.strip
+    url = "https://#{url}" unless url.start_with?("http")
+
+    uri = URI.parse(url)
+    domain = uri.host&.gsub(/^www\./, "")
+
+    # Skip generic domains
+    return nil if domain.blank? || generic_email_domain?(domain)
+
+    domain
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  # Checks if a domain is a generic email provider (not company-specific)
+  #
+  # @param domain [String] The domain to check
+  # @return [Boolean]
+  def generic_email_domain?(domain)
+    generic = %w[
+      gmail.com yahoo.com hotmail.com outlook.com
+      icloud.com aol.com mail.com protonmail.com
+      live.com msn.com ymail.com
+    ]
+    generic.include?(domain.downcase)
   end
 
   # Parses email messages into structured data
@@ -222,6 +351,7 @@ class Gmail::SyncService
   # @return [Hash, nil]
   def parse_email(message)
     headers = extract_headers(message)
+    body_content = extract_body_content(message)
 
     {
       id: message.id,
@@ -232,7 +362,8 @@ class Gmail::SyncService
       date: parse_date(headers["Date"]),
       snippet: message.snippet,
       labels: message.label_ids,
-      body_preview: extract_body_preview(message)
+      body_preview: body_content[:plain],
+      body_html: body_content[:html]
     }
   rescue StandardError => e
     Rails.logger.warn "Failed to parse email #{message.id}: #{e.message}"
@@ -263,25 +394,46 @@ class Gmail::SyncService
     nil
   end
 
-  # Extracts a preview of the email body
+  # Extracts both plain text and HTML body content from email
   #
   # @param message [Google::Apis::GmailV1::Message]
-  # @return [String]
-  def extract_body_preview(message)
-    # Start with the snippet
-    return message.snippet.to_s.truncate(500) unless message.payload
+  # @return [Hash] { plain: String, html: String|nil }
+  def extract_body_content(message)
+    result = { plain: message.snippet.to_s, html: nil }
+    return result unless message.payload
 
-    # Try to get plain text body
-    body = extract_body_part(message.payload, "text/plain")
-    body ||= extract_body_part(message.payload, "text/html")
-
-    if body
-      # Clean up HTML if present
-      body = ActionController::Base.helpers.strip_tags(body) if body.include?("<")
-      body.squish.truncate(500)
-    else
-      message.snippet.to_s.truncate(500)
+    # Extract raw HTML body (stored as-is for rendering)
+    html_body = extract_body_part(message.payload, "text/html")
+    if html_body.present?
+      # Store HTML as-is but limit size to prevent huge emails
+      result[:html] = html_body.truncate(100_000, omission: "")  # 100KB limit for HTML
     end
+
+    # Extract plain text for preview and search
+    plain_body = extract_body_part(message.payload, "text/plain")
+
+    if plain_body.present?
+      result[:plain] = clean_plain_text(plain_body)
+    elsif html_body.present?
+      # Convert HTML to plain text if no plain text version exists
+      result[:plain] = clean_plain_text(ActionController::Base.helpers.strip_tags(html_body))
+    end
+
+    result
+  end
+
+  # Cleans up plain text content for storage
+  #
+  # @param text [String] Raw plain text
+  # @return [String] Cleaned text
+  def clean_plain_text(text)
+    return "" if text.blank?
+
+    text.gsub(/\r\n?/, "\n")           # Normalize line endings
+        .gsub(/\n{3,}/, "\n\n")        # Max 2 consecutive newlines
+        .gsub(/[ \t]+/, " ")           # Collapse horizontal whitespace
+        .strip
+        .truncate(10_000)              # Store up to 10KB of plain text
   end
 
   # Recursively extracts body part by MIME type
@@ -312,7 +464,7 @@ class Gmail::SyncService
   # @param parsed_emails [Array<Hash>] Parsed email data
   # @return [Hash] Processing statistics
   def store_and_process_emails(parsed_emails)
-    stats = { new_count: 0, processed_count: 0, matched_count: 0, opportunities_count: 0 }
+    stats = { new_count: 0, processed_count: 0, matched_count: 0, opportunities_count: 0, auto_ignored_count: 0 }
 
     parsed_emails.each do |email_data|
       # Create or find existing synced email
@@ -323,10 +475,24 @@ class Gmail::SyncService
       is_new_email = synced_email.created_at >= 1.minute.ago
       stats[:new_count] += 1 if is_new_email
 
+      # Auto-ignore clearly irrelevant emails (marketing, notifications, etc.)
+      if is_new_email && synced_email.pending? && clearly_irrelevant?(synced_email)
+        synced_email.update!(status: :auto_ignored)
+        stats[:auto_ignored_count] += 1
+        next
+      end
+
       # Process the email if it's pending
       if synced_email.pending?
         result = Gmail::EmailProcessorService.new(synced_email).run
         stats[:processed_count] += 1 if result[:success]
+
+        # Auto-ignore emails classified as "other" (not job-related)
+        if result[:email_type] == "other" && !synced_email.matched?
+          synced_email.update!(status: :auto_ignored)
+          stats[:auto_ignored_count] += 1
+          next
+        end
 
         # Check for recruiter outreach and create opportunity
         if is_new_email && result[:email_type] == "recruiter_outreach"
@@ -341,6 +507,69 @@ class Gmail::SyncService
     end
 
     stats
+  end
+
+  # Checks if an email is clearly irrelevant (marketing, notifications, etc.)
+  # These are platform emails that slipped through the Gmail query but aren't direct recruiter contact
+  #
+  # @param synced_email [SyncedEmail] The email to check
+  # @return [Boolean] True if the email should be auto-ignored
+  def clearly_irrelevant?(synced_email)
+    # NEVER auto-ignore emails from companies user has applied to or is targeting
+    # These are always relevant regardless of content patterns
+    return false if from_user_company?(synced_email)
+
+    content = [
+      synced_email.subject,
+      synced_email.snippet,
+      synced_email.body_preview
+    ].compact.join(" ")
+
+    # Check against irrelevant patterns (newsletters, notifications, etc.)
+    return true if IRRELEVANT_PATTERNS.any? { |pattern| content.match?(pattern) }
+
+    # Check if subject matches notification-style subjects
+    return true if NOTIFICATION_SUBJECTS.any? { |pattern| synced_email.subject&.match?(pattern) }
+
+    # LinkedIn-specific: ignore if from LinkedIn but not a direct recruiter message
+    if synced_email.from_email.include?("linkedin.com")
+      # These are typically automated notifications, not direct recruiter outreach
+      linkedin_notification_patterns = [
+        /jobs-noreply/i,
+        /messages-noreply/i,
+        /notifications-noreply/i,
+        /invitations/i,
+        /member@linkedin/i
+      ]
+      return true if linkedin_notification_patterns.any? { |p| synced_email.from_email.match?(p) }
+    end
+
+    # Indeed/ZipRecruiter job alerts (not direct applications)
+    if synced_email.from_email.match?(/indeed|ziprecruiter/i)
+      return true if synced_email.subject&.match?(/jobs?\s+(for\s+you|matching|alert|digest)/i)
+    end
+
+    false
+  end
+
+  # Checks if an email is from a company the user has applied to or is targeting
+  #
+  # @param synced_email [SyncedEmail] The email to check
+  # @return [Boolean] True if from a user's company
+  def from_user_company?(synced_email)
+    return false if synced_email.from_email.blank?
+
+    sender_domain = synced_email.from_email.split("@").last&.downcase
+    return false if sender_domain.blank?
+
+    # Check if sender domain matches any user company domain
+    user_company_email_domains.any? do |company_domain|
+      # Match if domains are equal or one contains the other
+      # (handles cases like "mail.google.com" vs "google.com")
+      sender_domain == company_domain ||
+        sender_domain.end_with?(".#{company_domain}") ||
+        company_domain.end_with?(".#{sender_domain}")
+    end
   end
 
   # Creates an opportunity from a recruiter outreach email

@@ -151,6 +151,7 @@ class Gmail::EmailProcessorService
   end
 
   # Classifies the email type based on content patterns
+  # Emails from target companies get boosted relevance
   #
   # @return [void]
   def classify_email_type
@@ -167,8 +168,49 @@ class Gmail::EmailProcessorService
       end
     end
 
-    # Default to "other" if no pattern matched
+    # Boost relevance: If from a target company but no pattern matched,
+    # classify as recruiter_outreach since it's likely relevant
+    if from_target_company?
+      synced_email.email_type = "recruiter_outreach"
+      return
+    end
+
+    # Default to "other" if no pattern matched and not from target company
     synced_email.email_type = "other"
+  end
+
+  # Checks if the email is from a company the user is targeting
+  #
+  # @return [Boolean]
+  def from_target_company?
+    return false if synced_email.from_email.blank?
+
+    sender_domain = synced_email.from_email.split("@").last&.downcase
+    return false if sender_domain.blank? || generic_domain?(sender_domain)
+
+    target_domains = user_target_company_domains
+    target_domains.any? do |company_domain|
+      sender_domain == company_domain ||
+        sender_domain.end_with?(".#{company_domain}") ||
+        company_domain.end_with?(".#{sender_domain}")
+    end
+  end
+
+  # Returns email domains for the user's target companies
+  #
+  # @return [Array<String>]
+  def user_target_company_domains
+    @user_target_company_domains ||= synced_email.user.target_companies.filter_map do |company|
+      next unless company.website.present?
+
+      url = company.website.strip
+      url = "https://#{url}" unless url.start_with?("http")
+
+      uri = URI.parse(url)
+      uri.host&.gsub(/^www\./, "")&.downcase
+    rescue URI::InvalidURIError
+      nil
+    end.uniq
   end
 
   # Detects company name from email content
@@ -274,7 +316,7 @@ class Gmail::EmailProcessorService
   def find_matching_application
     user = synced_email.user
 
-    # Strategy 1: Match by company
+    # Strategy 1: Match by company name
     if synced_email.detected_company.present?
       company = Company.where("LOWER(name) = ?", synced_email.detected_company.downcase).first
       if company
@@ -297,7 +339,11 @@ class Gmail::EmailProcessorService
       return app if app
     end
 
-    # Strategy 3: Match by email thread (same thread = same application)
+    # Strategy 3: Match by sender domain to application companies
+    app = match_by_sender_domain(user)
+    return app if app
+
+    # Strategy 4: Match by email thread (same thread = same application)
     if synced_email.thread_id.present?
       existing = SyncedEmail.where(user: user, thread_id: synced_email.thread_id)
         .where.not(interview_application_id: nil)
@@ -305,6 +351,46 @@ class Gmail::EmailProcessorService
       return existing.interview_application if existing
     end
 
+    nil
+  end
+
+  # Matches email to application by comparing sender domain to company websites
+  #
+  # @param user [User] The user
+  # @return [InterviewApplication, nil]
+  def match_by_sender_domain(user)
+    sender_domain = synced_email.from_email.split("@").last&.downcase
+    return nil if sender_domain.blank? || generic_domain?(sender_domain)
+
+    # Find applications where the company website matches the sender domain
+    user.interview_applications
+      .includes(:company)
+      .where(status: :active)
+      .find do |app|
+        company = app.company
+        next unless company&.website.present?
+
+        company_domain = extract_domain_from_website(company.website)
+        next unless company_domain
+
+        # Check if domains match
+        sender_domain == company_domain ||
+          sender_domain.end_with?(".#{company_domain}") ||
+          company_domain.end_with?(".#{sender_domain}")
+      end
+  end
+
+  # Extracts domain from a website URL
+  #
+  # @param website [String] The website URL
+  # @return [String, nil]
+  def extract_domain_from_website(website)
+    url = website.strip
+    url = "https://#{url}" unless url.start_with?("http")
+
+    uri = URI.parse(url)
+    uri.host&.gsub(/^www\./, "")&.downcase
+  rescue URI::InvalidURIError
     nil
   end
 end

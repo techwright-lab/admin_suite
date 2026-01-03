@@ -1,14 +1,12 @@
 <%# locals: (email:, selected: false, show_company: true) %>
 
 <% is_opportunity = email.recruiter_outreach? %>
-<% link_path = is_opportunity && email.opportunity.present? ? opportunity_path(email.opportunity) : inbox_path(email) %>
-<% link_frame = is_opportunity ? "_top" : "email_detail" %>
 
-<%= link_to link_path,
+<%= link_to inbox_path(email),
     class: "block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer #{selected ? 'bg-primary-50 dark:bg-primary-900/20 border-l-2 border-primary-500' : ''} #{is_opportunity ? 'border-l-2 border-indigo-400 dark:border-indigo-500' : ''}",
     data: { 
-      turbo_frame: link_frame,
-      action: is_opportunity ? nil : "click->inbox-mobile#openEmail"
+      turbo_frame: "email_detail",
+      action: "click->inbox-mobile#openEmail"
     } do %>
   <div class="flex items-start gap-3">
     <!-- Type indicator / Avatar -->

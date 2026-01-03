@@ -39,30 +39,32 @@
       </div>
 
       <!-- Relevance Tabs -->
-      <div class="flex border-b border-gray-200 dark:border-gray-700">
-        <% relevance_tabs = [
-          { key: "relevant", label: "Relevant", count: @relevance_counts[:relevant] },
-          { key: "interviews", label: "Interviews", count: @relevance_counts[:interviews] },
-          { key: "opportunities", label: "Opportunities", count: @relevance_counts[:opportunities] },
-          { key: "all", label: "All", count: @relevance_counts[:all] }
-        ] %>
-        <% relevance_tabs.each do |tab| %>
-          <%= link_to inbox_index_path(relevance: tab[:key], q: params[:q], status: params[:status]),
-              class: "flex-1 px-3 py-2 text-xs font-medium text-center border-b-2 transition-colors #{@current_relevance == tab[:key] ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'}",
-              data: { turbo_frame: "_self" } do %>
-            <%= tab[:label] %>
-            <% if tab[:count] > 0 %>
-              <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full <%= @current_relevance == tab[:key] ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' %>">
-                <%= tab[:count] %>
-              </span>
+      <%= turbo_frame_tag "relevance_tabs" do %>
+        <div class="flex border-b border-gray-200 dark:border-gray-700">
+          <% relevance_tabs = [
+            { key: "relevant", label: "Relevant", count: @relevance_counts[:relevant] },
+            { key: "interviews", label: "Interviews", count: @relevance_counts[:interviews] },
+            { key: "opportunities", label: "Opportunities", count: @relevance_counts[:opportunities] },
+            { key: "all", label: "All", count: @relevance_counts[:all] }
+          ] %>
+          <% relevance_tabs.each do |tab| %>
+            <%= link_to inbox_index_path(relevance: tab[:key], q: params[:q], status: params[:status]),
+                class: "flex-1 px-3 py-2 text-xs font-medium text-center border-b-2 transition-colors #{@current_relevance == tab[:key] ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'}",
+                data: { turbo_action: "replace" } do %>
+              <%= tab[:label] %>
+              <% if tab[:count] > 0 %>
+                <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full <%= @current_relevance == tab[:key] ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' %>">
+                  <%= tab[:count] %>
+                </span>
+              <% end %>
             <% end %>
           <% end %>
-        <% end %>
-      </div>
+        </div>
+      <% end %>
 
       <!-- Search & Filters -->
       <div class="p-3 border-b border-gray-200 dark:border-gray-700">
-        <%= form_with url: inbox_index_path, method: :get, class: "space-y-2", data: { turbo_frame: "_self" } do |f| %>
+        <%= form_with url: inbox_index_path, method: :get, class: "space-y-2", data: { turbo_action: "replace" } do |f| %>
           <%= f.hidden_field :relevance, value: @current_relevance %>
           <div class="relative">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,8 +81,8 @@
                 { selected: params[:status] },
                 class: "flex-1 px-2 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500" %>
             <%= f.submit "Filter", class: "px-3 py-1.5 text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors cursor-pointer" %>
-            <% if params[:q].present? || params[:status].present? || params[:relevance].present? %>
-              <%= link_to "×", inbox_index_path, class: "px-2 py-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400" %>
+            <% if params[:q].present? || params[:status].present? || (params[:relevance].present? && params[:relevance] != "relevant") %>
+              <%= link_to "×", inbox_index_path, class: "px-2 py-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400", data: { turbo_action: "replace" } %>
             <% end %>
           </div>
         <% end %>

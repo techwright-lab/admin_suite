@@ -34,6 +34,16 @@
 
       <!-- Actions -->
       <div class="flex items-center gap-2 ml-4">
+        <% if email.recruiter_outreach? && email.opportunity.present? %>
+          <%= link_to opportunity_path(email.opportunity),
+              class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors",
+              title: "View opportunity" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+            View Opportunity
+          <% end %>
+        <% end %>
         <% unless email.matched? %>
           <%= button_to ignore_inbox_path(email),
               method: :patch,
@@ -75,4 +85,3 @@
     </div>
   <% end %>
 </div>
-

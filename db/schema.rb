@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_28_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_02_023857) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -761,6 +761,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_28_080000) do
   end
 
   create_table "synced_emails", force: :cascade do |t|
+    t.text "body_html", comment: "Full HTML content of the email"
     t.text "body_preview"
     t.bigint "connected_account_id", null: false
     t.datetime "created_at", null: false

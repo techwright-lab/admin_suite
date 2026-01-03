@@ -24,13 +24,16 @@
               Page <%= pagy_unmatched.page %> of <%= pagy_unmatched.pages %>
             </span>
             <div class="flex gap-2">
+              <% preserved_params = { relevance: params[:relevance], q: params[:q], status: params[:status], type: params[:type], company_id: params[:company_id] }.compact %>
               <% if pagy_unmatched.prev %>
-                <%= link_to "← Previous", inbox_index_path(unmatched_page: pagy_unmatched.prev),
-                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded" %>
+                <%= link_to "← Previous", inbox_index_path(preserved_params.merge(unmatched_page: pagy_unmatched.prev)),
+                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded",
+                  data: { turbo_frame: "email_list" } %>
               <% end %>
               <% if pagy_unmatched.next %>
-                <%= link_to "Next →", inbox_index_path(unmatched_page: pagy_unmatched.next),
-                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded" %>
+                <%= link_to "Next →", inbox_index_path(preserved_params.merge(unmatched_page: pagy_unmatched.next)),
+                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded",
+                  data: { turbo_frame: "email_list" } %>
               <% end %>
             </div>
           </div>

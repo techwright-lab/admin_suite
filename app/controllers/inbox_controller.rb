@@ -186,11 +186,11 @@ class InboxController < ApplicationController
   def filter_by_relevance(emails)
     case @current_relevance
     when "all"
-      emails.not_ignored
+      emails.visible  # Excludes ignored and auto_ignored
     when "interviews"
-      emails.interview_related
+      emails.interview_related.visible
     when "opportunities"
-      emails.potential_opportunities
+      emails.potential_opportunities.visible
     else # "relevant" (default)
       emails.relevant
     end
@@ -202,10 +202,10 @@ class InboxController < ApplicationController
   def calculate_relevance_counts
     base = current_user_emails
     {
-      all: base.not_ignored.count,
+      all: base.visible.count,
       relevant: base.relevant.count,
-      interviews: base.interview_related.count,
-      opportunities: base.potential_opportunities.count
+      interviews: base.interview_related.visible.count,
+      opportunities: base.potential_opportunities.visible.count
     }
   end
 
