@@ -20,8 +20,8 @@ class ProfileInsightsServiceTest < ActiveSupport::TestCase
   end
 
   test "stats includes correct interview counts" do
-    create_list(:interview, 3, :applied, user: @user)
-    create_list(:interview, 2, :offer_stage, user: @user)
+    create_list(:interview_application, 3, :applied_stage, user: @user)
+    create_list(:interview_application, 2, :offer_stage, user: @user)
     
     insights = @service.generate_insights
     stats = insights[:stats]
@@ -32,19 +32,21 @@ class ProfileInsightsServiceTest < ActiveSupport::TestCase
   end
 
   test "stats includes feedback count" do
-    create(:interview, :with_feedback, user: @user)
-    create(:interview, user: @user)
+    application1 = create(:interview_application, :with_rounds, user: @user)
+    application1.interview_rounds.each { |round| create(:interview_feedback, interview_round: round) }
+    create(:interview_application, user: @user)
     
     insights = @service.generate_insights
     stats = insights[:stats]
     
-    assert_equal 1, stats[:with_feedback]
+    # with_feedback counts distinct applications that have feedback, not individual feedback entries
+    assert_equal 1, stats[:with_feedback] # 1 application with feedback
   end
 
   test "strengths based on positive feedback tags" do
-    interview = create(:interview, user: @user)
-    feedback = create(:feedback_entry, interview: interview)
-    feedback.update(tags: ["Ruby", "Rails", "Testing"])
+    application = create(:interview_application, user: @user)
+    round = create(:interview_round, interview_application: application)
+    feedback = create(:interview_feedback, interview_round: round, tags: ["Ruby", "Rails", "Testing"])
     
     insights = @service.generate_insights
     strengths = insights[:strengths]
@@ -53,7 +55,7 @@ class ProfileInsightsServiceTest < ActiveSupport::TestCase
   end
 
   test "timeline shows interview progression" do
-    create_list(:interview, 3, user: @user)
+    create_list(:interview_application, 3, user: @user)
     
     insights = @service.generate_insights
     timeline = insights[:timeline]
@@ -65,9 +67,10 @@ class ProfileInsightsServiceTest < ActiveSupport::TestCase
   end
 
   test "recent_activity combines interviews and feedback" do
-    create(:interview, user: @user)
-    interview = create(:interview, user: @user)
-    create(:feedback_entry, interview: interview)
+    create(:interview_application, user: @user)
+    application = create(:interview_application, user: @user)
+    round = create(:interview_round, interview_application: application)
+    create(:interview_feedback, interview_round: round)
     
     insights = @service.generate_insights
     activity = insights[:recent_activity]

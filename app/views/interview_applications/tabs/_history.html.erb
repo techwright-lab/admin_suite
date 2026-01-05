@@ -1,0 +1,149 @@
+<%# History tab: renders a timeline from ApplicationTimelineService %>
+
+<%
+  timeline = ApplicationTimelineService.new(application)
+  grouped = timeline.generate_grouped.sort_by { |month, _| month }.reverse.to_h
+
+  # Helper to get event styling
+  def event_style(type)
+    case type.to_s
+    when 'applied'
+      { color: 'blue', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' }
+    when 'interview', 'interview_scheduled'
+      { color: 'violet', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' }
+    when 'interview_completed'
+      { color: 'emerald', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' }
+    when 'feedback', 'feedback_received'
+      { color: 'amber', icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z' }
+    when 'email'
+      { color: 'cyan', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' }
+    when 'offer'
+      { color: 'emerald', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+    when 'rejection', 'rejected'
+      { color: 'rose', icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z' }
+    when 'status_change'
+      { color: 'indigo', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' }
+    else
+      { color: 'gray', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' }
+    end
+  end
+%>
+
+<div class="space-y-6">
+  <%# Header %>
+  <div class="relative overflow-hidden bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-200/60 dark:border-gray-700/60">
+    <div class="absolute inset-0 opacity-[0.02] dark:opacity-[0.05]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;20&quot; height=&quot;20&quot; viewBox=&quot;0 0 20 20&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;%239C92AC&quot; fill-opacity=&quot;0.4&quot; fill-rule=&quot;evenodd&quot;%3E%3Ccircle cx=&quot;3&quot; cy=&quot;3&quot; r=&quot;3&quot;/%3E%3Ccircle cx=&quot;13&quot; cy=&quot;13&quot; r=&quot;3&quot;/%3E%3C/g%3E%3C/svg%3E');"></div>
+    
+    <div class="relative flex items-center gap-4">
+      <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/25">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Application History</h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Timeline of interviews, emails, and key events</p>
+      </div>
+    </div>
+  </div>
+
+  <% if grouped.any? %>
+    <%# Timeline %>
+    <div class="relative">
+      <%# Vertical line %>
+      <div class="absolute left-6 top-0 bottom-0 w-px bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700"></div>
+
+      <div class="space-y-8">
+        <% grouped.each do |month, events| %>
+          <%# Month header %>
+          <div class="relative flex items-center gap-4">
+            <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center shadow-sm">
+              <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase"><%= month.strftime("%b") %></span>
+            </div>
+            <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+            <span class="text-sm font-semibold text-gray-500 dark:text-gray-400"><%= month.strftime("%Y") %></span>
+          </div>
+
+          <%# Events for this month %>
+          <div class="space-y-4 ml-6 pl-10 border-l-2 border-transparent">
+            <% events.sort_by { |e| e[:date] || Time.current }.reverse.each do |event| %>
+              <% style = event_style(event[:type]) %>
+              <div class="group relative">
+                <%# Event dot %>
+                <div class="absolute -left-[52px] top-4 w-4 h-4 rounded-full bg-<%= style[:color] %>-100 dark:bg-<%= style[:color] %>-900/40 border-2 border-<%= style[:color] %>-500 shadow-sm group-hover:scale-110 transition-transform"></div>
+
+                <%# Event card %>
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                  <%# Colored accent bar %>
+                  <div class="absolute top-0 left-0 w-1 h-full bg-<%= style[:color] %>-500"></div>
+
+                  <div class="p-4 pl-5">
+                    <div class="flex items-start justify-between gap-4">
+                      <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-<%= style[:color] %>-100 dark:bg-<%= style[:color] %>-900/30 flex items-center justify-center">
+                          <svg class="w-4.5 h-4.5 text-<%= style[:color] %>-600 dark:text-<%= style[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= style[:icon] %>"/>
+                          </svg>
+                        </div>
+                        <div class="min-w-0">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                              <%= event[:title] %>
+                            </h4>
+                            <% if event[:type].present? %>
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-<%= style[:color] %>-100 text-<%= style[:color] %>-700 dark:bg-<%= style[:color] %>-900/30 dark:text-<%= style[:color] %>-300">
+                                <%= event[:type].to_s.humanize %>
+                              </span>
+                            <% end %>
+                          </div>
+                          <% if event[:description].present? %>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                              <%= event[:description] %>
+                            </p>
+                          <% end %>
+                          <% if event[:type] == :email && event[:snippet].present? %>
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 italic border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                              "<%= event[:snippet].truncate(150) %>"
+                            </p>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <time class="flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+                        <%= event[:date]&.strftime("%b %d") %>
+                      </time>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <%# Empty State %>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 p-12">
+      <div class="max-w-sm mx-auto text-center">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mb-6">
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No history yet</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Your application timeline will appear here as you add interviews, receive emails, and get feedback.
+        </p>
+        <div class="flex items-center justify-center gap-3">
+          <%= link_to new_interview_application_interview_round_path(application),
+              class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Schedule Interview
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

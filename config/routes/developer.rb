@@ -91,7 +91,12 @@ namespace :internal do
       end
 
       # User Resources
-      resources :users, only: [ :index, :show ]
+      resources :users, only: [ :index, :show ] do
+        member do
+          post :grant_billing_admin_access
+          post :revoke_billing_admin_access
+        end
+      end
       resources :connected_accounts, only: [ :index, :show ]
       resources :support_tickets do
         member do
@@ -200,6 +205,25 @@ namespace :internal do
       resources :memory_proposals, only: [ :index, :show ]
       resources :thread_summaries, only: [ :index, :show ]
       resources :user_memories, only: [ :index, :show, :destroy ]
+    end
+
+    # =================================================================
+    # Payments Portal - Billing Catalog & Payment Provider Sync
+    # =================================================================
+    namespace :payments do
+      root to: "dashboard#index"
+
+      resources :plans
+      resources :features
+      resources :plan_entitlements
+      resources :provider_mappings
+
+      resources :subscriptions, only: [ :index, :show ]
+      resources :webhook_events, only: [ :index, :show ] do
+        member do
+          post :replay
+        end
+      end
     end
 
     # Generic resource action routes (for resources not explicitly defined)

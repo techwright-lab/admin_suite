@@ -80,13 +80,15 @@ module Scraping
 
     def try_provider(provider_name, prompt, html_size)
       provider = get_provider_instance(provider_name)
+      prompt_template = Ai::JobExtractionPrompt.active_prompt
+      system_message = prompt_template&.system_prompt.presence || Ai::JobExtractionPrompt.default_system_prompt
 
       unless provider.available?
         log_event("ai_extraction_provider_unavailable", { provider: provider_name })
         return nil
       end
 
-      result = provider.run(prompt)
+      result = provider.run(prompt, system_message: system_message)
 
       if result[:rate_limit]
         handle_rate_limit(provider_name, result)

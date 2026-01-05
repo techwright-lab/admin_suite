@@ -173,7 +173,7 @@ class JobListingTest < ActiveSupport::TestCase
 
   test "#remote_type_display returns formatted remote type" do
     @listing.remote_type = :on_site
-    assert_equal "On-site", @listing.remote_type_display
+    assert_equal "On Site", @listing.remote_type_display
     
     @listing.remote_type = :remote
     assert_equal "Remote", @listing.remote_type_display

@@ -15,6 +15,8 @@ module AiAssistant
         return
       end
 
+      trial_result = Billing::TrialUnlockService.new(user: Current.user, trigger: :first_ai_request).run
+
       thread =
         if thread_uuid.present?
           Assistant::ChatThread.where(user: Current.user).find_by(uuid: thread_uuid)
@@ -33,7 +35,9 @@ module AiAssistant
         thread_id: result[:thread].id,
         thread_uuid: result[:thread].uuid,
         trace_id: result[:trace_id],
-        tool_calls: result[:tool_calls]
+        tool_calls: result[:tool_calls],
+        trial_unlocked: trial_result[:unlocked] == true,
+        trial_expires_at: trial_result[:expires_at]
       }
     end
   end

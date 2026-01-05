@@ -134,8 +134,6 @@ module Admin
       end
 
       def execute_action(action, target, params)
-        model_class = resource_class.model_class
-
         # Try to find a method on the model first
         if target.respond_to?(action.name)
           execute_model_method(target, action)
@@ -184,45 +182,5 @@ module Admin
         Result.new(success: false, message: message, redirect_url: nil, errors: errors)
       end
     end
-
-    # Base class for action handlers
-    #
-    # Implement custom action logic by subclassing this.
-    #
-    # @example
-    #   class Admin::Actions::CompanyMergeAction < Admin::Base::ActionHandler
-    #     def call
-    #       target_company = Company.find(params[:target_company_id])
-    #       Dedup::MergeCompanyService.new(source_company: record, target_company: target_company).run
-    #       success("Merged into #{target_company.name}")
-    #     end
-    #   end
-    class ActionHandler
-      attr_reader :record, :current_user, :params
-
-      def initialize(record, current_user, params = {})
-        @record = record
-        @current_user = current_user
-        @params = params
-      end
-
-      # Override this method to implement the action
-      #
-      # @return [ActionExecutor::Result]
-      def call
-        raise NotImplementedError, "Subclasses must implement #call"
-      end
-
-      protected
-
-      def success(message, redirect_url: nil)
-        ActionExecutor::Result.new(success: true, message: message, redirect_url: redirect_url, errors: [])
-      end
-
-      def failure(message, errors: [])
-        ActionExecutor::Result.new(success: false, message: message, redirect_url: nil, errors: errors)
-      end
-    end
   end
 end
-

@@ -21,10 +21,14 @@ class InterviewApplication < ApplicationRecord
   has_many :synced_emails, dependent: :nullify
   has_one :opportunity, dependent: :nullify
   has_one :fit_assessment, as: :fittable, dependent: :destroy
+  has_many :interview_prep_artifacts, dependent: :destroy
 
   validates :user, presence: true
   validates :company, presence: true
   validates :job_role, presence: true
+
+  scope :not_deleted, -> { where(deleted_at: nil) }
+  scope :deleted, -> { where.not(deleted_at: nil) }
 
   # Status state machine
   aasm column: :status, with_klass: BaseAasm do
@@ -188,6 +192,31 @@ class InterviewApplication < ApplicationRecord
   # @return [String] Formatted stage name
   def pipeline_stage_display
     pipeline_stage.to_s.titleize
+  end
+
+  # @return [Boolean] Whether this application is soft-deleted.
+  def deleted?
+    deleted_at.present?
+  end
+
+  # Soft delete (move to trash). This does not destroy dependent records.
+  #
+  # @return [Boolean] true if persisted successfully
+  def soft_delete!
+    return false if deleted?
+
+    # Use update_columns to avoid triggering FriendlyId/AASM callbacks that may
+    # regenerate slugs or block persistence for unrelated reasons.
+    update_columns(deleted_at: Time.current, updated_at: Time.current)
+  end
+
+  # Restore a soft-deleted application.
+  #
+  # @return [Boolean] true if persisted successfully
+  def restore!
+    return false unless deleted?
+
+    update_columns(deleted_at: nil, updated_at: Time.current)
   end
 
   private

@@ -61,6 +61,7 @@ class UserResumesController < ApplicationController
     @user_resume = Current.user.user_resumes.build(user_resume_params)
 
     if @user_resume.save
+      maybe_unlock_insight_trial_after_cv_upload
       # Always redirect to show page to see processing status
       redirect_to user_resume_path(@user_resume), notice: "Resume uploaded! Analysis in progress..."
     else
@@ -266,5 +267,26 @@ class UserResumesController < ApplicationController
 
   def normalize_label_key(label)
     label.to_s.strip.downcase.gsub(/\s+/, " ")
+  end
+
+  # Unlocks the insight-triggered trial when the user uploads a CV and already has exactly one feedback entry.
+  # This supports the "CV uploaded + first feedback entry" trigger regardless of which happens first.
+  #
+  # @return [void]
+  def maybe_unlock_insight_trial_after_cv_upload
+    user = Current.user
+    return if user.nil?
+
+    feedback_count = InterviewFeedback
+      .joins(interview_round: { interview_application: :user })
+      .where(users: { id: user.id })
+      .count
+    return unless feedback_count == 1
+
+    Billing::TrialUnlockService.new(
+      user: user,
+      trigger: :cv_upload_with_first_feedback_present,
+      metadata: { feedback_count: feedback_count, user_resume_id: @user_resume.id }
+    ).run
   end
 end

@@ -1,24 +1,37 @@
 <%# locals: (grouped_emails:, unmatched_emails:, selected_email_id: nil, pagy_unmatched: nil) %>
 
-<div class="divide-y divide-gray-200 dark:divide-gray-700">
+<div class="divide-y divide-gray-100 dark:divide-gray-700/50">
   <!-- Needs Review Section -->
   <% if unmatched_emails.any? %>
-    <div class="bg-amber-50 dark:bg-amber-900/10">
-      <div class="px-4 py-2 bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800">
-        <div class="flex items-center gap-2">
-          <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-          </svg>
-          <span class="text-xs font-medium text-amber-800 dark:text-amber-300">
-            <%= pagy_unmatched ? "#{pagy_unmatched.count} emails need review" : "Needs Review" %>
-          </span>
+    <div class="bg-gradient-to-b from-amber-50 to-amber-50/50 dark:from-amber-900/20 dark:to-amber-900/10">
+      <div class="sticky top-0 z-10 px-4 py-3 bg-amber-100/90 dark:bg-amber-900/40 backdrop-blur-sm border-b border-amber-200/60 dark:border-amber-800/40">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-amber-200 dark:bg-amber-800/60 flex items-center justify-center">
+              <svg class="w-4 h-4 text-amber-700 dark:text-amber-300" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                Needs Review
+              </span>
+              <span class="ml-2 px-2 py-0.5 text-xs font-bold bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full">
+                <%= pagy_unmatched ? pagy_unmatched.count : unmatched_emails.count %>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <% unmatched_emails.each do |email| %>
-        <%= render "inbox/email_row", email: email, selected: selected_email_id == email.id, show_company: true %>
-      <% end %>
+      
+      <div class="divide-y divide-amber-100 dark:divide-amber-800/30">
+        <% unmatched_emails.each do |email| %>
+          <%= render "inbox/email_row", email: email, selected: selected_email_id == email.id, show_company: true %>
+        <% end %>
+      </div>
+      
       <% if pagy_unmatched && pagy_unmatched.pages > 1 %>
-        <div class="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800">
+        <div class="px-4 py-3 bg-amber-50/80 dark:bg-amber-900/20 border-t border-amber-200/60 dark:border-amber-800/40">
           <div class="flex items-center justify-between text-xs">
             <span class="text-amber-700 dark:text-amber-400">
               Page <%= pagy_unmatched.page %> of <%= pagy_unmatched.pages %>
@@ -27,13 +40,13 @@
               <% preserved_params = { relevance: params[:relevance], q: params[:q], status: params[:status], type: params[:type], company_id: params[:company_id] }.compact %>
               <% if pagy_unmatched.prev %>
                 <%= link_to "← Previous", inbox_index_path(preserved_params.merge(unmatched_page: pagy_unmatched.prev)),
-                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded",
-                  data: { turbo_frame: "email_list" } %>
+                  class: "px-3 py-1.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg font-medium transition-colors",
+                  data: { turbo_frame: "_top" } %>
               <% end %>
               <% if pagy_unmatched.next %>
                 <%= link_to "Next →", inbox_index_path(preserved_params.merge(unmatched_page: pagy_unmatched.next)),
-                  class: "px-2 py-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded",
-                  data: { turbo_frame: "email_list" } %>
+                  class: "px-3 py-1.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg font-medium transition-colors",
+                  data: { turbo_frame: "_top" } %>
               <% end %>
             </div>
           </div>
@@ -48,40 +61,59 @@
       <% next unless application %>
       <div class="email-group">
         <!-- Application Header -->
-        <div class="sticky top-0 z-10 px-4 py-2 bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm">
-          <div class="flex items-center gap-2">
-            <div class="w-6 h-6 bg-white dark:bg-gray-700 rounded flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-400 shadow-sm">
-              <%= application.company.name[0].upcase %>
+        <div class="sticky top-0 z-10 px-4 py-3 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200/80 dark:border-gray-700/80">
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <div class="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-xl flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 shadow-sm">
+                <%= application.company.name[0].upcase %>
+              </div>
+              <% if emails.count > 1 %>
+                <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-primary-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                  <%= emails.count %>
+                </span>
+              <% end %>
             </div>
             <div class="flex-1 min-w-0">
-              <span class="text-xs font-medium text-gray-900 dark:text-white truncate block">
-                <%= application.company.name %>
-              </span>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                  <%= application.company.name %>
+                </span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide
+                  <%= case application.pipeline_stage.to_sym
+                      when :applied then 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+                      when :screening then 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'
+                      when :interviewing then 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400'
+                      when :offer then 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                      else 'bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-300'
+                      end %>">
+                  <%= application.pipeline_stage_display %>
+                </span>
+              </div>
               <span class="text-xs text-gray-500 dark:text-gray-400">
-                <%= application.job_role.title %> · <%= emails.count %> emails
+                <%= application.job_role.title %>
               </span>
             </div>
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
-              <%= case application.pipeline_stage.to_sym
-                  when :applied then 'bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-300'
-                  when :screening then 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                  when :interviewing then 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                  when :offer then 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                  else 'bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-300'
-                  end %>">
-              <%= application.pipeline_stage_display %>
-            </span>
+            <%= link_to interview_application_path(application),
+                class: "p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
+                title: "View application" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+            <% end %>
           </div>
         </div>
 
         <!-- Emails in this application -->
-        <% emails.first(5).each do |email| %>
-          <%= render "inbox/email_row", email: email, selected: selected_email_id == email.id, show_company: false %>
-        <% end %>
+        <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
+          <% emails.first(5).each do |email| %>
+            <%= render "inbox/email_row", email: email, selected: selected_email_id == email.id, show_company: false %>
+          <% end %>
+        </div>
+        
         <% if emails.count > 5 %>
-          <div class="px-4 py-2 text-center bg-gray-50 dark:bg-gray-800/50">
-            <span class="text-xs text-gray-500 dark:text-gray-400">
-              +<%= emails.count - 5 %> more emails
+          <div class="px-4 py-2.5 text-center bg-gray-50/80 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700/50">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">
+              +<%= emails.count - 5 %> more email<%= emails.count - 5 > 1 ? 's' : '' %>
             </span>
           </div>
         <% end %>
@@ -91,15 +123,23 @@
 
   <!-- Empty State -->
   <% if grouped_emails.empty? && unmatched_emails.empty? %>
-    <div class="p-8 text-center">
-      <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-      </svg>
-      <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">No emails found</p>
+    <div class="p-12 text-center">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">No emails found</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Try adjusting your filters or search query
+      </p>
       <% unless Current.user.google_connected? %>
         <%= link_to settings_path(tab: "integrations"),
-            class: "mt-3 inline-flex items-center text-sm text-primary-600 dark:text-primary-400 hover:underline" do %>
-          Connect Gmail to sync emails
+            class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-lg shadow-primary-500/25 transition-all duration-200" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+          </svg>
+          Connect Gmail
         <% end %>
       <% end %>
     </div>

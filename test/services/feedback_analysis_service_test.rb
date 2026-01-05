@@ -4,8 +4,8 @@ require "test_helper"
 
 class FeedbackAnalysisServiceTest < ActiveSupport::TestCase
   setup do
-    @feedback_entry = create(:feedback_entry)
-    @service = FeedbackAnalysisService.new(@feedback_entry)
+    @feedback = create(:interview_feedback)
+    @service = FeedbackAnalysisService.new(@feedback)
   end
 
   test "#analyze returns hash with expected keys" do
@@ -31,7 +31,7 @@ class FeedbackAnalysisServiceTest < ActiveSupport::TestCase
   end
 
   test "#generate_recommendation returns string when to_improve present" do
-    @feedback_entry.to_improve = "Need to work on system design"
+    @feedback.to_improve = "Need to work on system design"
     recommendation = @service.generate_recommendation
     
     assert_instance_of String, recommendation
@@ -39,15 +39,15 @@ class FeedbackAnalysisServiceTest < ActiveSupport::TestCase
   end
 
   test "#generate_recommendation returns nil when to_improve blank" do
-    @feedback_entry.to_improve = nil
+    @feedback.to_improve = nil
     recommendation = @service.generate_recommendation
     
     assert_nil recommendation
   end
 
   test "extracts common skills from feedback text" do
-    @feedback_entry.went_well = "Great system design and communication skills"
-    @feedback_entry.to_improve = "Leadership could use work"
+    @feedback.went_well = "Great system design and communication skills"
+    @feedback.to_improve = "Leadership could use work"
     
     tags = @service.extract_tags
     

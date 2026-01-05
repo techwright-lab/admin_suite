@@ -13,7 +13,8 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
           email_address: "newuser@example.com",
           password: "password123",
           password_confirmation: "password123",
-          name: "New User"
+          name: "New User",
+          terms_accepted: true
         }
       }
     end
@@ -65,11 +66,13 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
       user: {
         email_address: "newuser@example.com",
         password: "password123",
-        password_confirmation: "password123"
+        password_confirmation: "password123",
+        terms_accepted: true
       }
     }
 
     user = User.find_by(email_address: "newuser@example.com")
+    assert_not_nil user
     assert_enqueued_email_with UserMailer, :verify_email, args: [user]
   end
 end

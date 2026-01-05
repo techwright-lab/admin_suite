@@ -84,10 +84,10 @@ class ExceptionNotifier
         scope.set_context(:payload, payload) if payload.present?
 
         # Set AI-specific context if present
-        if options[:ai_context]
-          scope.set_context("ai", options[:ai_context])
-          scope.set_tags(options[:tags]) if options[:tags]
-        end
+        scope.set_context("ai", options[:ai_context]) if options[:ai_context]
+
+        # Set tags (used for AI and non-AI contexts like billing)
+        scope.set_tags(options[:tags]) if options[:tags].present?
 
         # Set severity level
         scope.set_level(options[:severity]) if options[:severity]

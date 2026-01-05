@@ -46,6 +46,10 @@ module Ai
       job_extraction
       email_extraction
       resume_extraction
+      interview_prep_match_analysis
+      interview_prep_focus_areas
+      interview_prep_question_framing
+      interview_prep_strength_positioning
       assistant_chat
       assistant_tool_call
     ].freeze

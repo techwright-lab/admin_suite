@@ -18,112 +18,109 @@
       </p>
     </div>
 
+    <% plans = local_assigns[:plans] || Billing::Catalog.published_plans %>
+
     <%# Pricing cards %>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-      <%# Free plan %>
-      <div class="card-glass hover:border-white/20 transition-all duration-300">
-        <div class="mb-6">
-          <h3 class="text-xl font-semibold text-white mb-2">Gleania Free</h3>
-          <p class="text-gray-400 text-sm">Perfect for getting started</p>
-        </div>
+    <% if plans.blank? %>
+      <div class="max-w-3xl mx-auto text-center">
+        <p class="text-gray-400">
+          Pricing is being configured. Please check back soon.
+        </p>
+      </div>
+    <% else %>
+      <% grid_cols = plans.size >= 3 ? "md:grid-cols-3" : "md:grid-cols-2" %>
+      <div class="grid grid-cols-1 <%= grid_cols %> gap-8 max-w-5xl mx-auto">
+        <% plans.each do |plan| %>
+          <% featured = plan.highlighted? %>
+          <div class="relative overflow-visible">
+            <% if featured %>
+              <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 text-sm font-semibold text-white shadow-lg z-20">
+                Most Popular
+              </div>
+            <% end %>
 
-        <div class="mb-8">
-          <span class="text-4xl font-bold text-white">$0</span>
-          <span class="text-gray-500">/month</span>
-        </div>
+            <% card_classes = featured ? "card-glass border-primary-500/30 hover:border-primary-500/50 transition-all duration-300 shadow-glow" : "card-glass hover:border-white/20 transition-all duration-300" %>
+            <div class="<%= card_classes %> relative z-10 h-full flex flex-col">
+              <div class="mb-6">
+                <h3 class="text-xl font-semibold text-white mb-2"><%= plan.name %></h3>
+                <p class="text-gray-400 text-sm"><%= plan.description.presence || "" %></p>
+              </div>
 
-        <ul class="space-y-4 mb-8">
-          <% [
-            { feature: "Manual interview tracking", included: true },
-            { feature: "Basic interview notes", included: true },
-            { feature: "Light reflection tools", included: true },
-            { feature: "Up to 10 applications", included: true },
-            { feature: "Gmail sync", included: false },
-            { feature: "AI insight engine", included: false },
-            { feature: "Growth dashboard", included: false },
-            { feature: "CV tailoring", included: false }
-          ].each do |item| %>
-            <li class="flex items-center gap-3">
-              <% if item[:included] %>
-                <div class="w-5 h-5 rounded-full bg-primary-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-                <span class="text-gray-300"><%= item[:feature] %></span>
-              <% else %>
-                <div class="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </div>
-                <span class="text-gray-500"><%= item[:feature] %></span>
+              <div class="mb-8 text-center">
+                <% if plan.free? %>
+                  <span class="text-4xl font-bold text-white">$0</span>
+                  <span class="text-gray-500">/month</span>
+                <% else %>
+                  <span class="text-4xl font-bold text-white">
+                    $<%= (plan.amount_cents.to_i / 100.0).round(2).to_s.sub(/\.0+\z/, "") %>
+                  </span>
+                  <span class="text-gray-500">
+                    <%= plan.recurring? ? "/#{plan.interval.presence || 'month'}" : (plan.metadata["duration_label"].presence || "one-time") %>
+                  </span>
+                <% end %>
+              </div>
+
+              <% metadata = plan.metadata.is_a?(Hash) ? plan.metadata : {} %>
+              <% features = metadata["pricing_features"] %>
+              <% features = Array(features).map { |x| x.is_a?(Hash) ? x : { "feature" => x, "included" => true } } %>
+
+              <% if features.any? %>
+                <ul class="space-y-4 mb-8 flex-1">
+                  <% features.each do |item| %>
+                    <% included = item["included"] != false %>
+                    <li class="flex items-center gap-3">
+                      <% if included %>
+                        <div class="w-5 h-5 rounded-full bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-3 h-3 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        </div>
+                        <span class="text-gray-300"><%= item["feature"] %></span>
+                      <% else %>
+                        <div class="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </div>
+                        <span class="text-gray-500"><%= item["feature"] %></span>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
               <% end %>
-            </li>
-          <% end %>
-        </ul>
 
-        <%= link_to new_registration_path, class: "block w-full text-center py-3 px-6 rounded-xl border-2 border-white/10 text-white font-semibold hover:bg-white/5 transition-colors" do %>
-          Get Started Free
+              <div class="mt-auto">
+                <% if authenticated? %>
+                  <%= link_to settings_path(tab: "billing"), class: "btn-primary-glow w-full justify-center" do %>
+                    Manage billing
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                  <% end %>
+                <% else %>
+                  <% cta_label = plan.free? ? "Get Started Free" : "Choose #{plan.name}" %>
+                  <% cta_class = plan.free? ? "block w-full text-center py-3 px-6 rounded-xl border-2 border-white/10 text-white font-semibold hover:bg-white/5 transition-colors" : "btn-primary-glow w-full justify-center" %>
+                  <%= link_to new_registration_path, class: cta_class do %>
+                    <%= cta_label %>
+                    <% unless plan.free? %>
+                      <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                      </svg>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
         <% end %>
       </div>
-
-      <%# Pro plan %>
-      <div class="relative">
-        <%# Popular badge %>
-        <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 text-sm font-semibold text-white shadow-lg">
-          Most Popular
-        </div>
-
-        <div class="card-glass border-primary-500/30 hover:border-primary-500/50 transition-all duration-300 shadow-glow">
-          <div class="mb-6">
-            <h3 class="text-xl font-semibold text-white mb-2">Gleania Pro</h3>
-            <p class="text-gray-400 text-sm">For serious job seekers</p>
-          </div>
-
-          <div class="mb-8">
-            <span class="text-4xl font-bold text-white">$12</span>
-            <span class="text-gray-500">/month</span>
-          </div>
-
-          <ul class="space-y-4 mb-8">
-            <% [
-              { feature: "Everything in Free", included: true },
-              { feature: "Unlimited applications", included: true },
-              { feature: "Gmail sync", included: true },
-              { feature: "AI insight engine", included: true },
-              { feature: "Growth dashboard", included: true },
-              { feature: "CV tailoring", included: true },
-              { feature: "Priority support", included: true },
-              { feature: "Export to PDF", included: true }
-            ].each do |item| %>
-              <li class="flex items-center gap-3">
-                <div class="w-5 h-5 rounded-full bg-primary-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-                <span class="text-gray-300"><%= item[:feature] %></span>
-              </li>
-            <% end %>
-          </ul>
-
-          <%= link_to new_registration_path, class: "btn-primary-glow w-full justify-center" do %>
-            Upgrade to Pro
-            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-            </svg>
-          <% end %>
-        </div>
-      </div>
-    </div>
+    <% end %>
 
     <%# FAQ teaser %>
     <div class="mt-16 text-center">
       <p class="text-gray-500">
-        Have questions? <a href="#" class="text-primary-400 hover:text-primary-300 transition-colors">Check our FAQ</a> or <a href="mailto:hello@gleania.com" class="text-primary-400 hover:text-primary-300 transition-colors">reach out</a>.
+        Have questions? <%= link_to "Check pricing details", pricing_path, class: "text-primary-400 hover:text-primary-300 transition-colors" %> or <a href="mailto:hello@gleania.com" class="text-primary-400 hover:text-primary-300 transition-colors">reach out</a>.
       </p>
     </div>
   </div>
 </section>
-

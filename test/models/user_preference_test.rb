@@ -66,23 +66,8 @@ class UserPreferenceTest < ActiveSupport::TestCase
     assert_not @preference.list_view?
   end
 
-  test "#dark_mode? returns true for dark theme" do
-    @preference.theme = "dark"
-    assert @preference.dark_mode?
-  end
-
-  test "#dark_mode? returns false for light theme" do
-    @preference.theme = "light"
-    assert_not @preference.dark_mode?
-  end
-
-  test "#dark_mode? returns false for system theme" do
-    @preference.theme = "system"
-    assert_not @preference.dark_mode?
-  end
-
   test "has correct VIEWS constant" do
-    assert_equal ["kanban", "list"], UserPreference::VIEWS
+    assert_equal ["kanban", "table"], UserPreference::VIEWS
   end
 
   test "has correct THEMES constant" do

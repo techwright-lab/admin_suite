@@ -31,15 +31,12 @@ class JobRoleTest < ActiveSupport::TestCase
     assert_equal "Senior Software Engineer", job_role.display_name
   end
 
-  test "should return categories" do
-    create(:job_role, category: "Engineering")
-    create(:job_role, category: "Product")
-    create(:job_role, category: "Engineering")
-
-    categories = JobRole.categories
-    assert_includes categories, "Engineering"
-    assert_includes categories, "Product"
-    assert_equal 2, categories.uniq.length
+  test "should belong to category" do
+    eng_category = create(:category, :engineering)
+    job_role = create(:job_role, category: eng_category)
+    
+    assert_equal eng_category, job_role.category
+    assert_equal "Engineering", job_role.category_name
   end
 
   test "should have associations" do

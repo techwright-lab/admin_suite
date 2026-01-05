@@ -12,6 +12,10 @@
 # Interview Applications
 # =================================================================
 resources :interview_applications, path: "applications" do
+  resource :prep, only: [] do
+    post :refresh, to: "interview_application_preps#refresh"
+  end
+
   resources :interview_rounds, path: "interviews" do
     resource :interview_feedback, path: "feedbacks"
   end
@@ -19,7 +23,12 @@ resources :interview_applications, path: "applications" do
 
   member do
     patch :update_pipeline_stage
+    patch :update_job_description
     patch :archive
+    patch :reject
+    patch :accept
+    patch :reactivate
+    patch :restore
   end
 
   collection do
@@ -55,6 +64,20 @@ resource :settings, only: [ :show ] do
   delete :account, action: :destroy_account
   post :trigger_sync
   patch :toggle_sync
+end
+
+# =================================================================
+# Billing
+# =================================================================
+namespace :billing do
+  post "checkout/:plan_key", to: "checkouts#create", as: :checkout
+  get "return", to: "returns#show", as: :return
+  get "portal", to: "portal#show", as: :portal
+
+  resource :subscription, only: [] do
+    post :cancel
+    post :resume
+  end
 end
 
 # =================================================================

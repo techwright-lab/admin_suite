@@ -56,6 +56,7 @@ module Admin
       show do
         sidebar do
           panel :account, title: "Account", fields: [:email_address, :is_admin]
+          panel :billing, title: "Billing", fields: [:billing_admin_access?]
           panel :timestamps, title: "Activity", fields: [:created_at, :updated_at]
         end
         
@@ -83,6 +84,15 @@ module Admin
                 columns: [:subject, :from_address, :synced_at],
                 link_to: :internal_developer_ops_synced_email_path
         end
+      end
+
+      actions do
+        action :grant_billing_admin_access, method: :post, label: "Grant Billing Admin Access",
+               confirm: "Grant Admin/Developer billing access (all features) to this user?",
+               unless: ->(u) { Billing::AdminAccessService.new(user: u).active? }
+        action :revoke_billing_admin_access, method: :post, label: "Revoke Billing Admin Access",
+               confirm: "Revoke Admin/Developer billing access from this user?",
+               if: ->(u) { Billing::AdminAccessService.new(user: u).active? }
       end
 
       exportable :json

@@ -3,26 +3,31 @@
 FactoryBot.define do
   factory :skill_tag do
     sequence(:name) { |n| "Skill #{n}" }
-    category { "Technical" }
+    category { Category.find_or_create_by!(name: "Technical", kind: :skill_tag) }
+    legacy_category { "Technical" }
 
     trait :system_design do
       name { "System Design" }
-      category { "Technical" }
+      category { Category.find_or_create_by!(name: "Technical", kind: :skill_tag) }
+      legacy_category { "Technical" }
     end
 
     trait :communication do
       name { "Communication" }
-      category { "Soft Skills" }
+      category { Category.find_or_create_by!(name: "Soft Skills", kind: :skill_tag) }
+      legacy_category { "Soft Skills" }
     end
 
     trait :leadership do
       name { "Leadership" }
-      category { "Soft Skills" }
+      category { Category.find_or_create_by!(name: "Soft Skills", kind: :skill_tag) }
+      legacy_category { "Soft Skills" }
     end
 
     trait :programming_language do
       sequence(:name) { |n| ["Ruby", "Python", "JavaScript", "Go", "Java"][n % 5] }
-      category { "Programming Languages" }
+      category { Category.find_or_create_by!(name: "Programming Languages", kind: :skill_tag) }
+      legacy_category { "Programming Languages" }
     end
   end
 end

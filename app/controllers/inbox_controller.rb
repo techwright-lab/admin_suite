@@ -43,6 +43,21 @@ class InboxController < ApplicationController
 
     # If email_id param, pre-select that email
     @selected_email = current_user_emails.find_by(id: params[:email_id]) if params[:email_id]
+
+    # Respond to turbo frame requests for email_list (search/filter without full page reload)
+    respond_to do |format|
+      format.html do
+        if turbo_frame_request_id == "email_list"
+          render inline: <<~ERB, locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, pagy_unmatched: @pagy_unmatched, selected_email_id: @selected_email&.id }
+            <%= turbo_frame_tag "email_list", class: "flex-1 overflow-y-auto" do %>
+              <%= render "inbox/email_list", grouped_emails: grouped_emails, unmatched_emails: unmatched_emails, pagy_unmatched: pagy_unmatched, selected_email_id: selected_email_id %>
+            <% end %>
+          ERB
+        else
+          render :index
+        end
+      end
+    end
   end
 
   # GET /inbox/:id

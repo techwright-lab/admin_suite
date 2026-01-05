@@ -59,6 +59,13 @@ module Ai
       PROMPT
     end
 
+    def self.default_system_prompt
+      <<~PROMPT
+        You are an expert at extracting structured job opportunity information from recruiter emails.
+        Return only valid JSON. Do not guess missing values; use null.
+      PROMPT
+    end
+
     # Returns the expected variables for this prompt type
     #
     # @return [Hash] Variable definitions

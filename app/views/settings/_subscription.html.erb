@@ -1,0 +1,270 @@
+<%# locals: (user:, entitlements:, plans:) %>
+
+<div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+  <div class="mb-6">
+    <h2 class="text-xl font-bold text-gray-900 dark:text-white">Subscription</h2>
+    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+      Manage your plan, usage, and subscription settings.
+    </p>
+  </div>
+
+  <div class="space-y-6">
+    <%# Insight Trial Banner %>
+    <% if entitlements.insight_trial_active? %>
+      <div class="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary-500/10 via-primary-500/5 to-secondary-500/10 border border-primary-500/20 p-5">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+        <div class="relative flex flex-col sm:flex-row items-start gap-4">
+          <div class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
+              <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+              Pro Features Unlocked
+            </h3>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              You've earned a 72-hour Pro trial based on your activity. Explore all Pro features before they expire.
+            </p>
+            <div class="mt-3 flex flex-wrap items-center gap-4">
+              <div class="flex items-center gap-2 text-sm">
+                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="font-medium text-gray-900 dark:text-white">
+                  <%= entitlements.insight_trial_time_remaining_in_words %> remaining
+                </span>
+              </div>
+              <span class="text-gray-400 dark:text-gray-500">•</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">
+                Expires <%= entitlements.insight_trial_expires_at&.strftime("%b %d at %l:%M %p") %>
+              </span>
+            </div>
+          </div>
+          <div class="flex-shrink-0 w-full sm:w-auto">
+            <% pro_plan = plans.find { |p| p.key == "pro_monthly" } %>
+            <% if pro_plan %>
+              <%= button_to "Upgrade to Pro",
+                  billing_checkout_path(plan_key: pro_plan.key),
+                  method: :post,
+                  form: { data: { turbo: false } },
+                  class: "w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors shadow-sm" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Current Plan Card %>
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-5">
+      <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-3">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <%= entitlements.plan&.name || "Free" %>
+            </h3>
+            <% status = entitlements.subscription_status %>
+            <% status_colors = {
+              free: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+              trial: "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300",
+              active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+              trialing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+              cancelled: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+              past_due: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+              expired: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+              inactive: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+            } %>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= status_colors[status] || status_colors[:free] %>">
+              <%= status.to_s.humanize %>
+            </span>
+          </div>
+
+          <% if entitlements.active_subscription %>
+            <% sub = entitlements.active_subscription %>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <% if entitlements.cancel_at_period_end? %>
+                Cancels on <%= sub.current_period_ends_at&.strftime("%B %d, %Y") %>
+              <% elsif sub.current_period_ends_at %>
+                Renews on <%= sub.current_period_ends_at.strftime("%B %d, %Y") %>
+              <% end %>
+            </p>
+          <% elsif entitlements.insight_trial_active? %>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Pro trial active • Upgrade to keep access after trial ends
+            </p>
+          <% else %>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              You're on the free plan. Upgrade to unlock more features.
+            </p>
+          <% end %>
+        </div>
+
+        <div class="text-left sm:text-right">
+          <% current_plan = entitlements.plan %>
+          <% if current_plan&.free? %>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">$0</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">/month</div>
+          <% elsif current_plan %>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">
+              $<%= (current_plan.amount_cents.to_i / 100.0).round(2).to_s.sub(/\.0+\z/, "") %>
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              <%= current_plan.recurring? ? "/#{current_plan.interval.presence || 'month'}" : (current_plan.metadata["duration_label"].presence || "one-time") %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Subscription Actions %>
+      <% if entitlements.active_subscription %>
+        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
+          <%= link_to billing_portal_path,
+              class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+            Manage Payment
+          <% end %>
+
+          <% if entitlements.cancel_at_period_end? %>
+            <%= button_to "Resume Subscription",
+                resume_billing_subscription_path,
+                method: :post,
+                class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors" %>
+          <% else %>
+            <%= button_to "Cancel Subscription",
+                cancel_billing_subscription_path,
+                method: :post,
+                data: { turbo_confirm: "Are you sure you want to cancel? Your subscription will remain active until the end of the current billing period." },
+                class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Usage Dashboard %>
+    <% quota_usage = entitlements.quota_usage %>
+    <% if quota_usage.any? %>
+      <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Usage This Period</h3>
+        <div class="space-y-4">
+          <% quota_usage.each do |feature_key, usage| %>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><%= usage[:name] %></span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  <% if usage[:unlimited] %>
+                    Unlimited
+                  <% else %>
+                    <%= usage[:used] %> / <%= usage[:limit] %>
+                  <% end %>
+                </span>
+              </div>
+              <% unless usage[:unlimited] %>
+                <% percentage = usage[:limit].to_i > 0 ? (usage[:used].to_f / usage[:limit] * 100).round : 0 %>
+                <% bar_color = percentage >= 90 ? "bg-red-500" : (percentage >= 70 ? "bg-amber-500" : "bg-primary-500") %>
+                <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div class="h-full <%= bar_color %> rounded-full transition-all duration-300" style="width: <%= [percentage, 100].min %>%"></div>
+                </div>
+              <% else %>
+                <div class="w-full h-2 bg-gradient-to-r from-primary-500/50 to-primary-500/20 rounded-full"></div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Available Plans %>
+    <% if plans.present? %>
+      <div>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
+          <% if entitlements.plan&.free? || entitlements.plan.nil? %>
+            Upgrade Your Plan
+          <% else %>
+            Change Plan
+          <% end %>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <% plans.each do |plan| %>
+            <% is_current = entitlements.plan&.id == plan.id %>
+            <div class="relative rounded-xl border <%= is_current ? 'border-primary-500 ring-2 ring-primary-500/20' : 'border-gray-200 dark:border-gray-700' %> bg-white dark:bg-gray-900 p-5 flex flex-col h-full">
+              <% if plan.highlighted? && !is_current %>
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 text-xs font-semibold text-white shadow-sm">
+                  Recommended
+                </div>
+              <% end %>
+              <% if is_current %>
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary-500 text-xs font-semibold text-white shadow-sm">
+                  Current Plan
+                </div>
+              <% end %>
+
+              <div class="<%= (plan.highlighted? || is_current) ? 'mt-2' : '' %>">
+                <h4 class="text-base font-semibold text-gray-900 dark:text-white"><%= plan.name %></h4>
+                <% if plan.description.present? %>
+                  <p class="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2"><%= plan.description %></p>
+                <% end %>
+              </div>
+
+              <div class="mt-4">
+                <% if plan.free? %>
+                  <span class="text-2xl font-bold text-gray-900 dark:text-white">$0</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">/month</span>
+                <% else %>
+                  <span class="text-2xl font-bold text-gray-900 dark:text-white">
+                    $<%= (plan.amount_cents.to_i / 100.0).round(2).to_s.sub(/\.0+\z/, "") %>
+                  </span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">
+                    <%= plan.recurring? ? "/#{plan.interval.presence || 'month'}" : (plan.metadata["duration_label"].presence || "one-time") %>
+                  </span>
+                <% end %>
+              </div>
+
+              <%# Features list from metadata %>
+              <% features = plan.metadata["pricing_features"] %>
+              <% if features.present? %>
+                <ul class="mt-4 space-y-2 flex-1">
+                  <% Array(features).first(4).each do |feature| %>
+                    <% feature_text = feature.is_a?(Hash) ? feature["feature"] : feature %>
+                    <li class="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <svg class="w-4 h-4 mt-0.5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                      </svg>
+                      <span><%= feature_text %></span>
+                    </li>
+                  <% end %>
+                  <% if Array(features).size > 4 %>
+                    <li class="text-sm text-gray-500 dark:text-gray-400 pl-6">
+                      + <%= Array(features).size - 4 %> more
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <div class="mt-auto pt-4">
+                <% if is_current %>
+                  <span class="block w-full text-center py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    Current Plan
+                  </span>
+                <% elsif plan.free? %>
+                  <span class="block w-full text-center py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    Free Tier
+                  </span>
+                <% else %>
+                  <%= button_to "Upgrade to #{plan.name}",
+                      billing_checkout_path(plan_key: plan.key),
+                      method: :post,
+                      form: { data: { turbo: false } },
+                      class: "w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors shadow-sm" %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

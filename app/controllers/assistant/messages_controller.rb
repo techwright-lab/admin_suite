@@ -58,11 +58,24 @@ module Assistant
       )
 
       @show_thinking = true
+      maybe_unlock_insight_trial_after_first_ai_request
 
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to assistant_thread_path(@thread) }
       end
+    end
+
+    private
+
+    # Unlocks the insight-triggered trial on the user's first AI assistant request.
+    #
+    # @return [void]
+    def maybe_unlock_insight_trial_after_first_ai_request
+      result = Billing::TrialUnlockService.new(user: Current.user, trigger: :first_ai_request).run
+      return unless result[:unlocked]
+
+      flash.now[:notice] = "You’ve unlocked Pro insights for 72 hours."
     end
   end
 end

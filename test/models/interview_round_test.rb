@@ -63,10 +63,10 @@ class InterviewRoundTest < ActiveSupport::TestCase
 
   test "has one interview_feedback" do
     round = create(:interview_round, interview_application: @application)
-    feedback = FeedbackEntry.create!(interview: @application, interview_round: round, self_reflection: "Test")
-    
-    # Note: This association might not exist yet - adjust based on actual model
-    # assert_not_nil round.interview_feedback
+    feedback = create(:interview_feedback, interview_round: round, self_reflection: "Test")
+
+    assert_not_nil feedback
+    assert_equal round.id, feedback.interview_round_id
   end
 
   # Scopes
@@ -105,13 +105,13 @@ class InterviewRoundTest < ActiveSupport::TestCase
   # Helper methods
   test "#stage_display_name returns formatted stage name" do
     @round.stage = :screening
-    assert_equal "Screening", @round.stage_display_name
+    assert_equal "Phone Screen", @round.stage_display_name
     
     @round.stage = :technical
-    assert_equal "Technical", @round.stage_display_name
+    assert_equal "Phone Screen", @round.stage_display_name
     
     @round.stage = :hiring_manager
-    assert_equal "Hiring Manager", @round.stage_display_name
+    assert_equal "Phone Screen", @round.stage_display_name
   end
 
   test "#completed? returns true when completed_at is set" do

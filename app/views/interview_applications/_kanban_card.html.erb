@@ -2,76 +2,78 @@
 <% display_company = application.display_company %>
 <% display_job_role = application.display_job_role %>
 
-<%= link_to interview_application_path(application), 
-    class: "block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow cursor-pointer" do %>
+<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow group">
   
-  <!-- Company & Role -->
-  <div class="flex items-start gap-3 mb-3">
-    <!-- Company Logo -->
-    <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-      <% if display_company.logo_url.present? %>
-        <%= image_tag display_company.logo_url, 
-            alt: display_company.name,
-            class: "w-10 h-10 rounded-lg object-cover" %>
-      <% else %>
-        <span class="text-sm font-bold text-gray-600 dark:text-gray-400">
-          <%= display_company.name[0].upcase %>
-        </span>
-      <% end %>
+  <!-- Clickable Area for Navigation -->
+  <%= link_to interview_application_path(application), class: "block" do %>
+    <!-- Company & Role -->
+    <div class="flex items-start gap-3 mb-3">
+      <!-- Company Logo -->
+      <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+        <% if display_company.logo_url.present? %>
+          <%= image_tag display_company.logo_url, 
+              alt: display_company.name,
+              class: "w-10 h-10 rounded-lg object-cover" %>
+        <% else %>
+          <span class="text-sm font-bold text-gray-600 dark:text-gray-400">
+            <%= display_company.name[0].upcase %>
+          </span>
+        <% end %>
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <h4 class="font-medium text-gray-900 dark:text-white text-sm truncate">
+          <%= display_job_role.title %>
+        </h4>
+        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+          <%= display_company.name %>
+        </p>
+      </div>
     </div>
 
-    <div class="flex-1 min-w-0">
-      <h4 class="font-medium text-gray-900 dark:text-white text-sm truncate">
-        <%= display_job_role.title %>
-      </h4>
-      <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-        <%= display_company.name %>
-      </p>
-    </div>
-  </div>
-
-  <!-- Status Badge -->
-  <div class="mb-3">
-    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-      <%= case application.status&.to_sym
-          when :active then 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-          when :accepted then 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-          when :rejected then 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-          when :archived then 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-          else 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-          end %>">
-      <%= (application.status || 'active').to_s.titleize %>
-    </span>
-  </div>
-
-  <!-- Interview Rounds Progress -->
-  <% if application.has_rounds? %>
+    <!-- Status Badge -->
     <div class="mb-3">
-      <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-        <span>Interview Progress</span>
-        <span><%= application.completed_rounds_count %>/<%= application.total_rounds_count %></span>
-      </div>
-      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-        <div class="bg-primary-600 h-1.5 rounded-full" 
-             style="width: <%= (application.completed_rounds_count.to_f / application.total_rounds_count * 100).round %>%"></div>
-      </div>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+        <%= case application.status&.to_sym
+            when :active then 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+            when :accepted then 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+            when :rejected then 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+            when :archived then 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+            else 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+            end %>">
+        <%= (application.status || 'active').to_s.titleize %>
+      </span>
     </div>
-  <% end %>
 
-  <!-- Skills -->
-  <% if application.skill_tags.any? %>
-    <div class="flex flex-wrap gap-1 mb-3">
-      <% application.skill_tags.limit(3).each do |skill| %>
-        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-          <%= skill.name %>
-        </span>
-      <% end %>
-      <% if application.skill_tags.count > 3 %>
-        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-          +<%= application.skill_tags.count - 3 %>
-        </span>
-      <% end %>
-    </div>
+    <!-- Interview Rounds Progress -->
+    <% if application.has_rounds? %>
+      <div class="mb-3">
+        <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+          <span>Interview Progress</span>
+          <span><%= application.completed_rounds_count %>/<%= application.total_rounds_count %></span>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+          <div class="bg-primary-600 h-1.5 rounded-full" 
+               style="width: <%= (application.completed_rounds_count.to_f / application.total_rounds_count * 100).round %>%"></div>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Skills -->
+    <% if application.skill_tags.any? %>
+      <div class="flex flex-wrap gap-1 mb-3">
+        <% application.skill_tags.limit(3).each do |skill| %>
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+            <%= skill.name %>
+          </span>
+        <% end %>
+        <% if application.skill_tags.count > 3 %>
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+            +<%= application.skill_tags.count - 3 %>
+          </span>
+        <% end %>
+      </div>
+    <% end %>
   <% end %>
 
   <!-- Footer: Date & Actions -->
@@ -82,16 +84,104 @@
     
     <div class="flex items-center gap-1">
       <% if application.notes.present? %>
-        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Has notes">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
         </svg>
       <% end %>
       
       <% if application.has_company_feedback? %>
-        <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Has feedback">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
       <% end %>
+      
+      <!-- Quick Actions Dropdown -->
+      <div class="relative" data-controller="dropdown">
+        <button 
+          type="button"
+          data-action="click->dropdown#toggle"
+          class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Actions"
+        >
+          <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+          </svg>
+        </button>
+        
+        <div 
+          data-dropdown-target="menu"
+          class="hidden absolute right-0 bottom-full mb-1 w-44 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50"
+        >
+          <div class="py-1" role="menu">
+            <% if application.deleted? %>
+              <%= button_to restore_interview_application_path(application), 
+                  method: :patch,
+                  class: "w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+                  role: "menuitem" do %>
+                <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Restore
+              <% end %>
+            <% elsif application.active? %>
+              <%= button_to accept_interview_application_path(application), 
+                  method: :patch,
+                  class: "w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+                  role: "menuitem" do %>
+                <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Accept
+              <% end %>
+              
+              <%= button_to reject_interview_application_path(application), 
+                  method: :patch,
+                  class: "w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+                  role: "menuitem" do %>
+                <svg class="w-4 h-4 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Reject
+              <% end %>
+              
+              <%= button_to archive_interview_application_path(application), 
+                  method: :patch,
+                  class: "w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+                  role: "menuitem" do %>
+                <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </svg>
+                Archive
+              <% end %>
+            <% else %>
+              <%= button_to reactivate_interview_application_path(application), 
+                  method: :patch,
+                  class: "w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+                  role: "menuitem" do %>
+                <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Reactivate
+              <% end %>
+            <% end %>
+            
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            
+            <% unless application.deleted? %>
+              <%= button_to interview_application_path(application), 
+                  method: :delete,
+                  data: { turbo_confirm: "Delete this application? You can restore it within 3 months." },
+                  class: "w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
+                  role: "menuitem" do %>
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Delete
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-<% end %>
+</div>

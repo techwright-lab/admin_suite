@@ -2,45 +2,51 @@
 
 <div class="flex flex-col h-full">
   <!-- Conversation Messages -->
-  <div class="flex-1 p-3 space-y-2 overflow-y-auto">
+  <div class="flex-1 p-4 space-y-3 overflow-y-auto">
     <% thread_emails.each_with_index do |email, index| %>
       <%
         # Strip HTML and clean up body content
         clean_body = strip_tags(email.body_preview.to_s).squish
         is_long = clean_body.length > 250
+        is_current = email.id == current_email.id
+        
+        type_colors = {
+          'offer' => { bg: 'from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/10', border: 'border-emerald-200 dark:border-emerald-800/40', avatar: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' },
+          'rejection' => { bg: 'from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/10', border: 'border-rose-200 dark:border-rose-800/40', avatar: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' },
+          'interview_invite' => { bg: 'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/10', border: 'border-blue-200 dark:border-blue-800/40', avatar: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
+          'scheduling' => { bg: 'from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/10', border: 'border-violet-200 dark:border-violet-800/40', avatar: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400' }
+        }
+        colors = type_colors[email.email_type] || { bg: 'from-white to-gray-50 dark:from-gray-800 dark:to-gray-850', border: 'border-gray-200 dark:border-gray-700', avatar: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' }
       %>
+      
       <div id="<%= dom_id(email) %>" 
-           class="conversation-message <%= email.id == current_email.id ? 'ring-2 ring-primary-500 ring-offset-1 dark:ring-offset-gray-900' : '' %>"
+           class="conversation-message <%= is_current ? 'ring-2 ring-primary-500/50 ring-offset-2 dark:ring-offset-gray-900' : '' %>"
            data-controller="<%= is_long ? 'expandable' : '' %>">
         
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="bg-gradient-to-br <%= colors[:bg] %> rounded-xl shadow-sm border <%= colors[:border] %> overflow-hidden transition-all duration-200 hover:shadow-md">
           <!-- Message Header -->
-          <div class="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center gap-2">
+          <div class="px-4 py-3 border-b <%= colors[:border] %>">
+            <div class="flex items-center gap-3">
               <!-- Avatar -->
-              <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium
-                          <%= email.email_type == 'offer' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                              email.email_type == 'rejection' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                              email.email_type == 'interview_invite' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                              'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' %>">
+              <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm <%= colors[:avatar] %>">
                 <%= email.sender_display[0].upcase %>
               </div>
 
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1.5 text-sm">
-                  <span class="font-medium text-gray-900 dark:text-white truncate">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-gray-900 dark:text-white truncate">
                     <%= email.sender_display %>
                   </span>
                   <span class="text-xs text-gray-400 dark:text-gray-500 truncate hidden sm:inline">
                     &lt;<%= email.from_email %>&gt;
                   </span>
                 </div>
-                <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                  <time datetime="<%= email.email_date&.iso8601 %>">
+                <div class="flex items-center gap-2 mt-0.5">
+                  <time class="text-xs text-gray-500 dark:text-gray-400" datetime="<%= email.email_date&.iso8601 %>">
                     <%= email.email_date&.strftime("%b %d, %Y at %I:%M %p") || "Unknown date" %>
                   </time>
-                  <% if email.email_type.present? %>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <%= email.type_badge_classes %>">
+                  <% if email.email_type.present? && !%w[other unknown].include?(email.email_type) %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide <%= colors[:avatar] %>">
                       <%= email.email_type.titleize %>
                     </span>
                   <% end %>
@@ -50,10 +56,10 @@
               <!-- Expand/collapse toggle for long emails -->
               <% if is_long %>
                 <button type="button" 
-                        class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+                        class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-200"
                         data-action="click->expandable#toggle"
                         data-expandable-target="button">
-                  <svg class="w-4 h-4 transition-transform" data-expandable-target="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5 transition-transform duration-200" data-expandable-target="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                   </svg>
                 </button>
@@ -62,14 +68,14 @@
 
             <!-- Subject (for first message only) -->
             <% if index == 0 %>
-              <p class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+              <p class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300 leading-snug">
                 <%= email.subject %>
               </p>
             <% end %>
           </div>
 
           <!-- Message Body -->
-          <div class="px-3 py-2">
+          <div class="px-4 py-3">
             <% if email.has_html_body? %>
               <!-- HTML email content -->
               <% if is_long %>
@@ -79,9 +85,12 @@
                     <%= clean_body.truncate(250) %>
                   </p>
                   <button type="button" 
-                          class="mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                           data-action="click->expandable#toggle">
-                    Show full email...
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                    Show full email
                   </button>
                 </div>
                 <!-- Expanded view (full HTML) -->
@@ -90,8 +99,11 @@
                     <%= email.safe_html_body.html_safe %>
                   </div>
                   <button type="button" 
-                          class="mt-2 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          class="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                           data-action="click->expandable#toggle">
+                    <svg class="w-3.5 h-3.5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
                     Show less
                   </button>
                 </div>
@@ -110,9 +122,12 @@
                     <%= clean_body.truncate(250) %>
                   </p>
                   <button type="button" 
-                          class="mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                           data-action="click->expandable#toggle">
-                    Show more...
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                    Show more
                   </button>
                 </div>
                 <!-- Expanded view -->
@@ -121,8 +136,11 @@
                     <%= clean_body %>
                   </p>
                   <button type="button" 
-                          class="mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                          class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                           data-action="click->expandable#toggle">
+                    <svg class="w-3.5 h-3.5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
                     Show less
                   </button>
                 </div>
@@ -136,9 +154,12 @@
                 <%= strip_tags(email.snippet) %>
               </p>
             <% else %>
-              <p class="text-gray-400 dark:text-gray-500 italic text-xs">
+              <div class="flex items-center gap-2 py-2 text-gray-400 dark:text-gray-500 italic text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
                 No email content available
-              </p>
+              </div>
             <% end %>
           </div>
         </div>
@@ -146,8 +167,8 @@
 
       <!-- Thread connector line -->
       <% if index < thread_emails.size - 1 %>
-        <div class="flex justify-center">
-          <div class="w-px h-2 bg-gray-300 dark:bg-gray-600"></div>
+        <div class="flex justify-center py-1">
+          <div class="w-0.5 h-4 bg-gradient-to-b from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-full"></div>
         </div>
       <% end %>
     <% end %>
@@ -155,13 +176,24 @@
 
   <!-- Thread info footer -->
   <% if thread_emails.size > 1 %>
-    <div class="flex-shrink-0 px-3 py-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-      <p class="text-xs text-center text-gray-500 dark:text-gray-400">
-        Conversation with <%= thread_emails.size %> messages
+    <div class="flex-shrink-0 px-4 py-3 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+        <span class="inline-flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+          <span class="font-medium"><%= thread_emails.size %></span> messages
+        </span>
         <% if thread_emails.first.email_date && thread_emails.last.email_date %>
-          · <%= distance_of_time_in_words(thread_emails.first.email_date, thread_emails.last.email_date) %> span
+          <span class="text-gray-300 dark:text-gray-600">·</span>
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <%= distance_of_time_in_words(thread_emails.first.email_date, thread_emails.last.email_date) %> span
+          </span>
         <% end %>
-      </p>
+      </div>
     </div>
   <% end %>
 </div>

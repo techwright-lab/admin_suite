@@ -4,7 +4,7 @@ require "test_helper"
 
 class SettingsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = create(:user, :with_complete_profile)
+    @user = create(:user, :with_complete_profile, email_verified_at: Time.current)
     sign_in_as(@user)
   end
 
@@ -116,7 +116,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     )
 
     assert_difference "@user.sessions.count", -1 do
-      delete destroy_session_settings_url(session_id: other_session.id)
+      delete revoke_session_settings_url(session_id: other_session.id)
     end
 
     assert_redirected_to settings_path(tab: "security")

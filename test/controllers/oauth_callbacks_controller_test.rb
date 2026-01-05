@@ -19,15 +19,17 @@ class OauthCallbacksControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create signs in existing user by OAuth provider and uid" do
-    user = create(:user, :oauth_user, oauth_provider: "google_oauth2", oauth_uid: "123456789", email_address: "oauth@example.com")
+    user = create(:user, :oauth_user, oauth_provider: "google_oauth2", oauth_uid: "123456789", email_address: "oauth@example.com", terms_accepted: true)
     create(:connected_account, user: user, provider: "google_oauth2", uid: "123456789")
 
     OmniAuth.config.mock_auth[:google_oauth2] = @auth_hash
 
     get "/auth/google_oauth2/callback"
 
-    assert_redirected_to root_path
-    assert cookies[:session_id].present?
+    assert_redirected_to dashboard_path
+    # Check that session was created by verifying Current.user is set after redirect
+    follow_redirect!
+    assert_response :success
   end
 
   test "create signs up new user via OAuth" do
@@ -46,8 +48,10 @@ class OauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil user.email_verified_at
     assert_not_nil user.connected_accounts.find_by(provider: "google_oauth2", uid: "123456789")
 
-    assert_redirected_to root_path
-    assert cookies[:session_id].present?
+    assert_redirected_to dashboard_path
+    # Check that session was created by verifying Current.user is set after redirect
+    follow_redirect!
+    assert_response :success
   end
 
   test "create links OAuth to existing user by email" do
@@ -65,7 +69,7 @@ class OauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil user.email_verified_at
     assert_not_nil user.connected_accounts.find_by(provider: "google_oauth2", uid: "123456789")
 
-    assert_redirected_to root_path
+    assert_redirected_to dashboard_path
   end
 
   test "create connects account when user is already authenticated" do

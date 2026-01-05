@@ -80,8 +80,8 @@ module Internal
           return
         end
 
-        executor = Admin::Base::ActionExecutor.new(resource_config, @resource, action_name)
-        result = executor.execute
+        executor = Admin::Base::ActionExecutor.new(resource_config, action_name, Current.user)
+        result = executor.execute_member(@resource, params.to_unsafe_h)
 
         if result.success?
           redirect_to resource_url(@resource), notice: result.message
@@ -106,8 +106,8 @@ module Internal
         else
           records = model.where(id: ids)
         end
-        executor = Admin::Base::ActionExecutor.new(resource_config, records, action_name, bulk: true)
-        result = executor.execute
+        executor = Admin::Base::ActionExecutor.new(resource_config, action_name, Current.user)
+        result = executor.execute_bulk(records, params.to_unsafe_h)
 
         if result.success?
           redirect_to collection_url, notice: result.message

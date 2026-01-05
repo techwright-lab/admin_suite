@@ -91,13 +91,16 @@ module Opportunities
     # @param prompt [String] The extraction prompt
     # @return [Hash] Result with success and data
     def extract_with_llm(prompt)
+      prompt_template = Ai::EmailExtractionPrompt.active_prompt
+      system_message = prompt_template&.system_prompt.presence || Ai::EmailExtractionPrompt.default_system_prompt
+
       provider_chain.each do |provider_name|
         provider = get_provider_instance(provider_name)
         next unless provider&.available?
 
         begin
           start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          result = provider.run(prompt, max_tokens: 2000, temperature: 0.1)
+          result = provider.run(prompt, max_tokens: 2000, temperature: 0.1, system_message: system_message)
           latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round
 
           if result[:error]

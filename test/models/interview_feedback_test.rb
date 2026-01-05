@@ -18,7 +18,9 @@ class InterviewFeedbackTest < ActiveSupport::TestCase
   end
 
   test "belongs to interview_round" do
-    feedback = create(:interview_feedback)
+    application = create(:interview_application)
+    round = create(:interview_round, interview_application: application)
+    feedback = create(:interview_feedback, interview_round: round)
     assert_instance_of InterviewRound, feedback.interview_round
   end
 
@@ -70,8 +72,12 @@ class InterviewFeedbackTest < ActiveSupport::TestCase
   end
 
   test "recent scope orders by created_at desc" do
-    old_feedback = create(:interview_feedback, created_at: 2.days.ago)
-    new_feedback = create(:interview_feedback, created_at: 1.day.ago)
+    application1 = create(:interview_application)
+    application2 = create(:interview_application)
+    round1 = create(:interview_round, interview_application: application1)
+    round2 = create(:interview_round, interview_application: application2)
+    old_feedback = create(:interview_feedback, interview_round: round1, created_at: 2.days.ago)
+    new_feedback = create(:interview_feedback, interview_round: round2, created_at: 1.day.ago)
     
     feedbacks = InterviewFeedback.recent
     assert_equal new_feedback.id, feedbacks.first.id
@@ -79,8 +85,12 @@ class InterviewFeedbackTest < ActiveSupport::TestCase
   end
 
   test "with_recommendations scope filters feedbacks with recommended_action" do
-    with_rec = create(:interview_feedback, recommended_action: "Practice more")
-    without_rec = create(:interview_feedback, recommended_action: nil)
+    application1 = create(:interview_application)
+    application2 = create(:interview_application)
+    round1 = create(:interview_round, interview_application: application1)
+    round2 = create(:interview_round, interview_application: application2)
+    with_rec = create(:interview_feedback, interview_round: round1, recommended_action: "Practice more")
+    without_rec = create(:interview_feedback, interview_round: round2, recommended_action: nil)
     
     feedbacks = InterviewFeedback.with_recommendations
     assert_includes feedbacks, with_rec

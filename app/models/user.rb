@@ -12,6 +12,15 @@ class User < ApplicationRecord
   has_many :opportunities, dependent: :destroy
   has_many :saved_jobs, dependent: :destroy
   has_many :fit_assessments, dependent: :destroy
+  has_many :interview_prep_artifacts, dependent: :destroy
+
+  # =================================================================
+  # Billing & subscriptions
+  # =================================================================
+  has_many :billing_customers, class_name: "Billing::Customer", dependent: :destroy
+  has_many :billing_subscriptions, class_name: "Billing::Subscription", dependent: :destroy
+  has_many :billing_entitlement_grants, class_name: "Billing::EntitlementGrant", dependent: :destroy
+  has_many :billing_usage_counters, class_name: "Billing::UsageCounter", dependent: :destroy
 
   # Resume and skill profile associations
   has_many :user_resumes, dependent: :destroy
@@ -114,6 +123,13 @@ class User < ApplicationRecord
   # @return [Boolean]
   def oauth_user?
     oauth_provider.present?
+  end
+
+  # Internal billing override for staff/admins (all features enabled).
+  #
+  # @return [Boolean]
+  def billing_admin_access?
+    Billing::AdminAccessService.new(user: self).active?
   end
 
   # Returns the user's aggregated skill profile

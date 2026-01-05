@@ -58,6 +58,9 @@ class ScrapingAttemptTest < ActiveSupport::TestCase
     attempt = create(:scraping_attempt)
     assert_equal "info", attempt.status_badge_color
     
+    # Transition through proper states to reach completed
+    attempt.start_fetch!
+    attempt.start_extract!
     attempt.mark_completed!
     assert_equal "success", attempt.status_badge_color
   end

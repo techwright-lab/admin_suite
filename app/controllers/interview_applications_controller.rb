@@ -2,16 +2,40 @@
 
 # Controller for managing interview application tracking
 class InterviewApplicationsController < ApplicationController
-  before_action :set_application, only: [ :show, :edit, :update, :destroy, :update_pipeline_stage, :archive ]
+  before_action :set_application, only: [ :show, :edit, :update, :update_pipeline_stage, :update_job_description, :archive, :reject, :accept, :reactivate ]
+  before_action :set_application_for_soft_delete, only: [ :destroy ]
+  before_action :set_deleted_application, only: [ :restore ]
   before_action :set_view_preference, only: [ :index, :kanban ]
 
   # GET /interview_applications
   def index
-    base_applications = Current.user.interview_applications
+    scope = Current.user.interview_applications
+
+    @status_counts = scope.not_deleted.group(:status).count
+    @deleted_count = scope.deleted.count
+
+    base_applications = scope
       .includes(:company, :job_role, :job_listing, :skill_tags, :interview_rounds)
 
+    if params[:status] == "deleted"
+      base_applications = base_applications.deleted
+    else
+      base_applications = base_applications.not_deleted
+      base_applications = base_applications.where(status: params[:status]) if params[:status].present?
+    end
+
+    # Apply search
+    if params[:q].present?
+      search_term = "%#{params[:q].strip}%"
+      base_applications = base_applications
+        .left_outer_joins(:company, :job_role)
+        .where(
+          "companies.name ILIKE :q OR job_roles.title ILIKE :q",
+          q: search_term
+        )
+    end
+
     # Apply filters
-    base_applications = base_applications.where(status: params[:status]) if params[:status].present?
     base_applications = base_applications.where(pipeline_stage: params[:pipeline_stage]) if params[:pipeline_stage].present?
 
     if params[:date_from].present?
@@ -58,35 +82,33 @@ class InterviewApplicationsController < ApplicationController
     else
       @pagy, @applications = pagy(base_applications, limit: 20)
     end
-
-    respond_to do |format|
-      format.html
-      format.turbo_stream
-    end
   end
 
   # GET /interview_applications/kanban
   def kanban
     @applications = Current.user.interview_applications
       .includes(:company, :job_role, :interview_rounds)
+      .not_deleted
       .active
       .recent
 
     @applications_by_pipeline_stage = InterviewApplication::PIPELINE_STAGES.index_with do |stage|
       @applications.select { |app| app.pipeline_stage == stage.to_s }
     end
-
-    respond_to do |format|
-      format.html
-      format.turbo_stream
-    end
   end
 
   # GET /interview_applications/:id
   def show
     @interview_rounds = @application.interview_rounds.ordered
+    @next_upcoming_round = @application.interview_rounds.upcoming.order(scheduled_at: :asc).first
     @company_feedback = @application.company_feedback
     @synced_emails = @application.synced_emails.recent
+    @application_timeline = ApplicationTimelineService.new(@application)
+
+    @prep_artifacts_by_kind = @application.interview_prep_artifacts.recent_first.index_by(&:kind)
+    focus = @prep_artifacts_by_kind["focus_areas"]&.content
+    focus_items = Array(focus&.dig("focus_areas")).filter_map { |i| i.is_a?(Hash) ? i["title"] : nil }
+    @prep_focus_areas_preview = focus_items.first(3)
   end
 
   # GET /interview_applications/new
@@ -143,13 +165,32 @@ class InterviewApplicationsController < ApplicationController
     end
   end
 
+  # PATCH /interview_applications/:id/update_job_description
+  def update_job_description
+    if @application.update(job_description_params)
+      redirect_to interview_application_path(@application, tab: "prepare"),
+        notice: "Job description saved",
+        status: :see_other
+    else
+      redirect_to interview_application_path(@application, tab: "prepare"),
+        alert: "Could not save job description",
+        status: :see_other
+    end
+  end
+
   # DELETE /interview_applications/:id
   def destroy
-    @application.destroy
+    if @application.soft_delete!
+      notice = "Application deleted. You can restore it within 3 months."
 
-    respond_to do |format|
-      format.html { redirect_to interview_applications_path, notice: "Application deleted successfully!", status: :see_other }
-      format.turbo_stream { flash.now[:notice] = "Application deleted successfully!" }
+      # If the delete happened from the show page, redirecting back would hit a now-unreachable URL.
+      if request.referer&.match?(%r{/applications/[^/?]+$})
+        redirect_to interview_applications_path, notice:, status: :see_other
+      else
+        redirect_back fallback_location: interview_applications_path, notice:, status: :see_other
+      end
+    else
+      redirect_back fallback_location: interview_application_path(@application), alert: "Could not delete application", status: :see_other
     end
   end
 
@@ -197,15 +238,45 @@ class InterviewApplicationsController < ApplicationController
   # PATCH /interview_applications/:id/archive
   def archive
     if @application.may_archive? && @application.archive!
-      respond_to do |format|
-        format.html { redirect_to interview_applications_path, notice: "Application archived" }
-        format.turbo_stream { flash.now[:notice] = "Application archived" }
-      end
+      redirect_back fallback_location: interview_application_path(@application), notice: "Application archived", status: :see_other
     else
-      respond_to do |format|
-        format.html { redirect_to interview_applications_path, alert: "Failed to archive" }
-        format.turbo_stream { render turbo_stream: turbo_stream.replace("flash", partial: "shared/flash") }
-      end
+      redirect_back fallback_location: interview_application_path(@application), alert: "Cannot archive this application", status: :see_other
+    end
+  end
+
+  # PATCH /interview_applications/:id/reject
+  def reject
+    if @application.may_reject? && @application.reject!
+      redirect_back fallback_location: interview_application_path(@application), notice: "Application marked as rejected", status: :see_other
+    else
+      redirect_back fallback_location: interview_application_path(@application), alert: "Cannot reject this application", status: :see_other
+    end
+  end
+
+  # PATCH /interview_applications/:id/accept
+  def accept
+    if @application.may_accept? && @application.accept!
+      redirect_back fallback_location: interview_application_path(@application), notice: "Congratulations! Application marked as accepted", status: :see_other
+    else
+      redirect_back fallback_location: interview_application_path(@application), alert: "Cannot accept this application", status: :see_other
+    end
+  end
+
+  # PATCH /interview_applications/:id/reactivate
+  def reactivate
+    if @application.may_reactivate? && @application.reactivate!
+      redirect_back fallback_location: interview_application_path(@application), notice: "Application reactivated", status: :see_other
+    else
+      redirect_back fallback_location: interview_application_path(@application), alert: "Cannot reactivate this application", status: :see_other
+    end
+  end
+
+  # PATCH /interview_applications/:id/restore
+  def restore
+    if @application.restore!
+      redirect_back fallback_location: interview_applications_path, notice: "Application restored", status: :see_other
+    else
+      redirect_back fallback_location: interview_applications_path(status: "deleted"), alert: "Could not restore application", status: :see_other
     end
   end
 
@@ -295,9 +366,21 @@ class InterviewApplicationsController < ApplicationController
   private
 
   def set_application
-    @application = Current.user.interview_applications.find(params[:id])
+    @application = Current.user.interview_applications.not_deleted.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     redirect_to interview_applications_path, alert: "Application not found"
+  end
+
+  def set_application_for_soft_delete
+    @application = Current.user.interview_applications.not_deleted.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to interview_applications_path, alert: "Application not found"
+  end
+
+  def set_deleted_application
+    @application = Current.user.interview_applications.deleted.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to interview_applications_path(status: "deleted"), alert: "Deleted application not found"
   end
 
   def set_view_preference
@@ -305,6 +388,7 @@ class InterviewApplicationsController < ApplicationController
     view = params[:view] || Current.user.preference.preferred_view
     # Normalize view names: "list" -> "table"
     @current_view = (view == "list") ? "table" : view
+    @current_view = "table" if params[:status] == "deleted"
   end
 
   def application_params
@@ -312,7 +396,12 @@ class InterviewApplicationsController < ApplicationController
       :company_id,
       :job_role_id,
       :applied_at,
-      :notes
+      :notes,
+      :job_description_text
     ])
+  end
+
+  def job_description_params
+    params.expect(interview_application: [ :job_description_text ])
   end
 end

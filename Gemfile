@@ -21,6 +21,10 @@ gem "tailwindcss-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
+# Rails 8.1.1's test runner integration is not compatible with Minitest 6 yet.
+# Pin to Minitest 5.x so tests are discoverable and runnable.
+gem "minitest", "< 6"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 

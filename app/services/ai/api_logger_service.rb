@@ -246,6 +246,17 @@ module Ai
       # Always include confidence
       payload[:confidence] = result[:confidence] if result[:confidence].present?
 
+      # Interview prep payloads: store small, structured preview fields.
+      if @operation_type.to_s.start_with?("interview_prep_")
+        payload[:match_label] = result[:match_label] if result[:match_label].present?
+        payload[:strong_in] = Array(result[:strong_in]).first(8) if result[:strong_in].present?
+        payload[:partial_in] = Array(result[:partial_in]).first(8) if result[:partial_in].present?
+        payload[:missing_or_risky] = Array(result[:missing_or_risky]).first(8) if result[:missing_or_risky].present?
+        payload[:focus_areas_count] = Array(result.dig(:focus_areas)).size if result[:focus_areas].present?
+        payload[:questions_count] = Array(result.dig(:questions)).size if result[:questions].present?
+        payload[:strengths_count] = Array(result.dig(:strengths)).size if result[:strengths].present?
+      end
+
       # Include skills summary for resume extraction
       if result[:skills].is_a?(Array)
         payload[:skills_count] = result[:skills].size

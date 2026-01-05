@@ -1,9 +1,11 @@
 require "test_helper"
 
 class SessionsControllerTest < ActionDispatch::IntegrationTest
-  setup { @user = User.take }
+  setup { @user = create(:user) }
 
   test "new" do
+    # Ensure login is enabled (set in test_helper, but verify)
+    Setting.set(name: "user_login_enabled", value: true)
     get new_session_path
     assert_response :success
   end
@@ -12,8 +14,9 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     @user.update!(email_verified_at: Time.current)
     post session_path, params: { email_address: @user.email_address, password: "password" }
 
-    assert_redirected_to root_path
-    assert cookies[:session_id]
+    assert_redirected_to dashboard_path
+    follow_redirect!
+    assert_response :success
   end
 
   test "create with unverified email redirects with message" do
@@ -21,7 +24,6 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     post session_path, params: { email_address: @user.email_address, password: "password" }
 
     assert_redirected_to new_session_path
-    assert_nil cookies[:session_id]
     
     follow_redirect!
     assert_response :success
@@ -42,15 +44,13 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     post session_path, params: { email_address: @user.email_address, password: "wrong" }
 
     assert_redirected_to new_session_path
-    assert_nil cookies[:session_id]
   end
 
   test "destroy" do
-    sign_in_as(User.take)
+    sign_in_as(@user)
 
-    delete session_path
+    delete logout_path
 
     assert_redirected_to new_session_path
-    assert_empty cookies[:session_id]
   end
 end

@@ -4,7 +4,7 @@ require "test_helper"
 
 class SavedJobsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = create(:user)
+    @user = create(:user, email_verified_at: Time.current)
     sign_in_as(@user)
   end
 

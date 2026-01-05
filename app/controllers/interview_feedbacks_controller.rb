@@ -15,7 +15,12 @@ class InterviewFeedbacksController < ApplicationController
     @feedback = @round.build_interview_feedback(feedback_params)
 
     if @feedback.save
-      redirect_to interview_application_path(@round.interview_application), notice: "Self-reflection added successfully!"
+      trial_result = maybe_unlock_insight_trial_after_feedback
+      notice = "Self-reflection added successfully!"
+      if trial_result[:unlocked]
+        notice = "#{notice} You’ve unlocked Pro insights for 72 hours."
+      end
+      redirect_to interview_application_path(@round.interview_application), notice: notice
     else
       render :new, status: :unprocessable_entity
     end
@@ -64,5 +69,26 @@ class InterviewFeedbacksController < ApplicationController
       :interviewer_notes,
       :tag_list
     )
+  end
+
+  # Unlocks the insight-triggered trial when the user has uploaded a CV and is adding their first feedback entry.
+  #
+  # @return [Hash] Trial unlock result
+  def maybe_unlock_insight_trial_after_feedback
+    user = Current.user
+    return { unlocked: false } if user.nil?
+    return { unlocked: false } unless user.user_resumes.exists?
+
+    feedback_count = InterviewFeedback
+      .joins(interview_round: { interview_application: :user })
+      .where(users: { id: user.id })
+      .count
+    return { unlocked: false } unless feedback_count == 1
+
+    Billing::TrialUnlockService.new(
+      user: user,
+      trigger: :first_feedback_after_cv,
+      metadata: { feedback_count: feedback_count }
+    ).run
   end
 end

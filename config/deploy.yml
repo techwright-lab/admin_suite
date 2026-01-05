@@ -54,6 +54,9 @@ env:
     - CLOUDFLARE_ACCESS_KEY_SECRET
     - CLOUDFLARE_BUCKET
     - CLOUDFLARE_API_TOKEN
+    - LEMONSQUEEZY_API_KEY
+    - LEMONSQUEEZY_STORE_ID
+    - LEMONSQUEEZY_WEBHOOK_SECRET
 
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.

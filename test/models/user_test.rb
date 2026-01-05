@@ -83,9 +83,9 @@ class UserTest < ActiveSupport::TestCase
     create(:interview_application, user: user, company: company, job_role: job_role, status: :rejected)
     
     grouped = user.applications_by_status
-    assert_equal 1, grouped[:active].count
-    assert_equal 1, grouped[:archived].count
-    assert_equal 1, grouped[:rejected].count
+    assert_equal 1, grouped["active"].count
+    assert_equal 1, grouped["archived"].count
+    assert_equal 1, grouped["rejected"].count
   end
 
   test "has optional current_job_role" do

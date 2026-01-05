@@ -4,7 +4,7 @@ require "test_helper"
 
 class ProfilesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = create(:user, :with_complete_profile)
+    @user = create(:user, :with_complete_profile, email_verified_at: Time.current)
     sign_in_as(@user)
   end
 
@@ -14,7 +14,12 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should display insights" do
-    create_list(:interview, 3, :with_feedback, user: @user)
+    applications = create_list(:interview_application, 3, :with_rounds, user: @user)
+    applications.each do |application|
+      application.interview_rounds.each do |round|
+        create(:interview_feedback, interview_round: round)
+      end
+    end
     
     get profile_url
     assert_response :success
@@ -47,7 +52,9 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_response :unprocessable_entity
+    # The controller uses params.expect which raises ActionController::ParameterMissing (400)
+    # when expected keys are missing, not a validation error (422)
+    assert_response :bad_request
   end
 end
 

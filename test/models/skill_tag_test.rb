@@ -50,10 +50,12 @@ class SkillTagTest < ActiveSupport::TestCase
   end
 
   test ".by_category scope filters by category" do
-    tech = create(:skill_tag, category: "Technical")
-    soft = create(:skill_tag, category: "Soft Skills")
+    tech_category = create(:category, :skill_tag_category, name: "Technical #{SecureRandom.hex(4)}")
+    soft_category = create(:category, :skill_tag_category, name: "Soft Skills #{SecureRandom.hex(4)}")
+    tech = create(:skill_tag, category: tech_category)
+    soft = create(:skill_tag, category: soft_category)
     
-    results = SkillTag.by_category("Technical")
+    results = SkillTag.by_category(tech_category.id)
     assert_includes results, tech
     assert_not_includes results, soft
   end

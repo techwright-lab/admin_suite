@@ -39,7 +39,10 @@ class InterviewRoundsController < ApplicationController
 
   # PATCH/PUT /interview_applications/:interview_application_id/interview_rounds/:id
   def update
+    previously_completed = @round.completed_at.present?
+
     if @round.update(round_params)
+      maybe_unlock_insight_trial_after_second_completion(previously_completed: previously_completed)
       respond_to do |format|
         format.html { redirect_to interview_application_path(@application), notice: "Interview round updated successfully!" }
         format.turbo_stream { flash.now[:notice] = "Interview round updated successfully!" }
@@ -86,6 +89,27 @@ class InterviewRoundsController < ApplicationController
       :result,
       :position
     ])
+  end
+
+  # Unlocks the insight-triggered trial when the user completes their 2nd interview round.
+  #
+  # @param previously_completed [Boolean]
+  # @return [void]
+  def maybe_unlock_insight_trial_after_second_completion(previously_completed:)
+    return if previously_completed
+    return unless @round.completed_at.present?
+
+    user = Current.user
+    return if user.nil?
+
+    completed_count = user.interview_rounds.completed.count
+    return unless completed_count == 2
+
+    Billing::TrialUnlockService.new(
+      user: user,
+      trigger: :second_interview_completed,
+      metadata: { completed_count: completed_count, interview_round_id: @round.id }
+    ).run
   end
 end
 

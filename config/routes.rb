@@ -61,6 +61,7 @@ Rails.application.routes.draw do
   draw :developer  # Admin framework at /internal/developer
   draw :public
   draw :auth
+  draw :webhooks
   draw :assistant
   draw :application
 

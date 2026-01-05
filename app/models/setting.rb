@@ -42,7 +42,7 @@ class Setting < ApplicationRecord
 
   AVAILABLE_SETTINGS.each do |setting|
     define_singleton_method(:"#{setting}?") do
-      cached_settings[setting.to_s] == true
+      (cached_settings || {})[setting.to_s] == true
     end
   end
 
@@ -84,10 +84,10 @@ class Setting < ApplicationRecord
             hash[setting.name] = setting.value
           end
         end
-        @cached_settings = value
+        @cached_settings = value || {} # Ensure we always return a hash, never nil
         @cached_settings_expires_at = Time.current.to_i + CACHE_TTL
 
-        value
+        @cached_settings
       end
     end
 

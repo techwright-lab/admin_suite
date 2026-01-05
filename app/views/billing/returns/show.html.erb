@@ -1,0 +1,58 @@
+<% content_for :title, "Checkout complete" %>
+
+<div class="min-h-[60vh] bg-dark-950">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16">
+    <div class="card-glass">
+      <h1 class="text-2xl font-bold text-white">Thanks — we’re processing your purchase</h1>
+      <p class="mt-3 text-gray-300">
+        Your plan unlocks as soon as LemonSqueezy sends the confirmation webhook. This usually takes a few seconds.
+      </p>
+
+      <% if authenticated? %>
+        <div class="mt-6">
+          <%= link_to settings_path(tab: "billing"), class: "btn-primary-glow w-full justify-center" do %>
+            Go to Billing
+          <% end %>
+        </div>
+      <% else %>
+        <div class="mt-6">
+          <%= link_to new_session_path, class: "btn-primary-glow w-full justify-center" do %>
+            Sign in to see your plan
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if @order_id.present? || @order_identifier.present? %>
+        <div class="mt-8 border-t border-white/10 pt-6">
+          <h2 class="text-sm font-semibold text-gray-200">Order details</h2>
+          <dl class="mt-3 space-y-2 text-sm">
+            <% if @order_id.present? %>
+              <div class="flex justify-between gap-4">
+                <dt class="text-gray-400">order_id</dt>
+                <dd class="text-gray-200 font-mono"><%= @order_id %></dd>
+              </div>
+            <% end %>
+            <% if @order_identifier.present? %>
+              <div class="flex justify-between gap-4">
+                <dt class="text-gray-400">order_identifier</dt>
+                <dd class="text-gray-200 font-mono"><%= @order_identifier %></dd>
+              </div>
+            <% end %>
+            <% if @email.present? %>
+              <div class="flex justify-between gap-4">
+                <dt class="text-gray-400">email</dt>
+                <dd class="text-gray-200"><%= @email %></dd>
+              </div>
+            <% end %>
+            <% if @total.present? %>
+              <div class="flex justify-between gap-4">
+                <dt class="text-gray-400">total</dt>
+                <dd class="text-gray-200"><%= @total %></dd>
+              </div>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

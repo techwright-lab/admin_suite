@@ -10,12 +10,19 @@ module ActiveSupport
 
     # Use FactoryBot instead of fixtures
     include FactoryBot::Syntax::Methods
+    include ActiveJob::TestHelper
 
     # Add more helper methods to be used by all tests here...
-    
-    # Helper to sign in a user
-    def sign_in_as(user)
-      post session_url, params: { email_address: user.email_address, password: "password" }
+
+    # Ensure Current attributes never leak between tests (critical with parallelization).
+    setup do
+      Current.reset
+
+      # Enable auth flows by default in test environment (feature-flagged via Setting).
+      # This must run in each parallel worker process.
+      Setting.set(name: "user_login_enabled", value: true)
+      Setting.set(name: "username_password_login_enabled", value: true)
+      Setting.set(name: "user_sign_up_enabled", value: true)
     end
   end
 end

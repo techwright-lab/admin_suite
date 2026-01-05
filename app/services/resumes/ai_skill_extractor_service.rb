@@ -78,6 +78,8 @@ module Resumes
     # @return [Hash, nil] Result or nil on failure
     def try_provider(provider_name, prompt, content_size)
       provider = get_provider_instance(provider_name)
+      prompt_template = Ai::ResumeSkillExtractionPrompt.active_prompt
+      system_message = prompt_template&.system_prompt.presence || Ai::ResumeSkillExtractionPrompt.default_system_prompt
 
       unless provider.available?
         Rails.logger.info("Resume skill extractor: #{provider_name} unavailable")
@@ -85,7 +87,7 @@ module Resumes
       end
 
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = provider.run(prompt)
+      response = provider.run(prompt, system_message: system_message)
       latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round
 
       if response[:rate_limit]

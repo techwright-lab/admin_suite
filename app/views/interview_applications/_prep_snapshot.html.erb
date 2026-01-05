@@ -1,0 +1,207 @@
+<%# Prep Snapshot card (always visible on Overview) %>
+<% fit = application.fit_assessment %>
+<% breakdown = fit&.breakdown.is_a?(Hash) ? fit.breakdown : {} %>
+<% missing_skills = Array(breakdown["missing_skills"] || breakdown[:missing_skills]).compact %>
+<% matched_skills = Array(breakdown["matched_skills"] || breakdown[:matched_skills]).compact %>
+<% score = fit&.computed? ? fit.score.to_i : nil %>
+<%
+  match_label =
+    if score.nil?
+      "Not assessed"
+    elsif score >= 80
+      "Strong match"
+    elsif score >= 50
+      "Partial match"
+    else
+      "Stretch role"
+    end
+  
+  match_color =
+    if score.nil?
+      "gray"
+    elsif score >= 80
+      "emerald"
+    elsif score >= 50
+      "amber"
+    else
+      "rose"
+    end
+%>
+
+<div class="relative overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg border border-gray-200/60 dark:border-gray-700/60">
+  <%# Decorative background pattern %>
+  <div class="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%239C92AC&quot; fill-opacity=&quot;0.4&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+  
+  <div class="relative p-6">
+    <%# Header %>
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/25">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Interview Prep</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Quick insights for your next round</p>
+        </div>
+      </div>
+
+      <%= link_to interview_application_path(application, tab: "prepare"),
+          class: "group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-500 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/40 transition-all duration-200 hover:-translate-y-0.5" do %>
+        <span>Full Prep</span>
+        <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+      <% end %>
+    </div>
+
+    <%# Stats Grid %>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <%# Match Score Card %>
+      <div class="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 p-5 hover:shadow-md transition-all duration-200">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-<%= match_color %>-100 dark:from-<%= match_color %>-900/20 to-transparent rounded-bl-full opacity-60"></div>
+        
+        <div class="relative">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-<%= match_color %>-100 dark:bg-<%= match_color %>-900/30 flex items-center justify-center">
+              <svg class="w-4 h-4 text-<%= match_color %>-600 dark:text-<%= match_color %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Match</span>
+          </div>
+
+          <div class="flex items-baseline gap-2 mb-3">
+            <% if score.present? %>
+              <span class="text-3xl font-bold text-gray-900 dark:text-white"><%= score %></span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">/100</span>
+            <% else %>
+              <span class="text-lg font-semibold text-gray-500 dark:text-gray-400">—</span>
+            <% end %>
+          </div>
+
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+            bg-<%= match_color %>-100 text-<%= match_color %>-700 dark:bg-<%= match_color %>-900/30 dark:text-<%= match_color %>-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-<%= match_color %>-500 animate-pulse"></span>
+            <%= match_label %>
+          </span>
+
+          <% if missing_skills.any? %>
+            <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50">
+              <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Gaps to address</p>
+              <div class="flex flex-wrap gap-1">
+                <% missing_skills.first(2).each do |skill| %>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/30">
+                    <%= skill %>
+                  </span>
+                <% end %>
+                <% if missing_skills.size > 2 %>
+                  <span class="text-[11px] text-gray-400 dark:text-gray-500">+<%= missing_skills.size - 2 %></span>
+                <% end %>
+              </div>
+            </div>
+          <% elsif matched_skills.any? %>
+            <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50">
+              <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Strong in</p>
+              <div class="flex flex-wrap gap-1">
+                <% matched_skills.first(2).each do |skill| %>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/30">
+                    <%= skill %>
+                  </span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Focus Areas Card %>
+      <div class="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 p-5 hover:shadow-md transition-all duration-200">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-100 dark:from-blue-900/20 to-transparent rounded-bl-full opacity-60"></div>
+        
+        <div class="relative">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Focus Next</span>
+          </div>
+
+          <% if focus_areas.present? && focus_areas.any? %>
+            <ol class="space-y-2">
+              <% focus_areas.first(3).each_with_index do |item, idx| %>
+                <li class="flex items-start gap-2">
+                  <span class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[11px] font-bold flex items-center justify-center mt-0.5">
+                    <%= idx + 1 %>
+                  </span>
+                  <span class="text-sm text-gray-700 dark:text-gray-300 leading-snug"><%= item.truncate(45) %></span>
+                </li>
+              <% end %>
+            </ol>
+          <% else %>
+            <div class="flex flex-col items-center justify-center py-4 text-center">
+              <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-2">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Generate prep to see<br>your top focus areas</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Next Round Card %>
+      <div class="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 p-5 hover:shadow-md transition-all duration-200">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-100 dark:from-violet-900/20 to-transparent rounded-bl-full opacity-60"></div>
+        
+        <div class="relative">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+              <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Next Round</span>
+          </div>
+
+          <% if next_round.present? %>
+            <p class="text-base font-semibold text-gray-900 dark:text-white mb-1">
+              <%= next_round.stage_display_name %>
+            </p>
+            <% if next_round.scheduled_at.present? %>
+              <div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <%= next_round.scheduled_at.strftime("%b %d, %I:%M %p") %>
+              </div>
+            <% end %>
+            <% if next_round.interviewer_display.present? %>
+              <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <%= next_round.interviewer_display %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="flex flex-col items-center justify-center py-2 text-center">
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">No round scheduled</p>
+              <%= link_to new_interview_application_interview_round_path(application),
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-lg transition-colors" do %>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Schedule Round
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

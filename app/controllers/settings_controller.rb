@@ -12,6 +12,8 @@ class SettingsController < ApplicationController
     @active_tab = params[:tab] || "profile"
     @sessions = @user.sessions.order(created_at: :desc) if @active_tab == "security"
     @connected_accounts = @user.connected_accounts if @active_tab == "integrations" && @user.respond_to?(:connected_accounts)
+    load_subscription_data if @active_tab == "subscription"
+    load_billing_data if @active_tab == "billing"
   end
 
   # PATCH /settings/profile
@@ -282,5 +284,36 @@ class SettingsController < ApplicationController
     @companies = Company.alphabetical.limit(100)
     @job_roles = JobRole.alphabetical.limit(100)
   end
-end
 
+  # Loads subscription data for the subscription tab
+  # @return [void]
+  def load_subscription_data
+    @entitlements = Billing::Entitlements.for(@user)
+    @plans = Billing::Catalog.published_plans
+  end
+
+  # Loads billing data for the billing tab
+  # @return [void]
+  def load_billing_data
+    @billing_customer = @user.billing_customers.find_by(provider: "lemonsqueezy")
+    @billing_history = load_billing_history
+  end
+
+  # Loads billing history from subscriptions and webhook events
+  # @return [Array<Hash>]
+  def load_billing_history
+    # Get subscription events that indicate payments
+    subscriptions = @user.billing_subscriptions.order(created_at: :desc).limit(10)
+
+    subscriptions.map do |sub|
+      {
+        date: sub.current_period_starts_at || sub.created_at,
+        plan_name: sub.plan&.name || "Unknown Plan",
+        amount: sub.plan&.amount_cents.to_i / 100.0,
+        currency: sub.plan&.currency || "usd",
+        status: sub.status,
+        subscription_id: sub.external_subscription_id
+      }
+    end
+  end
+end

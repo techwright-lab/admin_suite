@@ -9,6 +9,9 @@ scope module: :public do
   # Contact form
   resource :contact, only: [ :show, :create ]
 
+  # Pricing
+  get "pricing", to: "pricing#show", as: :pricing
+
   # Legal pages
   get "privacy", to: "legal#privacy", as: :privacy
   get "terms", to: "legal#terms", as: :terms

@@ -40,7 +40,7 @@ class SkillTag < ApplicationRecord
 
   scope :by_category, ->(category_id) { where(category_id: category_id) }
   scope :alphabetical, -> { order(:name) }
-  scope :popular, -> { joins(:application_skill_tags).group(:id).order("COUNT(application_skill_tags.id) DESC") }
+  scope :popular, -> { joins("INNER JOIN interview_skill_tags ON interview_skill_tags.skill_tag_id = skill_tags.id").group("skill_tags.id").order("COUNT(interview_skill_tags.id) DESC") }
   scope :from_resumes, -> { joins(:resume_skills).distinct }
 
   def category_name

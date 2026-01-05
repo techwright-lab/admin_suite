@@ -137,6 +137,36 @@
         </div>
       <% end %>
     </div>
+
+    <!-- Payments Portal -->
+    <div>
+      <% payments_active = request.path.start_with?("/internal/developer/payments") %>
+      <%= link_to internal_developer_payments_root_path,
+          class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{payments_active ? 'bg-emerald-500/20 text-white' : 'text-indigo-200 hover:bg-indigo-700/30 hover:text-white'}" do %>
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= payments_active ? 'bg-emerald-500/30' : 'bg-indigo-800/50' %>">
+          <svg class="w-4 h-4 <%= payments_active ? 'text-emerald-400' : 'text-indigo-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <span class="font-medium">Payments Portal</span>
+      <% end %>
+
+      <% if payments_active %>
+        <div class="mt-1 ml-11 space-y-0.5 text-sm">
+          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">Catalog</div>
+          <%= link_to "Plans", internal_developer_payments_plans_path, class: "block px-3 py-1.5 rounded #{controller_name == 'plans' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+          <%= link_to "Features", internal_developer_payments_features_path, class: "block px-3 py-1.5 rounded #{controller_name == 'features' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+          <%= link_to "Entitlements", internal_developer_payments_plan_entitlements_path, class: "block px-3 py-1.5 rounded #{controller_name == 'plan_entitlements' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+
+          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Providers</div>
+          <%= link_to "Mappings", internal_developer_payments_provider_mappings_path, class: "block px-3 py-1.5 rounded #{controller_name == 'provider_mappings' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+
+          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Runtime</div>
+          <%= link_to "Subscriptions", internal_developer_payments_subscriptions_path, class: "block px-3 py-1.5 rounded #{controller_name == 'subscriptions' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+          <%= link_to "Webhook Events", internal_developer_payments_webhook_events_path, class: "block px-3 py-1.5 rounded #{controller_name == 'webhook_events' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+        </div>
+      <% end %>
+    </div>
   </nav>
 
   <!-- Footer -->
@@ -144,7 +174,7 @@
     <div class="px-3 py-2 text-xs text-indigo-400">
       <div class="flex items-center justify-between">
         <span>Framework v2</span>
-        <span class="font-medium text-indigo-300">3 Portals • 28 Resources</span>
+        <span class="font-medium text-indigo-300">4 Portals</span>
       </div>
     </div>
   </div>
