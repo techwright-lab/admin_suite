@@ -193,7 +193,7 @@ gem "commonmarker"
 gem "meta-tags"
 gem "mailkick"
 
-gem "rouge", "~> 4.6"
+gem "rouge", "~> 4.7"
 
 gem "redcarpet", "~> 3.6"
 
