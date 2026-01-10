@@ -117,12 +117,38 @@ module InterviewPrep
         )
 
         if response[:rate_limit]
-          logger.record_result({ error: "rate_limited", rate_limit: true }, latency_ms: response[:latency_ms] || 0, prompt: prompt, content_size: prompt.bytesize)
+          logger.record_result(
+            {
+              error: "rate_limited",
+              rate_limit: true,
+              provider_request: response[:provider_request],
+              provider_error_response: response[:provider_error_response],
+              http_status: response[:http_status],
+              response_headers: response[:response_headers],
+              provider_endpoint: response[:provider_endpoint]
+            },
+            latency_ms: response[:latency_ms] || 0,
+            prompt: prompt,
+            content_size: prompt.bytesize
+          )
           next
         end
 
         if response[:error]
-          logger.record_result({ error: response[:error], error_type: response[:error_type] }, latency_ms: response[:latency_ms] || 0, prompt: prompt, content_size: prompt.bytesize)
+          logger.record_result(
+            {
+              error: response[:error],
+              error_type: response[:error_type],
+              provider_request: response[:provider_request],
+              provider_error_response: response[:provider_error_response],
+              http_status: response[:http_status],
+              response_headers: response[:response_headers],
+              provider_endpoint: response[:provider_endpoint]
+            },
+            latency_ms: response[:latency_ms] || 0,
+            prompt: prompt,
+            content_size: prompt.bytesize
+          )
           next
         end
 
@@ -132,7 +158,12 @@ module InterviewPrep
           raw_response: response[:content],
           input_tokens: response[:input_tokens],
           output_tokens: response[:output_tokens],
-          extracted_fields: normalized.keys.map(&:to_s)
+          extracted_fields: normalized.keys.map(&:to_s),
+          provider_request: response[:provider_request],
+          provider_response: response[:provider_response],
+          http_status: response[:http_status],
+          response_headers: response[:response_headers],
+          provider_endpoint: response[:provider_endpoint]
         )
 
         log = logger.record_result(

@@ -3,6 +3,13 @@
 # SkillTag model representing skills tracked across interviews and resumes
 class SkillTag < ApplicationRecord
   include Disableable
+  extend FriendlyId
+  friendly_id :name, use: [ :slugged, :finders ]
+
+  # def should_generate_new_friendly_id?
+  #   name_changed?
+  # end
+  #
 
   # Skill name aliases for normalization (maps variations to canonical names)
   SKILL_ALIASES = {

@@ -62,7 +62,7 @@ module Ai
         provider: @provider,
         model: @model,
         content_size: content_size,
-        request_payload: { prompt: truncate_for_storage(prompt) },
+        request_payload: build_request_payload(prompt: prompt),
         status: :success
       )
 
@@ -80,6 +80,7 @@ module Ai
           input_tokens: result[:input_tokens],
           output_tokens: result[:output_tokens],
           confidence_score: result[:confidence],
+          request_payload: build_request_payload(prompt: prompt, result: result),
           response_payload: build_response_payload(result),
           extracted_fields: extract_field_names(result),
           status: determine_status(result)
@@ -108,7 +109,8 @@ module Ai
           latency_ms: latency_ms,
           status: classify_exception_status(e),
           error_type: e.class.name,
-          error_message: e.message
+          error_message: e.message,
+          response_payload: build_exception_response_payload(e)
         )
 
         @log.save!
@@ -153,7 +155,7 @@ module Ai
         provider: @provider,
         model: @model,
         content_size: content_size,
-        request_payload: { prompt: truncate_for_storage(prompt) },
+        request_payload: build_request_payload(prompt: prompt, result: result),
         response_payload: build_response_payload(result),
         latency_ms: latency_ms,
         input_tokens: result[:input_tokens],
@@ -215,6 +217,20 @@ module Ai
     def build_response_payload(result)
       payload = {}
 
+      # Provider-native request/response (raw, best-effort) for debugging.
+      # These are intentionally separate from parsed/extracted fields.
+      if result[:provider_response].present?
+        payload[:provider_response] = sanitize_payload_for_storage(result[:provider_response])
+      end
+      if result[:provider_error_response].present?
+        payload[:provider_error_response] = sanitize_payload_for_storage(result[:provider_error_response])
+      end
+      payload[:http_status] = result[:http_status] if result[:http_status].present?
+      if result[:response_headers].present?
+        payload[:response_headers] = sanitize_payload_for_storage(result[:response_headers], max_string_length: 10_000)
+      end
+      payload[:provider_endpoint] = result[:provider_endpoint] if result[:provider_endpoint].present?
+
       # For assistant operations, store the full text response for debugging/replay.
       if @operation_type.to_s.start_with?("assistant_") && result[:content].present?
         payload[:text] = truncate_for_storage(result[:content], 10_000)
@@ -275,6 +291,90 @@ module Ai
       payload[:custom_sections] = result[:custom_sections] if result[:custom_sections].present?
 
       payload
+    end
+
+    # Builds request payload for storage
+    #
+    # Captures both the "prompt string" and the provider-native request payload
+    # (if the caller/provider provides it).
+    #
+    # @param prompt [String, nil]
+    # @param result [Hash, nil]
+    # @return [Hash]
+    def build_request_payload(prompt:, result: nil)
+      payload = {}
+      payload[:prompt] = truncate_for_storage(prompt) if prompt.present?
+
+      if result.is_a?(Hash)
+        if result[:provider_request].present?
+          payload[:provider_request] = sanitize_payload_for_storage(result[:provider_request])
+        end
+        payload[:provider_endpoint] = result[:provider_endpoint] if result[:provider_endpoint].present?
+      end
+
+      payload
+    end
+
+    # Attempts to capture a provider/client response from raised exceptions (best-effort).
+    #
+    # @param exception [Exception]
+    # @return [Hash]
+    def build_exception_response_payload(exception)
+      payload = {
+        exception_class: exception.class.name,
+        exception_message: exception.message
+      }
+
+      if exception.respond_to?(:response)
+        payload[:exception_response] = sanitize_payload_for_storage(exception.response, max_string_length: 10_000)
+      end
+      if exception.respond_to?(:status)
+        payload[:http_status] = exception.status
+      end
+
+      payload.compact
+    rescue StandardError
+      { exception_class: exception.class.name, exception_message: exception.message }
+    end
+
+    # Sanitizes nested payloads for JSONB storage and UI rendering.
+    #
+    # - Truncates long strings
+    # - Converts SDK objects via `to_h` when available
+    # - Limits recursion depth to avoid pathological payloads
+    #
+    # @param value [Object]
+    # @param max_string_length [Integer]
+    # @param max_depth [Integer]
+    # @param depth [Integer]
+    # @return [Object]
+    def sanitize_payload_for_storage(value, max_string_length: 50_000, max_depth: 8, depth: 0)
+      return nil if value.nil?
+      return "[TRUNCATED: max_depth=#{max_depth}]" if depth >= max_depth
+
+      if value.is_a?(String)
+        return truncate_for_storage(value, max_string_length)
+      end
+
+      if value.is_a?(Numeric) || value == true || value == false
+        return value
+      end
+
+      if value.is_a?(Hash)
+        return value.to_h.each_with_object({}) do |(k, v), acc|
+          acc[k.to_s] = sanitize_payload_for_storage(v, max_string_length: max_string_length, max_depth: max_depth, depth: depth + 1)
+        end
+      end
+
+      if value.is_a?(Array)
+        return value.first(200).map { |v| sanitize_payload_for_storage(v, max_string_length: max_string_length, max_depth: max_depth, depth: depth + 1) }
+      end
+
+      if value.respond_to?(:to_h)
+        return sanitize_payload_for_storage(value.to_h, max_string_length: max_string_length, max_depth: max_depth, depth: depth + 1)
+      end
+
+      sanitize_payload_for_storage(value.to_s, max_string_length: max_string_length, max_depth: max_depth, depth: depth + 1)
     end
 
     # Truncates content for display in UI

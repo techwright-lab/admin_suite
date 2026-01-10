@@ -27,7 +27,8 @@ module Scraping
 
           job_role_title = preliminary_data[:job_role_title] || preliminary_data[:title]
           if job_role_title.present?
-            job_role = EntityResolver.find_or_create_job_role(context, job_role_title)
+            department_name = preliminary_data[:job_role_department]
+            job_role = EntityResolver.find_or_create_job_role(context, job_role_title, department_name: department_name)
             updates[:job_role] = job_role if job_listing.job_role_id.nil? || job_role.id != job_listing.job_role_id
           end
 
@@ -75,7 +76,8 @@ module Scraping
           # Update job role using title as fallback, replacing placeholders
           job_role_title = result[:job_role] || result[:title]
           if job_role_title.present?
-            job_role = EntityResolver.find_or_create_job_role(context, job_role_title)
+            department_name = result[:job_role_department]
+            job_role = EntityResolver.find_or_create_job_role(context, job_role_title, department_name: department_name)
             should_update_role = job_listing.job_role_id.nil? ||
                                  job_role.id != job_listing.job_role_id ||
                                  is_placeholder_job_role?(job_listing.job_role)

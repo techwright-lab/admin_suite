@@ -30,6 +30,14 @@ module Ai
       PROMPT
     end
 
+    def self.default_system_prompt
+      <<~PROMPT
+        You are extracting durable user preferences/goals/constraints that should be remembered across chats.
+        Only propose items that are explicitly stated by the user. Do not infer sensitive attributes.
+        Return only valid JSON. Do not include markdown or extra commentary.
+      PROMPT
+    end
+
     def self.default_variables
       {
         "messages" => { "required" => true, "description" => "Recent messages to extract explicit preferences/goals from" }

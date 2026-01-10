@@ -3,33 +3,30 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <!-- Header -->
   <div class="mb-8">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
           Resumes & Skills
         </h1>
-
-        <p class="mt-2 text-gray-600 dark:text-gray-400">
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Upload your resumes to build your skill profile
         </p>
       </div>
 
-      <%= link_to new_user_resume_path, class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors" do %>
-        <svg
-          class="w-5 h-5 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        Upload Resume
-      <% end %>
+      <div class="flex items-center gap-3">
+        <%= link_to skills_path, class: "inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 font-medium rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors text-sm" do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Skills Dashboard
+        <% end %>
+        <%= link_to new_user_resume_path, class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors shadow-sm text-sm" do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Upload Resume
+        <% end %>
+      </div>
     </div>
   </div>
 

@@ -104,11 +104,11 @@
 
         <div class="space-y-3">
           <% user_skills.by_level_desc.limit(8).each do |user_skill| %>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between group">
               <div class="flex items-center min-w-0 flex-1">
-                <span class="text-sm text-gray-900 dark:text-white truncate">
+                <%= link_to skill_path(user_skill.skill_tag), class: "text-sm text-gray-900 dark:text-white truncate hover:text-primary-600 dark:hover:text-primary-400 transition-colors" do %>
                   <%= user_skill.skill_name %>
-                </span>
+                <% end %>
 
                 <% if user_skill.resume_count && user_skill.resume_count > 1 %>
                   <span

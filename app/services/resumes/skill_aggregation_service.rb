@@ -66,7 +66,8 @@ module Resumes
         return nil
       end
 
-      aggregated_data = compute_aggregated_data(resume_skills)
+      latest_by_resume_id = latest_demonstrated_dates_by_resume_id(skill_tag)
+      aggregated_data = compute_aggregated_data(resume_skills, latest_by_resume_id: latest_by_resume_id)
 
       user_skill = user.user_skills.find_or_initialize_by(skill_tag: skill_tag)
       user_skill.update!(
@@ -113,7 +114,7 @@ module Resumes
     #
     # @param resume_skills [Array<ResumeSkill>] Resume skills to aggregate
     # @return [Hash] Aggregated data
-    def compute_aggregated_data(resume_skills)
+    def compute_aggregated_data(resume_skills, latest_by_resume_id:)
       weighted_levels = []
       weighted_confidences = []
       categories = Hash.new(0)
@@ -135,9 +136,12 @@ module Resumes
         # Track max years
         max_years = [ max_years || 0, rs.years_of_experience || 0 ].max
 
-        # Track most recent resume date
-        resume_date = resume.created_at
-        last_demonstrated = [ last_demonstrated, resume_date ].compact.max
+        # Track most recent demonstrated date for this skill (prefer work experience dates).
+        demonstrated_on =
+          latest_by_resume_id[resume.id] ||
+          resume.resume_updated_at ||
+          resume.created_at&.to_date
+        last_demonstrated = [ last_demonstrated, demonstrated_on ].compact.max
       end
 
       {
@@ -145,8 +149,28 @@ module Resumes
         confidence: weighted_average(weighted_confidences),
         category: categories.max_by { |_, v| v }&.first || "Other",
         max_years: max_years.positive? ? max_years : nil,
-        last_demonstrated_at: last_demonstrated
+        last_demonstrated_at: last_demonstrated&.to_time&.in_time_zone
       }
+    end
+
+    # Builds a map of user_resume_id => latest demonstrated Date for a given skill_tag,
+    # based on extracted work experience dates (best-effort).
+    #
+    # @param skill_tag [SkillTag]
+    # @return [Hash{Integer => Date}]
+    def latest_demonstrated_dates_by_resume_id(skill_tag)
+      rows = ResumeWorkExperienceSkill
+        .joins(resume_work_experience: :user_resume)
+        .where(skill_tag_id: skill_tag.id, user_resumes: { user_id: user.id })
+        .group("resume_work_experiences.user_resume_id")
+        .pluck(
+          Arel.sql("resume_work_experiences.user_resume_id"),
+          Arel.sql("MAX(CASE WHEN resume_work_experiences.current THEN CURRENT_DATE ELSE COALESCE(resume_work_experiences.end_date, resume_work_experiences.start_date) END)")
+        )
+
+      rows.to_h
+    rescue StandardError
+      {}
     end
 
     # Calculates weight for a resume based on recency and purpose

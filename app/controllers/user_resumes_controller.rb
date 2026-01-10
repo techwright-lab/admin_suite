@@ -28,9 +28,10 @@ class UserResumesController < ApplicationController
       .includes(:skill_tag)
       .order(Arel.sql("COALESCE(user_level, model_level) DESC"))
 
-    @pagy, @resume_skills = pagy(base_skills, limit: 25)
+    @pagy, @resume_skills = pagy(base_skills, limit: 10)
     @skills_by_category = @resume_skills.group_by(&:category)
     @total_skills_count = base_skills.count
+    @work_experiences = @user_resume.resume_work_experiences.includes(:company, :job_role, resume_work_experience_skills: :skill_tag).reverse_chronological
 
     respond_to do |format|
       format.html
@@ -211,18 +212,9 @@ class UserResumesController < ApplicationController
   # @param labels [Array<String>]
   # @return [Hash{String => Hash}] e.g. { "system design" => { label: "System Design", count: 2 } }
   def aggregated_label_counts(labels)
-    labels = Array(labels).map { |l| l.to_s.strip }.reject(&:blank?)
-    counts = {}
-
-    labels.each do |label|
-      key = normalize_label_key(label)
-      next if key.blank?
-
-      counts[key] ||= { label: label, count: 0 }
-      counts[key][:count] += 1
-    end
-
-    counts
+    Labels::DedupeService
+      .new(labels, similarity_threshold: 0.82, overlap_threshold: 0.75)
+      .grouped_counts
   end
 
   def merged_strengths_for(user)
@@ -266,7 +258,13 @@ class UserResumesController < ApplicationController
   end
 
   def normalize_label_key(label)
-    label.to_s.strip.downcase.gsub(/\s+/, " ")
+    # Kept for backward compatibility (used by merged_strengths_for feedback keys).
+    ActiveSupport::Inflector.transliterate(label.to_s)
+      .downcase
+      .tr("&", "and")
+      .gsub(/[^a-z0-9\s]/, " ")
+      .gsub(/\s+/, " ")
+      .strip
   end
 
   # Unlocks the insight-triggered trial when the user uploads a CV and already has exactly one feedback entry.

@@ -36,6 +36,14 @@ module LlmProviders
     private
 
     def call_api(prompt, options)
+      @last_provider_request = build_params(prompt, options)
+      @last_provider_endpoint =
+        if Setting.helicone_enabled?
+          Rails.application.credentials.dig(:helicone, :base_url)
+        else
+          nil
+        end
+
       if  Setting.helicone_enabled?
         client = OpenAI::Client.new(
           access_token: Rails.application.credentials.dig(:helicone, :api_key),
@@ -45,8 +53,8 @@ module LlmProviders
         client = OpenAI::Client.new(access_token: api_key)
       end
 
-      response = client.responses.create(parameters: build_params(prompt, options))
-      parse_response(response)
+      response = client.responses.create(parameters: @last_provider_request)
+      parse_response(response, provider_request: @last_provider_request, provider_endpoint: @last_provider_endpoint)
     end
 
     def build_params(prompt, options)
@@ -103,7 +111,7 @@ module LlmProviders
       input
     end
 
-    def parse_response(response)
+    def parse_response(response, provider_request:, provider_endpoint:)
       response_data = response.is_a?(Hash) ? response : response.to_h
 
       content = extract_content(response_data)
@@ -115,7 +123,9 @@ module LlmProviders
         content: content,
         tool_calls: tool_calls,
         response_id: response_id,
-        raw_response: response_data,
+        provider_request: provider_request,
+        provider_response: response_data,
+        provider_endpoint: provider_endpoint,
         input_tokens: usage["input_tokens"],
         output_tokens: usage["output_tokens"]
       }
@@ -172,7 +182,10 @@ module LlmProviders
         content: result[:content],
         latency_ms: latency_ms,
         input_tokens: result[:input_tokens],
-        output_tokens: result[:output_tokens]
+        output_tokens: result[:output_tokens],
+        provider_request: result[:provider_request],
+        provider_response: result[:provider_response],
+        provider_endpoint: result[:provider_endpoint]
       ).merge(
         tool_calls: result[:tool_calls],
         response_id: result[:response_id]
@@ -195,13 +208,18 @@ module LlmProviders
       Rails.logger.error("OpenAI request failed: #{exception.message}")
 
       http_status = extract_http_status(exception)
-      response_body = extract_response_body(exception)
+      error_response_hash = extract_error_response_hash(exception)
       notify_error(exception, operation: "run", error_type: "request_failed", http_status: http_status)
 
       error_response(
-        error: [ exception.message, response_body.presence ].compact.join(" | "),
+        error: exception.message,
         latency_ms: 0,
-        error_type: exception.class.name
+        error_type: exception.class.name,
+        provider_request: @last_provider_request,
+        provider_error_response: error_response_hash,
+        http_status: http_status,
+        response_headers: error_response_hash&.dig(:headers),
+        provider_endpoint: @last_provider_endpoint
       )
     end
 
@@ -230,6 +248,30 @@ module LlmProviders
       end
     rescue StandardError
       nil
+    end
+
+    def extract_response_headers(exception)
+      return nil unless exception.respond_to?(:response)
+
+      response = exception.response
+      return response[:headers] || response["headers"] if response.is_a?(Hash)
+
+      nil
+    rescue StandardError
+      nil
+    end
+
+    def extract_error_response_hash(exception)
+      http_status = extract_http_status(exception)
+      body = extract_response_body(exception)
+      headers = extract_response_headers(exception)
+      return nil if http_status.blank? && body.blank? && headers.blank?
+
+      {
+        status: http_status,
+        headers: headers,
+        body: body
+      }.compact
     end
   end
 end

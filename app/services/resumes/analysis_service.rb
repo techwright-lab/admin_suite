@@ -43,14 +43,17 @@ module Resumes
       # Step 3: Create resume skill records
       skills_created = create_resume_skills(skill_result[:skills])
 
-      # Step 4: Create companies and job roles from work history
-      create_entities_from_work_history(skill_result[:work_history])
+      # Step 4: Persist expanded work history (experiences + per-experience skills)
+      persist_work_history(skill_result[:work_history])
 
       # Step 5: Save resume date if extracted
       save_resume_date(skill_result)
 
       # Step 6: Aggregate user skills
       aggregate_user_skills
+
+      # Step 7: Merge work history across resumes into a user-level profile
+      Resumes::WorkHistoryAggregationService.new(user_resume.user).run
 
       # Persist resume-derived strengths/domains for later display.
       persist_strengths_and_domains(skill_result)
@@ -126,28 +129,120 @@ module Resumes
       nil
     end
 
-    # Creates companies and job roles from extracted work history
+    # Persists expanded work history into normalized tables.
     #
     # @param work_history [Array<Hash>] Work history entries
     # @return [void]
-    def create_entities_from_work_history(work_history)
+    def persist_work_history(work_history)
       return if work_history.blank?
 
-      work_history.each do |entry|
-        # Create company if present
-        if entry[:company].present?
-          normalized_company = normalize_company_name(entry[:company])
-          Company.find_or_create_by(name: normalized_company) if normalized_company.present?
-        end
+      user_resume.resume_work_experiences.destroy_all
 
-        # Create job role if present
-        if entry[:role].present?
-          normalized_role = normalize_job_title(entry[:role])
-          JobRole.find_or_create_by(title: normalized_role) if normalized_role.present?
+      work_history.each do |entry|
+        next unless entry.is_a?(Hash)
+
+        company_name = entry[:company].to_s.strip
+        role_title = entry[:role].to_s.strip
+        company_domain = entry[:company_domain].to_s.strip.presence
+        role_department = entry[:role_department].to_s.strip.presence
+
+        normalized_company = normalize_company_name(company_name)
+        normalized_role = normalize_job_title(role_title)
+
+        company = normalized_company.present? ? Company.find_or_create_by(name: normalized_company) : nil
+        job_role = find_or_create_job_role_with_department(normalized_role, role_department)
+
+        experience = user_resume.resume_work_experiences.create!(
+          company: company,
+          job_role: job_role,
+          company_name: company_name.presence,
+          role_title: role_title.presence,
+          start_date: entry[:start_date],
+          end_date: entry[:end_date],
+          current: !!entry[:current],
+          duration_text: entry[:duration],
+          responsibilities: Array(entry[:responsibilities]),
+          highlights: Array(entry[:highlights]),
+          metadata: { company_domain: company_domain, role_department: role_department }.compact
+        )
+
+        Array(entry[:skills_used]).each do |skill_ref|
+          next unless skill_ref.is_a?(Hash)
+
+          name = skill_ref[:name].to_s.strip
+          next if name.blank?
+
+          skill_tag = SkillTag.find_or_create_by_name(name)
+          experience.resume_work_experience_skills.find_or_create_by!(skill_tag: skill_tag) do |row|
+            row.confidence_score = skill_ref[:confidence]
+            row.evidence_snippet = skill_ref[:evidence]
+          end
         end
       end
     rescue StandardError => e
-      Rails.logger.warn("Failed to create entities from work history: #{e.message}")
+      Rails.logger.warn("Failed to persist work history: #{e.message}")
+    end
+
+    # Finds or creates a job role and assigns department if provided
+    #
+    # @param title [String] Job role title
+    # @param department_name [String, nil] Department name
+    # @return [JobRole, nil]
+    def find_or_create_job_role_with_department(title, department_name)
+      return nil if title.blank?
+
+      job_role = JobRole.find_or_create_by(title: title)
+
+      # Assign department if provided and role doesn't have one
+      if department_name.present? && job_role.category_id.nil?
+        department = Category.find_by(name: department_name, kind: :job_role)
+        job_role.update(category: department) if department
+      elsif job_role.category_id.nil?
+        # Try to infer department from title
+        department = infer_department_from_title(title)
+        job_role.update(category: department) if department
+      end
+
+      job_role
+    end
+
+    # Infers department from job role title using keyword matching
+    #
+    # @param title [String] Job role title
+    # @return [Category, nil]
+    def infer_department_from_title(title)
+      return nil if title.blank?
+
+      title_lower = title.downcase
+
+      department_keywords = {
+        "Engineering" => %w[engineer developer software backend frontend fullstack architect sre devops platform],
+        "Product" => %w[product owner manager pm],
+        "Design" => %w[designer ux ui visual graphic],
+        "Data Science" => %w[data scientist analyst analytics machine learning ml ai],
+        "DevOps/SRE" => %w[devops sre infrastructure reliability platform],
+        "Sales" => %w[sales account executive ae sdr bdr],
+        "Marketing" => %w[marketing growth seo sem content brand],
+        "Customer Success" => %w[customer success support cx],
+        "Finance" => %w[finance accounting financial controller cfo],
+        "HR/People" => %w[hr human resources people talent recruiter recruiting],
+        "Legal" => %w[legal counsel attorney compliance],
+        "Operations" => %w[operations ops logistics supply],
+        "Executive" => %w[ceo cto coo cfo cmo chief director vp president],
+        "Research" => %w[research scientist r&d],
+        "QA/Testing" => %w[qa quality assurance test tester sdet],
+        "Security" => %w[security infosec appsec cyber],
+        "IT" => %w[it helpdesk administrator admin sysadmin],
+        "Content" => %w[content writer editor copywriter]
+      }
+
+      department_keywords.each do |dept_name, keywords|
+        if keywords.any? { |kw| title_lower.include?(kw) }
+          return Category.find_by(name: dept_name, kind: :job_role)
+        end
+      end
+
+      nil
     end
 
     # Normalizes company name
@@ -219,7 +314,9 @@ module Resumes
       strengths = Array(skill_result[:strengths])
         .map { |s| s.to_s.strip }
         .reject(&:blank?)
-        .uniq
+
+      # De-dupe near-duplicates within the same resume analysis (conservative threshold).
+      strengths = Labels::DedupeService.new(strengths, similarity_threshold: 0.9, overlap_threshold: 0.85).run
 
       domains = Array(skill_result[:domains])
         .map { |d| d.to_s.strip }

@@ -83,13 +83,28 @@
 
           <% if entitlements.active_subscription %>
             <% sub = entitlements.active_subscription %>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              <% if entitlements.cancel_at_period_end? %>
-                Cancels on <%= sub.current_period_ends_at&.strftime("%B %d, %Y") %>
-              <% elsif sub.current_period_ends_at %>
+            <% if entitlements.cancel_at_period_end? %>
+              <div class="mt-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <div class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Subscription Cancelled
+                    </p>
+                    <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                      Your access continues until <strong><%= sub.current_period_ends_at&.strftime("%B %d, %Y") %></strong>.
+                      You can resume your subscription anytime before this date.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            <% elsif sub.current_period_ends_at %>
+              <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 Renews on <%= sub.current_period_ends_at.strftime("%B %d, %Y") %>
-              <% end %>
-            </p>
+              </p>
+            <% end %>
           <% elsif entitlements.insight_trial_active? %>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Pro trial active • Upgrade to keep access after trial ends
@@ -177,8 +192,9 @@
       </div>
     <% end %>
 
-    <%# Available Plans %>
-    <% if plans.present? %>
+    <%# Available Plans - Hide when subscription is cancelled but still active %>
+    <% show_plans = plans.present? && !entitlements.cancel_at_period_end? %>
+    <% if show_plans %>
       <div>
         <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
           <% if entitlements.plan&.free? || entitlements.plan.nil? %>
@@ -264,6 +280,13 @@
             </div>
           <% end %>
         </div>
+      </div>
+    <% elsif entitlements.cancel_at_period_end? && plans.present? %>
+      <%# Show a message when subscription is cancelled %>
+      <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-5 text-center">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Resume your subscription to access plan options, or wait until your current period ends.
+        </p>
       </div>
     <% end %>
   </div>

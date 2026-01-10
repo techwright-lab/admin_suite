@@ -193,7 +193,14 @@ module Internal
 
         # Apply sorting
         sort_field = params[:sort] || resource_config&.index_config&.default_sort
-        sort_direction = params[:direction] == "desc" ? :desc : :asc
+        sort_direction =
+          if params[:direction].present?
+            params[:direction] == "desc" ? :desc : :asc
+          elsif sort_field.present? && sort_field.to_sym == resource_config&.index_config&.default_sort
+            (resource_config&.index_config&.default_sort_direction || :desc).to_sym
+          else
+            :asc
+          end
 
         if sort_field.present?
           scope = scope.order(sort_field => sort_direction)

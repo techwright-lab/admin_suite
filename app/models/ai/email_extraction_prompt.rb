@@ -28,7 +28,9 @@ module Ai
 
         {
           "company_name": "The company with the job opening (not the recruiting agency unless they are the employer)",
+          "company_domain": "The industry/domain the company operates in (e.g., 'FinTech', 'SaaS', 'Healthcare', 'E-commerce', 'EdTech', 'AI/ML', 'Cybersecurity', 'Enterprise Software', 'B2B', 'B2C', etc. - use null if unclear)",
           "job_role_title": "The job title or role being offered",
+          "job_role_department": "The department/function this role belongs to (one of: 'Engineering', 'Product', 'Design', 'Data Science', 'DevOps/SRE', 'Sales', 'Marketing', 'Customer Success', 'Finance', 'HR/People', 'Legal', 'Operations', 'Executive', 'Research', 'QA/Testing', 'Security', 'IT', 'Content', 'Other')",
           "job_url": "URL to the job listing or application page (if found in the email)",
           "all_links": [
             {"url": "...", "type": "job_posting|company_website|calendar|linkedin|other", "description": "brief description"}
@@ -62,7 +64,9 @@ module Ai
     def self.default_system_prompt
       <<~PROMPT
         You are an expert at extracting structured job opportunity information from recruiter emails.
-        Return only valid JSON. Do not guess missing values; use null.
+        Your goal is to return only valid JSON. Do not guess missing values; use null.
+        Do not include markdown or extra commentary.
+        Do not include any other text or formatting.
       PROMPT
     end
 

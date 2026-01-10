@@ -38,14 +38,17 @@ module LlmProviders
     private
 
     def call_api(prompt, options)
+      request_body = build_request_body(prompt, options)
+      @last_provider_request = request_body
+
       response = HTTParty.post(
         "#{ollama_endpoint}/api/generate",
         headers: { "Content-Type" => "application/json" },
-        body: build_request_body(prompt, options).to_json,
+        body: request_body.to_json,
         timeout: REQUEST_TIMEOUT
       )
 
-      parse_response(response)
+      parse_response(response, provider_request: request_body)
     end
 
     def build_request_body(prompt, options)
@@ -60,9 +63,20 @@ module LlmProviders
       body
     end
 
-    def parse_response(response)
+    def parse_response(response, provider_request:)
       unless response.success?
-        return { error: "Ollama request failed: #{response.code}" }
+        return {
+          error: "Ollama request failed: #{response.code}",
+          provider_request: provider_request,
+          provider_error_response: {
+            status: response.code,
+            headers: (response.respond_to?(:headers) ? response.headers.to_h : nil),
+            body: response.body
+          }.compact,
+          http_status: response.code,
+          response_headers: (response.respond_to?(:headers) ? response.headers.to_h : nil),
+          provider_endpoint: ollama_endpoint
+        }
       end
 
       parsed = response.parsed_response
@@ -70,7 +84,12 @@ module LlmProviders
       {
         content: parsed["response"],
         input_tokens: parsed["prompt_eval_count"],
-        output_tokens: parsed["eval_count"]
+        output_tokens: parsed["eval_count"],
+        provider_request: provider_request,
+        provider_response: parsed,
+        http_status: response.code,
+        response_headers: (response.respond_to?(:headers) ? response.headers.to_h : nil),
+        provider_endpoint: ollama_endpoint
       }
     end
 
@@ -79,14 +98,24 @@ module LlmProviders
         error_response(
           error: result[:error],
           latency_ms: latency_ms,
-          error_type: "http_error"
+          error_type: "http_error",
+          provider_request: result[:provider_request],
+          provider_error_response: result[:provider_error_response],
+          http_status: result[:http_status],
+          response_headers: result[:response_headers],
+          provider_endpoint: result[:provider_endpoint]
         )
       else
         success_response(
           content: result[:content],
           latency_ms: latency_ms,
           input_tokens: result[:input_tokens],
-          output_tokens: result[:output_tokens]
+          output_tokens: result[:output_tokens],
+          provider_request: result[:provider_request],
+          provider_response: result[:provider_response],
+          http_status: result[:http_status],
+          response_headers: result[:response_headers],
+          provider_endpoint: result[:provider_endpoint]
         )
       end
     end
@@ -99,7 +128,9 @@ module LlmProviders
       error_response(
         error: exception.message,
         latency_ms: 0,
-        error_type: exception.class.name
+        error_type: exception.class.name,
+        provider_request: @last_provider_request,
+        provider_endpoint: ollama_endpoint
       )
     end
 

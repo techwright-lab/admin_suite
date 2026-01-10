@@ -104,10 +104,63 @@ module Opportunities
 
       # Try to find existing
       job_role = JobRole.find_by("LOWER(title) = ?", role_title.downcase)
-      return job_role if job_role
+      return assign_department_if_missing(job_role) if job_role
 
-      # Create new job role
-      JobRole.create!(title: role_title)
+      # Create new job role with department if available
+      job_role = JobRole.create!(title: role_title)
+      assign_department_if_missing(job_role)
+    end
+
+    # Assigns department to job role if not already set
+    #
+    # @param job_role [JobRole]
+    # @return [JobRole]
+    def assign_department_if_missing(job_role)
+      return job_role if job_role.category_id.present?
+
+      # Try to get department from extracted data
+      department_name = opportunity.extracted_data&.dig("job_role_department")
+
+      if department_name.present?
+        department = Category.find_by(name: department_name, kind: :job_role)
+        job_role.update(category: department) if department
+      else
+        # Try to infer from title
+        department = infer_department_from_title(job_role.title)
+        job_role.update(category: department) if department
+      end
+
+      job_role
+    end
+
+    # Infers department from job role title using keyword matching
+    #
+    # @param title [String]
+    # @return [Category, nil]
+    def infer_department_from_title(title)
+      return nil if title.blank?
+
+      title_lower = title.downcase
+
+      department_keywords = {
+        "Engineering" => %w[engineer developer software backend frontend fullstack architect sre devops platform],
+        "Product" => %w[product owner manager pm],
+        "Design" => %w[designer ux ui visual graphic],
+        "Data Science" => %w[data scientist analyst analytics machine learning ml ai],
+        "Sales" => %w[sales account executive ae sdr bdr],
+        "Marketing" => %w[marketing growth seo sem content brand],
+        "HR/People" => %w[hr human resources people talent recruiter recruiting],
+        "Finance" => %w[finance accounting financial],
+        "Executive" => %w[ceo cto coo cfo cmo chief director vp president]
+      }
+
+      department_keywords.each do |dept_name, keywords|
+        if keywords.any? { |kw| title_lower.include?(kw) }
+          return Category.find_by(name: dept_name, kind: :job_role)
+        end
+      end
+
+      nil
     end
 
     # Creates a job listing if we have a URL

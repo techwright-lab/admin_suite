@@ -3,7 +3,7 @@
 FactoryBot.define do
   factory :user_resume do
     user
-    name { "#{Faker::Job.title} Resume" }
+    sequence(:name) { |n| "Resume #{n}" }
     purpose { :generic }
     analysis_status { :pending }
 

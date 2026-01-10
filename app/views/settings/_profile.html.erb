@@ -140,42 +140,41 @@
       </div>
     </div>
 
-    <!-- Target Positions -->
+    <!-- Career Targets Quick Link -->
     <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
-      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Target Positions</h3>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        Select the roles and companies you're targeting. This helps us provide better insights.
-      </p>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="flex items-center justify-between">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Target Roles
-          </label>
-          <div class="max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
-            <% job_roles.each do |role| %>
-              <label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 px-2 rounded">
-                <%= check_box_tag "user[target_job_role_ids][]", role.id, user.target_job_role_ids.include?(role.id), class: "rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500", data: { action: "change->autosave#save" } %>
-                <span class="text-sm text-gray-700 dark:text-gray-300"><%= role.title %></span>
-              </label>
-            <% end %>
-          </div>
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white">Career Targets</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Define your target roles, companies, and domains for personalized insights
+          </p>
         </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Target Companies
-          </label>
-          <div class="max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
-            <% companies.each do |company| %>
-              <label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 px-2 rounded">
-                <%= check_box_tag "user[target_company_ids][]", company.id, user.target_company_ids.include?(company.id), class: "rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500", data: { action: "change->autosave#save" } %>
-                <span class="text-sm text-gray-700 dark:text-gray-300"><%= company.name %></span>
-              </label>
-            <% end %>
-          </div>
-        </div>
+        <%= link_to settings_path(tab: "targets"), class: "inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" do %>
+          Manage Targets
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        <% end %>
       </div>
+
+      <% if user.target_job_roles.any? || user.target_companies.any? %>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <% user.target_job_roles.limit(3).each do |role| %>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 text-xs font-medium">
+              <%= role.title %>
+            </span>
+          <% end %>
+          <% user.target_companies.limit(3).each do |company| %>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-xs font-medium">
+              <%= company.name %>
+            </span>
+          <% end %>
+          <% total = user.target_job_roles.count + user.target_companies.count %>
+          <% if total > 6 %>
+            <span class="text-xs text-gray-500 dark:text-gray-400">+<%= total - 6 %> more</span>
+          <% end %>
+        </div>
+      <% end %>
     </div>
 
     <!-- Social Links -->

@@ -24,6 +24,19 @@ module Ai
       PROMPT
     end
 
+    def self.default_system_prompt
+      <<~PROMPT
+        You are summarizing an assistant chat thread. Your goal is to produce a concise summary that preserves:
+        - user goals and constraints
+        - decisions and commitments
+        - key context needed to continue the conversation
+        You should only return the updated summary text.
+        Do not include markdown or extra commentary.
+        Do not include any other text or formatting.
+        Do not include any other text or formatting.
+      PROMPT
+    end
+
     def self.default_variables
       {
         "existing_summary" => { "required" => false, "description" => "Current summary text" },

@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 # Controller for user settings management
-# Handles profile, preferences, notifications, AI settings, integrations, privacy, and security
+# Handles profile, preferences, notifications, AI settings, integrations, privacy, security,
+# work experience, and targets
 class SettingsController < ApplicationController
   before_action :set_user
   before_action :set_preference
   before_action :load_profile_data, only: [ :show, :update_profile ]
+  before_action :set_work_experience, only: [ :update_work_experience, :destroy_work_experience ]
 
   # GET /settings
   def show
@@ -14,6 +16,8 @@ class SettingsController < ApplicationController
     @connected_accounts = @user.connected_accounts if @active_tab == "integrations" && @user.respond_to?(:connected_accounts)
     load_subscription_data if @active_tab == "subscription"
     load_billing_data if @active_tab == "billing"
+    load_work_experience_data if @active_tab == "work_experience"
+    load_targets_data if @active_tab == "targets"
   end
 
   # PATCH /settings/profile
@@ -182,6 +186,190 @@ class SettingsController < ApplicationController
     end
   end
 
+  # =================================================================
+  # Work Experience Actions
+  # =================================================================
+
+  # POST /settings/work_experience
+  # Creates a new manual work experience entry
+  def create_work_experience
+    @work_experience = @user.user_work_experiences.build(work_experience_params)
+    @work_experience.source_type = :manual
+
+    if @work_experience.save
+      respond_to do |format|
+        format.html { redirect_to settings_path(tab: "work_experience"), notice: "Work experience added successfully." }
+        format.json { render json: { success: true, work_experience: work_experience_json(@work_experience) }, status: :created }
+        format.turbo_stream { load_work_experience_data }
+      end
+    else
+      respond_to do |format|
+        format.html do
+          @active_tab = "work_experience"
+          load_work_experience_data
+          render :show, status: :unprocessable_entity
+        end
+        format.json { render json: { success: false, errors: @work_experience.errors.full_messages }, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH /settings/work_experience/:id
+  # Updates a work experience entry (both AI-extracted and manual)
+  def update_work_experience
+    if @work_experience.update(work_experience_params)
+      respond_to do |format|
+        format.html { redirect_to settings_path(tab: "work_experience"), notice: "Work experience updated successfully." }
+        format.json { render json: { success: true, work_experience: work_experience_json(@work_experience) }, status: :ok }
+        format.turbo_stream { load_work_experience_data }
+      end
+    else
+      respond_to do |format|
+        format.html do
+          @active_tab = "work_experience"
+          load_work_experience_data
+          render :show, status: :unprocessable_entity
+        end
+        format.json { render json: { success: false, errors: @work_experience.errors.full_messages }, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /settings/work_experience/:id
+  # Deletes a work experience entry
+  def destroy_work_experience
+    @work_experience.destroy
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "work_experience"), notice: "Work experience deleted.", status: :see_other }
+      format.json { render json: { success: true }, status: :ok }
+      format.turbo_stream { load_work_experience_data }
+    end
+  end
+
+  # =================================================================
+  # Targets Actions
+  # =================================================================
+
+  # PATCH /settings/targets
+  # Updates user's target roles, companies, and domains
+  def update_targets
+    ActiveRecord::Base.transaction do
+      update_target_job_roles if params[:target_job_role_ids]
+      update_target_companies if params[:target_company_ids]
+      update_target_domains if params[:target_domain_ids]
+    end
+
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), notice: "Targets updated successfully." }
+      format.json { render json: { success: true }, status: :ok }
+      format.turbo_stream { load_targets_data }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), alert: "Failed to update targets: #{e.message}" }
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+    end
+  end
+
+  # POST /settings/targets/add_role
+  # Adds a single target role
+  def add_target_role
+    job_role = JobRole.find(params[:job_role_id])
+    @user.user_target_job_roles.find_or_create_by!(job_role: job_role)
+
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), notice: "#{job_role.title} added to target roles." }
+      format.json { render json: { success: true, job_role: { id: job_role.id, title: job_role.title, department: job_role.department_name } }, status: :ok }
+    end
+  rescue ActiveRecord::RecordNotFound
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), alert: "Role not found." }
+      format.json { render json: { success: false, error: "Role not found" }, status: :not_found }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), alert: e.message }
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+    end
+  end
+
+  # DELETE /settings/targets/remove_role
+  # Removes a single target role
+  def remove_target_role
+    @user.user_target_job_roles.where(job_role_id: params[:job_role_id]).destroy_all
+
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), notice: "Role removed from targets.", status: :see_other }
+      format.json { render json: { success: true }, status: :ok }
+    end
+  end
+
+  # POST /settings/targets/add_company
+  # Adds a single target company
+  def add_target_company
+    company = Company.find(params[:company_id])
+    @user.user_target_companies.find_or_create_by!(company: company)
+
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), notice: "#{company.name} added to target companies." }
+      format.json { render json: { success: true, company: { id: company.id, name: company.name } }, status: :ok }
+    end
+  rescue ActiveRecord::RecordNotFound
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), alert: "Company not found." }
+      format.json { render json: { success: false, error: "Company not found" }, status: :not_found }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), alert: e.message }
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+    end
+  end
+
+  # DELETE /settings/targets/remove_company
+  # Removes a single target company
+  def remove_target_company
+    @user.user_target_companies.where(company_id: params[:company_id]).destroy_all
+
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), notice: "Company removed from targets.", status: :see_other }
+      format.json { render json: { success: true }, status: :ok }
+    end
+  end
+
+  # POST /settings/targets/add_domain
+  # Adds a single target domain
+  def add_target_domain
+    domain = Domain.find(params[:domain_id])
+    @user.user_target_domains.find_or_create_by!(domain: domain)
+
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), notice: "#{domain.name} added to target domains." }
+      format.json { render json: { success: true, domain: { id: domain.id, name: domain.name } }, status: :ok }
+    end
+  rescue ActiveRecord::RecordNotFound
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), alert: "Domain not found." }
+      format.json { render json: { success: false, error: "Domain not found" }, status: :not_found }
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), alert: e.message }
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+    end
+  end
+
+  # DELETE /settings/targets/remove_domain
+  # Removes a single target domain
+  def remove_target_domain
+    @user.user_target_domains.where(domain_id: params[:domain_id]).destroy_all
+
+    respond_to do |format|
+      format.html { redirect_to settings_path(tab: "targets"), notice: "Domain removed from targets.", status: :see_other }
+      format.json { render json: { success: true }, status: :ok }
+    end
+  end
+
   private
 
   # Responds to successful update - JSON for AJAX, redirect for regular requests
@@ -272,9 +460,7 @@ class SettingsController < ApplicationController
       :github_url,
       :gitlab_url,
       :twitter_url,
-      :portfolio_url,
-      target_job_role_ids: [],
-      target_company_ids: []
+      :portfolio_url
     )
   end
 
@@ -303,17 +489,155 @@ class SettingsController < ApplicationController
   # @return [Array<Hash>]
   def load_billing_history
     # Get subscription events that indicate payments
-    subscriptions = @user.billing_subscriptions.order(created_at: :desc).limit(10)
+    # Only include subscriptions that have a plan associated (excludes incomplete subscriptions)
+    subscriptions = @user.billing_subscriptions
+      .includes(:plan)
+      .where.not(billing_plans: { id: nil })
+      .where.not(current_period_starts_at: nil)
+      .order(current_period_starts_at: :desc)
+      .limit(10)
 
-    subscriptions.map do |sub|
-      {
-        date: sub.current_period_starts_at || sub.created_at,
-        plan_name: sub.plan&.name || "Unknown Plan",
-        amount: sub.plan&.amount_cents.to_i / 100.0,
-        currency: sub.plan&.currency || "usd",
-        status: sub.status,
-        subscription_id: sub.external_subscription_id
-      }
+    # Group by period start date + plan to avoid duplicates from status updates
+    subscriptions.group_by { |s| [ s.current_period_starts_at&.to_date, s.plan_id ] }
+      .map do |(_date, _plan_id), subs|
+        sub = subs.first  # Take the most relevant record from the group
+        {
+          date: sub.current_period_starts_at || sub.created_at,
+          plan_name: sub.plan.name,
+          amount: sub.plan.amount_cents.to_i / 100.0,
+          currency: sub.plan.currency || "usd",
+          status: sub.status,
+          subscription_id: sub.external_subscription_id
+        }
+      end
+      .sort_by { |entry| entry[:date] }
+      .reverse
+  end
+
+  # =================================================================
+  # Work Experience Data & Params
+  # =================================================================
+
+  # Sets work experience for update/destroy actions
+  # @return [UserWorkExperience]
+  def set_work_experience
+    @work_experience = @user.user_work_experiences.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to settings_path(tab: "work_experience"), alert: "Work experience not found."
+  end
+
+  # Loads work experience data for the work_experience tab
+  # @return [void]
+  def load_work_experience_data
+    @work_experiences = @user.user_work_experiences
+      .reverse_chronological
+      .includes(:company, :job_role, :skill_tags)
+    @new_work_experience = @user.user_work_experiences.build
+    @companies = Company.alphabetical.limit(200)
+    @job_roles = JobRole.alphabetical.limit(200)
+  end
+
+  # Strong parameters for work experience
+  # @return [ActionController::Parameters]
+  def work_experience_params
+    params.require(:user_work_experience).permit(
+      :company_name,
+      :role_title,
+      :company_id,
+      :job_role_id,
+      :start_date,
+      :end_date,
+      :current,
+      :responsibilities,
+      :highlights
+    )
+  end
+
+  # Serializes work experience for JSON response
+  # @param work_experience [UserWorkExperience]
+  # @return [Hash]
+  def work_experience_json(work_experience)
+    {
+      id: work_experience.id,
+      company_name: work_experience.display_company_name,
+      role_title: work_experience.display_role_title,
+      start_date: work_experience.start_date,
+      end_date: work_experience.end_date,
+      current: work_experience.current,
+      source_type: work_experience.source_type,
+      responsibilities: work_experience.responsibilities,
+      highlights: work_experience.highlights
+    }
+  end
+
+  # =================================================================
+  # Targets Data & Params
+  # =================================================================
+
+  # Loads targets data for the targets tab
+  # @return [void]
+  def load_targets_data
+    @target_job_roles = @user.target_job_roles.includes(:category).alphabetical
+    @target_companies = @user.target_companies.alphabetical
+    @target_domains = @user.target_domains.alphabetical
+
+    @departments = Category.departments
+    @job_roles_by_department = JobRole.alphabetical
+      .includes(:category)
+      .group_by { |r| r.category&.name || "Uncategorized" }
+
+    @all_companies = Company.alphabetical
+    @all_domains = Domain.alphabetical
+  end
+
+  # Updates target job roles
+  # @return [void]
+  def update_target_job_roles
+    new_ids = Array(params[:target_job_role_ids]).map(&:to_i).reject(&:zero?)
+    current_ids = @user.target_job_role_ids
+
+    # Remove deselected
+    to_remove = current_ids - new_ids
+    @user.user_target_job_roles.where(job_role_id: to_remove).destroy_all if to_remove.any?
+
+    # Add new
+    to_add = new_ids - current_ids
+    to_add.each do |role_id|
+      @user.user_target_job_roles.find_or_create_by!(job_role_id: role_id)
+    end
+  end
+
+  # Updates target companies
+  # @return [void]
+  def update_target_companies
+    new_ids = Array(params[:target_company_ids]).map(&:to_i).reject(&:zero?)
+    current_ids = @user.target_company_ids
+
+    # Remove deselected
+    to_remove = current_ids - new_ids
+    @user.user_target_companies.where(company_id: to_remove).destroy_all if to_remove.any?
+
+    # Add new
+    to_add = new_ids - current_ids
+    to_add.each do |company_id|
+      @user.user_target_companies.find_or_create_by!(company_id: company_id)
+    end
+  end
+
+  # Updates target domains
+  # @return [void]
+  def update_target_domains
+    new_ids = Array(params[:target_domain_ids]).map(&:to_i).reject(&:zero?)
+    current_ids = @user.target_domain_ids
+
+    # Remove deselected
+    to_remove = current_ids - new_ids
+    @user.user_target_domains.where(domain_id: to_remove).destroy_all if to_remove.any?
+
+    # Add new
+    to_add = new_ids - current_ids
+    to_add.each do |domain_id|
+      @user.user_target_domains.find_or_create_by!(domain_id: domain_id)
     end
   end
 end

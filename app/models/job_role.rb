@@ -17,6 +17,9 @@ class JobRole < ApplicationRecord
 
   scope :alphabetical, -> { order(:title) }
   scope :by_category, ->(category_id) { where(category_id: category_id) }
+  scope :by_department, ->(department_id) { by_category(department_id) }
+  scope :with_department, -> { includes(:category).where.not(category_id: nil) }
+  scope :search, ->(query) { where("title ILIKE ?", "%#{query}%") if query.present? }
 
   def legacy_category_name
     respond_to?(:legacy_category) ? legacy_category : nil
@@ -28,7 +31,21 @@ class JobRole < ApplicationRecord
     title
   end
 
+  # Returns category name (alias: department name)
+  # @return [String, nil]
   def category_name
+    category&.name
+  end
+
+  # Alias for department (category with kind: job_role)
+  # @return [Category, nil]
+  def department
+    category
+  end
+
+  # Returns department name
+  # @return [String, nil]
+  def department_name
     category&.name
   end
 

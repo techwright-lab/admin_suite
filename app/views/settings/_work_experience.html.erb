@@ -1,0 +1,223 @@
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" data-controller="work-experience">
+  <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+          <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Work Experience</h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Your consolidated work history. Edit AI-extracted entries or add new ones manually.
+          </p>
+        </div>
+      </div>
+      <button type="button"
+              data-action="work-experience#showAddForm"
+              class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors text-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Add Experience
+      </button>
+    </div>
+  </div>
+
+  <!-- Add Experience Form (hidden by default) -->
+  <div id="add-experience-form" class="hidden p-6 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700" data-work-experience-target="addForm">
+    <%= form_with url: work_experience_settings_path, method: :post, local: true, class: "space-y-4" do |f| %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Title *</label>
+          <%= f.text_field :role_title,
+              name: "user_work_experience[role_title]",
+              class: "w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "e.g., Senior Software Engineer",
+              required: true %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company *</label>
+          <%= f.text_field :company_name,
+              name: "user_work_experience[company_name]",
+              class: "w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              placeholder: "e.g., Acme Corp",
+              required: true %>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+          <%= f.date_field :start_date,
+              name: "user_work_experience[start_date]",
+              class: "w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" %>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+          <%= f.date_field :end_date,
+              name: "user_work_experience[end_date]",
+              class: "w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+              data: { work_experience_target: "endDate" } %>
+        </div>
+        <div class="flex items-end">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <%= f.check_box :current,
+                name: "user_work_experience[current]",
+                class: "rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500",
+                data: { action: "work-experience#toggleCurrent", work_experience_target: "currentCheckbox" } %>
+            <span class="text-sm text-gray-700 dark:text-gray-300">I currently work here</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button"
+                data-action="work-experience#hideAddForm"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          Cancel
+        </button>
+        <%= f.submit "Add Experience",
+            class: "px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors text-sm cursor-pointer" %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Work Experience Timeline -->
+  <div class="p-6">
+    <% if @work_experiences.any? %>
+      <div class="relative">
+        <!-- Timeline line -->
+        <div class="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+        <div class="space-y-6">
+          <% @work_experiences.each do |experience| %>
+            <div class="relative pl-10 group" data-work-experience-target="item" data-experience-id="<%= experience.id %>">
+              <!-- Timeline dot -->
+              <div class="absolute left-0 w-8 h-8 rounded-full flex items-center justify-center <%= experience.current? ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-800' %>">
+                <% if experience.current? %>
+                  <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                <% else %>
+                  <div class="w-3 h-3 rounded-full bg-gray-400 dark:bg-gray-500"></div>
+                <% end %>
+              </div>
+
+              <!-- Experience Card -->
+              <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                      <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                        <%= experience.display_role_title %>
+                      </h3>
+                      <% if experience.current? %>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          Current
+                        </span>
+                      <% end %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <%= experience.manual? ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' %>">
+                        <%= experience.manual? ? 'Manual' : 'AI Extracted' %>
+                      </span>
+                    </div>
+
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <%= experience.display_company_name %>
+                    </p>
+
+                    <p class="text-xs text-gray-500 dark:text-gray-500">
+                      <% if experience.start_date.present? %>
+                        <%= experience.start_date.strftime("%b %Y") %>
+                        —
+                        <%= experience.current? ? "Present" : (experience.end_date&.strftime("%b %Y") || "?") %>
+                      <% else %>
+                        <span class="italic">Dates not specified</span>
+                      <% end %>
+                    </p>
+
+                    <% if experience.skill_tags.any? %>
+                      <div class="mt-3 flex flex-wrap gap-1.5">
+                        <% experience.skill_tags.limit(8).each do |skill| %>
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-300">
+                            <%= skill.name %>
+                          </span>
+                        <% end %>
+                        <% if experience.skill_tags.count > 8 %>
+                          <span class="text-xs text-gray-500 dark:text-gray-400">+<%= experience.skill_tags.count - 8 %> more</span>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button"
+                            data-action="work-experience#editExperience"
+                            data-experience-id="<%= experience.id %>"
+                            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                            title="Edit">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                    </button>
+                    <%= button_to destroy_work_experience_settings_path(experience),
+                        method: :delete,
+                        data: { confirm: "Are you sure you want to delete this work experience?" },
+                        class: "p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors",
+                        title: "Delete" do %>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    <% end %>
+                  </div>
+                </div>
+
+                <% highlights = Array(experience.highlights).map(&:to_s).map(&:strip).reject(&:blank?) %>
+                <% if highlights.any? %>
+                  <details class="mt-3">
+                    <summary class="text-xs text-primary-600 dark:text-primary-400 cursor-pointer hover:text-primary-700 dark:hover:text-primary-300">
+                      View highlights (<%= highlights.count %>)
+                    </summary>
+                    <ul class="mt-2 space-y-1 pl-4 text-sm text-gray-600 dark:text-gray-400">
+                      <% highlights.first(5).each do |highlight| %>
+                        <li class="list-disc list-inside"><%= highlight %></li>
+                      <% end %>
+                    </ul>
+                  </details>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <div class="text-center py-12">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+          <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No work experience yet</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Upload a resume to automatically extract your work history, or add entries manually.
+        </p>
+        <div class="flex items-center justify-center gap-3">
+          <%= link_to new_user_resume_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" do %>
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            Upload Resume
+          <% end %>
+          <button type="button"
+                  data-action="work-experience#showAddForm"
+                  class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors text-sm">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Manually
+          </button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

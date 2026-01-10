@@ -3,7 +3,7 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <!-- Header -->
   <div class="mb-8">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
           Skills Dashboard
@@ -12,68 +12,76 @@
           Your aggregated skill profile across <%= pluralize(@resume_coverage[:total_resumes], "resume") %>
         </p>
       </div>
-      <%= link_to user_resumes_path, class: "inline-flex items-center px-4 py-2 bg-white dark:bg-dark-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors" do %>
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
-        Manage Resumes
-      <% end %>
+      <div class="flex items-center gap-3">
+        <%= link_to new_user_resume_path, class: "inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Upload Resume
+        <% end %>
+        <%= link_to user_resumes_path, class: "inline-flex items-center px-4 py-2 bg-white dark:bg-dark-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors" do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Manage Resumes
+        <% end %>
+      </div>
     </div>
   </div>
 
   <% if @user_skills.any? %>
     <!-- Stats Overview -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @skill_stats[:total] %></p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Total Skills</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white"><%= @skill_stats[:total] %></p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Total Skills</p>
           </div>
-          <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
             </svg>
           </div>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xl font-bold text-green-600 dark:text-green-400"><%= @skill_stats[:strong] %></p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Strong (4+)</p>
+            <p class="text-3xl font-bold text-emerald-600 dark:text-emerald-400"><%= @skill_stats[:strong] %></p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Strong (4+)</p>
           </div>
-          <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xl font-bold text-amber-600 dark:text-amber-400"><%= @skill_stats[:moderate] %></p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Moderate (2.5-4)</p>
+            <p class="text-3xl font-bold text-amber-600 dark:text-amber-400"><%= @skill_stats[:moderate] %></p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Moderate</p>
           </div>
-          <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white"><%= @skill_stats[:average_level] %></p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Avg. Level</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white"><%= @skill_stats[:average_level] %></p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Avg. Level</p>
           </div>
-          <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-12 h-12 bg-violet-50 dark:bg-violet-900/20 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
           </div>
@@ -82,41 +90,41 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left Column: Top Skills -->
+      <!-- Left Column: Skills Lists -->
       <div class="lg:col-span-2 space-y-6">
         <!-- Top Skills -->
-        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Top Skills</h2>
+        <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-dark-800/50">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Top Skills</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">Your strongest skills across all resumes</p>
           </div>
-          <div class="p-6">
+          <div class="p-5">
             <div class="space-y-4">
               <% @top_skills.each do |skill| %>
-                <div class="flex items-center gap-4">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between mb-1">
-                      <span class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        <%= skill.skill_name %>
-                      </span>
-                      <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        <%= skill.aggregated_level.round(1) %>
-                      </span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
-                        class="<%= skill.strong? ? 'bg-green-500' : skill.developing? ? 'bg-amber-500' : 'bg-blue-500' %> h-2 rounded-full transition-all duration-300"
-                        style="width: <%= (skill.aggregated_level / 5.0 * 100).round %>%"
-                      ></div>
-                    </div>
-                    <div class="flex items-center justify-between mt-1">
+                <div class="group">
+                  <div class="flex items-center justify-between mb-2">
+                    <%= link_to skill_path(skill.skill_tag), class: "text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" do %>
+                      <%= skill.skill_name %>
+                    <% end %>
+                    <div class="flex items-center gap-3">
                       <span class="text-xs text-gray-500 dark:text-gray-400">
                         <%= skill.category || "Other" %>
                       </span>
-                      <span class="text-xs text-gray-500 dark:text-gray-400">
-                        <%= pluralize(skill.resume_count || 0, "resume") %>
+                      <span class="text-sm font-semibold text-gray-700 dark:text-gray-300 tabular-nums">
+                        <%= skill.aggregated_level.round(1) %>
                       </span>
                     </div>
+                  </div>
+                  <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+                    <div
+                      class="<%= skill.strong? ? 'bg-emerald-500' : skill.developing? ? 'bg-amber-500' : 'bg-blue-500' %> h-2 rounded-full transition-all duration-300"
+                      style="width: <%= (skill.aggregated_level / 5.0 * 100).round %>%"
+                    ></div>
+                  </div>
+                  <div class="flex items-center justify-between mt-1.5">
+                    <span class="text-xs text-gray-400 dark:text-gray-500">
+                      <%= pluralize(skill.resume_count || 0, "resume") %>
+                    </span>
                   </div>
                 </div>
               <% end %>
@@ -124,13 +132,43 @@
           </div>
         </div>
 
+        <!-- Skills by Experience -->
+        <% if @skills_by_experience.any? %>
+          <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-dark-800/50">
+              <h2 class="text-base font-semibold text-gray-900 dark:text-white">Skills by Experience</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Skills demonstrated across distinct roles</p>
+            </div>
+            <div class="p-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <% @skills_by_experience.each do |row| %>
+                  <%= link_to skill_path(row[:skill_tag_id]), class: "flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors group" do %>
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"><%= row[:name] %></p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        <%= pluralize(row[:experience_count], "role") %>
+                        <% if row[:last_used_on].present? %>
+                          • <%= row[:last_used_on].strftime("%b %Y") %>
+                        <% end %>
+                      </p>
+                    </div>
+                    <span class="flex-shrink-0 inline-flex items-center justify-center w-8 h-8 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <%= row[:experience_count] %>
+                    </span>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
         <!-- Skills by Category -->
-        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Skills by Category</h2>
+        <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-dark-800/50">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Skills by Category</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">All your skills organized by domain</p>
           </div>
-          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <div class="divide-y divide-gray-100 dark:divide-gray-800">
             <% @skills_by_category.each do |category, skills| %>
               <details class="group">
                 <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-gray-50 dark:hover:bg-dark-800 transition-colors">
@@ -138,7 +176,7 @@
                     <span class="text-sm font-medium text-gray-900 dark:text-white">
                       <%= category || "Other" %>
                     </span>
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                    <span class="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">
                       <%= skills.count %>
                     </span>
                   </div>
@@ -146,25 +184,25 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                   </svg>
                 </summary>
-                <div class="px-6 pb-4">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="px-6 pb-5">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <% skills.sort_by { |s| -s.aggregated_level }.each do |skill| %>
-                      <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-dark-800">
-                        <span class="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      <%= link_to skill_path(skill.skill_tag), class: "flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors group" do %>
+                        <span class="text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                           <%= skill.skill_name %>
                         </span>
-                        <div class="flex items-center gap-2 flex-shrink-0">
-                          <div class="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                        <div class="flex items-center gap-3 flex-shrink-0 ml-3">
+                          <div class="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                             <div
-                              class="<%= skill.strong? ? 'bg-green-500' : skill.developing? ? 'bg-amber-500' : 'bg-blue-500' %> h-1.5 rounded-full"
+                              class="<%= skill.strong? ? 'bg-emerald-500' : skill.developing? ? 'bg-amber-500' : 'bg-blue-500' %> h-1.5 rounded-full"
                               style="width: <%= (skill.aggregated_level / 5.0 * 100).round %>%"
                             ></div>
                           </div>
-                          <span class="text-xs font-medium text-gray-600 dark:text-gray-400 w-6 text-right">
+                          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 w-6 text-right tabular-nums">
                             <%= skill.aggregated_level.round(1) %>
                           </span>
                         </div>
-                      </div>
+                      <% end %>
                     <% end %>
                   </div>
                 </div>
@@ -177,17 +215,16 @@
       <!-- Right Column: Sidebar -->
       <div class="space-y-6">
         <% if @merged_strengths&.any? %>
-          <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">Strengths</h3>
+          <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Strengths</h3>
             <div class="flex flex-wrap gap-2">
               <% @merged_strengths.first(10).each do |s| %>
                 <span
-                  class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/25 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/40"
                   title="Resume: <%= s[:resume_count] %> • Feedback: <%= s[:feedback_count] %>"
                 >
                   <%= s[:label] %>
-                  <span class="text-[10px] text-indigo-600/80 dark:text-indigo-300/80"><%= s[:total_count] %></span>
-                  <span class="text-[10px] text-indigo-600/70 dark:text-indigo-300/70"><%= s[:sources].join("+") %></span>
+                  <span class="text-xs opacity-70"><%= s[:total_count] %></span>
                 </span>
               <% end %>
             </div>
@@ -195,16 +232,16 @@
         <% end %>
 
         <% if @resume_domains&.any? %>
-          <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">Domains</h3>
+          <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Domains</h3>
             <div class="flex flex-wrap gap-2">
               <% @resume_domains.values.sort_by { |h| -h[:count].to_i }.first(10).each do |d| %>
                 <span
-                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-dark-700 dark:text-gray-300"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50"
                   title="Mentioned in <%= d[:count] %> resume<%= d[:count].to_i == 1 ? '' : 's' %>"
                 >
                   <%= d[:label] %>
-                  <span class="ml-1 text-gray-500 dark:text-gray-400">(<%= d[:count] %>)</span>
+                  <span class="text-xs opacity-70"><%= d[:count] %></span>
                 </span>
               <% end %>
             </div>
@@ -212,18 +249,18 @@
         <% end %>
 
         <!-- Category Distribution -->
-        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Category Distribution</h3>
-          <div class="space-y-3">
+        <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Category Distribution</h3>
+          <div class="space-y-4">
             <% @category_stats.first(8).each do |stat| %>
               <div>
-                <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center justify-between mb-1.5">
                   <span class="text-sm text-gray-700 dark:text-gray-300"><%= stat[:category] %></span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400"><%= stat[:count] %></span>
+                  <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 tabular-nums"><%= stat[:count] %></span>
                 </div>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
                   <div
-                    class="bg-primary-500 h-1.5 rounded-full"
+                    class="bg-primary-500 h-2 rounded-full transition-all duration-300"
                     style="width: <%= @skill_stats[:total] > 0 ? (stat[:count].to_f / @skill_stats[:total] * 100).round : 0 %>%"
                   ></div>
                 </div>
@@ -234,56 +271,55 @@
 
         <!-- Growth Areas -->
         <% if @development_areas.any? %>
-          <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Growth Areas</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Skills with room for improvement</p>
-            <div class="space-y-3">
+          <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Growth Areas</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Skills with room for improvement</p>
+            <div class="space-y-2">
               <% @development_areas.each do |skill| %>
-                <div class="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
-                  <span class="text-sm text-gray-700 dark:text-gray-300"><%= skill.skill_name %></span>
-                  <span class="text-xs font-medium text-amber-600 dark:text-amber-400">
+                <%= link_to skill_path(skill.skill_tag), class: "flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30 hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors group" do %>
+                  <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors"><%= skill.skill_name %></span>
+                  <span class="text-xs font-semibold text-amber-600 dark:text-amber-400 tabular-nums">
                     <%= skill.aggregated_level.round(1) %>/5
                   </span>
-                </div>
+                <% end %>
               <% end %>
             </div>
           </div>
         <% end %>
 
         <!-- Resume Coverage -->
-        <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">Resume Coverage</h3>
-          <div class="space-y-4">
+        <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Resume Coverage</h3>
+          <div class="space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">Analyzed Resumes</span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white"><%= @resume_coverage[:total_resumes] %></span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white tabular-nums"><%= @resume_coverage[:total_resumes] %></span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">With Skills</span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white"><%= @resume_coverage[:resumes_with_skills] %></span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white tabular-nums"><%= @resume_coverage[:resumes_with_skills] %></span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">Avg Skills/Resume</span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white"><%= @resume_coverage[:avg_skills_per_resume] %></span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white tabular-nums"><%= @resume_coverage[:avg_skills_per_resume] %></span>
             </div>
           </div>
-          <%= link_to new_user_resume_path, class: "mt-4 block w-full text-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors" do %>
-            Upload New Resume
-          <% end %>
         </div>
       </div>
     </div>
   <% else %>
     <!-- Empty State -->
-    <div class="bg-white dark:bg-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-      <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-      </svg>
+    <div class="bg-white dark:bg-dark-900 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-dark-800 flex items-center justify-center">
+        <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Skills Yet</h3>
       <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
         Upload your resume to automatically extract and track your skills. We'll analyze your experience and build your skill profile.
       </p>
-      <%= link_to new_user_resume_path, class: "inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors" do %>
+      <%= link_to new_user_resume_path, class: "inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors shadow-sm" do %>
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>

@@ -157,7 +157,14 @@ module Opportunities
         confidence: parsed&.dig(:confidence_score),
         input_tokens: result[:input_tokens],
         output_tokens: result[:output_tokens],
-        error: result[:error]
+        error: result[:error],
+        rate_limit: result[:rate_limit],
+        provider_request: result[:provider_request],
+        provider_response: result[:provider_response],
+        provider_error_response: result[:provider_error_response],
+        http_status: result[:http_status],
+        response_headers: result[:response_headers],
+        provider_endpoint: result[:provider_endpoint]
       }
 
       # Add parsed fields for successful extractions
@@ -253,11 +260,13 @@ module Opportunities
         end
       end
 
-      # Store full extraction data
+      # Store full extraction data including new domain/department fields
       updates[:extracted_data] = opportunity.extracted_data.merge(
         raw_extraction: data,
-        extracted_at: Time.current.iso8601
-      )
+        extracted_at: Time.current.iso8601,
+        company_domain: data[:company_domain],
+        job_role_department: data[:job_role_department]
+      ).compact
       updates[:ai_confidence_score] = data[:confidence_score]
 
       opportunity.update!(updates)

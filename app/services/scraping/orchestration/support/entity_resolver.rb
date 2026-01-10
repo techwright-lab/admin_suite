@@ -41,12 +41,60 @@ module Scraping
           end
         end
 
-        def find_or_create_job_role(context, title)
+        def find_or_create_job_role(context, title, department_name: nil)
           job_listing = context.job_listing
           return job_listing.job_role if title.blank?
 
           normalized_title = normalize_job_role_title(title)
-          JobRole.find_or_create_by(title: normalized_title)
+          job_role = JobRole.find_or_create_by(title: normalized_title)
+
+          # Assign department if provided and role doesn't have one
+          if department_name.present? && job_role.category_id.nil?
+            department = Category.find_by(name: department_name, kind: :job_role)
+            department ||= infer_department_from_title(normalized_title)
+            job_role.update(category: department) if department
+          elsif job_role.category_id.nil?
+            # Try to infer department from title if not provided
+            department = infer_department_from_title(normalized_title)
+            job_role.update(category: department) if department
+          end
+
+          job_role
+        end
+
+        def infer_department_from_title(title)
+          return nil if title.blank?
+
+          title_lower = title.downcase
+
+          department_keywords = {
+            "Engineering" => %w[engineer developer software backend frontend fullstack architect sre devops platform],
+            "Product" => %w[product owner manager pm],
+            "Design" => %w[designer ux ui visual graphic],
+            "Data Science" => %w[data scientist analyst analytics machine learning ml ai],
+            "DevOps/SRE" => %w[devops sre infrastructure reliability platform],
+            "Sales" => %w[sales account executive ae sdr bdr],
+            "Marketing" => %w[marketing growth seo sem content brand],
+            "Customer Success" => %w[customer success support cx],
+            "Finance" => %w[finance accounting financial controller cfo],
+            "HR/People" => %w[hr human resources people talent recruiter recruiting],
+            "Legal" => %w[legal counsel attorney compliance],
+            "Operations" => %w[operations ops logistics supply],
+            "Executive" => %w[ceo cto coo cfo cmo chief director vp president],
+            "Research" => %w[research scientist r&d],
+            "QA/Testing" => %w[qa quality assurance test tester sdet],
+            "Security" => %w[security infosec appsec cyber],
+            "IT" => %w[it helpdesk administrator admin sysadmin],
+            "Content" => %w[content writer editor copywriter]
+          }
+
+          department_keywords.each do |dept_name, keywords|
+            if keywords.any? { |kw| title_lower.include?(kw) }
+              return Category.find_by(name: dept_name, kind: :job_role)
+            end
+          end
+
+          nil
         end
 
         def normalize_company_name(name)

@@ -33,6 +33,12 @@ module LlmProviders
     #   - :latency_ms [Integer] Request latency in milliseconds
     #   - :error [String, nil] Error message if failed
     #   - :rate_limit [Boolean] True if rate limited
+    #   - :provider_request [Hash, nil] Provider-native request payload (best-effort, sanitized)
+    #   - :provider_response [Hash, String, nil] Provider-native raw response payload (best-effort, sanitized)
+    #   - :provider_error_response [Hash, String, nil] Provider-native raw error response payload (best-effort, sanitized)
+    #   - :http_status [Integer, nil] HTTP status code if available
+    #   - :response_headers [Hash, nil] HTTP response headers if available
+    #   - :provider_endpoint [String, nil] Provider endpoint/base URL if available
     # @raise [NotImplementedError] Must be implemented by subclass
     def run(prompt, options = {})
       raise NotImplementedError, "#{self.class} must implement #run"
@@ -132,8 +138,18 @@ module LlmProviders
     # @param input_tokens [Integer, nil] Input token count
     # @param output_tokens [Integer, nil] Output token count
     # @return [Hash] Success response
-    def success_response(content:, latency_ms:, input_tokens: nil, output_tokens: nil)
-      {
+    def success_response(
+      content:,
+      latency_ms:,
+      input_tokens: nil,
+      output_tokens: nil,
+      provider_request: nil,
+      provider_response: nil,
+      http_status: nil,
+      response_headers: nil,
+      provider_endpoint: nil
+    )
+      response = {
         content: content,
         provider: provider_name,
         model: model_name,
@@ -141,6 +157,12 @@ module LlmProviders
         output_tokens: output_tokens,
         latency_ms: latency_ms
       }
+      response[:provider_request] = provider_request if provider_request.present?
+      response[:provider_response] = provider_response if provider_response.present?
+      response[:http_status] = http_status if http_status.present?
+      response[:response_headers] = response_headers if response_headers.present?
+      response[:provider_endpoint] = provider_endpoint if provider_endpoint.present?
+      response
     end
 
     # Builds an error response hash
@@ -151,7 +173,18 @@ module LlmProviders
     # @param rate_limit [Boolean] Whether this is a rate limit error
     # @param retry_after [Integer, nil] Seconds to wait before retry
     # @return [Hash] Error response
-    def error_response(error:, latency_ms:, error_type: nil, rate_limit: false, retry_after: nil)
+    def error_response(
+      error:,
+      latency_ms:,
+      error_type: nil,
+      rate_limit: false,
+      retry_after: nil,
+      provider_request: nil,
+      provider_error_response: nil,
+      http_status: nil,
+      response_headers: nil,
+      provider_endpoint: nil
+    )
       response = {
         content: nil,
         error: error,
@@ -162,6 +195,11 @@ module LlmProviders
       }
       response[:rate_limit] = true if rate_limit
       response[:retry_after] = retry_after if retry_after
+      response[:provider_request] = provider_request if provider_request.present?
+      response[:provider_error_response] = provider_error_response if provider_error_response.present?
+      response[:http_status] = http_status if http_status.present?
+      response[:response_headers] = response_headers if response_headers.present?
+      response[:provider_endpoint] = provider_endpoint if provider_endpoint.present?
       response
     end
 

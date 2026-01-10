@@ -64,6 +64,20 @@ resource :settings, only: [ :show ] do
   delete :account, action: :destroy_account
   post :trigger_sync
   patch :toggle_sync
+
+  # Work Experience CRUD
+  post :work_experience, action: :create_work_experience
+  patch "work_experience/:id", action: :update_work_experience, as: :update_work_experience
+  delete "work_experience/:id", action: :destroy_work_experience, as: :destroy_work_experience
+
+  # Targets management
+  patch :targets, action: :update_targets
+  post "targets/add_role", action: :add_target_role, as: :add_target_role
+  delete "targets/remove_role", action: :remove_target_role, as: :remove_target_role
+  post "targets/add_company", action: :add_target_company, as: :add_target_company
+  delete "targets/remove_company", action: :remove_target_company, as: :remove_target_company
+  post "targets/add_domain", action: :add_target_domain, as: :add_target_domain
+  delete "targets/remove_domain", action: :remove_target_domain, as: :remove_target_domain
 end
 
 # =================================================================
@@ -114,7 +128,7 @@ resources :archived_jobs, only: [ :index ]
 # =================================================================
 # Skills & Resumes
 # =================================================================
-resources :skills, only: [ :index ]
+resources :skills, only: [ :index, :show ]
 
 resources :user_resumes, path: "resumes" do
   member do

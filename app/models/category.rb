@@ -16,6 +16,20 @@ class Category < ApplicationRecord
 
   scope :alphabetical, -> { order(:name) }
   scope :for_kind, ->(kind) { where(kind: kind) }
+  scope :departments, -> { for_kind(:job_role).alphabetical }
+  scope :skill_categories, -> { for_kind(:skill_tag).alphabetical }
+
+  # Returns display name for the category
+  # @return [String]
+  def display_name
+    name
+  end
+
+  # Alias for job_role categories (departments)
+  # @return [Boolean]
+  def department?
+    job_role?
+  end
 
   # Merges a source category into a target category
   #

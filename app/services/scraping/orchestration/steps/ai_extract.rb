@@ -61,7 +61,7 @@ module Scraping
           # Low confidence - but still save whatever useful data we extracted
           # This ensures title/company are updated even if overall confidence is low
           if has_useful_data
-            context.event_recorder.record_simple(:data_update, status: :partial, input: { source: "ai" }, output: { confidence: confidence })
+            context.event_recorder.record_simple(:data_update, status: :success, input: { source: "ai", partial: true }, output: { confidence: confidence })
             Support::JobListingUpdater.update_final!(context, ai_result.merge(extraction_method: "ai"))
             Rails.logger.info({
               event: "low_confidence_data_saved",

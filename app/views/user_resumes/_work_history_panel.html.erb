@@ -1,0 +1,127 @@
+<% experiences = local_assigns.fetch(:experiences, []) %>
+
+<div class="p-5">
+  <% if experiences.any? %>
+    <div class="relative">
+      <!-- Timeline line -->
+      <div class="absolute left-5 top-3 bottom-3 w-px bg-gradient-to-b from-gray-200 via-gray-200 to-transparent dark:from-gray-700 dark:via-gray-700 hidden sm:block"></div>
+
+      <div class="space-y-0">
+        <% experiences.each_with_index do |exp, idx| %>
+          <div class="group relative pl-0 sm:pl-12 py-5 <%= idx > 0 ? 'border-t border-gray-100 dark:border-gray-800' : '' %>">
+            <!-- Timeline dot -->
+            <div class="hidden sm:flex absolute left-0 top-5 w-10 h-10 rounded-full bg-white dark:bg-dark-900 border-2 border-gray-200 dark:border-gray-700 items-center justify-center z-10 group-hover:border-primary-300 dark:group-hover:border-primary-700 transition-colors">
+              <% if exp.current %>
+                <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+              <% else %>
+                <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+              <% end %>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <!-- Header -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                      <%= exp.display_role_title.presence || "Role" %>
+                    </h3>
+                    <% if exp.current %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        Current
+                      </span>
+                    <% end %>
+                  </div>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                    <%= exp.display_company_name.presence || "Company" %>
+                  </p>
+                </div>
+
+                <div class="flex-shrink-0 text-right">
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <% if exp.start_date.present? || exp.end_date.present? %>
+                      <%= exp.start_date&.strftime("%b %Y") || "?" %> — <%= exp.current ? "Present" : (exp.end_date&.strftime("%b %Y") || "?") %>
+                    <% elsif exp.duration_text.present? %>
+                      <%= exp.duration_text %>
+                    <% else %>
+                      <span class="text-gray-400 dark:text-gray-500">Dates not provided</span>
+                    <% end %>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Skills -->
+              <% skills = exp.resume_work_experience_skills.includes(:skill_tag).limit(12) rescue [] %>
+              <% if skills.any? %>
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                  <% skills.each do |rwe_skill| %>
+                    <% tag = rwe_skill.skill_tag %>
+                    <%= link_to skill_path(tag), class: "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/25 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors" do %>
+                      <%= tag.name %>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <!-- Expandable Details -->
+              <% responsibilities = Array(exp.responsibilities).map(&:to_s).map(&:strip).reject(&:blank?) %>
+              <% highlights = Array(exp.highlights).map(&:to_s).map(&:strip).reject(&:blank?) %>
+
+              <% if responsibilities.any? || highlights.any? %>
+                <details class="mt-3 group/details">
+                  <summary class="cursor-pointer text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors inline-flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 transition-transform group-open/details:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                    View details
+                  </summary>
+
+                  <div class="mt-3 space-y-3 pl-4 border-l-2 border-gray-100 dark:border-gray-800">
+                    <% if highlights.any? %>
+                      <div>
+                        <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Highlights</h4>
+                        <ul class="space-y-1">
+                          <% highlights.first(6).each do |h| %>
+                            <li class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                              <span class="flex-shrink-0 w-1 h-1 rounded-full bg-primary-400 dark:bg-primary-500 mt-2"></span>
+                              <%= h %>
+                            </li>
+                          <% end %>
+                        </ul>
+                      </div>
+                    <% end %>
+
+                    <% if responsibilities.any? %>
+                      <div>
+                        <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Responsibilities</h4>
+                        <ul class="space-y-1">
+                          <% responsibilities.first(6).each do |r| %>
+                            <li class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                              <span class="flex-shrink-0 w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600 mt-2"></span>
+                              <%= r %>
+                            </li>
+                          <% end %>
+                        </ul>
+                      </div>
+                    <% end %>
+                  </div>
+                </details>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-dark-800 flex items-center justify-center">
+        <svg class="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <p class="text-sm text-gray-500 dark:text-gray-400">No work history extracted yet.</p>
+    </div>
+  <% end %>
+</div>

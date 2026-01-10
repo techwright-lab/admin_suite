@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_09_005402) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -440,6 +440,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
     t.index ["user_id"], name: "index_connected_accounts_on_user_id"
   end
 
+  create_table "domains", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "disabled_at"
+    t.string "name", null: false
+    t.string "slug"
+    t.datetime "updated_at", null: false
+    t.index ["disabled_at"], name: "index_domains_on_disabled_at"
+    t.index ["name"], name: "index_domains_on_name", unique: true
+    t.index ["slug"], name: "index_domains_on_slug", unique: true
+  end
+
   create_table "email_senders", force: :cascade do |t|
     t.bigint "auto_detected_company_id"
     t.bigint "company_id"
@@ -802,6 +814,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
     t.index ["user_resume_id"], name: "index_resume_skills_on_user_resume_id"
   end
 
+  create_table "resume_work_experience_skills", force: :cascade do |t|
+    t.float "confidence_score"
+    t.datetime "created_at", null: false
+    t.text "evidence_snippet"
+    t.bigint "resume_work_experience_id", null: false
+    t.bigint "skill_tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["resume_work_experience_id", "skill_tag_id"], name: "idx_rwes_unique", unique: true
+    t.index ["resume_work_experience_id"], name: "idx_rwes_on_rwe_id"
+    t.index ["skill_tag_id"], name: "index_resume_work_experience_skills_on_skill_tag_id"
+  end
+
+  create_table "resume_work_experiences", force: :cascade do |t|
+    t.bigint "company_id"
+    t.string "company_name"
+    t.datetime "created_at", null: false
+    t.boolean "current", default: false, null: false
+    t.string "duration_text"
+    t.date "end_date"
+    t.jsonb "highlights", default: [], null: false
+    t.bigint "job_role_id"
+    t.jsonb "metadata", default: {}, null: false
+    t.jsonb "responsibilities", default: [], null: false
+    t.string "role_title"
+    t.date "start_date"
+    t.datetime "updated_at", null: false
+    t.bigint "user_resume_id", null: false
+    t.index ["company_id"], name: "index_resume_work_experiences_on_company_id"
+    t.index ["company_name", "role_title"], name: "idx_resume_work_experiences_company_role"
+    t.index ["job_role_id"], name: "index_resume_work_experiences_on_job_role_id"
+    t.index ["user_resume_id", "start_date", "end_date"], name: "idx_resume_work_experiences_by_dates"
+    t.index ["user_resume_id"], name: "index_resume_work_experiences_on_user_resume_id"
+  end
+
   create_table "saved_jobs", force: :cascade do |t|
     t.datetime "archived_at"
     t.string "archived_reason"
@@ -920,10 +966,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
     t.datetime "disabled_at"
     t.string "legacy_category"
     t.string "name", null: false
+    t.string "slug"
     t.datetime "updated_at", null: false
     t.index ["category_id"], name: "index_skill_tags_on_category_id"
     t.index ["disabled_at"], name: "index_skill_tags_on_disabled_at"
     t.index ["name"], name: "index_skill_tags_on_name", unique: true
+    t.index ["slug"], name: "index_skill_tags_on_slug", unique: true
   end
 
   create_table "support_tickets", force: :cascade do |t|
@@ -1068,10 +1116,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
     t.string "resume_date_confidence"
     t.string "resume_date_source"
     t.date "resume_updated_at"
+    t.string "slug"
     t.jsonb "strengths", default: [], null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["analysis_status"], name: "index_user_resumes_on_analysis_status"
+    t.index ["slug"], name: "index_user_resumes_on_slug", unique: true
     t.index ["user_id", "created_at"], name: "index_user_resumes_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_user_resumes_on_user_id"
   end
@@ -1105,6 +1155,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
     t.index ["user_id"], name: "index_user_target_companies_on_user_id"
   end
 
+  create_table "user_target_domains", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "domain_id", null: false
+    t.integer "priority"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["domain_id"], name: "index_user_target_domains_on_domain_id"
+    t.index ["user_id", "domain_id"], name: "idx_user_target_domains_unique", unique: true
+    t.index ["user_id"], name: "index_user_target_domains_on_user_id"
+  end
+
   create_table "user_target_job_roles", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "job_role_id", null: false
@@ -1114,6 +1175,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
     t.index ["job_role_id"], name: "index_user_target_job_roles_on_job_role_id"
     t.index ["user_id", "job_role_id"], name: "index_user_target_job_roles_on_user_id_and_job_role_id", unique: true
     t.index ["user_id"], name: "index_user_target_job_roles_on_user_id"
+  end
+
+  create_table "user_work_experience_skills", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "last_used_on"
+    t.bigint "skill_tag_id", null: false
+    t.integer "source_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_work_experience_id", null: false
+    t.index ["skill_tag_id"], name: "index_user_work_experience_skills_on_skill_tag_id"
+    t.index ["user_work_experience_id", "skill_tag_id"], name: "idx_uwesk_unique", unique: true
+    t.index ["user_work_experience_id"], name: "idx_uwesk_on_uwe_id"
+  end
+
+  create_table "user_work_experience_sources", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "resume_work_experience_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_work_experience_id", null: false
+    t.index ["resume_work_experience_id"], name: "idx_uwes_on_rwe_id"
+    t.index ["user_work_experience_id", "resume_work_experience_id"], name: "idx_uwes_unique", unique: true
+    t.index ["user_work_experience_id"], name: "idx_uwes_on_uwe_id"
+  end
+
+  create_table "user_work_experiences", force: :cascade do |t|
+    t.bigint "company_id"
+    t.string "company_name"
+    t.datetime "created_at", null: false
+    t.boolean "current", default: false, null: false
+    t.date "end_date"
+    t.jsonb "highlights", default: [], null: false
+    t.bigint "job_role_id"
+    t.jsonb "merge_keys", default: {}, null: false
+    t.jsonb "responsibilities", default: [], null: false
+    t.string "role_title"
+    t.integer "source_count", default: 0, null: false
+    t.integer "source_type", default: 0, null: false
+    t.date "start_date"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["company_id"], name: "index_user_work_experiences_on_company_id"
+    t.index ["job_role_id"], name: "index_user_work_experiences_on_job_role_id"
+    t.index ["source_type"], name: "index_user_work_experiences_on_source_type"
+    t.index ["user_id", "company_name", "role_title"], name: "idx_user_work_experiences_user_company_role"
+    t.index ["user_id", "start_date", "end_date"], name: "idx_user_work_experiences_user_dates"
+    t.index ["user_id"], name: "index_user_work_experiences_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -1133,15 +1240,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
     t.string "oauth_uid"
     t.string "password_digest", null: false
     t.string "portfolio_url"
+    t.string "slug"
     t.datetime "terms_accepted_at"
     t.string "twitter_url"
     t.datetime "updated_at", null: false
+    t.string "uuid"
     t.integer "years_of_experience"
     t.index ["current_company_id"], name: "index_users_on_current_company_id"
     t.index ["current_job_role_id"], name: "index_users_on_current_job_role_id"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["is_admin"], name: "index_users_on_is_admin"
     t.index ["oauth_provider", "oauth_uid"], name: "index_users_on_oauth_provider_and_oauth_uid", unique: true
+    t.index ["slug"], name: "index_users_on_slug", unique: true
+    t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -1199,6 +1310,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
   add_foreign_key "opportunities", "users"
   add_foreign_key "resume_skills", "skill_tags"
   add_foreign_key "resume_skills", "user_resumes"
+  add_foreign_key "resume_work_experience_skills", "resume_work_experiences"
+  add_foreign_key "resume_work_experience_skills", "skill_tags"
+  add_foreign_key "resume_work_experiences", "companies"
+  add_foreign_key "resume_work_experiences", "job_roles"
+  add_foreign_key "resume_work_experiences", "user_resumes"
   add_foreign_key "saved_jobs", "opportunities"
   add_foreign_key "saved_jobs", "users"
   add_foreign_key "scraped_job_listing_data", "job_listings"
@@ -1224,8 +1340,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_011000) do
   add_foreign_key "user_skills", "users"
   add_foreign_key "user_target_companies", "companies"
   add_foreign_key "user_target_companies", "users"
+  add_foreign_key "user_target_domains", "domains"
+  add_foreign_key "user_target_domains", "users"
   add_foreign_key "user_target_job_roles", "job_roles"
   add_foreign_key "user_target_job_roles", "users"
+  add_foreign_key "user_work_experience_skills", "skill_tags"
+  add_foreign_key "user_work_experience_skills", "user_work_experiences"
+  add_foreign_key "user_work_experience_sources", "resume_work_experiences"
+  add_foreign_key "user_work_experience_sources", "user_work_experiences"
+  add_foreign_key "user_work_experiences", "companies"
+  add_foreign_key "user_work_experiences", "job_roles"
+  add_foreign_key "user_work_experiences", "users"
   add_foreign_key "users", "companies", column: "current_company_id"
   add_foreign_key "users", "job_roles", column: "current_job_role_id"
 end

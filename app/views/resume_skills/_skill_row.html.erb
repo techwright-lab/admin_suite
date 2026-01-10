@@ -10,9 +10,9 @@
   <!-- Skill Name & Evidence -->
   <div class="col-span-4">
     <div class="flex items-center">
-      <span class="font-medium text-gray-900 dark:text-white">
+      <%= link_to skill_path(resume_skill.skill_tag), class: "font-medium text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors" do %>
         <%= resume_skill.skill_name %>
-      </span>
+      <% end %>
 
       <% if resume_skill.user_confirmed? %>
         <svg

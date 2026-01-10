@@ -21,7 +21,9 @@ module Ai
         Required fields:
         - title: Job title
         - company: Company name (the organization posting the job)
+        - company_domain: The industry/domain the company operates in (e.g., "FinTech", "SaaS", "Healthcare", "E-commerce", "EdTech", "AI/ML", "Cybersecurity", "Gaming", "Social Media", "Enterprise Software", "B2B", "B2C", "Marketplace", "Media/Entertainment", "Real Estate", "Travel", "Logistics", "Automotive", "CleanTech", "Biotech", "Other" - use null if unclear)
         - job_role: Job role/title (can be the same as title or a normalized version)
+        - job_role_department: The department/function this role belongs to (one of: "Engineering", "Product", "Design", "Data Science", "DevOps/SRE", "Sales", "Marketing", "Customer Success", "Finance", "HR/People", "Legal", "Operations", "Executive", "Research", "QA/Testing", "Security", "IT", "Content", "Other")
         - job_board: The job board where the job listing was found (e.g. "LinkedIn", "Greenhouse", "Lever", "Indeed", "Glassdoor", "Workable", "Jobvite", "ICIMS", "SmartRecruiters", "BambooHR", "AshbyHQ", "Other")
         - description: Full job description (text only, no HTML)
         - requirements: Required qualifications and skills
@@ -30,7 +32,7 @@ module Ai
         - remote_type: one of "on_site", "hybrid", or "remote"
 
         Optional fields (use null if not found):
-        - about_company: A concise “About the company” section (mission/product context)
+        - about_company: A concise "About the company" section (mission/product context)
         - company_culture: Company values/culture section (how they work, principles, DEI, etc.)
         - salary_min: Minimum salary as number
         - salary_max: Maximum salary as number

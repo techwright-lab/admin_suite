@@ -7,6 +7,9 @@
 #   AnalyzeResumeJob.perform_later(resume)
 #
 class UserResume < ApplicationRecord
+  extend FriendlyId
+  friendly_id :slug_candidates, use: [ :slugged, :finders ]
+
   # Constants
   ALLOWED_CONTENT_TYPES = %w[
     application/pdf
@@ -35,6 +38,7 @@ class UserResume < ApplicationRecord
   belongs_to :user
   has_many :resume_skills, dependent: :destroy
   has_many :skill_tags, through: :resume_skills
+  has_many :resume_work_experiences, dependent: :destroy
 
   # Target roles and companies (many-to-many)
   has_many :user_resume_target_job_roles, dependent: :destroy
@@ -60,6 +64,18 @@ class UserResume < ApplicationRecord
 
   # Callbacks
   after_create_commit :enqueue_analysis
+
+  def slug_candidates
+    [
+      :name,
+      [ :name, :purpose ],
+      [ :name, :purpose, :user_uuid ]
+    ]
+  end
+
+  def user_uuid
+    user.uuid
+  end
 
   # Returns the file extension
   #

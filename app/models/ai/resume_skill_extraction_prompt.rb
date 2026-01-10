@@ -31,7 +31,8 @@ module Ai
         6. **years**: Estimated years of experience if determinable (null if unclear)
 
         Also extract work history:
-        - For each job/position, provide: **company** (full company name), **role** (job title), **duration** (years or months)
+        - For each job/position, provide: **company** (full company name), **company_domain** (the industry/domain the company operates in, e.g., "FinTech", "SaaS", "Healthcare", "E-commerce", "EdTech", "AI/ML", "Cybersecurity", "Enterprise Software", "B2B", "B2C", etc. - use null if unclear), **role** (job title), **role_department** (the department/function this role belongs to, one of: "Engineering", "Product", "Design", "Data Science", "DevOps/SRE", "Sales", "Marketing", "Customer Success", "Finance", "HR/People", "Legal", "Operations", "Executive", "Research", "QA/Testing", "Security", "IT", "Content", "Other"), **duration** (years or months), **highlight** (a brief description of the job's most significant accomplishment), **start_date** (the date the job started), **end_date** (the date the job ended or null if still current), **current** (true if the job is still current, false if it has ended), **responsibilities** (an array of responsibilities the candidate had in the job), **skills_used** (an array of skills the candidate used in the job)
+        - For each skill used, provide: **name** (the skill name), **confidence** (your confidence in this assessment of the skill's usage, 0.0-1.0), **evidence** (a brief quote or description from the resume supporting this skill usage)
         - Order from most recent to oldest
 
         Also provide:
@@ -59,8 +60,27 @@ module Ai
           "work_history": [
             {
               "company": "Acme Corp",
+              "company_domain": "FinTech",
               "role": "Senior Software Engineer",
-              "duration": "3 years"
+              "role_department": "Engineering",
+              "duration": "3 years",
+              "highlight": "Built scalable backend infrastructure for a fintech startup",
+              "start_date": "2021-01-01",
+              "end_date": "2024-01-01",
+              "current": false,
+              "responsibilities": [
+                "Developed and maintained scalable backend infrastructure",
+                "Built RESTful APIs for internal tools and external integrations",
+                "Optimized database queries and implemented caching strategies",
+                "Collaborated with frontend and mobile teams to ensure seamless integration"
+              ],
+              "skills_used": [
+                {
+                  "name": "Ruby on Rails",
+                  "confidence": 0.9,
+                  "evidence": "5+ years building Rails applications at scale"
+                }
+              ]
             }
           ],
           "summary": "Senior backend engineer with strong Ruby and distributed systems experience...",
@@ -80,6 +100,9 @@ module Ai
     def self.default_system_prompt
       <<~PROMPT
         You are an expert at extracting skills, strengths, domains, competencies, work history, and areas of expertise from unstructured text extracted from a resume or Curriculum Vitae, then converting it into structured json response.
+        Your goal is to return only valid JSON. Do not guess missing values; use null.
+        Do not include markdown or extra commentary.
+        Do not include any other text or formatting.
       PROMPT
     end
 

@@ -19,9 +19,31 @@ class SkillsController < ApplicationController
     @skill_stats = calculate_skill_stats
     @category_stats = calculate_category_stats
     @resume_coverage = calculate_resume_coverage
+    @skills_by_experience = calculate_skills_by_experience
 
     @merged_strengths = merged_strengths_for(Current.user)
     @resume_domains = aggregated_label_counts(Current.user.user_resumes.analyzed.pluck(:domains).flatten)
+  end
+
+  # GET /skills/:id
+  #
+  # Skill detail view showing proficiency + evidence of use in work history.
+  def show
+    @skill_tag = SkillTag.find(params[:id])
+
+    @user_skill = Current.user.user_skills.includes(:skill_tag).find_by(skill_tag_id: @skill_tag.id)
+
+    @experience_skill_rows = UserWorkExperienceSkill
+      .includes(:skill_tag, user_work_experience: [ :company, :job_role ])
+      .joins(:user_work_experience)
+      .where(user_work_experiences: { user_id: Current.user.id }, skill_tag_id: @skill_tag.id)
+      .order(Arel.sql("COALESCE(user_work_experiences.end_date, user_work_experiences.start_date) DESC NULLS LAST"), created_at: :desc)
+
+    @resume_sources = UserResume
+      .joins(resume_work_experiences: :resume_work_experience_skills)
+      .where(user_id: Current.user.id, resume_work_experience_skills: { skill_tag_id: @skill_tag.id })
+      .distinct
+      .order(created_at: :desc)
   end
 
   private
@@ -73,19 +95,39 @@ class SkillsController < ApplicationController
     }
   end
 
-  def aggregated_label_counts(labels)
-    labels = Array(labels).map { |l| l.to_s.strip }.reject(&:blank?)
-    counts = {}
+  # Calculates experience-based usage for skills (skills used in distinct work experiences).
+  #
+  # @return [Array<Hash>]
+  def calculate_skills_by_experience
+    rows = UserWorkExperienceSkill
+      .joins(user_work_experience: :user)
+      .where(user_work_experiences: { user_id: Current.user.id })
+      .group(:skill_tag_id)
+      .select(
+        :skill_tag_id,
+        Arel.sql("COUNT(DISTINCT user_work_experience_id) AS experience_count"),
+        Arel.sql("MAX(last_used_on) AS last_used_on")
+      )
+      .order(Arel.sql("experience_count DESC"), Arel.sql("last_used_on DESC NULLS LAST"))
+      .limit(12)
 
-    labels.each do |label|
-      key = normalize_label_key(label)
-      next if key.blank?
+    skill_tags = SkillTag.where(id: rows.map(&:skill_tag_id)).index_by(&:id)
 
-      counts[key] ||= { label: label, count: 0 }
-      counts[key][:count] += 1
+    rows.map do |row|
+      tag = skill_tags[row.skill_tag_id]
+      {
+        skill_tag_id: row.skill_tag_id,
+        name: tag&.name || "Unknown",
+        experience_count: row.try(:experience_count).to_i,
+        last_used_on: row.try(:last_used_on)
+      }
     end
+  end
 
-    counts
+  def aggregated_label_counts(labels)
+    Labels::DedupeService
+      .new(labels, similarity_threshold: 0.82, overlap_threshold: 0.75)
+      .grouped_counts
   end
 
   def merged_strengths_for(user)
@@ -129,6 +171,12 @@ class SkillsController < ApplicationController
   end
 
   def normalize_label_key(label)
-    label.to_s.strip.downcase.gsub(/\s+/, " ")
+    # Kept for backward compatibility (used by merged_strengths_for feedback keys).
+    ActiveSupport::Inflector.transliterate(label.to_s)
+      .downcase
+      .tr("&", "and")
+      .gsub(/[^a-z0-9\s]/, " ")
+      .gsub(/\s+/, " ")
+      .strip
   end
 end

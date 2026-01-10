@@ -64,6 +64,7 @@ module Admin
         end
 
         section "Prompt Template" do
+          field :system_prompt, type: :markdown, rows: 10, help: "System prompt for the LLM. This is used to instruct the LLM on how to behave and what to do."
           field :prompt_template, type: :markdown, rows: 20,
                 help: "Use {{variable_name}} for template variables"
         end
@@ -74,15 +75,16 @@ module Admin
           panel :metadata, title: "Metadata", fields: [ :type, :version, :active ]
           panel :timestamps, title: "Timestamps", fields: [ :created_at, :updated_at ]
         end
-        
+
         main do
           panel :info, title: "Information", fields: [ :name, :description ]
+          panel :system_prompt, title: "System Prompt", fields: [ :system_prompt ]
           panel :template, title: "Prompt Template", render: :prompt_template_preview
           panel :api_logs, title: "Recent API Logs",
                 association: :llm_api_logs,
                 limit: 10,
                 display: :table,
-                columns: [:provider, :model, :status, :latency_ms, :created_at],
+                columns: [ :provider, :model, :status, :latency_ms, :created_at ],
                 link_to: :internal_developer_ai_llm_api_log_path
         end
       end
@@ -98,4 +100,3 @@ module Admin
     end
   end
 end
-

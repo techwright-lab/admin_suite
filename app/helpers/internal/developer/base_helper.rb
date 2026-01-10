@@ -244,8 +244,71 @@ module Internal
           render_tool_args_preview(resource)
         when :turn_messages_preview
           render_turn_messages_preview(resource)
+        when :llm_provider_request_raw
+          render_llm_provider_payload(resource, kind: :provider_request)
+        when :llm_provider_response_raw
+          render_llm_provider_payload(resource, kind: :provider_response)
+        when :llm_provider_error_response_raw
+          render_llm_provider_payload(resource, kind: :provider_error_response)
         else
           content_tag(:p, "Unknown render type: #{render_type}", class: "text-slate-500 italic")
+        end
+      end
+
+      # Renders provider-native payloads for Ai::LlmApiLog in a prominent, copy-friendly format.
+      #
+      # Reads from:
+      # - request_payload["provider_request"]
+      # - response_payload["provider_response"] / ["provider_error_response"]
+      #
+      # @param resource [ActiveRecord::Base]
+      # @param kind [Symbol] :provider_request, :provider_response, :provider_error_response
+      # @return [String]
+      def render_llm_provider_payload(resource, kind:)
+        return content_tag(:p, "Not available", class: "text-slate-400 italic text-sm") unless resource.respond_to?(:request_payload) && resource.respond_to?(:response_payload)
+
+        request_payload = resource.request_payload || {}
+        response_payload = resource.response_payload || {}
+
+        value =
+          case kind.to_sym
+          when :provider_request
+            request_payload["provider_request"] || request_payload[:provider_request]
+          when :provider_response
+            response_payload["provider_response"] || response_payload[:provider_response]
+          when :provider_error_response
+            response_payload["provider_error_response"] || response_payload[:provider_error_response]
+          else
+            nil
+          end
+
+        if value.blank?
+          hint =
+            if kind.to_sym == :provider_error_response
+              "No provider error response captured."
+            else
+              "No provider payload captured."
+            end
+          return content_tag(:div, class: "text-sm text-slate-500 dark:text-slate-400") do
+            concat(content_tag(:p, hint, class: "italic"))
+            concat(content_tag(:p, "Older logs (or synthetic logs) may not include raw provider payloads.", class: "text-xs mt-1"))
+          end
+        end
+
+        # Render hashes/arrays as highlighted JSON. Strings are attempted as JSON, else plain.
+        if value.is_a?(Hash) || value.is_a?(Array)
+          render_json_block(value)
+        else
+          str = value.to_s
+          if str.strip.start_with?("{", "[")
+            begin
+              render_json_block(JSON.parse(str))
+            rescue JSON::ParserError
+              render_text_block(str)
+            end
+          else
+            render_text_block(str)
+          end
         end
       end
 

@@ -63,6 +63,14 @@ module LlmProviders
 
     # Makes the actual API call
     def call_api(prompt, options)
+      @last_provider_request = build_params(prompt, options)
+      @last_provider_endpoint =
+        if Setting.helicone_enabled?
+          Rails.application.credentials.dig(:helicone, :base_url)
+        else
+          nil
+        end
+
       if  Setting.helicone_enabled?
         client = Anthropic::Client.new(
           api_key: Rails.application.credentials.dig(:helicone, :api_key),
@@ -71,8 +79,7 @@ module LlmProviders
       else
         client = Anthropic::Client.new(api_key: api_key)
       end
-      params = build_params(prompt, options)
-      stream = client.messages.stream(**params)
+      stream = client.messages.stream(**@last_provider_request)
 
       message = stream.accumulated_message
       message_hash = message.respond_to?(:to_h) ? message.to_h : message
@@ -88,7 +95,9 @@ module LlmProviders
         tool_calls: parsed[:tool_calls],
         content_blocks: parsed[:content_blocks],
         message_id: message&.id,
-        raw_response: message_hash.is_a?(Hash) ? message_hash : message_hash.to_s,
+        provider_request: @last_provider_request,
+        provider_response: message_hash.is_a?(Hash) ? message_hash : message_hash.to_s,
+        provider_endpoint: @last_provider_endpoint,
         input_tokens: message&.usage&.input_tokens,
         output_tokens: message&.usage&.output_tokens
       }
@@ -183,7 +192,10 @@ module LlmProviders
         content: result[:content],
         latency_ms: latency_ms,
         input_tokens: result[:input_tokens],
-        output_tokens: result[:output_tokens]
+        output_tokens: result[:output_tokens],
+        provider_request: result[:provider_request],
+        provider_response: result[:provider_response],
+        provider_endpoint: result[:provider_endpoint]
       ).merge(
         tool_calls: result[:tool_calls],
         content_blocks: result[:content_blocks],
@@ -204,27 +216,41 @@ module LlmProviders
     def handle_rate_limit_error(exception, latency_ms)
       Rails.logger.warn("Anthropic rate limit exceeded: #{exception.message}")
       retry_after = extract_retry_after(exception)
+      http_status = extract_http_status(exception)
+      error_response_hash = extract_error_response_hash(exception)
 
-      notify_error(exception, operation: "run", error_type: "rate_limit_exceeded", retry_after: retry_after)
+      notify_error(exception, operation: "run", error_type: "rate_limit_exceeded", retry_after: retry_after, http_status: http_status)
 
       error_response(
         error: "Rate limit exceeded: #{exception.message}",
         latency_ms: latency_ms,
         error_type: "rate_limit",
         rate_limit: true,
-        retry_after: retry_after
+        retry_after: retry_after,
+        provider_request: @last_provider_request,
+        provider_error_response: error_response_hash,
+        http_status: http_status,
+        response_headers: error_response_hash&.dig(:headers),
+        provider_endpoint: @last_provider_endpoint
       )
     end
 
     def handle_general_error(exception, latency_ms)
       Rails.logger.error("Anthropic request failed: #{exception.message}")
 
-      notify_error(exception, operation: "run", error_type: "request_failed")
+      http_status = extract_http_status(exception)
+      error_response_hash = extract_error_response_hash(exception)
+      notify_error(exception, operation: "run", error_type: "request_failed", http_status: http_status)
 
       error_response(
         error: exception.message,
         latency_ms: latency_ms,
-        error_type: exception.class.name
+        error_type: exception.class.name,
+        provider_request: @last_provider_request,
+        provider_error_response: error_response_hash,
+        http_status: http_status,
+        response_headers: error_response_hash&.dig(:headers),
+        provider_endpoint: @last_provider_endpoint
       )
     end
 
@@ -269,6 +295,52 @@ module LlmProviders
       retry_after&.to_i
     rescue
       nil
+    end
+
+    def extract_http_status(exception)
+      return nil unless exception.respond_to?(:response)
+
+      response = exception.response
+      return response[:status] || response["status"] if response.is_a?(Hash)
+
+      nil
+    rescue StandardError
+      nil
+    end
+
+    def extract_response_body(exception)
+      return nil unless exception.respond_to?(:response)
+
+      response = exception.response
+      return response[:body] || response["body"] if response.is_a?(Hash)
+
+      nil
+    rescue StandardError
+      nil
+    end
+
+    def extract_response_headers(exception)
+      return nil unless exception.respond_to?(:response)
+
+      response = exception.response
+      return response[:headers] || response["headers"] if response.is_a?(Hash)
+
+      nil
+    rescue StandardError
+      nil
+    end
+
+    def extract_error_response_hash(exception)
+      http_status = extract_http_status(exception)
+      body = extract_response_body(exception)
+      headers = extract_response_headers(exception)
+      return nil if http_status.blank? && body.blank? && headers.blank?
+
+      {
+        status: http_status,
+        headers: headers,
+        body: body
+      }.compact
     end
   end
 end

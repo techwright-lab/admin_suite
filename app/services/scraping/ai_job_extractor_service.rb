@@ -92,11 +92,13 @@ module Scraping
 
       if result[:rate_limit]
         handle_rate_limit(provider_name, result)
+        log_extraction_result(result, nil, html_size, prompt: prompt)
         return nil
       end
 
       if result[:error]
         log_event("ai_extraction_failed", { provider: provider_name, error: result[:error] })
+        log_extraction_result(result, nil, html_size, prompt: prompt)
         return nil
       end
 
@@ -157,8 +159,23 @@ module Scraping
         llm_prompt: prompt_template
       )
 
+      log_data = (parsed || {}).merge(
+        confidence: parsed&.dig(:confidence),
+        input_tokens: result[:input_tokens],
+        output_tokens: result[:output_tokens],
+        error: result[:error],
+        rate_limit: result[:rate_limit],
+        raw_response: result[:content],
+        provider_request: result[:provider_request],
+        provider_response: result[:provider_response],
+        provider_error_response: result[:provider_error_response],
+        http_status: result[:http_status],
+        response_headers: result[:response_headers],
+        provider_endpoint: result[:provider_endpoint]
+      )
+
       logger.record_result(
-        parsed.merge(provider: result[:provider], model: result[:model]),
+        log_data.merge(provider: result[:provider], model: result[:model]),
         latency_ms: result[:latency_ms] || 0,
         content_size: html_size,
         prompt: prompt

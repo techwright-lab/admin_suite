@@ -60,14 +60,17 @@ module Admin
           panel :meta, title: "Request Info", fields: [ :operation_type, :provider, :model, :status ]
           panel :performance, title: "Performance", fields: [ :latency_ms, :input_tokens, :output_tokens, :estimated_cost_cents ]
           panel :timestamps, title: "Timestamps", fields: [ :created_at ]
+          panel :error, title: "Error Details", fields: [ :error_type, :error_message ]
         end
 
         main do
           panel :loggable, title: "Source", fields: [ :loggable ]
           panel :prompt, title: "Prompt/Input", fields: [ :llm_prompt ]
+          panel :provider_request_raw, title: "Provider Request (raw)", render: :llm_provider_request_raw
+          panel :provider_response_raw, title: "Provider Response (raw)", render: :llm_provider_response_raw
+          panel :provider_error_response_raw, title: "Provider Error Response (raw)", render: :llm_provider_error_response_raw
           panel :request, title: "Request Payload", fields: [ :request_payload ]
           panel :response, title: "Response Payload", fields: [ :response_payload ]
-          panel :error, title: "Error Details", fields: [ :error_type, :error_message ]
         end
       end
 

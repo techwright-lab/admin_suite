@@ -64,6 +64,7 @@ Rails.application.routes.draw do
   draw :webhooks
   draw :assistant
   draw :application
+  draw :api
 
   # =================================================================
   # Root & Health Check

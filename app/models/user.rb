@@ -2,6 +2,9 @@
 
 # User model representing registered users
 class User < ApplicationRecord
+  extend FriendlyId
+  friendly_id :slug_candidates, use: [ :slugged, :finders ]
+
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :interview_applications, dependent: :destroy
@@ -31,11 +34,16 @@ class User < ApplicationRecord
   belongs_to :current_job_role, class_name: "JobRole", optional: true
   belongs_to :current_company, class_name: "Company", optional: true
 
-  # Target job roles and companies
+  # Target job roles, companies, and domains
   has_many :user_target_job_roles, dependent: :destroy
   has_many :target_job_roles, through: :user_target_job_roles, source: :job_role
   has_many :user_target_companies, dependent: :destroy
   has_many :target_companies, through: :user_target_companies, source: :company
+  has_many :user_target_domains, dependent: :destroy
+  has_many :target_domains, through: :user_target_domains, source: :domain
+
+  # Work experience (aggregated from resumes + manual entries)
+  has_many :user_work_experiences, dependent: :destroy
 
   # Virtual attribute for terms acceptance checkbox
   attribute :terms_accepted, :boolean, default: false
@@ -53,10 +61,21 @@ class User < ApplicationRecord
 
   after_create :create_default_preference
 
+  before_create :generate_uuid
+
   # Returns the user's preference or builds a default one
   # @return [UserPreference]
   def preference
     super || build_preference
+  end
+
+  # Returns the slug candidates for the user
+  # @return [Array<String>]
+  def slug_candidates
+    [
+      :name,
+      [ :name, :uuid ]
+    ]
   end
 
   # Returns the total number of applications for this user
@@ -165,5 +184,11 @@ class User < ApplicationRecord
 
   def set_terms_accepted_at
     self.terms_accepted_at = Time.current
+  end
+
+  # Generates a UUID for the user
+  # @return [String]
+  def generate_uuid
+    self.uuid = SecureRandom.uuid
   end
 end

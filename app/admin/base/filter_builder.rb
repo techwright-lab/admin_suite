@@ -171,7 +171,13 @@ module Admin
 
         return scope unless sort_field
 
-        direction = params[:sort_direction]&.to_sym == :desc ? :desc : :asc
+        direction_param = params[:sort_direction].presence || params[:direction].presence
+        direction =
+          if direction_param.present?
+            direction_param.to_sym == :desc ? :desc : :asc
+          else
+            (index_config.default_sort_direction || :desc).to_sym
+          end
         scope.order(sort_field => direction)
       end
     end

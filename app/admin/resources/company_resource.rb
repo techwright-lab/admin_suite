@@ -34,7 +34,7 @@ module Admin
             [ "Name (A-Z)", "name" ],
             [ "Recently Added", "recent" ]
           ]
-          filter :has_website, type: :toggle, label: "Has Website"
+          filter :has_website, type: :toggle, label: "Has Website", scope: ->(scope) { scope.where.not(website: [ nil, "" ]) }
         end
       end
 
@@ -50,20 +50,20 @@ module Admin
           panel :info, title: "Company Info", fields: [ :website, :logo_url ]
           panel :timestamps, title: "Timestamps", fields: [ :created_at, :updated_at ]
         end
-        
+
         main do
           panel :about, title: "About", fields: [ :about ]
-          panel :job_listings, title: "Job Listings", 
-                association: :job_listings, 
-                limit: 10, 
+          panel :job_listings, title: "Job Listings",
+                association: :job_listings,
+                limit: 10,
                 display: :table,
-                columns: [:title, :status, :remote_type, :created_at],
+                columns: [ :title, :status, :remote_type, :created_at ],
                 link_to: :internal_developer_ops_job_listing_path
-          panel :applications, title: "Interview Applications", 
-                association: :interview_applications, 
-                limit: 10, 
+          panel :applications, title: "Interview Applications",
+                association: :interview_applications,
+                limit: 10,
                 display: :table,
-                columns: [:status, :job_listing, :user, :created_at],
+                columns: [ :status, :job_listing, :user, :created_at ],
                 link_to: :internal_developer_ops_interview_application_path
         end
       end
@@ -79,4 +79,3 @@ module Admin
     end
   end
 end
-

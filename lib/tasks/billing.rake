@@ -34,5 +34,3 @@ namespace :billing do
     puts "Revoked Admin/Developer billing access from #{email}"
   end
 end
-
-

@@ -1,0 +1,234 @@
+<div class="space-y-6" data-controller="targets">
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Career Targets</h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Define your target roles, companies, and domains to personalize your experience
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Target Roles Section -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="p-5 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Target Roles</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Roles you're targeting in your job search</p>
+        </div>
+        <span class="text-sm text-gray-500 dark:text-gray-400"><%= @target_job_roles.count %> selected</span>
+      </div>
+    </div>
+
+    <div class="p-5">
+      <!-- Selected Roles Tags -->
+      <% if @target_job_roles.any? %>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Selected</label>
+          <div class="flex flex-wrap gap-2" data-targets-target="selectedRoles">
+            <% @target_job_roles.each do |role| %>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 text-sm font-medium">
+                <%= role.title %>
+                <% if role.department_name.present? %>
+                  <span class="text-primary-400 dark:text-primary-500 text-xs">(<%= role.department_name %>)</span>
+                <% end %>
+                <%= button_to remove_target_role_settings_path(job_role_id: role.id),
+                    method: :delete,
+                    data: { turbo_confirm: "Remove #{role.title} from targets?" },
+                    class: "ml-1 text-primary-400 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-200" do %>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                <% end %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Search and Add -->
+      <div class="relative">
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Add roles</label>
+        <div class="flex gap-2">
+          <div class="flex-1 relative">
+            <input type="text"
+                   placeholder="Search roles..."
+                   class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                   data-action="input->targets#searchRoles"
+                   data-targets-target="roleSearch">
+            <div class="absolute right-3 top-1/2 -translate-y-1/2">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+          </div>
+          <select class="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  data-action="change->targets#filterByDepartment"
+                  data-targets-target="departmentFilter">
+            <option value="">All Departments</option>
+            <% @departments.each do |dept| %>
+              <option value="<%= dept.id %>"><%= dept.name %></option>
+            <% end %>
+          </select>
+        </div>
+
+        <!-- Search Results Dropdown -->
+        <div class="hidden absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg max-h-64 overflow-y-auto"
+             data-targets-target="roleResults">
+          <!-- Results populated by JS -->
+        </div>
+      </div>
+
+      <!-- Department-grouped available roles -->
+      <details class="mt-4">
+        <summary class="text-sm text-primary-600 dark:text-primary-400 cursor-pointer hover:text-primary-700 dark:hover:text-primary-300 font-medium">
+          Browse by department
+        </summary>
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <% @job_roles_by_department.each do |dept_name, roles| %>
+            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+              <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"><%= dept_name %></h4>
+              <div class="space-y-1 max-h-40 overflow-y-auto">
+                <% roles.reject { |r| @target_job_roles.include?(r) }.first(10).each do |role| %>
+                  <%= form_with url: add_target_role_settings_path, method: :post, local: true, class: "inline" do %>
+                    <%= hidden_field_tag :job_role_id, role.id %>
+                    <button type="submit" class="w-full text-left px-2 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                      </svg>
+                      <%= role.title %>
+                    </button>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Target Companies Section -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="p-5 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Target Companies</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Companies you'd like to work for</p>
+        </div>
+        <span class="text-sm text-gray-500 dark:text-gray-400"><%= @target_companies.count %> selected</span>
+      </div>
+    </div>
+
+    <div class="p-5">
+      <!-- Selected Companies Tags -->
+      <% if @target_companies.any? %>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Selected</label>
+          <div class="flex flex-wrap gap-2" data-targets-target="selectedCompanies">
+            <% @target_companies.each do |company| %>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-sm font-medium">
+                <%= company.name %>
+                <%= button_to remove_target_company_settings_path(company_id: company.id),
+                    method: :delete,
+                    data: { turbo_confirm: "Remove #{company.name} from targets?" },
+                    class: "ml-1 text-emerald-400 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-200" do %>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                <% end %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Search and Add -->
+      <div class="relative">
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Add companies</label>
+        <div class="relative">
+          <input type="text"
+                 placeholder="Search companies or type to create new..."
+                 class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                 data-action="input->targets#searchCompanies"
+                 data-targets-target="companySearch">
+          <div class="absolute right-3 top-1/2 -translate-y-1/2">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Search Results Dropdown -->
+        <div class="hidden absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg max-h-64 overflow-y-auto"
+             data-targets-target="companyResults">
+          <!-- Results populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Target Domains Section -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="p-5 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Target Domains</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Industries and domains you're interested in</p>
+        </div>
+        <span class="text-sm text-gray-500 dark:text-gray-400"><%= @target_domains.count %> selected</span>
+      </div>
+    </div>
+
+    <div class="p-5">
+      <!-- Selected Domains Tags -->
+      <% if @target_domains.any? %>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Selected</label>
+          <div class="flex flex-wrap gap-2" data-targets-target="selectedDomains">
+            <% @target_domains.each do |domain| %>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-sm font-medium">
+                <%= domain.name %>
+                <%= button_to remove_target_domain_settings_path(domain_id: domain.id),
+                    method: :delete,
+                    data: { turbo_confirm: "Remove #{domain.name} from targets?" },
+                    class: "ml-1 text-violet-400 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-200" do %>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                <% end %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Domain Tag Cloud -->
+      <div>
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Available domains</label>
+        <div class="flex flex-wrap gap-2">
+          <% @all_domains.reject { |d| @target_domains.include?(d) }.each do |domain| %>
+            <%= form_with url: add_target_domain_settings_path, method: :post, local: true, class: "inline" do %>
+              <%= hidden_field_tag :domain_id, domain.id %>
+              <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-violet-300 dark:hover:border-violet-600 transition-colors">
+                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <%= domain.name %>
+              </button>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
