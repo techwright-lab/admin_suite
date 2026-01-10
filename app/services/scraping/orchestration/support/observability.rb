@@ -8,20 +8,60 @@ module Scraping
 
         JS_HEAVY_TEXT_THRESHOLD = 1500
 
-        def js_heavy_page?(html_content:, cleaned_html:)
+        # Returns a diagnosis for whether a page appears JS-heavy, along with the signals used.
+        #
+        # @param html_content [String, nil]
+        # @param cleaned_html [String, nil]
+        # @return [Hash]
+        def js_heavy_diagnosis(html_content:, cleaned_html:)
           text_len = cleaned_html.to_s.length
-          return false if text_len >= JS_HEAVY_TEXT_THRESHOLD
-
           html = html_content.to_s
+
           spa_markers = [
             "__NEXT_DATA__",
             "data-reactroot",
             "id=\"app\"",
             "id=\"root\""
           ]
-          spa_markers.any? { |m| html.include?(m) } || text_len < 200
-        rescue
-          false
+
+          found_markers = spa_markers.select { |m| html.include?(m) }
+
+          js_heavy =
+            if text_len >= JS_HEAVY_TEXT_THRESHOLD
+              false
+            else
+              found_markers.any? || text_len < 200
+            end
+
+          reason =
+            if text_len >= JS_HEAVY_TEXT_THRESHOLD
+              "text_above_threshold"
+            elsif found_markers.any?
+              "spa_marker_detected"
+            elsif text_len < 200
+              "very_low_text"
+            else
+              "below_threshold"
+            end
+
+          {
+            js_heavy: js_heavy,
+            reason: reason,
+            text_length: text_len,
+            threshold: JS_HEAVY_TEXT_THRESHOLD,
+            html_size: html.bytesize,
+            spa_markers_found: found_markers
+          }
+        rescue => e
+          {
+            js_heavy: false,
+            reason: "diagnosis_error",
+            error: e.message
+          }
+        end
+
+        def js_heavy_page?(html_content:, cleaned_html:)
+          js_heavy_diagnosis(html_content: html_content, cleaned_html: cleaned_html)[:js_heavy]
         end
 
         def create_selectors_html_log(context, selectors_result, fetch_mode:, board_type:, html_size:, cleaned_html_size:)

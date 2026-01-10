@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "cgi"
+
 module ApiFetchers
   # Greenhouse API fetcher for job listings
   #
@@ -72,6 +74,7 @@ module ApiFetchers
     # @return [Hash] Standardized job data
     def parse_greenhouse_response(data)
       location_name = data.dig("location", "name")
+      content_html = decode_html(data["content"])
 
       # Determine remote type from location
       remote_type = if location_name&.downcase&.include?("remote")
@@ -84,15 +87,17 @@ module ApiFetchers
 
       normalize_response(
         title: data["title"],
-        description: strip_html(data["content"]),
-        requirements: extract_section(data["content"], "requirements"),
-        responsibilities: extract_section(data["content"], "responsibilities"),
+        description: content_html,
+        requirements: extract_section(content_html, "requirements"),
+        responsibilities: extract_section(content_html, "responsibilities"),
         location: location_name,
         remote_type: remote_type,
         salary_min: nil, # Greenhouse doesn't always expose salary in public API
         salary_max: nil,
         salary_currency: "USD",
         custom_sections: build_custom_sections(data)
+      ).merge(
+        company: data["company_name"]
       )
     end
 
@@ -103,8 +108,7 @@ module ApiFetchers
     def strip_html(html)
       return nil if html.blank?
 
-      # Simple HTML stripping - can be enhanced with Nokogiri if needed
-      html.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip
+      Nokogiri::HTML.fragment(html.to_s).text.to_s.gsub(/\s+/, " ").strip
     end
 
     # Extracts a specific section from job content
@@ -127,6 +131,14 @@ module ApiFetchers
       end
 
       nil
+    end
+
+    def decode_html(text)
+      return "" if text.blank?
+
+      CGI.unescapeHTML(text.to_s)
+    rescue
+      text.to_s
     end
 
     # Builds custom sections from Greenhouse data

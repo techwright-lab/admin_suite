@@ -52,6 +52,8 @@ module Admin
 
         main do
           panel :error, title: "Error Details", fields: [ :error_type, :error_message ]
+          panel :input, title: "Input Payload", fields: [ :input_payload ]
+          panel :output, title: "Output Payload", fields: [ :output_payload ]
           panel :metadata, title: "Metadata", fields: [ :metadata ]
         end
       end

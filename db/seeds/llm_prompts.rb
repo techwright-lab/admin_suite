@@ -68,8 +68,16 @@ memory_proposal_prompt = Ai::AssistantMemoryProposalPrompt.find_or_create_by!(na
   prompt.version = 1
   prompt.active = true
 end
-
-
 puts "  - Created: #{memory_proposal_prompt.name} (active: #{memory_proposal_prompt.active})"
+
+job_postprocess_prompt = Ai::JobPostprocessPrompt.find_or_create_by!(name: "Job Postprocess - Default") do |prompt|
+  prompt.description = "Prompt template for post-processing job content into structured fields + Markdown."
+  prompt.prompt_template = Ai::JobPostprocessPrompt.default_prompt_template
+  prompt.variables = Ai::JobPostprocessPrompt.default_variables
+  prompt.system_prompt = Ai::JobPostprocessPrompt.default_system_prompt
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{job_postprocess_prompt.name} (active: #{job_postprocess_prompt.active})"
 
 puts "LLM Prompts created: #{Ai::LlmPrompt.count} total"

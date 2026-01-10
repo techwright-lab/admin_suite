@@ -18,8 +18,10 @@ class ScrapingEvent < ApplicationRecord
     :permission_check,  # Robots.txt / rate limit check
     :job_board_detection, # Job board/ATS detection from URL
     :html_fetch,        # Fetching HTML content
+    :embedded_job_board_fetch, # Fetch embedded job board HTML (e.g., Greenhouse embeds)
     :js_heavy_detected, # Heuristic indicating JS-rendered content
     :rendered_html_fetch, # Selenium/Headless rendered HTML fetch
+    :limited_source_handling, # Handling limited extraction sources (LinkedIn, etc.)
     :nokogiri_scrape,   # Preliminary HTML parsing
     :selectors_extraction, # Selectors-first extraction (job boards)
     :api_extraction,    # API-based extraction (Greenhouse, Lever)
@@ -45,8 +47,10 @@ class ScrapingEvent < ApplicationRecord
     permission_check: "permission_check",
     job_board_detection: "job_board_detection",
     html_fetch: "html_fetch",
+    embedded_job_board_fetch: "embedded_job_board_fetch",
     js_heavy_detected: "js_heavy_detected",
     rendered_html_fetch: "rendered_html_fetch",
+    limited_source_handling: "limited_source_handling",
     nokogiri_scrape: "nokogiri_scrape",
     selectors_extraction: "selectors_extraction",
     api_extraction: "api_extraction",
@@ -115,8 +119,10 @@ class ScrapingEvent < ApplicationRecord
     when :permission_check then "Permission Check"
     when :job_board_detection then "Job Board Detection"
     when :html_fetch then "HTML Fetch"
+    when :embedded_job_board_fetch then "Embedded Job Board Fetch"
     when :js_heavy_detected then "JS-Heavy Detected"
     when :rendered_html_fetch then "Rendered HTML Fetch"
+    when :limited_source_handling then "Limited Source Handling"
     when :nokogiri_scrape then "HTML Parse"
     when :selectors_extraction then "Selectors Extraction"
     when :api_extraction then "API Extraction"
@@ -136,8 +142,10 @@ class ScrapingEvent < ApplicationRecord
     when :permission_check then "shield-check"
     when :job_board_detection then "tag"
     when :html_fetch then "cloud-download"
+    when :embedded_job_board_fetch then "link"
     when :js_heavy_detected then "sparkles"
     when :rendered_html_fetch then "globe-alt"
+    when :limited_source_handling then "exclamation-triangle"
     when :nokogiri_scrape then "code"
     when :selectors_extraction then "adjustments-horizontal"
     when :api_extraction then "server"

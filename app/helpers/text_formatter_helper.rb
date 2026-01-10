@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "cgi"
+
 # Helper for formatting extracted text content (descriptions, requirements, etc.)
 #
 # Provides smart formatting that:
@@ -69,6 +71,22 @@ module TextFormatterHelper
     }.merge(options)
 
     formatted = text.to_s.dup
+
+    # Some sources (notably Greenhouse boards API) return HTML as escaped entities
+    # (e.g., "&lt;p&gt;...&lt;/p&gt;"). Decode first so we can sanitize+render properly.
+    if formatted.include?("&lt;") && formatted.include?("&gt;")
+      begin
+        formatted = CGI.unescapeHTML(formatted)
+      rescue
+        nil
+      end
+    end
+
+    # If this is already HTML (and not markdown-like), keep structure and just sanitize.
+    # Note: some markdown content may contain inline HTML (e.g. <strong> inside list items).
+    if formatted.match?(%r{</?(p|ul|ol|li|h2|h3|h4|div|span|strong|em|br)\b}i) && !looks_like_markdown?(formatted)
+      return sanitize(formatted, tags: allowed_tags, attributes: allowed_attributes)
+    end
 
     # First, check if this looks like a Ruby hash or array
     if looks_like_ruby_data?(formatted)
@@ -394,22 +412,32 @@ module TextFormatterHelper
 
   # Renders markdown to HTML using a simple parser
   #
+  # Outputs plain HTML elements without inline classes - styling is handled
+  # by the parent container's CSS class (e.g., job-prose, doc-content).
+  #
   # @param [String] text The markdown text
   # @return [String] HTML output
   def render_markdown(text)
     html = text.dup
 
-    # Headers
-    html.gsub!(/^### (.+)$/m, '<h4 class="text-base font-semibold text-gray-900 dark:text-white mt-4 mb-2">\1</h4>')
-    html.gsub!(/^## (.+)$/m, '<h3 class="text-lg font-semibold text-gray-900 dark:text-white mt-4 mb-2">\1</h3>')
-    html.gsub!(/^# (.+)$/m, '<h2 class="text-xl font-semibold text-gray-900 dark:text-white mt-4 mb-2">\1</h2>')
+    # Horizontal rules (---, ***, ___) - use [^\n]* to avoid crossing lines
+    html.gsub!(/^[^\S\n]*(---|\*\*\*|___)[^\S\n]*$/, "<hr>")
 
-    # Bold and italic
-    html.gsub!(/\*\*([^*]+)\*\*/, '<strong>\1</strong>')
-    html.gsub!(/\*([^*]+)\*/, '<em>\1</em>')
+    # Blockquotes - use [^\n]+ to match only within a single line
+    html.gsub!(/^[^\S\n]*>[^\S\n]*([^\n]+)$/, '<blockquote>\1</blockquote>')
+
+    # Headers - use [^\n]+ to prevent matching across lines
+    html.gsub!(/^####[^\S\n]+([^\n]+)$/, '<h5>\1</h5>')
+    html.gsub!(/^###[^\S\n]+([^\n]+)$/, '<h4>\1</h4>')
+    html.gsub!(/^##[^\S\n]+([^\n]+)$/, '<h3>\1</h3>')
+    html.gsub!(/^#[^\S\n]+([^\n]+)$/, '<h2>\1</h2>')
+
+    # Bold and italic (non-greedy matching)
+    html.gsub!(/\*\*([^*\n]+?)\*\*/, '<strong>\1</strong>')
+    html.gsub!(/\*([^*\n]+?)\*/, '<em>\1</em>')
 
     # Inline code
-    html.gsub!(/`([^`]+)`/, '<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">\1</code>')
+    html.gsub!(/`([^`\n]+?)`/, '<code>\1</code>')
 
     # Convert lists and paragraphs
     html = convert_lists_to_html(html, detect_implicit: true)
@@ -503,6 +531,9 @@ module TextFormatterHelper
 
   # Closes a list and returns HTML
   #
+  # Outputs plain HTML elements - styling is handled by the parent container's
+  # CSS class (e.g., job-prose, doc-content).
+  #
   # @param [Symbol] list_type :ul, :ol, or :ul_implicit
   # @param [Array<String>] items List items
   # @return [String] HTML list
@@ -510,30 +541,18 @@ module TextFormatterHelper
     return "" if items.empty?
 
     tag = list_type == :ol ? "ol" : "ul"
-    list_class = case list_type
-    when :ol
-                   "list-decimal list-inside space-y-2"
-    when :ul_implicit
-                   "space-y-2" # No bullets for implicit lists, just spacing
-    else
-                   "list-disc list-inside space-y-2"
-                 end
-
-    item_class = list_type == :ul_implicit ? "flex items-start gap-2" : ""
-    bullet_html = list_type == :ul_implicit ? '<span class="text-primary-500 mt-1 flex-shrink-0">•</span>' : ""
 
     items_html = items.map do |item|
-      if list_type == :ul_implicit
-        "<li class=\"#{item_class}\">#{bullet_html}<span>#{ERB::Util.html_escape(item)}</span></li>"
-      else
-        "<li class=\"py-1\">#{ERB::Util.html_escape(item)}</li>"
-      end
+      # Keep inline HTML (e.g. <strong>) - sanitize happens in format_job_text
+      "<li>#{item}</li>"
     end.join("\n")
 
-    "<#{tag} class=\"#{list_class} text-gray-600 dark:text-gray-400 my-3\">#{items_html}</#{tag}>"
+    "<#{tag}>#{items_html}</#{tag}>"
   end
 
   # Converts text paragraphs to HTML <p> tags
+  #
+  # Outputs plain <p> elements - styling is handled by the parent container's CSS.
   #
   # @param [String] text The text
   # @return [String] Text with HTML paragraphs
@@ -546,12 +565,12 @@ module TextFormatterHelper
       next "" if para.blank?
 
       # Don't wrap if it's already a block element
-      if para.start_with?("<h", "<ul", "<ol", "<div", "<p", "<dl")
+      if para.start_with?("<h", "<ul", "<ol", "<div", "<p", "<dl", "<blockquote", "<hr")
         para
       else
         # Replace single newlines with <br> within paragraphs
         content = para.gsub(/\n/, "<br>")
-        "<p class=\"mb-3 text-gray-600 dark:text-gray-400\">#{content}</p>"
+        "<p>#{content}</p>"
       end
     end.join("\n")
   end
@@ -564,7 +583,7 @@ module TextFormatterHelper
     url_pattern = %r{(https?://[^\s<>"]+)}
 
     text.gsub(url_pattern) do |url|
-      "<a href=\"#{ERB::Util.html_escape(url)}\" target=\"_blank\" rel=\"noopener\" class=\"text-primary-600 dark:text-primary-400 hover:underline\">#{ERB::Util.html_escape(url)}</a>"
+      "<a href=\"#{ERB::Util.html_escape(url)}\" target=\"_blank\" rel=\"noopener\">#{ERB::Util.html_escape(url)}</a>"
     end
   end
 
@@ -572,7 +591,7 @@ module TextFormatterHelper
   #
   # @return [Array<String>] Allowed tags
   def allowed_tags
-    %w[h2 h3 h4 p br ul ol li strong em b i code a span div dl dt dd]
+    %w[h2 h3 h4 h5 p br ul ol li strong em b i code a span div dl dt dd blockquote hr]
   end
 
   # Returns allowed HTML attributes for sanitization

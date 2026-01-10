@@ -5,7 +5,18 @@ module Assistant
     # Builds a bounded context snapshot for the assistant.
     #
     # This should remain deterministic and small; it is persisted for observability.
+    #
+    # Context Strategy:
+    # - Always include: user summary, top skills, work history summary, target roles/domains
+    # - Include resume summary: by default (low token cost)
+    # - Include full resume text: only when page_context[:include_full_resume] is true
+    #   (e.g., user is on resume page, or query explicitly needs raw resume content)
     class Builder
+      # Maximum work experiences to include
+      MAX_WORK_EXPERIENCES = 5
+      # Maximum skills per work experience
+      MAX_SKILLS_PER_EXPERIENCE = 5
+
       def initialize(user:, page_context: {})
         @user = user
         @page_context = page_context.to_h.symbolize_keys
@@ -14,6 +25,7 @@ module Assistant
       def build
         {
           user: user_summary,
+          career: career_summary,
           skills: skill_summary,
           pipeline: pipeline_summary,
           page: page_summary
@@ -31,6 +43,73 @@ module Assistant
           email_verified: user.email_verified?,
           created_at: user.created_at&.iso8601
         }
+      end
+
+      # Career context: resume summaries, work history, targets
+      # This provides rich context with minimal tokens (~300-800 tokens)
+      def career_summary
+        latest = latest_resume
+        extraction = resume_extraction(latest)
+
+        {
+          resume: resume_summary(latest, extraction),
+          work_history: work_history_summary,
+          targets: targets_summary
+        }.compact
+      end
+
+      def resume_summary(latest, extraction)
+        return nil if latest.nil?
+
+        summary = {
+          profile_summary: latest.analysis_summary,
+          strengths: Array(extraction["strengths"]).first(5),
+          domains: Array(extraction["domains"]).first(5),
+          resume_count: user.user_resumes.count,
+          latest_analyzed_at: latest.analyzed_at&.iso8601
+        }.compact
+
+        # Include full resume text only when explicitly requested
+        if include_full_resume?
+          summary[:full_text] = latest.parsed_text.to_s.truncate(10_000)
+        end
+
+        summary
+      end
+
+      def work_history_summary
+        experiences = user.user_work_experiences
+                         .reverse_chronological
+                         .includes(:skill_tags)
+                         .limit(MAX_WORK_EXPERIENCES)
+
+        return nil if experiences.empty?
+
+        experiences.map do |exp|
+          {
+            title: exp.display_role_title,
+            company: exp.display_company_name,
+            current: exp.current,
+            start_date: exp.start_date&.strftime("%b %Y"),
+            end_date: exp.current ? "Present" : exp.end_date&.strftime("%b %Y"),
+            highlights: Array(exp.highlights).first(3),
+            skills: exp.skill_tags.pluck(:name).first(MAX_SKILLS_PER_EXPERIENCE)
+          }.compact
+        end
+      end
+
+      def targets_summary
+        target_roles = user.respond_to?(:target_job_roles) ? user.target_job_roles.pluck(:title).first(5) : []
+        target_companies = user.respond_to?(:target_companies) ? user.target_companies.pluck(:name).first(5) : []
+        target_domains = user.respond_to?(:target_domains) ? user.target_domains.pluck(:name).first(5) : []
+
+        targets = {
+          roles: target_roles.presence,
+          companies: target_companies.presence,
+          domains: target_domains.presence
+        }.compact
+
+        targets.presence
       end
 
       def skill_summary
@@ -67,8 +146,36 @@ module Assistant
         {
           job_listing_id: page_context[:job_listing_id],
           interview_application_id: page_context[:interview_application_id],
-          opportunity_id: page_context[:opportunity_id]
+          opportunity_id: page_context[:opportunity_id],
+          resume_id: page_context[:resume_id]
         }.compact
+      end
+
+      # Helper methods
+
+      def latest_resume
+        @latest_resume ||= user.user_resumes
+                               .analyzed
+                               .recent_first
+                               .first
+      end
+
+      def resume_extraction(resume)
+        return {} if resume.nil?
+
+        data = resume.extracted_data
+        data = JSON.parse(data) if data.is_a?(String)
+        data&.dig("resume_extraction", "parsed") || {}
+      rescue JSON::ParserError
+        {}
+      end
+
+      # Include full resume text when:
+      # 1. Explicitly requested via page_context
+      # 2. User is viewing a resume page (resume_id present)
+      def include_full_resume?
+        page_context[:include_full_resume] == true ||
+          page_context[:resume_id].present?
       end
     end
   end

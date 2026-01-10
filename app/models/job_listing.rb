@@ -6,6 +6,8 @@ class JobListing < ApplicationRecord
 
   REMOTE_TYPES = [ :on_site, :hybrid, :remote ].freeze
   STATUSES = [ :draft, :active, :closed ].freeze
+  EXTRACTION_QUALITIES = [ :full, :partial, :limited, :manual ].freeze
+  LIMITED_JOB_BOARDS = %w[linkedin indeed glassdoor].freeze
 
   belongs_to :company
   belongs_to :job_role
@@ -113,6 +115,55 @@ class JobListing < ApplicationRecord
     return false unless latest_attempt
 
     latest_attempt.needs_review? || extraction_confidence < 0.7
+  end
+
+  # Returns the job board type from scraped_data
+  # @return [String, nil] Job board type (linkedin, greenhouse, etc.)
+  def job_board
+    scraped_data["job_board"] || job_board_id
+  end
+
+  # Returns extraction quality from scraped_data
+  # @return [String] Extraction quality (full, partial, limited, manual)
+  def extraction_quality
+    scraped_data["extraction_quality"] || "full"
+  end
+
+  # Checks if this job listing has limited extraction data
+  # (from sources like LinkedIn that require auth)
+  # @return [Boolean] True if extraction was limited
+  def limited_extraction?
+    extraction_quality == "limited" || LIMITED_JOB_BOARDS.include?(job_board.to_s)
+  end
+
+  # Checks if this job listing needs more details from the user
+  # @return [Boolean] True if more details would be helpful
+  def needs_more_details?
+    return true if limited_extraction?
+    return true if description.blank? && responsibilities.blank?
+    return true if extraction_confidence < 0.5
+
+    false
+  end
+
+  # Returns a human-readable explanation of why extraction was limited
+  # @return [String, nil] Explanation or nil if not limited
+  def limited_extraction_reason
+    return nil unless limited_extraction?
+
+    case job_board.to_s
+    when "linkedin"
+      "LinkedIn requires authentication to access full job details. " \
+      "We extracted what was publicly available."
+    when "indeed"
+      "Indeed limits public access to job details. " \
+      "Some information may be incomplete."
+    when "glassdoor"
+      "Glassdoor requires authentication for full job details. " \
+      "We extracted what was publicly available."
+    else
+      "This job listing has limited data due to source restrictions."
+    end
   end
 
   private

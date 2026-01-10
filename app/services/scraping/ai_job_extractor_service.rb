@@ -238,11 +238,20 @@ module Scraping
     end
 
     def normalize_parsed_data(data)
+      # Build custom_sections with markdown and additional extracted fields
+      custom_sections = data["custom_sections"] || {}
+      custom_sections["description_markdown"] = data["description_markdown"] if data["description_markdown"].present?
+      custom_sections["compensation_text"] = data["compensation_text"] if data["compensation_text"].present?
+      custom_sections["interview_process"] = data["interview_process"] if data["interview_process"].present?
+
       {
         title: data["title"],
         company: data["company"] || data["company_name"],
         job_role: data["job_role"] || data["job_role_title"],
+        job_role_department: data["job_role_department"],
+        job_board: data["job_board"],
         description: data["description"],
+        description_markdown: data["description_markdown"],
         about_company: data["about_company"],
         company_culture: data["company_culture"],
         requirements: data["requirements"],
@@ -252,10 +261,12 @@ module Scraping
         salary_min: data["salary_min"],
         salary_max: data["salary_max"],
         salary_currency: data["salary_currency"] || "USD",
+        compensation_text: data["compensation_text"],
         equity_info: data["equity_info"],
         benefits: data["benefits"],
         perks: data["perks"],
-        custom_sections: data["custom_sections"] || {},
+        interview_process: data["interview_process"],
+        custom_sections: custom_sections,
         confidence: data["confidence_score"] || 0.5,
         notes: data["notes"]
       }

@@ -27,6 +27,7 @@ class QuickApplyFromUrlService
   # @param [User] user The user creating the application
   def initialize(url, user)
     @url = url
+    @normalized_url = ScrapedJobListingData.normalize_url(url)
     @user = user
     @start_time = Time.current
   end
@@ -39,7 +40,7 @@ class QuickApplyFromUrlService
     return error_result("Invalid URL format") unless valid_url?
 
     # Extract company name from URL first (needed to create JobListing)
-    company_name = extract_company_name_from_url
+    company_name = extract_company_name_from_url || extract_company_name_from_domain
     job_role_title = "Unknown Position" # Placeholder, will be updated after extraction
 
     # Find or create Company and JobRole (with placeholder values)
@@ -94,14 +95,15 @@ class QuickApplyFromUrlService
   # @param [JobRole] job_role The job role
   # @return [JobListing] The created job listing
   def create_job_listing(company, job_role)
-    job_listing = JobListing.find_or_initialize_by(url: @url)
+    job_listing = JobListing.find_or_initialize_by(url: @normalized_url)
 
     # Set attributes if it's a new record
     if job_listing.new_record?
       job_listing.company = company
       job_listing.job_role = job_role
       job_listing.status = :active
-      job_listing.source_id = extract_source_id(@url)
+      job_listing.source_id = extract_source_id(@normalized_url)
+      job_listing.custom_sections = (job_listing.custom_sections || {}).merge("original_url" => @url)
       job_listing.save!
     end
 
@@ -310,12 +312,12 @@ class QuickApplyFromUrlService
   # @param [JobRole] job_role The job role
   # @return [InterviewApplication] The created application
   def create_application(job_listing, company, job_role)
-    @user.interview_applications.create!(
-      company: company,
-      job_role: job_role,
-      job_listing: job_listing,
-      applied_at: Date.today
-    )
+    application = @user.interview_applications.find_or_initialize_by(job_listing: job_listing)
+    application.company = company
+    application.job_role = job_role
+    application.applied_at ||= Date.today
+    application.save!
+    application
   end
 
   # Extracts source ID from URL

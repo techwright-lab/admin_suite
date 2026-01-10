@@ -9,6 +9,7 @@ module AiAssistant
       thread_uuid = params[:thread_uuid]
       thread_id = params[:thread_id]
       client_request_uuid = params[:client_request_uuid].presence
+      page_context = build_page_context_from_params
 
       if question.blank?
         render json: { error: "Question cannot be blank" }, status: :unprocessable_entity
@@ -27,6 +28,7 @@ module AiAssistant
         user: Current.user,
         thread: thread,
         message: question,
+        page_context: page_context,
         client_request_uuid: client_request_uuid
       ).call
 
@@ -39,6 +41,23 @@ module AiAssistant
         trial_unlocked: trial_result[:unlocked] == true,
         trial_expires_at: trial_result[:expires_at]
       }
+    end
+
+    private
+
+    # Builds page context from request parameters
+    #
+    # @return [Hash] Page context for the assistant
+    def build_page_context_from_params
+      context = {}
+
+      context[:resume_id] = params[:resume_id].to_i if params[:resume_id].present?
+      context[:job_listing_id] = params[:job_listing_id].to_i if params[:job_listing_id].present?
+      context[:interview_application_id] = params[:interview_application_id].to_i if params[:interview_application_id].present?
+      context[:opportunity_id] = params[:opportunity_id].to_i if params[:opportunity_id].present?
+      context[:include_full_resume] = true if params[:include_full_resume] == "true" || params[:include_full_resume] == true
+
+      context.compact
     end
   end
 end

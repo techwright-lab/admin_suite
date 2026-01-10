@@ -4,29 +4,9 @@
 <% missing_skills = Array(breakdown["missing_skills"] || breakdown[:missing_skills]).compact %>
 <% matched_skills = Array(breakdown["matched_skills"] || breakdown[:matched_skills]).compact %>
 <% score = fit&.computed? ? fit.score.to_i : nil %>
-<%
-  match_label =
-    if score.nil?
-      "Not assessed"
-    elsif score >= 80
-      "Strong match"
-    elsif score >= 50
-      "Partial match"
-    else
-      "Stretch role"
-    end
-  
-  match_color =
-    if score.nil?
-      "gray"
-    elsif score >= 80
-      "emerald"
-    elsif score >= 50
-      "amber"
-    else
-      "rose"
-    end
-%>
+<% match_styling = match_score_styling(score) %>
+<% match_label = match_styling[:label] %>
+<% match_classes = match_styling[:classes] %>
 
 <div class="relative overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg border border-gray-200/60 dark:border-gray-700/60">
   <%# Decorative background pattern %>
@@ -60,16 +40,16 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <%# Match Score Card %>
       <div class="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 p-5 hover:shadow-md transition-all duration-200">
-        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-<%= match_color %>-100 dark:from-<%= match_color %>-900/20 to-transparent rounded-bl-full opacity-60"></div>
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl <%= match_classes[:gradient] %> to-transparent rounded-bl-full opacity-60"></div>
         
         <div class="relative">
           <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 rounded-lg bg-<%= match_color %>-100 dark:bg-<%= match_color %>-900/30 flex items-center justify-center">
-              <svg class="w-4 h-4 text-<%= match_color %>-600 dark:text-<%= match_color %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-8 h-8 rounded-lg <%= match_classes[:icon_bg] %> flex items-center justify-center">
+              <svg class="w-4 h-4 <%= match_classes[:icon_text] %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
               </svg>
             </div>
-            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Match</span>
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Match</span>
           </div>
 
           <div class="flex items-baseline gap-2 mb-3">
@@ -81,9 +61,8 @@
             <% end %>
           </div>
 
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-            bg-<%= match_color %>-100 text-<%= match_color %>-700 dark:bg-<%= match_color %>-900/30 dark:text-<%= match_color %>-300">
-            <span class="w-1.5 h-1.5 rounded-full bg-<%= match_color %>-500 animate-pulse"></span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold <%= match_classes[:badge_bg] %> <%= match_classes[:badge_text] %>">
+            <span class="w-1.5 h-1.5 rounded-full <%= match_classes[:dot] %> animate-pulse"></span>
             <%= match_label %>
           </span>
 
@@ -122,12 +101,12 @@
         
         <div class="relative">
           <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center">
+              <svg class="w-4 h-4 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
-            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Focus Next</span>
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Focus Next</span>
           </div>
 
           <% if focus_areas.present? && focus_areas.any? %>
@@ -160,12 +139,12 @@
         
         <div class="relative">
           <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-              <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
+              <svg class="w-4 h-4 text-violet-600 dark:text-violet-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
             </div>
-            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Next Round</span>
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Next Round</span>
           </div>
 
           <% if next_round.present? %>

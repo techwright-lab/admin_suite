@@ -119,66 +119,139 @@
       </div>
     <% end %>
 
-    <!-- Description -->
-    <% if job_listing.description.present? %>
-      <div>
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          Description
-        </h3>
+    <%# Limited extraction warning for LinkedIn and similar sources %>
+    <% if job_listing.limited_extraction? %>
+      <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+        <div class="flex gap-3">
+          <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <div>
+            <h4 class="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">Limited Job Details</h4>
+            <p class="text-sm text-amber-700 dark:text-amber-300 mb-2">
+              <%= job_listing.limited_extraction_reason %>
+            </p>
+            <% if job_listing.url.present? %>
+              <a href="<%= job_listing.url %>" target="_blank" rel="noopener noreferrer" 
+                 class="inline-flex items-center gap-1 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 underline">
+                View full details on <%= job_listing.job_board&.titleize || "original site" %>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
 
-        <div class="prose prose-sm dark:prose-invert max-w-none">
+    <%# Prompt for more details if extraction was incomplete %>
+    <% if job_listing.needs_more_details? && !job_listing.limited_extraction? %>
+      <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div class="flex gap-3">
+          <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Help us improve this listing</h4>
+            <p class="text-sm text-blue-700 dark:text-blue-300">
+              Some job details may be missing. If you have more information about this role, 
+              you can help improve the listing.
+            </p>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Description -->
+    <%# Check for markdown content from either extraction (description_markdown) or post-processing (job_markdown) %>
+    <% job_markdown = job_listing.custom_sections&.dig("job_markdown") || job_listing.custom_sections&.dig("description_markdown") %>
+    <% compensation_text = job_listing.custom_sections&.dig("compensation_text") %>
+    <% interview_process = job_listing.custom_sections&.dig("interview_process") %>
+
+    <% if job_markdown.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Job Posting</h3>
+        <div class="job-prose">
+          <%= format_job_text(job_markdown) %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if compensation_text.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Compensation</h3>
+        <div class="job-prose">
+          <%= format_job_text(compensation_text) %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if interview_process.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Interview Process</h3>
+        <div class="job-prose">
+          <%= format_job_text(interview_process) %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if job_markdown.blank? && job_listing.description.present? %>
+      <div>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
+        <div class="job-prose">
           <%= format_job_text(job_listing.description) %>
         </div>
       </div>
     <% end %>
 
     <!-- Responsibilities -->
-    <% if job_listing.responsibilities.present? %>
+    <% if job_markdown.blank? && job_listing.responsibilities.present? %>
       <div>
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           Responsibilities
         </h3>
 
-        <div class="prose prose-sm dark:prose-invert max-w-none">
+        <div class="job-prose">
           <%= format_list_text(job_listing.responsibilities) %>
         </div>
       </div>
     <% end %>
 
     <!-- Requirements -->
-    <% if job_listing.requirements.present? %>
+    <% if job_markdown.blank? && job_listing.requirements.present? %>
       <div>
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           Requirements
         </h3>
 
-        <div class="prose prose-sm dark:prose-invert max-w-none">
+        <div class="job-prose">
           <%= format_list_text(job_listing.requirements) %>
         </div>
       </div>
     <% end %>
 
     <!-- Benefits -->
-    <% if job_listing.benefits.present? %>
+    <% if job_markdown.blank? && job_listing.benefits.present? %>
       <div>
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           Benefits
         </h3>
 
-        <div class="prose prose-sm dark:prose-invert max-w-none">
+        <div class="job-prose">
           <%= format_key_value_text(job_listing.benefits) %>
         </div>
       </div>
     <% end %>
 
     <!-- Perks -->
-    <% if job_listing.perks.present? %>
+    <% if job_markdown.blank? && job_listing.perks.present? %>
       <div>
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
           Perks
         </h3>
 
-        <div class="prose prose-sm dark:prose-invert max-w-none">
+        <div class="job-prose">
           <%= format_list_text(job_listing.perks) %>
         </div>
       </div>
@@ -202,8 +275,15 @@
       <%# Separate key-value sections from text sections %>
       <% kv_sections = {}
         text_sections = {}
+        hidden_custom_section_keys = %w[
+          job_markdown
+          compensation_text
+          interview_process
+          original_url
+        ]
         
         job_listing.custom_sections.each do |key, value|
+          next if hidden_custom_section_keys.include?(key.to_s)
           next if value.blank?
           
           # Check if it's a simple value (no newlines, short)
@@ -247,7 +327,7 @@
             <%= key.to_s.titleize %>
           </h3>
 
-          <div class="prose prose-sm dark:prose-invert max-w-none">
+          <div class="job-prose">
             <%= format_job_text(value) %>
           </div>
         </div>

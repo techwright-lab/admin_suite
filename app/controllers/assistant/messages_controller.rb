@@ -31,12 +31,17 @@ module Assistant
         end
       end
 
+      # Build page context from params
+      # This allows the frontend to indicate which page the user is on,
+      # enabling context-aware features like including full resume text
+      page_context = build_page_context_from_params
+
       # Create user message immediately
       trace_id = SecureRandom.uuid
       @user_message = @thread.messages.create!(
         role: "user",
         content: question,
-        metadata: { trace_id: trace_id }
+        metadata: { trace_id: trace_id, page_context: page_context }
       )
 
       # Update thread activity
@@ -68,6 +73,31 @@ module Assistant
 
     private
 
+    # Builds page context from request parameters
+    #
+    # Supported context fields:
+    # - resume_id: User is viewing a resume (triggers full resume text inclusion)
+    # - job_listing_id: User is viewing a job listing
+    # - interview_application_id: User is viewing an application
+    # - opportunity_id: User is viewing an opportunity
+    # - include_full_resume: Explicit flag to include full resume text
+    #
+    # @return [Hash] Page context for the assistant
+    def build_page_context_from_params
+      context = {}
+
+      # Extract context IDs from params
+      context[:resume_id] = params[:resume_id].to_i if params[:resume_id].present?
+      context[:job_listing_id] = params[:job_listing_id].to_i if params[:job_listing_id].present?
+      context[:interview_application_id] = params[:interview_application_id].to_i if params[:interview_application_id].present?
+      context[:opportunity_id] = params[:opportunity_id].to_i if params[:opportunity_id].present?
+
+      # Explicit flags
+      context[:include_full_resume] = true if params[:include_full_resume] == "true" || params[:include_full_resume] == true
+
+      context.compact
+    end
+
     # Unlocks the insight-triggered trial on the user's first AI assistant request.
     #
     # @return [void]
@@ -75,7 +105,7 @@ module Assistant
       result = Billing::TrialUnlockService.new(user: Current.user, trigger: :first_ai_request).run
       return unless result[:unlocked]
 
-      flash.now[:notice] = "You’ve unlocked Pro insights for 72 hours."
+      flash.now[:notice] = "You've unlocked Pro insights for 72 hours."
     end
   end
 end

@@ -25,9 +25,10 @@ module Ai
         - job_role: Job role/title (can be the same as title or a normalized version)
         - job_role_department: The department/function this role belongs to (one of: "Engineering", "Product", "Design", "Data Science", "DevOps/SRE", "Sales", "Marketing", "Customer Success", "Finance", "HR/People", "Legal", "Operations", "Executive", "Research", "QA/Testing", "Security", "IT", "Content", "Other")
         - job_board: The job board where the job listing was found (e.g. "LinkedIn", "Greenhouse", "Lever", "Indeed", "Glassdoor", "Workable", "Jobvite", "ICIMS", "SmartRecruiters", "BambooHR", "AshbyHQ", "Other")
-        - description: Full job description (text only, no HTML)
-        - requirements: Required qualifications and skills
-        - responsibilities: Key responsibilities and duties
+        - description: Brief summary of the role (1-2 sentences)
+        - description_markdown: Complete job posting formatted as clean Markdown (see format below)
+        - requirements: Array of requirement strings (one item per requirement)
+        - responsibilities: Array of responsibility strings (one item per responsibility)
         - location: Office location or "Remote"
         - remote_type: one of "on_site", "hybrid", or "remote"
 
@@ -37,14 +38,26 @@ module Ai
         - salary_min: Minimum salary as number
         - salary_max: Maximum salary as number
         - salary_currency: Currency code (e.g., "USD", "EUR")
+        - compensation_text: Human-readable compensation description (e.g., "$120,000 - $150,000 USD per year")
         - equity_info: Stock options or equity details
-        - benefits: Benefits package description
-        - perks: Additional perks and amenities
+        - benefits: Array of benefit strings
+        - perks: Array of perk strings
+        - interview_process: Description of the interview/hiring process if mentioned
         - custom_sections: Any additional structured data as a JSON object
 
         Also provide:
         - confidence_score: Your confidence in the extraction accuracy (0.0 to 1.0)
         - notes: Any extraction challenges or uncertainties
+
+        MARKDOWN FORMAT for description_markdown:
+        - Use ## for main sections (e.g., ## About the Role, ## Responsibilities, ## Requirements)
+        - Use ### for subsections
+        - Use - for bullet lists (not *)
+        - Use **text** for bold emphasis
+        - Use *text* for italic emphasis
+        - DO NOT include any HTML tags
+        - Preserve the logical structure of the original posting
+        - Include all content: about company, role description, responsibilities, requirements, benefits, etc.
 
         Job Listing URL: {{url}}
 
@@ -58,6 +71,8 @@ module Ai
     def self.default_system_prompt
       <<~PROMPT
         You are an expert at extracting structured job listing data from HTML. You are given a job listing URL and the HTML content of the job listing. You need to extract the structured data from the HTML content.
+
+        For description_markdown, produce clean, well-formatted Markdown that preserves the job posting's structure. Use consistent heading levels (## for sections, ### for subsections) and bullet lists (- item) for lists. Never include HTML tags in the markdown output.
       PROMPT
     end
 

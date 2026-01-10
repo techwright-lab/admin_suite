@@ -94,7 +94,9 @@ class InterviewApplication < ApplicationRecord
   scope :by_pipeline_stage, ->(stage) { where(pipeline_stage: stage) }
   scope :with_active_rounds, -> { joins(:interview_rounds).where(interview_rounds: { result: :pending }).distinct }
 
-  before_create :set_uuid
+  # Set uuid early so FriendlyId can use it for slug generation
+  # (FriendlyId runs in before_validation, before before_create)
+  before_validation :set_uuid, on: :create
   before_create :set_applied_at
 
   # Returns a short summary for display in cards

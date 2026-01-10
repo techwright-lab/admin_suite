@@ -111,6 +111,20 @@ class ScrapeJobListingJob < ApplicationJob
     attempt = job_listing.scraping_attempts.order(created_at: :desc).first
 
     if attempt
+      classifier = Scraping::FailureClassifierService.new(attempt)
+      unless classifier.retryable?
+        Rails.logger.info({
+          event: "job_scraping_not_retryable",
+          job_listing_id: job_listing.id,
+          scraping_attempt_id: attempt.id,
+          url: job_listing.url,
+          failed_step: attempt.failed_step,
+          error_message: attempt.error_message,
+          retry_count: attempt.retry_count
+        }.to_json)
+        return
+      end
+
       # Use retry_count from attempt, not executions (which is from ActiveJob)
       current_retry_count = attempt.retry_count || 0
 
@@ -154,6 +168,19 @@ class ScrapeJobListingJob < ApplicationJob
   #
   # @param [ScrapingAttempt] attempt The failed attempt
   def handle_retry_failure(attempt)
+    classifier = Scraping::FailureClassifierService.new(attempt)
+    unless classifier.retryable?
+      Rails.logger.info({
+        event: "job_scraping_retry_not_retryable",
+        scraping_attempt_id: attempt.id,
+        job_listing_id: attempt.job_listing_id,
+        failed_step: attempt.failed_step,
+        error_message: attempt.error_message,
+        retry_count: attempt.retry_count
+      }.to_json)
+      return
+    end
+
     current_retry_count = attempt.retry_count || 0
 
     if current_retry_count >= 3

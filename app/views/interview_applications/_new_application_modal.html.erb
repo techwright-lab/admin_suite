@@ -112,6 +112,22 @@
               </p>
             </div>
 
+            <!-- Tip for better extraction -->
+            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+              <div class="flex gap-3">
+                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="text-sm">
+                  <p class="font-medium text-blue-800 dark:text-blue-200 mb-1">Tip for best results</p>
+                  <p class="text-blue-700 dark:text-blue-300">
+                    When possible, use the direct job listing URL (e.g., from Greenhouse, Lever, or the company's careers page) 
+                    instead of LinkedIn. This allows us to extract more complete job details.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- Quick Apply Form -->
             <form
               data-application-modal-target="quickApplyForm"
@@ -139,10 +155,30 @@
                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                   "
                   data-application-modal-target="urlInput"
+                  data-action="input->application-modal#checkUrlSource"
                 />
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Supports Greenhouse, Lever, LinkedIn, Indeed, and other job boards
                 </p>
+                
+                <!-- LinkedIn Warning (hidden by default) -->
+                <div
+                  data-application-modal-target="linkedinWarning"
+                  class="hidden mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+                >
+                  <div class="flex gap-2">
+                    <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <div class="text-sm">
+                      <p class="font-medium text-amber-800 dark:text-amber-200">LinkedIn URL detected</p>
+                      <p class="text-amber-700 dark:text-amber-300">
+                        LinkedIn limits access to job details. If you clicked "Apply" on LinkedIn and were redirected to another site, 
+                        please use that URL instead for better extraction. You can continue with this URL, but some details may be missing.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Error Message -->

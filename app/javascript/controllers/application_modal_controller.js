@@ -32,12 +32,32 @@ export default class extends Controller {
     "quickApplyButton",
     "manualLoadingIndicator",
     "manualFormActions",
-    "manualSubmitButton"
+    "manualSubmitButton",
+    "linkedinWarning"
   ]
+
+  // Limited extraction job boards that show warnings
+  static LIMITED_SOURCES = ["linkedin.com", "indeed.com", "glassdoor.com"]
 
   connect() {
     // Default to Quick Apply tab
     this.switchToQuickApply()
+  }
+
+  // Checks if the entered URL is from a limited extraction source (LinkedIn, Indeed, etc.)
+  // and shows an appropriate warning
+  checkUrlSource(event) {
+    const url = event.target.value.toLowerCase()
+    
+    if (!this.hasLinkedinWarningTarget) return
+
+    const isLimitedSource = this.constructor.LIMITED_SOURCES.some(source => url.includes(source))
+    
+    if (isLimitedSource) {
+      this.linkedinWarningTarget.classList.remove("hidden")
+    } else {
+      this.linkedinWarningTarget.classList.add("hidden")
+    }
   }
 
   switchToQuickApply(event) {
@@ -269,6 +289,9 @@ export default class extends Controller {
   hideMessages() {
     this.errorMessageTarget.classList.add("hidden")
     this.successMessageTarget.classList.add("hidden")
+    if (this.hasLinkedinWarningTarget) {
+      this.linkedinWarningTarget.classList.add("hidden")
+    }
   }
 
   // Handles manual entry form submission - shows loading state

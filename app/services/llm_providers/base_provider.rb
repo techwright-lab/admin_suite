@@ -24,6 +24,13 @@ module LlmProviders
     #   @option options [Integer] :max_tokens Maximum tokens in response
     #   @option options [Float] :temperature Temperature setting (0-1)
     #   @option options [String] :system_message Optional system message
+    #   @option options [Array<Hash>] :media Array of media attachments for multimodal input
+    #     Each media hash should contain:
+    #     - :type [String] Media type: "image" or "document"
+    #     - :source_type [String] Source type: "base64" or "url"
+    #     - :media_type [String] MIME type (e.g., "image/png", "application/pdf")
+    #     - :data [String] Base64-encoded data (if source_type is "base64")
+    #     - :url [String] URL to media (if source_type is "url")
     # @return [Hash] Result hash with:
     #   - :content [String] The LLM response text
     #   - :provider [String] Provider name
@@ -42,6 +49,20 @@ module LlmProviders
     # @raise [NotImplementedError] Must be implemented by subclass
     def run(prompt, options = {})
       raise NotImplementedError, "#{self.class} must implement #run"
+    end
+
+    # Checks if this provider supports multimodal input (images, documents)
+    #
+    # @return [Boolean] True if provider supports media attachments
+    def supports_media?
+      false
+    end
+
+    # Returns supported media types for this provider
+    #
+    # @return [Array<String>] Array of supported MIME types
+    def supported_media_types
+      []
     end
 
     # Checks if the provider is available and configured

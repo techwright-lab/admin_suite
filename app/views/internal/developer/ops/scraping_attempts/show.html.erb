@@ -1,0 +1,246 @@
+<% content_for :title, "Scraping Attempt ##{resource.id} - Developer Portal" %>
+
+<% attempt = resource %>
+<% job_listing = attempt.job_listing %>
+<% events = attempt.scraping_events.in_order.includes(:job_listing) %>
+<% html_logs = attempt.html_scraping_logs.order(created_at: :desc).limit(10) %>
+<% llm_logs = attempt.llm_api_logs.order(created_at: :desc).limit(10) %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="mb-6">
+    <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+      <%= link_to "Dashboard", internal_developer_root_path, class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <%= link_to "Scraping Attempts", internal_developer_ops_scraping_attempts_path, class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span class="text-slate-900 dark:text-white font-mono">#<%= attempt.id %></span>
+    </nav>
+
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Scraping Attempt <span class="font-mono">#<%= attempt.id %></span></h1>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          Step-by-step timeline of the scrape with inputs, outputs, and artifacts.
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <%= link_to internal_developer_ops_scraping_attempt_path(attempt, format: :json),
+            class: "inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-sm font-medium rounded-lg transition-colors" do %>
+          Export JSON
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <div class="lg:w-96 flex-shrink-0 space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <h3 class="font-medium text-slate-900 dark:text-white text-sm">Attempt Summary</h3>
+        </div>
+
+        <div class="p-4 space-y-4">
+          <div class="space-y-2">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</div>
+            <div class="flex items-center justify-between">
+              <%= render_status_badge(attempt.status) %>
+              <% if attempt.duration_seconds.present? %>
+                <span class="text-xs text-slate-500 dark:text-slate-400 font-mono"><%= attempt.formatted_duration %></span>
+              <% end %>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">URL</div>
+            <div class="text-sm">
+              <a href="<%= attempt.url %>" target="_blank" rel="noopener"
+                 class="text-indigo-600 dark:text-indigo-400 hover:underline break-all">
+                <%= attempt.url %>
+              </a>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">
+              Domain: <span class="font-mono"><%= attempt.domain %></span>
+            </div>
+          </div>
+
+          <% if attempt.failed_step.present? || attempt.error_message.present? %>
+            <div class="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-3">
+              <div class="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider">Failure</div>
+              <% if attempt.failed_step.present? %>
+                <div class="mt-1 text-sm text-red-700 dark:text-red-200">
+                  Step: <span class="font-mono"><%= attempt.failed_step %></span>
+                </div>
+              <% end %>
+              <% if attempt.error_message.present? %>
+                <div class="mt-1 text-sm text-red-700 dark:text-red-200 break-words"><%= attempt.error_message %></div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Created</div>
+              <div class="mt-1 text-sm text-slate-900 dark:text-white"><%= attempt.created_at.strftime("%b %d, %H:%M") %></div>
+            </div>
+            <div>
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Updated</div>
+              <div class="mt-1 text-sm text-slate-900 dark:text-white"><%= attempt.updated_at.strftime("%b %d, %H:%M") %></div>
+            </div>
+          </div>
+
+          <% if job_listing.present? %>
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-700">
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Job Listing</div>
+              <div class="space-y-1">
+                <div class="text-sm font-medium text-slate-900 dark:text-white">
+                  <%= job_listing.title.presence || "Untitled" %>
+                </div>
+                <%= link_to "Open in Ops Portal",
+                    internal_developer_ops_job_listing_path(job_listing),
+                    class: "text-sm text-indigo-600 dark:text-indigo-400 hover:underline" %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <% if html_logs.any? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-medium text-slate-900 dark:text-white text-sm">HTML Logs</h3>
+          </div>
+          <div class="p-4 space-y-2">
+            <% html_logs.each do |log| %>
+              <%= link_to internal_developer_ops_html_scraping_log_path(log),
+                  class: "block p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors" do %>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-900 dark:text-white truncate"><%= log.domain %></div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                      <span class="font-mono"><%= log.fetch_mode %></span> •
+                      <span class="font-mono"><%= log.board_type %></span> •
+                      <%= log.created_at.strftime("%b %d, %H:%M") %>
+                    </div>
+                  </div>
+                  <%= render_status_badge(log.status, size: :sm) %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if llm_logs.any? %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-medium text-slate-900 dark:text-white text-sm">LLM API Logs</h3>
+          </div>
+          <div class="p-4 space-y-2">
+            <% llm_logs.each do |log| %>
+              <%= link_to internal_developer_ai_llm_api_log_path(log),
+                  class: "block p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors" do %>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-900 dark:text-white truncate"><%= log.provider %> • <%= log.model %></div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400"><%= log.created_at.strftime("%b %d, %H:%M") %></div>
+                  </div>
+                  <%= render_status_badge(log.status, size: :sm) %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="flex-1 min-w-0 space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="font-medium text-slate-900 dark:text-white">Event Timeline</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400"><%= events.size %> events</span>
+          </div>
+        </div>
+
+        <div class="p-6">
+          <% if events.any? %>
+            <ol class="relative border-s border-slate-200 dark:border-slate-700">
+              <% events.each do |event| %>
+                <li class="mb-6 ms-4">
+                  <div class="absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-white dark:border-slate-800
+                    <%= event.status.to_s == 'success' ? 'bg-green-500' : (event.status.to_s == 'failed' ? 'bg-red-500' : (event.status.to_s == 'skipped' ? 'bg-slate-400' : 'bg-indigo-500')) %>">
+                  </div>
+
+                  <details class="group rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/20">
+                    <summary class="cursor-pointer list-none p-4 flex items-start justify-between gap-4">
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="text-xs font-mono text-slate-500 dark:text-slate-400">#<%= event.step_order %></span>
+                          <span class="text-sm font-semibold text-slate-900 dark:text-white"><%= event.event_type_display %></span>
+                          <%= render_status_badge(event.status, size: :sm) %>
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          <%= event.created_at.strftime("%b %d, %H:%M:%S") %>
+                          <% if event.duration_ms.present? %>
+                            • <span class="font-mono"><%= event.duration_ms %>ms</span>
+                          <% end %>
+                          <% if event.output_payload.is_a?(Hash) && event.output_payload["error"].present? %>
+                            • <span class="text-red-600 dark:text-red-300"><%= event.output_payload["error"].to_s.truncate(120) %></span>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <%= link_to "Open",
+                            internal_developer_ops_scraping_event_path(event),
+                            class: "text-xs text-indigo-600 dark:text-indigo-400 hover:underline",
+                            data: { turbo_frame: "_top" } %>
+                        <svg class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                      </div>
+                    </summary>
+
+                    <div class="px-4 pb-4 space-y-4">
+                      <% if event.input_payload.present? %>
+                        <div>
+                          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Input</div>
+                          <%= format_show_value(event, :input_payload) %>
+                        </div>
+                      <% end %>
+
+                      <% if event.output_payload.present? %>
+                        <div>
+                          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Output</div>
+                          <%= format_show_value(event, :output_payload) %>
+                        </div>
+                      <% end %>
+
+                      <% if event.error_message.present? || event.error_type.present? %>
+                        <div class="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-3">
+                          <div class="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wider">Error</div>
+                          <div class="mt-1 text-sm text-red-700 dark:text-red-200">
+                            <%= [event.error_type, event.error_message].compact.join(": ") %>
+                          </div>
+                        </div>
+                      <% end %>
+                    </div>
+                  </details>
+                </li>
+              <% end %>
+            </ol>
+          <% else %>
+            <div class="text-center py-10 text-sm text-slate-500 dark:text-slate-400">
+              No events recorded for this attempt.
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

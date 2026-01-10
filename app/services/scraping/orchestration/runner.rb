@@ -34,7 +34,9 @@ module Scraping
         [
           Steps::DetectJobBoard.new,
           Steps::FetchHtml.new,
+          Steps::ResolveEmbeddedJobBoard.new,
           Steps::RenderedFallback.new,
+          Steps::HandleLimitedSources.new,
           Steps::NokogiriScrape.new,
           Steps::SelectorsExtract.new,
           Steps::ApiExtract.new,

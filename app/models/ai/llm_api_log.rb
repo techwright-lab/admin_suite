@@ -44,6 +44,7 @@ module Ai
     # Operation types for LLM calls
     OPERATION_TYPES = %w[
       job_extraction
+      job_postprocess
       email_extraction
       resume_extraction
       interview_prep_match_analysis
@@ -177,6 +178,7 @@ module Ai
     def operation_badge_color
       case operation_type
       when "job_extraction" then "blue"
+      when "job_postprocess" then "blue"
       when "email_extraction" then "purple"
       when "resume_extraction" then "green"
       else "gray"

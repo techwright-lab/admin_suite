@@ -44,6 +44,9 @@ module Scraping
         def update_final!(context, result)
           job_listing = context.job_listing
 
+          # Merge custom_sections to preserve existing data while adding new fields
+          merged_custom_sections = (job_listing.custom_sections || {}).merge(result[:custom_sections] || {})
+
           updates = {
             title: result[:title] || job_listing.title,
             description: result[:description] || job_listing.description,
@@ -59,7 +62,7 @@ module Scraping
             perks: result[:perks] || job_listing.perks,
             location: result[:location] || job_listing.location,
             remote_type: result[:remote_type] || job_listing.remote_type,
-            custom_sections: result[:custom_sections] || job_listing.custom_sections,
+            custom_sections: merged_custom_sections,
             scraped_data: build_scraped_metadata(context, result)
           }
 

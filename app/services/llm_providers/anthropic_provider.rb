@@ -5,7 +5,35 @@ module LlmProviders
   #
   # Uses the Anthropic Ruby SDK with streaming for efficient long-running requests.
   # Includes rate limiting via AnthropicRateLimiterService.
+  #
+  # Supports multimodal input:
+  # - Images: JPEG, PNG, GIF, WebP
+  # - Documents: PDF (native), DOCX (via text extraction)
   class AnthropicProvider < BaseProvider
+    # Supported image MIME types
+    SUPPORTED_IMAGE_TYPES = %w[
+      image/jpeg
+      image/png
+      image/gif
+      image/webp
+    ].freeze
+
+    # Natively supported document MIME types (sent as-is)
+    NATIVE_DOCUMENT_TYPES = %w[
+      application/pdf
+    ].freeze
+
+    # Document types requiring text extraction before sending
+    TEXT_EXTRACTION_TYPES = %w[
+      application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    ].freeze
+
+    # All supported document MIME types
+    SUPPORTED_DOCUMENT_TYPES = (NATIVE_DOCUMENT_TYPES + TEXT_EXTRACTION_TYPES).freeze
+
+    # All supported media types
+    SUPPORTED_MEDIA_TYPES = (SUPPORTED_IMAGE_TYPES + SUPPORTED_DOCUMENT_TYPES).freeze
+
     # Sends a prompt to Claude and returns the response
     #
     # @param prompt [String] The prompt text
@@ -13,6 +41,7 @@ module LlmProviders
     #   @option options [Integer] :max_tokens Maximum tokens in response
     #   @option options [Float] :temperature Temperature setting
     #   @option options [String] :system_message Optional system message
+    #   @option options [Array<Hash>] :media Array of media attachments (images, documents)
     # @return [Hash] Result with content and metadata
     def run(prompt, options = {})
       return rate_limit_error_response if prompt.present? && exceeds_rate_limit?(prompt)
@@ -21,6 +50,16 @@ module LlmProviders
       build_response(result, latency_ms)
     rescue => e
       handle_error(e)
+    end
+
+    # @return [Boolean] True - Anthropic Claude supports multimodal input
+    def supports_media?
+      true
+    end
+
+    # @return [Array<String>] Supported MIME types for media attachments
+    def supported_media_types
+      SUPPORTED_MEDIA_TYPES
     end
 
     protected
@@ -125,8 +164,185 @@ module LlmProviders
     end
 
     def build_messages(prompt, options)
-      return Array(options[:messages]) if options[:messages].present?
-      [ { role: "user", content: prompt } ]
+      # If caller provides pre-built messages, use them directly
+      if options[:messages].present?
+        messages = Array(options[:messages])
+        # Attach media to the last user message if media is provided
+        if options[:media].present?
+          return inject_media_into_messages(messages, options[:media])
+        end
+        return messages
+      end
+
+      # Build simple user message with optional media
+      content = build_content_with_media(prompt, options[:media])
+      [ { role: "user", content: content } ]
+    end
+
+    # Builds content array with text and optional media blocks
+    #
+    # @param text [String] The text content
+    # @param media [Array<Hash>, nil] Optional media attachments
+    # @return [String, Array<Hash>] String if no media, Array of content blocks otherwise
+    def build_content_with_media(text, media)
+      return text.to_s if media.blank?
+
+      content_blocks = []
+
+      # Add media blocks first (images/documents)
+      Array(media).each do |m|
+        block = build_media_block(m)
+        content_blocks << block if block
+      end
+
+      # Add text block
+      content_blocks << { type: "text", text: text.to_s } if text.present?
+
+      content_blocks
+    end
+
+    # Builds a single media content block for Anthropic's API
+    #
+    # @param media [Hash] Media attachment info
+    #   - :type [String] "image" or "document"
+    #   - :source_type [String] "base64" or "url"
+    #   - :media_type [String] MIME type
+    #   - :data [String] Base64 data (if source_type is "base64")
+    #   - :url [String] URL (if source_type is "url")
+    # @return [Hash, nil] Content block for Anthropic API or nil if invalid
+    def build_media_block(media)
+      media = media.symbolize_keys
+      media_type = media[:media_type].to_s
+
+      return nil unless SUPPORTED_MEDIA_TYPES.include?(media_type)
+
+      if media[:type].to_s == "document" || SUPPORTED_DOCUMENT_TYPES.include?(media_type)
+        build_document_block(media)
+      else
+        build_image_block(media)
+      end
+    end
+
+    # Builds an image content block
+    def build_image_block(media)
+      source = if media[:source_type].to_s == "url" && media[:url].present?
+        { type: "url", url: media[:url] }
+      elsif media[:data].present?
+        { type: "base64", media_type: media[:media_type], data: media[:data] }
+      end
+
+      return nil unless source
+
+      { type: "image", source: source }
+    end
+
+    # Builds a document content block (PDF native, DOCX via text extraction)
+    def build_document_block(media)
+      media_type = media[:media_type].to_s
+
+      # DOCX requires text extraction since Claude doesn't natively support it
+      if TEXT_EXTRACTION_TYPES.include?(media_type)
+        return build_text_block_from_document(media)
+      end
+
+      # Native document support (PDF)
+      source = if media[:source_type].to_s == "url" && media[:url].present?
+        { type: "url", url: media[:url] }
+      elsif media[:data].present?
+        { type: "base64", media_type: media[:media_type], data: media[:data] }
+      end
+
+      return nil unless source
+
+      {
+        type: "document",
+        source: source,
+        cache_control: media[:cache_control] # Optional caching hint
+      }.compact
+    end
+
+    # Extracts text from a DOCX file and returns it as a text block
+    #
+    # @param media [Hash] Media attachment with :data (base64) or :text (pre-extracted)
+    # @return [Hash, nil] Text content block or nil
+    def build_text_block_from_document(media)
+      # If text was pre-extracted, use it directly
+      if media[:extracted_text].present?
+        return { type: "text", text: format_document_text(media[:extracted_text], media[:filename]) }
+      end
+
+      # If we have base64 data, try to extract text from DOCX
+      if media[:data].present? && media[:media_type] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        extracted = extract_text_from_docx(media[:data])
+        if extracted.present?
+          return { type: "text", text: format_document_text(extracted, media[:filename]) }
+        end
+      end
+
+      nil
+    end
+
+    # Extracts text from a base64-encoded DOCX file
+    #
+    # @param base64_data [String] Base64-encoded DOCX content
+    # @return [String, nil] Extracted text or nil if extraction fails
+    def extract_text_from_docx(base64_data)
+      require "docx"
+      require "base64"
+      require "tempfile"
+
+      Tempfile.create([ "document", ".docx" ]) do |temp|
+        temp.binmode
+        temp.write(Base64.decode64(base64_data))
+        temp.rewind
+
+        doc = Docx::Document.open(temp.path)
+        paragraphs = doc.paragraphs.map(&:text).reject(&:blank?)
+        paragraphs.join("\n\n")
+      end
+    rescue LoadError => e
+      Rails.logger.warn("DOCX extraction unavailable: #{e.message}. Install 'docx' gem for DOCX support.")
+      nil
+    rescue => e
+      Rails.logger.error("Failed to extract text from DOCX: #{e.message}")
+      nil
+    end
+
+    # Formats extracted document text with context
+    def format_document_text(text, filename = nil)
+      header = filename.present? ? "--- Document: #{filename} ---\n\n" : "--- Document Content ---\n\n"
+      "#{header}#{text}\n\n--- End of Document ---"
+    end
+
+    # Injects media into the last user message in a messages array
+    #
+    # @param messages [Array<Hash>] Existing messages
+    # @param media [Array<Hash>] Media to inject
+    # @return [Array<Hash>] Messages with media injected
+    def inject_media_into_messages(messages, media)
+      return messages if media.blank?
+
+      # Find the last user message
+      last_user_idx = messages.rindex { |m| m[:role] == "user" || m["role"] == "user" }
+      return messages unless last_user_idx
+
+      messages = messages.deep_dup
+      last_msg = messages[last_user_idx]
+      existing_content = last_msg[:content] || last_msg["content"]
+
+      # Convert string content to content blocks
+      if existing_content.is_a?(String)
+        new_content = build_content_with_media(existing_content, media)
+      elsif existing_content.is_a?(Array)
+        # Already an array of content blocks, prepend media
+        media_blocks = Array(media).filter_map { |m| build_media_block(m) }
+        new_content = media_blocks + existing_content
+      else
+        new_content = build_content_with_media("", media)
+      end
+
+      messages[last_user_idx] = last_msg.merge(content: new_content)
+      messages
     end
 
     def parse_message(message)

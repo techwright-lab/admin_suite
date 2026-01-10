@@ -126,7 +126,8 @@ module Assistant
 
         def anthropic_followup(allowed_tools:, tool_results:)
           provider = LlmProviders::AnthropicProvider.new
-          system_prompt = Ai::AssistantSystemPrompt.active_prompt&.prompt_template || Ai::AssistantSystemPrompt.default_prompt_template
+          system_prompt = Ai::AssistantSystemPrompt.active_prompt&.system_prompt.presence ||
+            Ai::AssistantSystemPrompt.default_system_prompt
           tools = Assistant::Tools::ToolSchemaAdapter.new(allowed_tools).for_anthropic
 
           messages = build_anthropic_history_messages

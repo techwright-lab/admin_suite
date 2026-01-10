@@ -20,6 +20,26 @@ module Scraping
     # This is a hard limit to prevent indefinite hangs
     HARD_TIMEOUT_SECONDS = 90
     MAX_HTML_BYTES = 5.megabytes
+    MAX_IFRAMES_TO_CHECK = 5
+
+    # A realistic UA (some job boards degrade bot UAs).
+    REALISTIC_UA =
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " \
+      "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+
+    # Best-effort selectors for “job content is present”.
+    JOB_CONTENT_SELECTORS = [
+      "[data-testid*='job']",
+      "[data-testid*='description']",
+      "[data-testid*='posting']",
+      "[class*='job-description']",
+      "[class*='jobDescription']",
+      "[class*='job-details']",
+      "[class*='jobDetails']",
+      "[id*='job-description']",
+      "[id*='jobDescription']",
+      "main"
+    ].freeze
 
     attr_reader :job_listing, :scraping_attempt, :url
 
@@ -96,6 +116,8 @@ module Scraping
         # Wait for document readiness
         wait_until(driver, @timeout) { driver.execute_script("return document.readyState") == "complete" }
 
+        selector_probe = wait_for_job_content(driver)
+
         # Best-effort settle time for SPAs (bounded)
         sleep(@wait) if @wait.positive?
 
@@ -108,6 +130,19 @@ module Scraping
         cleaner = Scraping::HtmlCleaners::CleanerFactory.cleaner_for_url(url)
         cleaned_html = cleaner.clean(html)
 
+        iframe_result = selector_probe[:iframe_best_candidate]
+        if iframe_result.present?
+          # Prefer iframe HTML if it yields more extracted text
+          iframe_cleaned = cleaner.clean(iframe_result[:iframe_html].to_s)
+          if extracted_text_length(iframe_cleaned) > extracted_text_length(cleaned_html)
+            html = iframe_result[:iframe_html].to_s
+            cleaned_html = iframe_cleaned
+            selector_probe[:iframe_used] = true
+          end
+        end
+
+        cleaned_text_length = extracted_text_length(cleaned_html)
+
         duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
 
         cached_data = ScrapedJobListingData.create_with_html(
@@ -119,7 +154,12 @@ module Scraping
           metadata: {
             fetched_via: "selenium",
             rendered: true,
-            duration_ms: duration_ms
+            duration_ms: duration_ms,
+            selector_found: selector_probe[:selector_found],
+            found_selectors: selector_probe[:found_selectors],
+            selector_wait_ms: selector_probe[:selector_wait_ms],
+            iframe_used: selector_probe[:iframe_used],
+            cleaned_text_length: cleaned_text_length
           }
         )
 
@@ -130,7 +170,12 @@ module Scraping
           cached_data: cached_data,
           from_cache: false,
           http_status: nil,
-          duration_ms: duration_ms
+          duration_ms: duration_ms,
+          selector_found: selector_probe[:selector_found],
+          found_selectors: selector_probe[:found_selectors],
+          selector_wait_ms: selector_probe[:selector_wait_ms],
+          iframe_used: selector_probe[:iframe_used],
+          cleaned_text_length: cleaned_text_length
         }
       ensure
         driver&.quit
@@ -146,8 +191,8 @@ module Scraping
       options.add_argument("--window-size=1280,1024")
       options.add_argument("--lang=en-US")
 
-      # Prefer a stable UA for consistent rendering
-      options.add_argument("--user-agent=GleaniaBot/1.0 (+https://gleania.com/bot)")
+      # Prefer a realistic UA to avoid degraded “bot” experiences.
+      options.add_argument("--user-agent=#{REALISTIC_UA}")
 
       # Support remote Selenium Grid via environment variables (for scaling)
       if selenium_remote_url.present?
@@ -176,6 +221,85 @@ module Scraping
     rescue Selenium::WebDriver::Error::TimeoutError
       # Continue best-effort if readiness never reports complete
       nil
+    end
+
+    # Waits (best-effort) until job content appears in the DOM.
+    #
+    # @param driver [Selenium::WebDriver]
+    # @return [Hash]
+    def wait_for_job_content(driver)
+      started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      found_selectors = []
+      selector_found = false
+      iframe_best_candidate = nil
+      iframe_used = false
+
+      selector_found, found_selectors = wait_for_any_selector(driver, JOB_CONTENT_SELECTORS, timeout: [ @timeout, 15 ].min)
+
+      # If not found, check a small number of iframes for content (best-effort).
+      if !selector_found
+        iframes = driver.find_elements(css: "iframe").first(MAX_IFRAMES_TO_CHECK)
+        iframes.each do |iframe|
+          begin
+            driver.switch_to.frame(iframe)
+            iframe_found, iframe_selectors = wait_for_any_selector(driver, JOB_CONTENT_SELECTORS, timeout: 6)
+            if iframe_found
+              iframe_html = driver.page_source.to_s
+              iframe_best_candidate = { iframe_html: iframe_html, found_selectors: iframe_selectors }
+              break
+            end
+          rescue Selenium::WebDriver::Error::WebDriverError
+            nil
+          ensure
+            begin
+              driver.switch_to.default_content
+            rescue Selenium::WebDriver::Error::WebDriverError
+              nil
+            end
+          end
+        end
+      end
+
+      selector_wait_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
+
+      {
+        selector_found: selector_found,
+        found_selectors: found_selectors.first(10),
+        selector_wait_ms: selector_wait_ms,
+        iframe_used: iframe_used,
+        iframe_best_candidate: iframe_best_candidate
+      }
+    rescue => e
+      Rails.logger.debug("RenderedHtmlFetcherService wait_for_job_content error: #{e.message}")
+      { selector_found: false, found_selectors: [], selector_wait_ms: nil, iframe_used: false, iframe_best_candidate: nil }
+    end
+
+    def wait_for_any_selector(driver, selectors, timeout:)
+      found = []
+      wait_until(driver, timeout) do
+        found = selectors.select { |sel| dom_has_selector?(driver, sel) }
+        found.any?
+      end
+      [ found.any?, found ]
+    rescue
+      [ false, [] ]
+    end
+
+    def dom_has_selector?(driver, selector)
+      driver.execute_script("return !!document.querySelector(arguments[0])", selector) == true
+    rescue Selenium::WebDriver::Error::JavascriptError
+      false
+    end
+
+    # Rough “how much text do we have?” metric for deciding if rendered fetch worked.
+    #
+    # @param html [String]
+    # @return [Integer]
+    def extracted_text_length(html)
+      Nokogiri::HTML(html.to_s).text.to_s.strip.length
+    rescue
+      0
     end
 
     def error_result(message)

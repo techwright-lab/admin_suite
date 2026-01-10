@@ -19,13 +19,15 @@ module Assistant
       # @param trace_id [String]
       # @param client_request_uuid [String, nil]
       # @param page_context [Hash]
-      def initialize(user:, thread:, user_message:, trace_id:, client_request_uuid: nil, page_context: {})
+      # @param media [Array<Hash>, nil] Optional media attachments (images, documents)
+      def initialize(user:, thread:, user_message:, trace_id:, client_request_uuid: nil, page_context: {}, media: nil)
         @user = user
         @thread = thread
         @user_message = user_message
         @trace_id = trace_id.to_s
         @client_request_uuid = client_request_uuid.presence
         @page_context = page_context.to_h
+        @media = Array(media).compact
       end
 
       # @return [Hash] { thread:, user_message:, assistant_message:, turn:, trace_id:, tool_calls:, tool_executions: }
@@ -45,7 +47,7 @@ module Assistant
 
       private
 
-      attr_reader :user, :thread, :user_message, :trace_id, :client_request_uuid, :page_context
+      attr_reader :user, :thread, :user_message, :trace_id, :client_request_uuid, :page_context, :media
 
       def validate_inputs!
         raise ArgumentError, "thread is required" if thread.nil?
@@ -82,7 +84,8 @@ module Assistant
             question: user_message.content,
             context: context,
             allowed_tools: allowed_tools,
-            thread: thread
+            thread: thread,
+            media: media
           ).call
 
           assistant_message = persist_assistant_message!(llm_result)

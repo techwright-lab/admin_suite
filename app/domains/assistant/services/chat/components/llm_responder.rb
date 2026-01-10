@@ -4,17 +4,18 @@ module Assistant
   module Chat
     module Components
       class LlmResponder
-        def initialize(user:, trace_id:, question:, context:, allowed_tools:, thread: nil)
+        def initialize(user:, trace_id:, question:, context:, allowed_tools:, thread: nil, media: nil)
           @user = user
           @trace_id = trace_id
           @question = question.to_s
           @context = context
           @allowed_tools = allowed_tools
           @thread = thread
+          @media = Array(media).compact
         end
 
         def call
-          system_prompt = active_system_prompt
+          system_prompt = build_system_prompt_with_context
           provider_chain = LlmProviders::ProviderConfigHelper.all_providers
 
           last_error = nil
@@ -39,10 +40,112 @@ module Assistant
 
         private
 
-        attr_reader :user, :trace_id, :question, :context, :allowed_tools, :thread
+        attr_reader :user, :trace_id, :question, :context, :allowed_tools, :thread, :media
 
+        # Returns the system prompt for the assistant.
+        # Uses system_prompt column from DB if available, falls back to default.
+        # This follows the same pattern as extraction prompts.
+        #
+        # @return [String] System prompt for the LLM
         def active_system_prompt
-          Ai::AssistantSystemPrompt.active_prompt&.prompt_template || Ai::AssistantSystemPrompt.default_prompt_template
+          Ai::AssistantSystemPrompt.active_prompt&.system_prompt.presence ||
+            Ai::AssistantSystemPrompt.default_system_prompt
+        end
+
+        # Builds the system prompt with injected context
+        #
+        # The context includes:
+        # - User info (name, account age)
+        # - Career context (resume summary, work history, targets)
+        # - Skills summary
+        # - Pipeline status
+        # - Current page context
+        def build_system_prompt_with_context
+          base_prompt = active_system_prompt
+
+          context_section = <<~CONTEXT
+
+            ---
+
+            USER CONTEXT:
+            #{format_context_for_prompt}
+
+            ---
+          CONTEXT
+
+          "#{base_prompt}\n#{context_section}"
+        end
+
+        # Formats the context hash into a readable section for the system prompt
+        def format_context_for_prompt
+          sections = []
+
+          # User info
+          if context[:user].present?
+            sections << "User: #{context[:user][:name]}"
+          end
+
+          # Career context (tiered - most important for job search assistance)
+          if context[:career].present?
+            career = context[:career]
+
+            if career[:resume].present?
+              resume = career[:resume]
+              sections << "\nProfile Summary: #{resume[:profile_summary]}" if resume[:profile_summary].present?
+              sections << "Strengths: #{resume[:strengths].join(', ')}" if resume[:strengths].present?
+              sections << "Domains: #{resume[:domains].join(', ')}" if resume[:domains].present?
+
+              # Full resume text only included when page_context has include_full_resume or resume_id
+              if resume[:full_text].present?
+                sections << "\n--- Full Resume ---\n#{resume[:full_text]}\n--- End Resume ---"
+              end
+            end
+
+            if career[:work_history].present?
+              work_lines = career[:work_history].map do |exp|
+                status = exp[:current] ? "(Current)" : ""
+                dates = [ exp[:start_date], exp[:end_date] ].compact.join(" - ")
+                skills = exp[:skills].present? ? "Skills: #{exp[:skills].join(', ')}" : nil
+                highlights = exp[:highlights].present? ? "Highlights: #{exp[:highlights].join('; ')}" : nil
+                [ "• #{exp[:title]} at #{exp[:company]} #{status} #{dates}", skills, highlights ].compact.join("\n  ")
+              end
+              sections << "\nWork History:\n#{work_lines.join("\n")}"
+            end
+
+            if career[:targets].present?
+              targets = career[:targets]
+              sections << "\nCareer Targets:" if targets.any?
+              sections << "  Target Roles: #{targets[:roles].join(', ')}" if targets[:roles].present?
+              sections << "  Target Companies: #{targets[:companies].join(', ')}" if targets[:companies].present?
+              sections << "  Target Domains: #{targets[:domains].join(', ')}" if targets[:domains].present?
+            end
+          end
+
+          # Top skills
+          if context[:skills].present? && context[:skills][:top_skills].present?
+            skills = context[:skills][:top_skills].map { |s| s[:name] }.compact.first(10)
+            sections << "\nTop Skills: #{skills.join(', ')}" if skills.any?
+          end
+
+          # Pipeline status
+          if context[:pipeline].present?
+            pipeline = context[:pipeline]
+            sections << "\nPipeline: #{pipeline[:interview_applications_count]} applications"
+            if pipeline[:recent_interview_applications].present?
+              recent = pipeline[:recent_interview_applications].first(3).map do |app|
+                "#{app[:job_role]} at #{app[:company]} (#{app[:status]})"
+              end
+              sections << "Recent: #{recent.join('; ')}"
+            end
+          end
+
+          # Page context
+          if context[:page].present? && context[:page].any?
+            page_info = context[:page].map { |k, v| "#{k}: #{v}" }.join(", ")
+            sections << "\nCurrent Page: #{page_info}"
+          end
+
+          sections.join("\n")
         end
 
         def attempt_provider(provider_name:, system_prompt:)
@@ -225,28 +328,36 @@ module Assistant
               [ { role: "system", content: system_prompt } ] + openai_messages
             end
 
-          provider.run(
-            nil,
+          options = {
             messages: messages,
             tools: tools,
             previous_response_id: previous_response_id,
             temperature: 0.2,
             max_tokens: 1200
-          )
+          }
+
+          # Include media attachments if present
+          options[:media] = media if media.present?
+
+          provider.run(nil, options)
         end
 
         def anthropic_call(provider:, system_prompt:)
           tools = Assistant::Tools::ToolSchemaAdapter.new(allowed_tools).for_anthropic
           messages = build_provider_messages(max_messages: 20)
 
-          provider.run(
-            nil,
+          options = {
             messages: messages,
             tools: tools,
             system_message: system_prompt,
             temperature: 0.2,
             max_tokens: 1200
-          )
+          }
+
+          # Include media attachments if present
+          options[:media] = media if media.present?
+
+          provider.run(nil, options)
         end
 
         def build_provider_messages(max_messages:)
