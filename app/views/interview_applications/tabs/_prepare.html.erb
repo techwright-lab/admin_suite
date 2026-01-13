@@ -472,9 +472,9 @@
               <% if application.job_listing.location.present? %>
                 <span><%= application.job_listing.location_display %></span>
               <% end %>
-              <% if application.job_listing.url.present? %>
+              <% if application.job_listing.safe_url.present? %>
                 <span>•</span>
-                <a href="<%= application.job_listing.url %>" target="_blank" rel="noopener" class="text-blue-600 dark:text-blue-400 hover:underline">
+                <a href="<%= application.job_listing.safe_url %>" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
                   View posting →
                 </a>
               <% end %>

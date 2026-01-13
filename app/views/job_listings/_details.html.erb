@@ -59,11 +59,11 @@
           </span>
         <% end %>
 
-        <% if job_listing.url.present? %>
+        <% if job_listing.safe_url.present? %>
           <a
-            href="<%= job_listing.url %>"
+            href="<%= job_listing.safe_url %>"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="
               flex items-center text-primary-600 dark:text-primary-400
               hover:text-primary-700
@@ -131,8 +131,8 @@
             <p class="text-sm text-amber-700 dark:text-amber-300 mb-2">
               <%= job_listing.limited_extraction_reason %>
             </p>
-            <% if job_listing.url.present? %>
-              <a href="<%= job_listing.url %>" target="_blank" rel="noopener noreferrer" 
+            <% if job_listing.safe_url.present? %>
+              <a href="<%= job_listing.safe_url %>" target="_blank" rel="noopener noreferrer" 
                  class="inline-flex items-center gap-1 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 underline">
                 View full details on <%= job_listing.job_board&.titleize || "original site" %>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -353,11 +353,11 @@
 
         <p class="mt-4 text-sm">Job details not available yet.</p>
 
-        <% if job_listing.url.present? %>
+        <% if job_listing.safe_url.present? %>
           <a
-            href="<%= job_listing.url %>"
+            href="<%= job_listing.safe_url %>"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="
               mt-2 inline-flex items-center text-sm text-primary-600
               dark:text-primary-400 hover:text-primary-700

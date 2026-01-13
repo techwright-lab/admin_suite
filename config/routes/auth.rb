@@ -17,6 +17,7 @@ post "signup", to: "registrations#create", as: :registrations
 resources :passwords, param: :token
 
 # Email verification
+get "email_verification/new", to: "email_verifications#new", as: :new_email_verification
 post "email_verification", to: "email_verifications#create", as: :resend_email_verification
 get "email_verification/:token", to: "email_verifications#show", as: :email_verification
 

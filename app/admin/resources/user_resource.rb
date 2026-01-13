@@ -35,58 +35,67 @@ module Admin
 
         filters do
           filter :role, type: :select, options: [
-            ["All Users", ""],
-            ["Admins Only", "admin"],
-            ["Regular Users", "user"]
+            [ "All Users", "" ],
+            [ "Admins Only", "admin" ],
+            [ "Regular Users", "user" ]
           ]
           filter :gmail_status, type: :select, label: "Gmail", options: [
-            ["All", ""],
-            ["Connected", "connected"],
-            ["Not Connected", "not_connected"],
-            ["Sync Enabled", "sync_enabled"]
+            [ "All", "" ],
+            [ "Connected", "connected" ],
+            [ "Not Connected", "not_connected" ],
+            [ "Sync Enabled", "sync_enabled" ]
           ]
           filter :sort, type: :select, options: [
-            ["Recently Joined", "recent"],
-            ["Name (A-Z)", "name"],
-            ["Most Emails", "email_count"]
+            [ "Recently Joined", "recent" ],
+            [ "Name (A-Z)", "name" ],
+            [ "Most Emails", "email_count" ]
           ]
         end
       end
 
       show do
         sidebar do
-          panel :account, title: "Account", fields: [:email_address, :is_admin]
-          panel :billing, title: "Billing", fields: [:billing_admin_access?]
-          panel :timestamps, title: "Activity", fields: [:created_at, :updated_at]
+          panel :account, title: "Account", fields: [ :email_address, :is_admin, :email_verified_at ]
+          panel :billing, title: "Billing", fields: [ :billing_admin_access? ]
+          panel :timestamps, title: "Activity", fields: [ :created_at, :updated_at ]
         end
-        
+
         main do
-          panel :profile, title: "Profile", fields: [:name]
-          panel :connected_accounts, title: "Connected Accounts", 
-                association: :connected_accounts, 
+          panel :profile, title: "Profile", fields: [ :name ]
+          panel :connected_accounts, title: "Connected Accounts",
+                association: :connected_accounts,
                 display: :table,
-                columns: [:provider, :sync_enabled, :created_at],
+                columns: [ :provider, :sync_enabled, :created_at ],
                 link_to: :internal_developer_ops_connected_account_path
           panel :threads, title: "Chat Threads",
                 association: :chat_threads,
                 limit: 5,
                 display: :list,
                 link_to: :internal_developer_assistant_thread_path
-          panel :applications, title: "Interview Applications", 
-                association: :interview_applications, 
-                limit: 10, 
+          panel :applications, title: "Interview Applications",
+                association: :interview_applications,
+                limit: 10,
                 display: :list,
                 link_to: :internal_developer_ops_interview_application_path
-          panel :emails, title: "Recent Synced Emails", 
-                association: :synced_emails, 
-                limit: 10, 
+          panel :emails, title: "Recent Synced Emails",
+                association: :synced_emails,
+                limit: 10,
                 display: :table,
-                columns: [:subject, :from_address, :synced_at],
+                columns: [ :subject, :from_address, :synced_at ],
                 link_to: :internal_developer_ops_synced_email_path
         end
       end
 
       actions do
+        action :resend_verification_email, method: :post, label: "Resend Verification Email",
+               confirm: "Send a new verification email to this user?",
+               unless: ->(u) { u.email_verified? }
+        action :grant_admin, method: :post, label: "Grant Admin Privileges",
+               confirm: "Grant admin privileges to this user? They will have full access to the developer portal.",
+               unless: ->(u) { u.admin? }
+        action :revoke_admin, method: :post, label: "Revoke Admin Privileges",
+               confirm: "Revoke admin privileges from this user?",
+               if: ->(u) { u.admin? }
         action :grant_billing_admin_access, method: :post, label: "Grant Billing Admin Access",
                confirm: "Grant Admin/Developer billing access (all features) to this user?",
                unless: ->(u) { Billing::AdminAccessService.new(user: u).active? }
@@ -99,4 +108,3 @@ module Admin
     end
   end
 end
-

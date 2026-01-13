@@ -60,6 +60,13 @@ module Internal
       def format_show_value(record, field_name)
         value = record.public_send(field_name) rescue nil
 
+        # Handle Active Storage attachments
+        if value.is_a?(ActiveStorage::Attached::One)
+          return render_attachment_preview(value)
+        elsif value.is_a?(ActiveStorage::Attached::Many)
+          return render_attachments_preview(value)
+        end
+
         case value
         when nil
           content_tag(:span, "—", class: "text-slate-400")
@@ -118,6 +125,61 @@ module Internal
           else
             # Regular text
             value_str
+          end
+        end
+      end
+
+      # Renders an Active Storage attachment preview
+      #
+      # @param attachment [ActiveStorage::Attached::One] The attachment
+      # @return [String] HTML safe attachment preview
+      def render_attachment_preview(attachment)
+        return content_tag(:span, "—", class: "text-slate-400") unless attachment.attached?
+
+        blob = attachment.blob
+
+        if blob.image?
+          content_tag(:div, class: "space-y-2") do
+            concat(content_tag(:div, class: "inline-block rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700") do
+              image_tag(attachment.variant(resize_to_limit: [ 600, 400 ]),
+                       class: "max-w-full h-auto max-h-64 object-contain",
+                       alt: blob.filename.to_s)
+            end)
+            concat(content_tag(:div, class: "flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400") do
+              concat(content_tag(:span, blob.filename.to_s, class: "font-medium text-slate-700 dark:text-slate-300"))
+              concat(content_tag(:span, "•"))
+              concat(content_tag(:span, number_to_human_size(blob.byte_size)))
+              concat(content_tag(:span, "•"))
+              concat(link_to("View full size", rails_blob_path(blob, disposition: :inline),
+                            target: "_blank",
+                            class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
+            end)
+          end
+        else
+          content_tag(:div, class: "flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700") do
+            concat(content_tag(:div, class: "flex-shrink-0 w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center") do
+              '<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'.html_safe
+            end)
+            concat(content_tag(:div, class: "flex-1 min-w-0") do
+              concat(content_tag(:p, blob.filename.to_s, class: "font-medium text-slate-700 dark:text-slate-300 truncate"))
+              concat(content_tag(:p, number_to_human_size(blob.byte_size), class: "text-sm text-slate-500 dark:text-slate-400"))
+            end)
+            concat(link_to("Download", rails_blob_path(blob, disposition: :attachment),
+                          class: "flex-shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"))
+          end
+        end
+      end
+
+      # Renders multiple Active Storage attachments preview
+      #
+      # @param attachments [ActiveStorage::Attached::Many] The attachments
+      # @return [String] HTML safe attachments preview
+      def render_attachments_preview(attachments)
+        return content_tag(:span, "—", class: "text-slate-400") unless attachments.attached?
+
+        content_tag(:div, class: "grid grid-cols-2 md:grid-cols-3 gap-4") do
+          attachments.each do |attachment|
+            concat(render_attachment_preview(attachment))
           end
         end
       end
@@ -582,11 +644,59 @@ module Internal
       def render_sidebar_fields(resource, fields)
         content_tag(:div, class: "space-y-3") do
           fields.each do |field_name|
-            concat(content_tag(:div, class: "flex justify-between items-start gap-2") do
-              concat(content_tag(:span, field_name.to_s.humanize, class: "text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider flex-shrink-0"))
-              concat(content_tag(:span, class: "text-sm text-slate-900 dark:text-white text-right") do
-                format_show_value(resource, field_name)
+            value = resource.public_send(field_name) rescue nil
+
+            # Special handling for attachments in sidebar - show image prominently
+            if value.is_a?(ActiveStorage::Attached::One) || value.is_a?(ActiveStorage::Attached::Many)
+              concat(render_sidebar_attachment(value))
+            else
+              concat(content_tag(:div, class: "flex justify-between items-start gap-2") do
+                concat(content_tag(:span, field_name.to_s.humanize, class: "text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider flex-shrink-0"))
+                concat(content_tag(:span, class: "text-sm text-slate-900 dark:text-white text-right") do
+                  format_show_value(resource, field_name)
+                end)
               end)
+            end
+          end
+        end
+      end
+
+      # Renders an attachment for sidebar display (compact, image-focused)
+      #
+      # @param attachment [ActiveStorage::Attached] The attachment
+      # @return [String] HTML safe attachment preview
+      def render_sidebar_attachment(attachment)
+        return content_tag(:div, class: "text-center py-4") do
+          content_tag(:span, "No image", class: "text-slate-400 text-sm")
+        end unless attachment.respond_to?(:attached?) && attachment.attached?
+
+        blob = attachment.is_a?(ActiveStorage::Attached::Many) ? attachment.first.blob : attachment.blob
+
+        if blob.image?
+          content_tag(:div, class: "space-y-2") do
+            # Image preview - full width in sidebar
+            concat(content_tag(:div, class: "rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700") do
+              image_tag(attachment.variant(resize_to_limit: [ 400, 300 ]),
+                       class: "w-full h-auto object-cover",
+                       alt: blob.filename.to_s)
+            end)
+            # Compact metadata
+            concat(content_tag(:div, class: "flex items-center justify-between text-xs text-slate-500 dark:text-slate-400") do
+              concat(content_tag(:span, number_to_human_size(blob.byte_size)))
+              concat(link_to("View full", rails_blob_path(blob, disposition: :inline),
+                            target: "_blank",
+                            class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
+            end)
+          end
+        else
+          # Non-image file in sidebar
+          content_tag(:div, class: "flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg") do
+            concat(content_tag(:div, class: "flex-shrink-0 w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded flex items-center justify-center") do
+              '<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'.html_safe
+            end)
+            concat(content_tag(:div, class: "flex-1 min-w-0") do
+              concat(content_tag(:p, blob.filename.to_s.truncate(20), class: "text-xs font-medium text-slate-700 dark:text-slate-300 truncate"))
+              concat(content_tag(:p, number_to_human_size(blob.byte_size), class: "text-xs text-slate-500"))
             end)
           end
         end
@@ -1093,6 +1203,12 @@ module Internal
                 placeholder: field.placeholder)
             when :file
               f.file_field(field.name, class: "form-input-file", accept: field.accept)
+            when :datetime
+              f.datetime_local_field(field.name, class: field_class, readonly: field.readonly)
+            when :date
+              f.date_field(field.name, class: field_class, readonly: field.readonly)
+            when :time
+              f.time_field(field.name, class: field_class, readonly: field.readonly)
             when :json
               render("internal/developer/shared/json_editor_field",
                 f: f,
@@ -1245,15 +1361,19 @@ module Internal
           []
         end
 
+        # For tags type, we need to use tag_list as the field name with array brackets
+        field_name = field.type == :tags ? "tag_list" : field.name
+        full_field_name = "#{param_key}[#{field_name}][]"
+
         content_tag(:div,
           data: {
             controller: "tag-select",
-            tag_select_creatable_value: field.create_url.present? || field.type == :tags
+            tag_select_creatable_value: field.create_url.present? || field.type == :tags,
+            tag_select_field_name_value: full_field_name
           },
           class: "space-y-2") do
-          # Hidden field for form submission
-          field_name = field.type == :tags ? "tag_list" : "#{field.name}[]"
-          concat(hidden_field_tag("#{param_key}[#{field_name}]", "", id: nil))
+          # Empty placeholder hidden field (will be replaced when tags are added)
+          concat(hidden_field_tag(full_field_name, "", id: nil, data: { tag_select_target: "placeholder" }))
 
           # Selected tags display
           concat(content_tag(:div,
@@ -1263,7 +1383,7 @@ module Internal
               concat(content_tag(:span,
                      class: "inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded text-sm") do
                 concat(val.to_s)
-                concat(hidden_field_tag("#{param_key}[#{field_name}]", val, id: nil))
+                concat(hidden_field_tag(full_field_name, val, id: nil))
                 concat(button_tag("×",
                        type: "button",
                        class: "text-indigo-500 hover:text-indigo-700 font-bold",

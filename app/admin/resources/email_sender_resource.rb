@@ -40,13 +40,7 @@ module Admin
             [ "Auto Detected", "auto_detected" ],
             [ "Verified", "verified" ]
           ]
-          filter :sender_type, type: :select, label: "Type", options: [
-            [ "All Types", "" ],
-            [ "ATS System", "ats_system" ],
-            [ "Recruiter", "recruiter" ],
-            [ "Company", "company" ],
-            [ "Unknown", "unknown" ]
-          ]
+          filter :sender_type, type: :select, label: "Type", options: EmailSender.sender_types_for_select
           filter :sort, type: :select, options: [
             [ "Recently Added", "recent" ],
             [ "Email Count", "email_count" ],
@@ -67,12 +61,7 @@ module Admin
           field :company_id, type: :searchable_select, label: "Company",
                 collection: -> { Company.order(:name).pluck(:name, :id) },
                 placeholder: "Search for a company..."
-          field :sender_type, type: :select, collection: [
-            [ "Unknown", "unknown" ],
-            [ "ATS System", "ats_system" ],
-            [ "Recruiter", "recruiter" ],
-            [ "Company", "company" ]
-          ]
+          field :sender_type, type: :select, collection: EmailSender.sender_types_for_select
           field :verified, type: :toggle, help: "Verified company assignment"
         end
       end

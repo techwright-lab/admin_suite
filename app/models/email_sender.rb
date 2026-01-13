@@ -8,7 +8,7 @@
 #   sender.assign_company!(company)
 #
 class EmailSender < ApplicationRecord
-  SENDER_TYPES = %w[recruiter hiring_manager hr ats_system unknown].freeze
+  SENDER_TYPES = %w[recruiter hiring_manager hr ats_system company unknown].freeze
 
   belongs_to :company, optional: true
   belongs_to :auto_detected_company, class_name: "Company", optional: true
@@ -56,6 +56,10 @@ class EmailSender < ApplicationRecord
   rescue ActiveRecord::RecordNotUnique
     # Handle race condition
     find_by!(email: email.strip.downcase)
+  end
+
+  def self.sender_types_for_select
+    SENDER_TYPES.map { |type| [ type.titleize, type ] }
   end
 
   # Increments the email count and updates last seen timestamp
@@ -122,13 +126,13 @@ class EmailSender < ApplicationRecord
 
     self.sender_type = if ats_domain?
                          "ats_system"
-                       elsif recruiter_pattern?
+    elsif recruiter_pattern?
                          "recruiter"
-                       elsif hr_pattern?
+    elsif hr_pattern?
                          "hr"
-                       else
+    else
                          "unknown"
-                       end
+    end
   end
 
   # Checks if domain is from a known ATS system
@@ -152,4 +156,3 @@ class EmailSender < ApplicationRecord
     email.match?(/\bhr\b|human.?resources|people.?ops/i)
   end
 end
-

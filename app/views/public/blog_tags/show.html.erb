@@ -39,7 +39,7 @@
             <% if post.tag_list.any? %>
               <div class="flex flex-wrap gap-2 mb-3">
                 <% post.tag_list.first(2).each do |tag| %>
-                  <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+                  <%= link_to blog_tag_path(tag.parameterize), class: "tag-pill" do %>
                     <%= tag %>
                   <% end %>
                 <% end %>

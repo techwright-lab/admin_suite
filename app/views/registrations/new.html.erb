@@ -1,5 +1,12 @@
 <% content_for :title, "Sign Up - Gleania" %>
 
+<%# Load Turnstile script only on this page %>
+<% if turnstile_configured? %>
+  <% content_for :head do %>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <% end %>
+<% end %>
+
 <div class="space-y-6">
   <!-- Header -->
   <div>

@@ -77,14 +77,40 @@
       <% resource_config.actions_config.member_actions.each do |action_def| %>
         <% 
           show_action = true
-          show_action = action_def.if_condition.call(resource) if action_def.if_condition.present?
-          show_action = !action_def.unless_condition.call(resource) if action_def.unless_condition.present? && show_action
-          
-          action_url = begin
-            url_for(action: action_def.name, id: resource.to_param)
-          rescue ActionController::UrlGenerationError
-            nil
+          if action_def.if_condition.present?
+            show_action =
+              if action_def.if_condition.arity.zero?
+                resource.instance_exec(&action_def.if_condition)
+              else
+                action_def.if_condition.call(resource)
+              end
           end
+          if action_def.unless_condition.present? && show_action
+            show_action =
+              if action_def.unless_condition.arity.zero?
+                !resource.instance_exec(&action_def.unless_condition)
+              else
+                !action_def.unless_condition.call(resource)
+              end
+          end
+          
+          controller_has_action = controller.action_methods.include?(action_def.name.to_s)
+
+          action_url =
+            if controller_has_action
+              begin
+                url_for(action: action_def.name, id: resource.to_param)
+              rescue ActionController::UrlGenerationError
+                nil
+              end
+            elsif action_def.type == :button
+              internal_developer_execute_action_path(
+                portal: current_portal,
+                resource_name: controller_name,
+                id: resource.to_param,
+                action_name: action_def.name
+              )
+            end
         %>
         <% if show_action && action_url %>
           <% button_class = "inline-flex items-center gap-2 px-4 py-2 #{action_def.color == :danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'} text-sm font-medium rounded-lg transition-colors" %>

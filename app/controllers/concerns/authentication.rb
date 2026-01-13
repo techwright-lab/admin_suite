@@ -19,7 +19,12 @@ module Authentication
     end
 
     def require_authentication
+      set_no_cache_headers
       resume_session || request_authentication
+    end
+
+    def set_no_cache_headers
+      response.set_header("Cache-Control", "no-store, private")
     end
 
     def resume_session

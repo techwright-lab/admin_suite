@@ -34,21 +34,12 @@ module Admin
         end
 
         filters do
-          filter :status, type: :select, options: [
-            [ "All Statuses", "" ],
-            [ "Pending", "pending" ],
-            [ "Processed", "processed" ],
-            [ "Needs Review", "needs_review" ],
-            [ "Ignored", "ignored" ]
-          ]
-          filter :email_type, type: :select, label: "Type", options: [
-            [ "All Types", "" ],
-            [ "Application", "application" ],
-            [ "Interview", "interview" ],
-            [ "Offer", "offer" ],
-            [ "Rejection", "rejection" ],
-            [ "Unknown", "unknown" ]
-          ]
+          filter :status, type: :select, options: -> {
+            [ [ "All Statuses", "" ] ] + SyncedEmail::STATUSES.map { |s| [ s.to_s.humanize, s.to_s ] }
+          }
+          filter :email_type, type: :select, label: "Type", options: -> {
+            [ [ "All Types", "" ] ] + SyncedEmail::EMAIL_TYPES.map { |t| [ t.humanize, t ] }
+          }
           filter :matched, type: :select, options: [
             [ "All", "" ],
             [ "Matched", "matched" ],
@@ -65,18 +56,13 @@ module Admin
       form do
         section "Email Matching" do
           field :interview_application_id, type: :number, label: "Application ID"
-          field :email_type, type: :select, collection: [
-            [ "Unknown", "unknown" ],
-            [ "Application", "application" ],
-            [ "Interview", "interview" ],
-            [ "Offer", "offer" ],
-            [ "Rejection", "rejection" ]
-          ]
+          field :email_type, type: :select, collection: [ [ "Unknown", "" ] ] + SyncedEmail::EMAIL_TYPES.map { |t| [ t.humanize, t ] }
           field :status, type: :select, collection: [
             [ "Pending", "pending" ],
             [ "Processed", "processed" ],
-            [ "Needs Review", "needs_review" ],
-            [ "Ignored", "ignored" ]
+            [ "Ignored", "ignored" ],
+            [ "Failed", "failed" ],
+            [ "Auto Ignored", "auto_ignored" ]
           ]
         end
       end
@@ -96,8 +82,8 @@ module Admin
 
       actions do
         action :mark_processed, method: :post, if: ->(se) { se.status == "pending" }
-        action :mark_needs_review, method: :post, if: ->(se) { se.status != "needs_review" }
-        action :ignore, method: :post, if: ->(se) { se.status != "ignored" }
+        action :mark_needs_review, method: :post, unless: ->(se) { se.pending? && se.interview_application_id.nil? }
+        action :ignore, method: :post, unless: ->(se) { se.ignored? }
       end
 
       exportable :json

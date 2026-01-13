@@ -21,8 +21,8 @@ module Admin
 
         columns do
           column :id
-          column :company, ->(cf) { cf.company&.name }
-          column :user, ->(cf) { cf.user&.email_address }
+          column :company, ->(cf) { cf.interview_application&.company&.name }
+          column :user, ->(cf) { cf.interview_application&.user&.email_address }
           column :rating
           column :created_at, ->(cf) { cf.created_at.strftime("%b %d, %Y") }
         end
@@ -35,8 +35,7 @@ module Admin
       show do
         section :details, fields: [ :rating, :created_at, :updated_at ]
         section :feedback, fields: [ :feedback_text ]
-        section :company, fields: [ :company ]
-        section :user, fields: [ :user ]
+        section :application, fields: [ :interview_application ]
       end
 
       exportable :json

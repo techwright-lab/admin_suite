@@ -96,7 +96,7 @@ module Assistant
 
         # With invalid kinds, should default to all valid kinds
         result = tool.call(
-          args: { "application_id" => @application.id, "kinds" => ["invalid_kind"] },
+          args: { "application_id" => @application.id, "kinds" => [ "invalid_kind" ] },
           tool_execution: @tool_execution
         )
 

@@ -152,11 +152,12 @@
       </div>
     </div>
 
-    <!-- External Link -->
-    <% if @job_listing.url.present? %>
+    <!-- External Link (only show if URL uses safe http/https scheme) -->
+    <% if @job_listing.safe_url.present? %>
       <div class="mt-4">
-        <%= link_to @job_listing.url, 
+        <%= link_to @job_listing.safe_url, 
               target: "_blank",
+              rel: "noopener noreferrer",
               class: "inline-flex items-center text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700" do %>
           <svg
             class="w-4 h-4 mr-1.5"

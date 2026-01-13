@@ -14,9 +14,8 @@
 
     <%= yield :head %>
 
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="icon" href="<%= asset_url('logo/logo.png') %>" type="image/png">
+    <link rel="apple-touch-icon" href="<%= asset_url('logo/logo.png') %>">
 
     <%# Google Fonts - Plus Jakarta Sans %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,15 +28,6 @@
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-
-    <%# Cloudflare Turnstile %>
-    <% if turnstile_configured? %>
-      <script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        async
-        defer
-      ></script>
-    <% end %>
   </head>
 
   <body class="bg-dark-950 text-gray-100 antialiased">

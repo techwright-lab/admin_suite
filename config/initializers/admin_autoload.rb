@@ -25,4 +25,3 @@ Rails.autoloaders.main.push_dir(
 Rails.application.config.after_initialize do
   require Rails.root.join("app/admin/base/resource.rb").to_s
 end
-

@@ -18,8 +18,8 @@ class SessionsController < ApplicationController
         start_new_session_for user
         redirect_to after_authentication_url
       else
-        redirect_to new_session_path,
-          alert: "Please verify your email first. Check your inbox for the verification link."
+        redirect_to new_email_verification_path(email_address: user.email_address),
+          alert: "Please verify your email first. You can request a new verification link below."
       end
     else
       redirect_to new_session_path, alert: "Try another email address or password."

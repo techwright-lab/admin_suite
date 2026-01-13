@@ -9,10 +9,13 @@ module TurnstileHelper
     CloudflareTurnstileService.site_key
   end
 
-  # Checks if Turnstile is configured
+  # Checks if Turnstile is configured and enabled
+  # Only returns true if BOTH site key and secret key are present
+  # and the setting is enabled. This ensures the widget is only shown
+  # when verification can actually succeed.
   #
   # @return [Boolean]
   def turnstile_configured?
-    turnstile_site_key.present? && Setting.turnstile_enabled?
+    Setting.turnstile_enabled? && CloudflareTurnstileService.fully_configured?
   end
 end

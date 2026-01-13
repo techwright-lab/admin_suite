@@ -31,14 +31,14 @@ module Admin
 
         filters do
           filter :status, type: :select, options: [
-            ["All Statuses", ""],
-            ["Published", "published"],
-            ["Draft", "draft"]
+            [ "All Statuses", "" ],
+            [ "Published", "published" ],
+            [ "Draft", "draft" ]
           ]
           filter :sort, type: :select, options: [
-            ["Recently Added", "recent"],
-            ["Title (A-Z)", "title"],
-            ["Published Date", "published_at"]
+            [ "Recently Added", "recent" ],
+            [ "Title (A-Z)", "title" ],
+            [ "Published Date", "published_at" ]
           ]
         end
       end
@@ -52,7 +52,7 @@ module Admin
         end
 
         section "Cover Image" do
-          field :cover_image, type: :image, 
+          field :cover_image, type: :image,
                 accept: "image/jpeg,image/png,image/webp",
                 help: "Recommended size: 1200x630 pixels for best social media preview"
         end
@@ -64,8 +64,8 @@ module Admin
         section "Publishing" do
           row cols: 2 do
             field :status, type: :select, collection: [
-              ["Draft", "draft"],
-              ["Published", "published"]
+              [ "Draft", "draft" ],
+              [ "Published", "published" ]
             ]
             field :published_at, type: :datetime
           end
@@ -79,14 +79,15 @@ module Admin
 
       show do
         sidebar do
-          panel :meta, title: "Post Info", fields: [:slug, :status, :author_name]
-          panel :dates, title: "Dates", fields: [:published_at, :created_at, :updated_at]
+          panel :cover, title: "Cover Image", fields: [ :cover_image ]
+          panel :meta, title: "Post Info", fields: [ :slug, :status, :author_name ]
+          panel :dates, title: "Dates", fields: [ :published_at, :created_at, :updated_at ]
         end
-        
+
         main do
-          panel :excerpt, title: "Excerpt", fields: [:excerpt]
-          panel :content, title: "Content", fields: [:body]
-          panel :tags, title: "Tags", fields: [:tag_list]
+          panel :excerpt, title: "Excerpt", fields: [ :excerpt ]
+          panel :content, title: "Content", fields: [ :body ]
+          panel :tags, title: "Tags", fields: [ :tag_list ]
         end
       end
 
@@ -99,4 +100,3 @@ module Admin
     end
   end
 end
-

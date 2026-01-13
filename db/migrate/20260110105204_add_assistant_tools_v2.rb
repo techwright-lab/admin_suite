@@ -110,7 +110,7 @@ class AddAssistantToolsV2 < ActiveRecord::Migration[8.1]
           properties: {
             experience_id: { type: "number", description: "ID of the work experience to retrieve" }
           },
-          required: ["experience_id"]
+          required: [ "experience_id" ]
         },
         timeout_ms: 5000
       ),
@@ -153,7 +153,7 @@ class AddAssistantToolsV2 < ActiveRecord::Migration[8.1]
           properties: {
             application_id: { type: "number", description: "ID of the interview application" }
           },
-          required: ["application_id"]
+          required: [ "application_id" ]
         },
         timeout_ms: 5000
       ),
@@ -170,12 +170,12 @@ class AddAssistantToolsV2 < ActiveRecord::Migration[8.1]
             application_id: { type: "number", description: "ID of the interview application" },
             kinds: {
               oneOf: [
-                { type: "string", enum: ["all"], description: "Generate all prep types" },
+                { type: "string", enum: [ "all" ], description: "Generate all prep types" },
                 {
                   type: "array",
                   items: {
                     type: "string",
-                    enum: ["match_analysis", "focus_areas", "strength_positioning", "question_framing"]
+                    enum: [ "match_analysis", "focus_areas", "strength_positioning", "question_framing" ]
                   },
                   description: "Specific prep types to generate"
                 }
@@ -183,7 +183,7 @@ class AddAssistantToolsV2 < ActiveRecord::Migration[8.1]
               description: "Which prep artifacts to generate (default: all)"
             }
           },
-          required: ["application_id"]
+          required: [ "application_id" ]
         },
         timeout_ms: 60000
       ),
@@ -203,7 +203,7 @@ class AddAssistantToolsV2 < ActiveRecord::Migration[8.1]
             category: { type: "string", description: "Filter by category (e.g., Backend, Frontend, Leadership)" },
             filter: {
               type: "string",
-              enum: ["all", "strong", "moderate", "developing"],
+              enum: [ "all", "strong", "moderate", "developing" ],
               description: "Filter by proficiency level (default: all)"
             }
           }

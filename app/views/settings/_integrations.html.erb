@@ -65,7 +65,8 @@
           </div>
 
           <div>
-            <%= link_to "/auth/google_oauth2",
+            <%= button_to "/auth/google_oauth2",
+                method: :post,
                 class: "inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium rounded-lg text-sm text-gray-700 dark:text-gray-200 transition-colors",
                 data: { turbo: false } do %>
               <svg
@@ -126,7 +127,8 @@
                           syncing emails.
                         </p>
 
-                        <%= link_to "/auth/google_oauth2",
+                        <%= button_to "/auth/google_oauth2",
+                            method: :post,
                             class: "inline-flex items-center mt-2 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded text-xs transition-colors",
                             data: { turbo: false } do %>
                           <svg

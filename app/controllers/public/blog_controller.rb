@@ -46,7 +46,11 @@ module Public
 
       og_image =
         if @post.cover_image.attached?
-          url_for(@post.cover_image_variant(size: :og))
+          if Rails.env.production?
+            @post.cover_image.url
+          else
+            url_for(@post.cover_image_variant(size: :og))
+          end
         end
 
       description = @post.excerpt.presence || "Read #{@post.title} on the Gleania blog."

@@ -123,14 +123,22 @@ module Admin
 
       def condition_met?(action, record)
         if action.if_condition.present?
-          return record.instance_exec(&action.if_condition)
+          return evaluate_condition(action.if_condition, record)
         end
 
         if action.unless_condition.present?
-          return !record.instance_exec(&action.unless_condition)
+          return !evaluate_condition(action.unless_condition, record)
         end
 
         true
+      end
+
+      def evaluate_condition(condition_proc, record)
+        if condition_proc.arity.zero?
+          record.instance_exec(&condition_proc)
+        else
+          condition_proc.call(record)
+        end
       end
 
       def execute_action(action, target, params)

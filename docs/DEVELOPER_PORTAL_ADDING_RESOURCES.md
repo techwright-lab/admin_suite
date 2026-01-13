@@ -9,6 +9,10 @@ Adding a new resource requires 3 steps:
 2. Create a controller
 3. Add routes
 
+> Note: **member actions no longer require controller methods + routes** for the common “button” case.
+> Prefer defining the action in the resource and implementing either a model bang-method (e.g. `disable!`)
+> or an `Admin::Actions::*` handler. See **Action Configuration** below.
+
 ## Step 1: Create Resource Definition
 
 Create a file in `app/admin/resources/` named `{model_name}_resource.rb`:
@@ -144,6 +148,13 @@ module Internal
     module Ops
       class WidgetsController < Internal::Developer::ResourcesController
         # Custom actions (if needed)
+        #
+        # Prefer the resource action framework for simple actions:
+        # - Define the action in the resource `actions do ... end`
+        # - Implement `action_name!` on the model OR create an Admin::Actions handler
+        #
+        # Only add controller methods when the action needs to render HTML (e.g. modal forms)
+        # or relies on controller-specific behavior.
         def enable
           @resource.update(active: true)
           redirect_to resource_url(@resource), notice: "Widget enabled."
@@ -200,6 +211,11 @@ namespace :ops do
   end
 end
 ```
+
+> For **simple button actions**, you do *not* need to add per-action routes anymore.
+> The Developer Portal includes a generic route:
+> `/internal/developer/:portal/:resource_name/:id/execute_action/:action_name`
+> which dispatches to the `ActionExecutor`.
 
 ### Available Route Concerns
 
@@ -312,6 +328,15 @@ actions do
 end
 ```
 
+#### How actions are executed (preferred)
+
+- **Model method**: If the model responds to `action_name` or `action_name!`, it will be called.
+  - Example: `action :disable` will call `disable!` if present.
+- **Action handler**: Otherwise, create a handler in `app/admin/actions/` named:
+  - `Admin::Actions::<ResourceNameCamel><ActionNameCamel>Action`
+  - Example: for `UserResource` + `grant_billing_admin_access`:
+    `Admin::Actions::UserGrantBillingAdminAccessAction`
+
 ## Best Practices
 
 1. **Use the correct portal**: Place resources in the appropriate portal based on their domain
@@ -331,6 +356,9 @@ end
 ### Controller action not found
 - Define `resource_config` method returning the resource class
 - Define `current_portal` method returning the portal symbol
+
+If the action is a **button action**, prefer implementing a model bang-method or an
+`Admin::Actions::*` handler instead of adding a controller action + route.
 
 ### Form field not rendering
 - Check field type is supported

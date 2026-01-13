@@ -9,7 +9,19 @@ class BlogPost < ApplicationRecord
   STATUSES = %i[draft published].freeze
 
   acts_as_taggable_on :tags
-  has_one_attached :cover_image
+
+  # Determine public storage service based on environment
+  #
+  # @return [Symbol] The storage service to use for public assets
+  def self.public_storage_service
+    case Rails.env
+    when "production" then :cloudflare_public
+    when "test" then :test_public
+    else :local_public
+    end
+  end
+
+  has_one_attached :cover_image, service: public_storage_service
 
   friendly_id :title, use: [ :slugged, :finders ]
 
@@ -37,6 +49,7 @@ class BlogPost < ApplicationRecord
   end
 
   # Returns an optimized variant for the cover image.
+  # Uses resize_to_limit to scale without cropping - preserves entire image.
   #
   # @param size [Symbol] :thumbnail, :medium, :large, :og
   # @return [ActiveStorage::Variant, ActiveStorage::Attached, nil]
@@ -45,16 +58,21 @@ class BlogPost < ApplicationRecord
 
     dimensions =
       case size
-      when :thumbnail then [ 400, 225 ] # 16:9
-      when :medium    then [ 800, 450 ]
-      when :large     then [ 1200, 675 ]
-      when :og        then [ 1200, 630 ] # OpenGraph standard
+      when :thumbnail then [ 600, 400 ]
+      when :medium    then [ 1200, 800 ]
+      when :large     then [ 1600, 1067 ]
+      when :og        then [ 1200, 630 ] # OpenGraph standard - this one uses fill for social
       else
         nil
       end
 
     return cover_image if dimensions.nil?
 
-    cover_image.variant(resize_to_fill: dimensions)
+    # OG images need exact dimensions for social sharing, others preserve aspect ratio
+    if size == :og
+      cover_image.variant(resize_to_fill: dimensions)
+    else
+      cover_image.variant(resize_to_limit: dimensions)
+    end
   end
 end

@@ -168,10 +168,24 @@ class Gmail::SyncService
       { success: false, error: e.message, needs_reauth: true }
     rescue Google::Apis::Error => e
       Rails.logger.error "Gmail API error: #{e.message}"
+      ExceptionNotifier.notify(e, {
+        context: "gmail_sync",
+        severity: "error",
+        operation: "gmail_api",
+        connected_account_id: connected_account.id,
+        user: { id: user&.id, email: user&.email_address }
+      })
       { success: false, error: "Gmail API error: #{e.message}" }
     rescue StandardError => e
       Rails.logger.error "Gmail sync error: #{e.class} - #{e.message}"
       Rails.logger.error e.backtrace.first(10).join("\n")
+      ExceptionNotifier.notify(e, {
+        context: "gmail_sync",
+        severity: "error",
+        operation: "sync_run",
+        connected_account_id: connected_account.id,
+        user: { id: user&.id, email: user&.email_address }
+      })
       { success: false, error: "Sync failed: #{e.message}" }
     end
   end
@@ -366,7 +380,13 @@ class Gmail::SyncService
       body_html: body_content[:html]
     }
   rescue StandardError => e
-    Rails.logger.warn "Failed to parse email #{message.id}: #{e.message}"
+    Rails.logger.error "Failed to parse email #{message.id}: #{e.class} - #{e.message}"
+    ExceptionNotifier.notify(e, {
+      context: "gmail_sync",
+      severity: "warning",
+      gmail_message_id: message.id,
+      user: { id: user&.id, email: user&.email_address }
+    })
     nil
   end
 
@@ -438,12 +458,16 @@ class Gmail::SyncService
 
   # Recursively extracts body part by MIME type
   #
+  # The Google APIs gem may return body.data in two formats:
+  # 1. Already decoded plain text (most common with format='full')
+  # 2. Base64 encoded (URL-safe variant) which needs decoding
+  #
   # @param part [Google::Apis::GmailV1::MessagePart]
   # @param mime_type [String]
   # @return [String, nil]
   def extract_body_part(part, mime_type)
-    if part.mime_type == mime_type && part.body&.data
-      return Base64.urlsafe_decode64(part.body.data)
+    if part.mime_type == mime_type && part.body&.data.present?
+      return decode_body_data(part.body.data)
     end
 
     return nil unless part.parts
@@ -454,9 +478,45 @@ class Gmail::SyncService
     end
 
     nil
-  rescue ArgumentError
-    # Base64 decode failed
+  rescue StandardError => e
+    Rails.logger.error "Failed to extract body part (#{mime_type}): #{e.class} - #{e.message}"
+    ExceptionNotifier.notify(e, {
+      context: "gmail_sync",
+      severity: "warning",
+      operation: "extract_body_part",
+      mime_type: mime_type,
+      user: { id: user&.id, email: user&.email_address }
+    })
     nil
+  end
+
+  # Decodes body data from Gmail API
+  #
+  # The Gmail API gem sometimes returns already-decoded data and sometimes
+  # returns Base64 encoded data. This method handles both cases.
+  #
+  # @param data [String] The body data (may be decoded or Base64 encoded)
+  # @return [String, nil] The decoded content
+  def decode_body_data(data)
+    return nil if data.blank?
+
+    # Check if data looks like Base64 (only contains valid Base64 chars)
+    # Base64 URL-safe uses: A-Z, a-z, 0-9, -, _, and optional = padding
+    if data.match?(/\A[A-Za-z0-9_-]+={0,2}\z/) && data.length > 50
+      # Likely Base64 encoded - try to decode
+      begin
+        decoded = Base64.urlsafe_decode64(data)
+        # Verify it produced valid UTF-8 text
+        decoded.force_encoding("UTF-8")
+        return decoded if decoded.valid_encoding?
+      rescue ArgumentError
+        # Not valid Base64, fall through to use raw data
+      end
+    end
+
+    # Data is already decoded plain text or HTML
+    # Force UTF-8 encoding and handle any invalid bytes
+    data.dup.force_encoding("UTF-8").scrub
   end
 
   # Stores parsed emails and processes them
@@ -589,7 +649,14 @@ class Gmail::SyncService
 
     opportunity
   rescue StandardError => e
-    Rails.logger.error "Failed to create opportunity: #{e.message}"
+    Rails.logger.error "Failed to create opportunity from email #{synced_email.id}: #{e.class} - #{e.message}"
+    ExceptionNotifier.notify(e, {
+      context: "gmail_sync",
+      severity: "error",
+      operation: "create_opportunity",
+      synced_email_id: synced_email.id,
+      user: { id: user&.id, email: user&.email_address }
+    })
     nil
   end
 end

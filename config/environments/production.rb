@@ -57,6 +57,8 @@ Rails.application.configure do
   # Replace the default in-process memory cache store with a durable alternative.
   config.cache_store = :solid_cache_store
 
+  config.assets.integrity_hash_algorithm = "sha256"
+
   # Configure Solid Cache for better session management
   config.solid_cache.size_estimate_samples = 1000
 
@@ -107,4 +109,10 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  config.action_dispatch.default_headers.merge!({
+    "X-Content-Type-Options" => "nosniff",
+    "X-Frame-Options" => "DENY",
+    "Referrer-Policy" => "strict-origin-when-cross-origin"
+  })
 end

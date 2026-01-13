@@ -176,6 +176,23 @@ body {
   @apply mt-1 text-sm text-red-600 dark:text-red-400;
 }
 
+/* Email HTML content styles */
+.email-html-content a {
+  @apply text-primary-600 dark:text-primary-400 underline decoration-primary-400/50 dark:decoration-primary-500/50 underline-offset-2 hover:text-primary-700 dark:hover:text-primary-300 hover:decoration-primary-600 dark:hover:decoration-primary-400 transition-colors;
+}
+
+.email-html-content blockquote {
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 my-3 text-gray-600 dark:text-gray-400 italic;
+}
+
+.email-html-content p {
+  @apply my-2;
+}
+
+.email-html-content br + br {
+  @apply hidden;
+}
+
 /* Button styles for public pages */
 .btn-primary-glow {
   @apply inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white rounded-xl transition-all duration-300;

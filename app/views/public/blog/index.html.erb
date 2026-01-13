@@ -19,7 +19,7 @@
     <div class="flex flex-wrap items-center gap-2 mb-10">
       <span class="text-sm text-gray-500 mr-2">Browse:</span>
       <% @tag_cloud.each do |tag| %>
-        <%= link_to blog_tag_path(tag.name), class: "tag-pill" do %>
+        <%= link_to blog_tag_path(tag.name.parameterize), class: "tag-pill" do %>
           <%= tag.name %>
           <span class="ml-1.5 text-gray-500"><%= tag.try(:usage_count) || tag.taggings_count %></span>
         <% end %>
@@ -35,10 +35,10 @@
     <article class="card-featured mb-10">
       <div class="grid grid-cols-1 lg:grid-cols-2">
         <% if featured_post.cover_image.attached? %>
-          <div class="aspect-video lg:aspect-auto lg:h-full overflow-hidden">
+          <div class="aspect-[4/3] overflow-hidden rounded-t-xl lg:rounded-l-xl lg:rounded-tr-none">
             <%= link_to blog_path(featured_post.slug) do %>
               <%= image_tag featured_post.cover_image_variant(size: :medium),
-                  class: "w-full h-full object-cover transition-transform duration-500 hover:scale-105",
+                  class: "w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105",
                   loading: "eager",
                   alt: featured_post.title %>
             <% end %>
@@ -49,7 +49,7 @@
           <% if featured_post.tag_list.any? %>
             <div class="flex flex-wrap gap-2 mb-4">
               <% featured_post.tag_list.first(3).each do |tag| %>
-                <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+                <%= link_to blog_tag_path(tag.parameterize), class: "tag-pill" do %>
                   <%= tag %>
                 <% end %>
               <% end %>
@@ -86,10 +86,10 @@
           <article class="card-blog group">
             <%# Cover image at top %>
             <% if post.cover_image.attached? %>
-              <div class="aspect-video overflow-hidden rounded-lg mb-4 -mx-6 -mt-6">
-                <%= link_to blog_path(post.slug), class: "block" do %>
+              <div class="aspect-[16/10] overflow-hidden rounded-lg mb-4 -mx-6 -mt-6">
+                <%= link_to blog_path(post.slug), class: "block h-full" do %>
                   <%= image_tag post.cover_image_variant(size: :medium),
-                      class: "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105",
+                      class: "w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105",
                       loading: "lazy",
                       alt: post.title %>
                 <% end %>
@@ -101,7 +101,7 @@
               <% if post.tag_list.any? %>
                 <div class="flex flex-wrap gap-2 mb-3">
                   <% post.tag_list.first(2).each do |tag| %>
-                    <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+                    <%= link_to blog_tag_path(tag.parameterize), class: "tag-pill" do %>
                       <%= tag %>
                     <% end %>
                   <% end %>

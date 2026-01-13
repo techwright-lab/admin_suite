@@ -44,10 +44,9 @@ class RegistrationsController < ApplicationController
     # @return [Boolean]
     def verify_turnstile_token
       return true if Rails.env.development? || Rails.env.test?
-      return true unless Setting.turnstile_enabled?
       return true unless turnstile_configured?
 
-      token = params[:cf_turnstile_response]
+      token = params["cf-turnstile-response"]
       CloudflareTurnstileService.verify(token, request.remote_ip)
     end
 end

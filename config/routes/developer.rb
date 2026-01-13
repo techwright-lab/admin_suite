@@ -93,6 +93,9 @@ namespace :internal do
       # User Resources
       resources :users, only: [ :index, :show ] do
         member do
+          post :resend_verification_email
+          post :grant_admin
+          post :revoke_admin
           post :grant_billing_admin_access
           post :revoke_billing_admin_access
         end

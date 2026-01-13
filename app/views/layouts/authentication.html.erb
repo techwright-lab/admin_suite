@@ -11,17 +11,11 @@
 
     <%= yield :head %>
 
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="icon" href="<%= asset_url('logo/logo.png') %>" type="image/png">
+    <link rel="apple-touch-icon" href="<%= asset_url('logo/logo.png') %>">
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-
-    <%# Cloudflare Turnstile %>
-    <% if turnstile_configured? %>
-      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    <% end %>
   </head>
 
   <body class="bg-gray-50 dark:bg-gray-900">

@@ -41,21 +41,20 @@
   <div data-reading-progress-target="bar" class="h-full bg-gradient-to-r from-primary-400 to-primary-600 transition-[width]"></div>
 </div>
 
-<%# Hero section with cover image and overlaid header %>
+<%# Hero section with full image and overlaid text %>
 <% if @post.cover_image.attached? %>
   <div class="relative w-full pt-24">
-    <%# Cover image container %>
-    <div class="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="relative aspect-[16/9] sm:aspect-[21/9] max-h-[500px] w-full overflow-hidden rounded-2xl">
-        <%# Image %>
+    <div class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="relative overflow-hidden rounded-2xl">
+        <%# Full image %>
         <%= image_tag @post.cover_image_variant(size: :large),
-            class: "w-full h-full object-cover",
+            class: "w-full h-auto",
             loading: "eager",
             fetchpriority: "high",
             alt: @post.title %>
         
-        <%# Gradient overlay %>
-        <div class="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/60 to-transparent"></div>
+        <%# Dark overlay for text readability %>
+        <div class="absolute inset-0 bg-gradient-to-t from-dark-950/90 via-dark-950/50 to-dark-950/30"></div>
         
         <%# Header content overlaid at bottom %>
         <div class="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
@@ -63,21 +62,21 @@
             <% if @post.tag_list.any? %>
               <div class="flex flex-wrap justify-center gap-2 mb-4">
                 <% @post.tag_list.each do |tag| %>
-                  <%= link_to blog_tag_path(tag), class: "tag-pill-light" do %>
+                  <%= link_to blog_tag_path(tag.parameterize), class: "inline-block px-3 py-1 rounded-full text-xs font-medium bg-dark-800/80 text-gray-200 border border-white/10 backdrop-blur-sm hover:bg-dark-700 transition-colors" do %>
                     <%= tag %>
                   <% end %>
                 <% end %>
               </div>
             <% end %>
 
-            <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 tracking-tight leading-tight drop-shadow-lg">
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 tracking-tight leading-tight">
               <%= @post.title %>
             </h1>
 
-            <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-gray-200">
+            <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-gray-300">
               <% if @post.author_name.present? %>
                 <span>By <span class="text-white font-medium"><%= @post.author_name %></span></span>
-                <span class="text-gray-400">·</span>
+                <span class="text-gray-500">·</span>
               <% end %>
               <% if @post.published_at.present? %>
                 <time datetime="<%= @post.published_at.iso8601 %>">
@@ -85,7 +84,7 @@
                 </time>
               <% end %>
               <% if defined?(@reading_time_minutes) && @reading_time_minutes.present? %>
-                <span class="text-gray-400">·</span>
+                <span class="text-gray-500">·</span>
                 <span><%= @reading_time_minutes %> min read</span>
               <% end %>
             </div>
@@ -98,7 +97,7 @@
               <%= link_to "https://twitter.com/intent/tweet?url=#{CGI.escape(share_url)}&text=#{CGI.escape(share_title)}",
                   target: "_blank",
                   rel: "noopener",
-                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-colors",
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-dark-800/80 border border-white/10 backdrop-blur-sm text-white hover:bg-dark-700 transition-colors",
                   title: "Share on X" do %>
                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 Share
@@ -107,7 +106,7 @@
               <%= link_to "https://www.linkedin.com/sharing/share-offsite/?url=#{CGI.escape(share_url)}",
                   target: "_blank",
                   rel: "noopener",
-                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-colors",
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-dark-800/80 border border-white/10 backdrop-blur-sm text-white hover:bg-dark-700 transition-colors",
                   title: "Share on LinkedIn" do %>
                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                 Share
@@ -134,7 +133,7 @@
       <% if @post.tag_list.any? %>
         <div class="flex flex-wrap justify-center gap-2 mb-4">
           <% @post.tag_list.each do |tag| %>
-            <%= link_to blog_tag_path(tag), class: "tag-pill" do %>
+            <%= link_to blog_tag_path(tag.parameterize), class: "tag-pill" do %>
               <%= tag %>
             <% end %>
           <% end %>

@@ -1,0 +1,18 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "8950faa99073dd1231aaeafb9cfc365223dddaa711422382668a2ffa3c2523f2",
+      "note": "Blog posts are admin-only content. Only authenticated admins can create/edit posts."
+    },
+    {
+      "fingerprint": "b079de3fce5343a3b79508f9f2bb5c509b64447836c34c98a1d47bb61e5fe5ea",
+      "note": "Developer docs are admin-only and read from local docs/ folder, not user input."
+    },
+    {
+      "fingerprint": "8e2b8cbbdf59338ca0b5c544635fa62b39a7ca15e3258f111c4ce9e24336398d",
+      "note": "Job listing URLs now use safe_url method which validates http/https scheme only."
+    }
+  ],
+  "updated": "2026-01-11",
+  "brakeman_version": "7.1.2"
+}

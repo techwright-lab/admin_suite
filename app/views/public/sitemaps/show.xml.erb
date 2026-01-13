@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <%# === Primary Pages === %>
   <url>
     <loc><%= root_url %></loc>
     <lastmod><%= Date.current.iso8601 %></lastmod>
@@ -8,41 +9,82 @@
   </url>
 
   <url>
+    <loc><%= pricing_url %></loc>
+    <lastmod><%= Date.current.iso8601 %></lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc><%= contact_url %></loc>
+    <lastmod><%= Date.current.iso8601 %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <%# === Authentication === %>
+  <url>
+    <loc><%= new_registration_url %></loc>
+    <lastmod><%= Date.current.iso8601 %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc><%= new_session_url %></loc>
+    <lastmod><%= Date.current.iso8601 %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <%# === Blog === %>
+  <url>
+    <loc><%= blog_index_url %></loc>
+    <lastmod><%= Date.current.iso8601 %></lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <% @posts.each do |post| %>
+  <url>
+    <loc><%= blog_url(post.slug) %></loc>
+    <lastmod><%= (post.updated_at || Time.current).to_date.iso8601 %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <% end %>
+
+  <%# === Blog Tags === %>
+  <% @tags.each do |tag| %>
+  <url>
+    <loc><%= blog_tag_url(tag.parameterize) %></loc>
+    <lastmod><%= Date.current.iso8601 %></lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <% end %>
+
+  <%# === Legal Pages === %>
+  <url>
     <loc><%= privacy_url %></loc>
     <lastmod><%= Date.current.iso8601 %></lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
 
   <url>
     <loc><%= terms_url %></loc>
     <lastmod><%= Date.current.iso8601 %></lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
 
   <url>
     <loc><%= cookies_url %></loc>
     <lastmod><%= Date.current.iso8601 %></lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
-
-  <url>
-    <loc><%= blog_index_url %></loc>
-    <lastmod><%= Date.current.iso8601 %></lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <% @posts.each do |post| %>
-    <url>
-      <loc><%= blog_url(post.slug) %></loc>
-      <lastmod><%= (post.updated_at || Time.current).to_date.iso8601 %></lastmod>
-      <changefreq>monthly</changefreq>
-      <priority>0.5</priority>
-    </url>
-  <% end %>
 </urlset>
 
 

@@ -2,8 +2,11 @@
 
 # Base controller for API v1 endpoints
 # Provides JSON-only responses and authentication
+#
+# Note: CSRF protection is enabled (default Rails behavior) since these APIs
+# are consumed by same-origin JavaScript using session-based auth.
+# The frontend includes the X-CSRF-Token header in all mutating requests.
 class Api::V1::BaseController < ApplicationController
-  skip_before_action :verify_authenticity_token
   before_action :authenticate_api_user!
 
   private

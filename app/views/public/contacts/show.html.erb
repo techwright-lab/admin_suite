@@ -1,6 +1,13 @@
 <% content_for :title, "Contact Us - Gleania" %>
 <% content_for :description, "Get in touch with the Gleania team. We'd love to hear from you." %>
 
+<%# Load Turnstile script only on this page %>
+<% if turnstile_configured? %>
+  <% content_for :head do %>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <% end %>
+<% end %>
+
 <section class="relative min-h-screen flex items-center pt-20">
   <%# Background %>
   <div class="absolute inset-0 bg-dark-950"></div>

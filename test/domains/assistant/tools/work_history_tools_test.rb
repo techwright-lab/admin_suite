@@ -65,7 +65,7 @@ module Assistant
           role_title: "DetailTestRole",
           start_date: 2.years.ago,
           end_date: 1.year.ago,
-          highlights: ["Led team", "Improved performance"]
+          highlights: [ "Led team", "Improved performance" ]
         )
 
         tool = GetWorkExperienceTool.new(user: @user)

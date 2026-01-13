@@ -47,9 +47,12 @@ module Public
     #
     # @return [Boolean]
     def verify_turnstile_token
+      # Skip verification in development/test environments
+      return true if Rails.env.development? || Rails.env.test?
+      # Skip if Turnstile is not fully configured
       return true unless turnstile_configured?
 
-      token = params[:cf_turnstile_response]
+      token = params["cf-turnstile-response"]
       CloudflareTurnstileService.verify(token, request.remote_ip)
     end
   end

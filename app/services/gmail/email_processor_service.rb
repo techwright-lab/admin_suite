@@ -11,7 +11,7 @@ class Gmail::EmailProcessorService
   EMAIL_TYPE_PATTERNS = {
     interview_invite: [
       /interview\s+(invitation|invite|scheduled|confirmed)/i,
-      /schedule\s+(a|an|your)\s+interview/i,
+      /schedule\s+(a|an|your|the)\s+interview/i,
       /invit(e|ing)\s+you\s+(to|for)\s+(an?\s+)?interview/i,
       /would\s+like\s+to\s+interview/i,
       /meet\s+with\s+(our|the)\s+team/i,
@@ -19,15 +19,26 @@ class Gmail::EmailProcessorService
       /technical\s+interview/i,
       /on-?site\s+interview/i,
       /video\s+interview/i,
-      /zoom\s+interview/i
+      /zoom\s+(interview|call|meeting)/i,
+      # Subject line patterns (high signal)
+      /\b(first|initial|final|next|second|third)\s+interview\b/i,
+      /interview\s+(with|at)\s+\w+/i,
+      # Recruiter scheduling interview
+      /I\s+recruit/i,
+      /recruiter\s+(at|for|from)/i,
+      /set\s+up\s+(a\s+)?time\s+(for\s+us\s+)?to\s+(chat|talk|meet|speak)/i,
+      /excited\s+to\s+(get\s+to\s+)?know\s+you/i
     ],
     scheduling: [
-      /schedule\s+(a\s+)?(call|meeting|time)/i,
+      /schedule\s+(a\s+|the\s+)?(call|meeting|time)/i,
       /book\s+(a\s+)?time/i,
       /calendly/i,
+      /goodtime\.io/i,
       /pick\s+a\s+time/i,
       /available\s+times?/i,
-      /when\s+are\s+you\s+available/i
+      /when\s+are\s+you\s+available/i,
+      /set\s+up\s+(a\s+)?time/i,
+      /visit\s+this\s+link/i
     ],
     application_confirmation: [
       /thank\s+you\s+for\s+(applying|your\s+application)/i,

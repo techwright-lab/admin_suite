@@ -36,7 +36,7 @@ class SyncedEmail < ApplicationRecord
   ].freeze
 
   # Types that represent potential opportunities
-  OPPORTUNITY_TYPES = %w[recruiter_outreach].freeze
+  OPPORTUNITY_TYPES = %w[recruiter_outreach interview_invite follow_up].freeze
 
   belongs_to :user
   belongs_to :connected_account
@@ -50,7 +50,7 @@ class SyncedEmail < ApplicationRecord
   # Validations
   validates :gmail_id, presence: true, uniqueness: { scope: :user_id }
   validates :from_email, presence: true
-  validates :email_type, inclusion: { in: EMAIL_TYPES }, allow_nil: true
+  validates :email_type, inclusion: { in: EMAIL_TYPES }, allow_blank: true
 
   # Normalizations
   normalizes :from_email, with: ->(email) { email.strip.downcase }
@@ -163,6 +163,23 @@ class SyncedEmail < ApplicationRecord
   # @return [Boolean]
   def ignore!
     update!(status: :ignored)
+  end
+
+  # Marks this email as processed (manual override).
+  #
+  # @return [Boolean]
+  def mark_processed!
+    update!(status: :processed)
+  end
+
+  # Marks this email as needing review (manual override).
+  #
+  # The "needs review" concept is derived (pending + unmatched), not a persisted status.
+  # This action resets the email back to pending and clears any application match.
+  #
+  # @return [Boolean]
+  def mark_needs_review!
+    update!(status: :pending, interview_application: nil)
   end
 
   # Marks processing as failed
@@ -329,19 +346,64 @@ class SyncedEmail < ApplicationRecord
   # Returns sanitized HTML body safe for rendering
   # Removes potentially dangerous tags/attributes while preserving formatting
   #
+  # Security measures:
+  # - Allowlist of safe HTML tags only
+  # - No style attribute (prevents CSS-based attacks)
+  # - URL scheme validation for href/src (blocks javascript:, data:, etc.)
+  #
   # @return [String, nil]
   def safe_html_body
     return nil unless body_html.present?
 
-    # Use Rails sanitizer with safe list of tags
-    ActionController::Base.helpers.sanitize(
+    # First pass: Rails sanitizer with safe list of tags
+    # Note: style attribute removed to prevent CSS-based attacks
+    sanitized = ActionController::Base.helpers.sanitize(
       body_html,
       tags: %w[p br div span a ul ol li strong b em i u h1 h2 h3 h4 h5 h6 blockquote pre code table tr td th thead tbody hr img],
-      attributes: %w[href src alt title class style target]
+      attributes: %w[href src alt title class target]
     )
+
+    # Second pass: Validate URL schemes in href and src attributes
+    # Only allow http, https, and mailto schemes
+    sanitize_url_schemes(sanitized)
   end
 
   private
+
+  # Validates and sanitizes URL schemes in href and src attributes
+  # Blocks dangerous schemes like javascript:, data:, vbscript:, etc.
+  #
+  # @param html [String] The HTML to sanitize
+  # @return [String] HTML with dangerous URLs removed
+  def sanitize_url_schemes(html)
+    return html if html.blank?
+
+    safe_schemes = %w[http https mailto]
+
+    # Parse and sanitize href attributes
+    html = html.gsub(/\bhref\s*=\s*["']([^"']*)["']/i) do |match|
+      url = Regexp.last_match(1).to_s.strip.downcase
+      scheme = url.split(":").first
+
+      if url.start_with?("/", "#") || safe_schemes.include?(scheme)
+        match
+      else
+        'href="#"'
+      end
+    end
+
+    # Parse and sanitize src attributes
+    html.gsub(/\bsrc\s*=\s*["']([^"']*)["']/i) do |match|
+      url = Regexp.last_match(1).to_s.strip.downcase
+      scheme = url.split(":").first
+
+      if url.start_with?("/") || %w[http https].include?(scheme)
+        match
+      else
+        'src=""'
+      end
+    end
+  end
 
   # Links or creates the email sender record
   #

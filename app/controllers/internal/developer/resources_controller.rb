@@ -118,6 +118,25 @@ module Internal
 
       protected
 
+      # Resolves the resource configuration.
+      #
+      # For normal resource controllers (e.g. `Internal::Developer::Ops::UsersController`),
+      # `BaseController#resource_config` uses `controller_name`.
+      #
+      # For the generic action routes:
+      # `/internal/developer/:portal/:resource_name/:id/execute_action/:action_name`,
+      # we need to resolve based on `params[:resource_name]`.
+      #
+      # @return [Class, nil]
+      def resource_config
+        return super unless params[:resource_name].present?
+
+        resource_name = params[:resource_name].to_s.singularize.camelize
+        "Admin::Resources::#{resource_name}Resource".constantize
+      rescue NameError
+        nil
+      end
+
       # Returns the model class for the resource
       #
       # @return [Class]
@@ -282,14 +301,24 @@ module Internal
       #
       # @return [ActionController::Parameters]
       def resource_params
-        permitted_fields = resource_config&.form_config&.fields_list&.map do |field|
+        permitted_fields = []
+        array_fields = []
+
+        resource_config&.form_config&.fields_list&.each do |field|
           next if field.is_a?(Admin::Base::Resource::SectionDefinition) ||
                   field.is_a?(Admin::Base::Resource::SectionEnd) ||
                   field.is_a?(Admin::Base::Resource::RowDefinition) ||
                   field.is_a?(Admin::Base::Resource::RowEnd)
 
-          field.name
-        end&.compact || []
+          # Tags and multi-select fields need to be permitted as arrays
+          if field.type == :tags || field.type == :multi_select
+            array_fields << { field.name => [] }
+            # Also permit tag_list for :tags type
+            array_fields << { tag_list: [] } if field.type == :tags && field.name != :tag_list
+          else
+            permitted_fields << field.name
+          end
+        end
 
         # Handle STI: the form is built from the concrete record class (e.g. Ai::AssistantSystemPrompt)
         # but the resource config may be the base class (e.g. Ai::LlmPrompt).
@@ -299,7 +328,7 @@ module Internal
         ].compact.uniq
 
         key = param_keys.find { |k| params.key?(k) }
-        params.require(key).permit(permitted_fields)
+        params.require(key).permit(permitted_fields + array_fields)
       end
 
       # Returns the URL for a resource
@@ -307,14 +336,25 @@ module Internal
       # @param record [ActiveRecord::Base] Record
       # @return [String]
       def resource_url(record)
-        url_for(controller: controller_path, action: :show, id: record.to_param)
+        url_for(controller: resource_controller_path, action: :show, id: record.to_param)
       end
 
       # Returns the URL for the collection
       #
       # @return [String]
       def collection_url
-        url_for(controller: controller_path, action: :index)
+        url_for(controller: resource_controller_path, action: :index)
+      end
+
+      # Returns the correct controller path for redirects when using generic routes.
+      #
+      # @return [String]
+      def resource_controller_path
+        if params[:portal].present? && params[:resource_name].present?
+          "/internal/developer/#{params[:portal]}/#{params[:resource_name]}"
+        else
+          controller_path
+        end
       end
     end
   end

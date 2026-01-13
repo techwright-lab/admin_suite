@@ -4,6 +4,12 @@ class EmailVerificationsController < ApplicationController
   rate_limit to: 5, within: 3.minutes, only: :create, with: -> { redirect_to new_session_path, alert: "Try again later." }
   layout "authentication"
 
+  # GET /email_verification/new
+  # Show form to request verification email resend
+  def new
+    @email_address = params[:email_address]
+  end
+
   # GET /email_verification/:token
   # Verify user's email address
   def show

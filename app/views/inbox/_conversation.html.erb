@@ -20,7 +20,7 @@
       %>
       
       <div id="<%= dom_id(email) %>" 
-           class="conversation-message <%= is_current ? 'ring-2 ring-primary-500/50 ring-offset-2 dark:ring-offset-gray-900' : '' %>"
+           class="conversation-message"
            data-controller="<%= is_long ? 'expandable' : '' %>">
         
         <div class="bg-gradient-to-br <%= colors[:bg] %> rounded-xl shadow-sm border <%= colors[:border] %> overflow-hidden transition-all duration-200 hover:shadow-md">

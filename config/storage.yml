@@ -2,10 +2,21 @@ test:
   service: Disk
   root: <%= Rails.root.join("tmp/storage") %>
 
+# Test public storage (mirrors cloudflare_public for tests)
+test_public:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage/public") %>
+
 local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+# Local public storage (mirrors cloudflare_public for development)
+local_public:
+  service: Disk
+  root: <%= Rails.root.join("storage/public") %>
+
+# Default bucket for user uploads (avatars, resumes, documents, etc.)
 cloudflare:
   service: S3
   endpoint: https://<%= Rails.application.credentials.dig(:cloudflare, :account_id) %>.r2.cloudflarestorage.com
@@ -15,6 +26,21 @@ cloudflare:
   bucket: <%= Rails.application.credentials.dig(:cloudflare, :bucket) %>
   request_checksum_calculation: "when_required"
   response_checksum_validation: "when_required"
+
+# Public bucket for blog images and marketing assets
+# Can use a separate custom domain (e.g., assets.gleania.com)
+cloudflare_public:
+  service: S3
+  endpoint: https://<%= Rails.application.credentials.dig(:cloudflare_public, :account_id) %>.r2.cloudflarestorage.com
+  access_key_id: <%= Rails.application.credentials.dig(:cloudflare_public, :access_key_id) %>
+  secret_access_key: <%= Rails.application.credentials.dig(:cloudflare_public, :access_key_secret) %>
+  region: auto
+  bucket: <%= Rails.application.credentials.dig(:cloudflare_public, :bucket) %>
+  public: true
+  request_checksum_calculation: "when_required"
+  response_checksum_validation: "when_required"
+  # Note: Custom CDN URL is handled by config/initializers/active_storage_cdn.rb
+  # Set CLOUDFLARE_ASSETS_URL env var or cloudflare_public.public_url in credentials
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:

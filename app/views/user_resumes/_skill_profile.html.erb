@@ -82,13 +82,13 @@
                 <span
                   class="
                     inline-flex items-center px-2.5 py-1 rounded-full text-xs
-                    font-medium bg-gray-100 text-gray-700 dark:bg-dark-700
-                    dark:text-gray-300
+                    font-medium bg-gray-100 text-gray-700 dark:bg-gray-700
+                    dark:text-gray-200
                   "
                   title="Mentioned in <%= d[:count] %> resume<%= d[:count].to_i == 1 ? '' : 's' %>"
                 >
                   <%= d[:label] %>
-                  <span class="ml-1 text-gray-500 dark:text-gray-400">(<%= d[:count] %>)</span>
+                  <span class="ml-1 text-gray-500 dark:text-gray-300">(<%= d[:count] %>)</span>
                 </span>
               <% end %>
             </div>
@@ -156,14 +156,14 @@
               <span
                 class="
                   inline-flex items-center px-2.5 py-1 rounded-full text-xs
-                  font-medium bg-gray-100 text-gray-700 dark:bg-dark-700
-                  dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-600
+                  font-medium bg-gray-100 text-gray-700 dark:bg-gray-700
+                  dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600
                   transition-colors cursor-default
                 "
                 title="<%= skills.map(&:skill_name).join(', ') %>"
               >
                 <%= category %>
-                <span class="ml-1 text-gray-500">(<%= skills.count %>)</span>
+                <span class="ml-1 text-gray-500 dark:text-gray-300">(<%= skills.count %>)</span>
               </span>
             <% end %>
           </div>

@@ -26,6 +26,7 @@ class JobListing < ApplicationRecord
   validates :job_role, presence: true
   validates :remote_type, inclusion: { in: REMOTE_TYPES.map(&:to_s) }
   validates :status, inclusion: { in: STATUSES.map(&:to_s) }
+  validate :url_has_safe_scheme, if: -> { url.present? }
 
   scope :active, -> { where(status: :active) }
   scope :closed, -> { where(status: :closed) }
@@ -166,7 +167,37 @@ class JobListing < ApplicationRecord
     end
   end
 
+  # Returns a safe URL for linking, or nil if URL is potentially dangerous
+  # Only allows http/https schemes to prevent javascript: XSS attacks
+  #
+  # @return [String, nil] Safe URL or nil
+  def safe_url
+    return nil if url.blank?
+
+    uri = URI.parse(url.strip)
+    %w[http https].include?(uri.scheme&.downcase) ? url : nil
+  rescue URI::InvalidURIError
+    nil
+  end
+
   private
+
+  # Validates that the URL uses a safe scheme (http/https only)
+  # Prevents javascript:, data:, and other dangerous URL schemes
+  #
+  # @return [void]
+  def url_has_safe_scheme
+    return if url.blank?
+
+    begin
+      uri = URI.parse(url.strip)
+      unless %w[http https].include?(uri.scheme&.downcase)
+        errors.add(:url, "must use http or https")
+      end
+    rescue URI::InvalidURIError
+      errors.add(:url, "is not a valid URL")
+    end
+  end
 
   def number_with_delimiter(number)
     number.to_s.reverse.scan(/\d{1,3}/).join(",").reverse

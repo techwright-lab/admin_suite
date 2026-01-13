@@ -23,11 +23,11 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     @user.update!(email_verified_at: nil)
     post session_path, params: { email_address: @user.email_address, password: "password" }
 
-    assert_redirected_to new_session_path
-    
+    assert_redirected_to new_email_verification_path(email_address: @user.email_address)
+
     follow_redirect!
     assert_response :success
-    assert_match /verify your email/i, response.body
+    assert_match /verify your email|verification/i, response.body
   end
 
   test "create with OAuth user allows sign in without email verification" do

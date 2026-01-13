@@ -19,10 +19,11 @@ import { Controller } from "@hotwired/stimulus"
  *   </div>
  */
 export default class extends Controller {
-  static targets = ["tags", "input", "dropdown"]
+  static targets = ["tags", "input", "dropdown", "placeholder"]
   static values = {
     creatable: { type: Boolean, default: true },
-    suggestions: { type: Array, default: [] }
+    suggestions: { type: Array, default: [] },
+    fieldName: { type: String, default: "" }
   }
 
   connect() {
@@ -173,12 +174,33 @@ export default class extends Controller {
   }
 
   getFieldName() {
+    // Use the configured field name if available
+    if (this.fieldNameValue) return this.fieldNameValue
+    
     // Find existing hidden inputs to get the field name
-    const existing = this.tagsTarget.querySelector("input[type='hidden']")
+    const existing = this.tagsTarget.querySelector("input[type='hidden']:not([data-tag-select-target='placeholder'])")
     if (existing && existing.name) return existing.name
     
+    // Check placeholder
+    if (this.hasPlaceholderTarget && this.placeholderTarget.name) {
+      return this.placeholderTarget.name
+    }
+    
+    // Look for the parent form to determine the resource name
+    const form = this.element.closest("form")
+    if (form) {
+      // Try to find any hidden input in the form that has a param key pattern
+      const anyHidden = form.querySelector("input[type='hidden'][name*='[']")
+      if (anyHidden) {
+        const match = anyHidden.name.match(/^([^\[]+)\[/)
+        if (match) {
+          return `${match[1]}[tag_list]`
+        }
+      }
+    }
+    
     // Fallback
-    return "tags[]"
+    return "tag_list"
   }
 
   escapeHtml(text) {

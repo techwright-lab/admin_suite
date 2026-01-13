@@ -24,5 +24,6 @@ OmniAuth.config.on_failure = proc do |env|
   OauthCallbacksController.action(:failure).call(env)
 end
 
-# Allow both POST and GET for OAuth (POST for CSRF protection, GET for compatibility)
-OmniAuth.config.allowed_request_methods = [ :post, :get ]
+# Only allow POST for OAuth requests (CSRF protection)
+# GET requests are vulnerable to CSRF attacks
+OmniAuth.config.allowed_request_methods = [ :post ]

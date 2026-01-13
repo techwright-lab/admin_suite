@@ -51,9 +51,9 @@
             class="
               inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
               <%= case user_resume.purpose
-              when 'generic' then 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-              when 'company_specific' then 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-              when 'role_specific' then 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+              when 'generic' then 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+              when 'company_specific' then 'bg-purple-100 text-purple-700 dark:bg-purple-800/50 dark:text-purple-200'
+              when 'role_specific' then 'bg-blue-100 text-blue-700 dark:bg-blue-800/50 dark:text-blue-200'
               end %>
             "
           >
@@ -96,7 +96,7 @@
         <% if user_resume.analyzed? && user_resume.strengths.any? %>
           <div class="mt-2 flex flex-wrap gap-2">
             <% user_resume.strengths.first(3).each do |strength| %>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-800/40 dark:text-indigo-200">
                 <%= strength %>
               </span>
             <% end %>
