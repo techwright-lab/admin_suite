@@ -87,7 +87,7 @@ GEM
     after_commit_everywhere (1.6.0)
       activerecord (>= 4.2)
       activesupport
-    anthropic (1.16.2)
+    anthropic (1.16.3)
       connection_pool
     ast (2.4.3)
     awesome_print (1.9.2)
