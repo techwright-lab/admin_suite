@@ -79,7 +79,10 @@
         <div class="space-y-3">
           <button
             type="button"
-            onclick="document.getElementById('new-application-modal')?.dispatchEvent(new CustomEvent('modal:show')) || (window.location.href = '<%= new_interview_application_path %>')"
+            data-controller="click-actions"
+            data-action="click->click-actions#openModal"
+            data-click-actions-modal-id-value="new-application-modal"
+            data-click-actions-fallback-url-value="<%= new_interview_application_path %>"
             class="w-full flex items-center px-4 py-3 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
           >
             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,11 +98,11 @@
             Upload Resume
           <% end %>
 
-          <%= link_to inbox_index_path, class: "w-full flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" do %>
+          <%= link_to signals_path, class: "w-full flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" do %>
             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
-            Check Inbox
+            View Signals
           <% end %>
 
           <%= link_to opportunities_path, class: "w-full flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" do %>
@@ -200,7 +203,9 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">No applications yet</p>
             <button
               type="button"
-              onclick="document.getElementById('new-application-modal')?.dispatchEvent(new CustomEvent('modal:show'))"
+              data-controller="click-actions"
+              data-action="click->click-actions#openModal"
+              data-click-actions-modal-id-value="new-application-modal"
               class="text-sm text-primary-600 dark:text-primary-400 hover:underline"
             >
               Add your first application

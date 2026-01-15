@@ -221,7 +221,74 @@ class InterviewApplication < ApplicationRecord
     update_columns(deleted_at: nil, updated_at: Time.current)
   end
 
+  # Returns a scheduling link from synced emails if available
+  # Prioritizes links from scheduling-type emails or high-priority action links
+  #
+  # @return [Hash, nil] { url: String, platform: String } or nil
+  def scheduling_link
+    @scheduling_link ||= find_scheduling_link_from_emails
+  end
+
+  # Checks if this application has a scheduling link available
+  #
+  # @return [Boolean] True if scheduling link exists
+  def has_scheduling_link?
+    scheduling_link.present?
+  end
+
+  # Checks if the next interview needs to be scheduled
+  # True if no upcoming rounds exist
+  #
+  # @return [Boolean] True if interview not yet scheduled
+  def needs_scheduling?
+    interview_rounds.upcoming.none?
+  end
+
+  # Returns scheduling link only if interview needs scheduling
+  #
+  # @return [Hash, nil] { url: String, platform: String } or nil
+  def actionable_scheduling_link
+    return nil unless needs_scheduling?
+    scheduling_link
+  end
+
   private
+
+  # Finds scheduling link from synced emails
+  #
+  # @return [Hash, nil]
+  def find_scheduling_link_from_emails
+    synced_emails.each do |email|
+      next unless email.signal_action_links.is_a?(Array)
+
+      # Look for scheduling links (priority 1 or label contains "schedule")
+      email.signal_action_links.each do |link|
+        if link["priority"] == 1 || link["action_label"]&.downcase&.include?("schedule")
+          return {
+            url: link["url"],
+            platform: extract_platform_name(link["url"]),
+            label: link["action_label"]
+          }
+        end
+      end
+    end
+    nil
+  end
+
+  # Extracts friendly platform name from URL
+  #
+  # @param url [String]
+  # @return [String]
+  def extract_platform_name(url)
+    case url
+    when /goodtime\.io/i then "GoodTime"
+    when /calendly\.com/i then "Calendly"
+    when /cal\.com/i then "Cal.com"
+    when /doodle\.com/i then "Doodle"
+    when /zoom\.us/i then "Zoom"
+    else "scheduling link"
+    end
+  end
 
   PLACEHOLDER_COMPANY_NAMES = [ "unknown company", "unknown" ].freeze
   PLACEHOLDER_JOB_ROLES = [ "unknown position", "unknown role", "unknown" ].freeze

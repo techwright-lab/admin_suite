@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_10_105204) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -410,13 +410,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_105204) do
   create_table "company_feedbacks", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "feedback_text"
+    t.string "feedback_type"
     t.bigint "interview_application_id", null: false
     t.text "next_steps"
     t.datetime "received_at"
     t.text "rejection_reason"
     t.text "self_reflection"
+    t.bigint "source_email_id"
     t.datetime "updated_at", null: false
     t.index ["interview_application_id"], name: "index_company_feedbacks_on_interview_application_id"
+    t.index ["source_email_id"], name: "index_company_feedbacks_on_source_email_id"
   end
 
   create_table "connected_accounts", force: :cascade do |t|
@@ -606,6 +609,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_105204) do
 
   create_table "interview_rounds", force: :cascade do |t|
     t.datetime "completed_at"
+    t.string "confirmation_source"
     t.datetime "created_at", null: false
     t.integer "duration_minutes"
     t.bigint "interview_application_id", null: false
@@ -615,12 +619,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_105204) do
     t.integer "position"
     t.integer "result", default: 0
     t.datetime "scheduled_at"
+    t.bigint "source_email_id"
     t.integer "stage", default: 0, null: false
     t.string "stage_name"
     t.datetime "updated_at", null: false
+    t.string "video_link"
     t.index ["interview_application_id", "position"], name: "idx_on_interview_application_id_position_2ffa3d90ee"
     t.index ["interview_application_id"], name: "index_interview_rounds_on_interview_application_id"
     t.index ["result"], name: "index_interview_rounds_on_result"
+    t.index ["source_email_id"], name: "index_interview_rounds_on_source_email_id"
     t.index ["stage"], name: "index_interview_rounds_on_stage"
   end
 
@@ -998,6 +1005,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_105204) do
     t.datetime "email_date"
     t.bigint "email_sender_id"
     t.string "email_type"
+    t.datetime "extracted_at"
+    t.jsonb "extracted_data", default: {}, null: false
+    t.decimal "extraction_confidence", precision: 3, scale: 2
+    t.string "extraction_status", default: "pending"
     t.string "from_email", null: false
     t.string "from_name"
     t.string "gmail_id", null: false
@@ -1014,6 +1025,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_105204) do
     t.index ["email_date"], name: "index_synced_emails_on_email_date"
     t.index ["email_sender_id"], name: "index_synced_emails_on_email_sender_id"
     t.index ["email_type"], name: "index_synced_emails_on_email_type"
+    t.index ["extraction_status"], name: "index_synced_emails_on_extraction_status"
     t.index ["from_email"], name: "index_synced_emails_on_from_email"
     t.index ["interview_application_id"], name: "index_synced_emails_on_interview_application_id"
     t.index ["status"], name: "index_synced_emails_on_status"

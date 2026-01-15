@@ -561,6 +561,9 @@ class Gmail::SyncService
         elsif synced_email.reload.matched?
           stats[:matched_count] += 1
         end
+
+        # Queue signal extraction for relevant emails
+        queue_signal_extraction(synced_email) if is_new_email
       elsif synced_email.matched?
         stats[:matched_count] += 1
       end
@@ -630,6 +633,20 @@ class Gmail::SyncService
         sender_domain.end_with?(".#{company_domain}") ||
         company_domain.end_with?(".#{sender_domain}")
     end
+  end
+
+  # Queues signal extraction for a synced email
+  # Extracts company info, recruiter details, job information, and suggested actions
+  #
+  # @param synced_email [SyncedEmail] The synced email
+  # @return [void]
+  def queue_signal_extraction(synced_email)
+    # Only queue if email is suitable for extraction
+    return if synced_email.auto_ignored? || synced_email.ignored?
+    return if synced_email.email_type == "other" && !synced_email.matched?
+    return if synced_email.extraction_status != "pending"
+
+    ProcessSignalExtractionJob.perform_later(synced_email.id)
   end
 
   # Creates an opportunity from a recruiter outreach email

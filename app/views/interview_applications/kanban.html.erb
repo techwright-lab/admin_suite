@@ -18,7 +18,9 @@
         <!-- Add Application Button (Opens Modal) -->
         <button
           type="button"
-          onclick="document.getElementById('new-application-modal').dispatchEvent(new CustomEvent('modal:show'))"
+          data-controller="click-actions"
+          data-action="click->click-actions#openModal"
+          data-click-actions-modal-id-value="new-application-modal"
           class="
             inline-flex items-center px-4 py-2 bg-primary-600
             hover:bg-primary-700 text-white font-medium rounded-lg

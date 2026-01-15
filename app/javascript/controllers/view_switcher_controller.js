@@ -1,8 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="view-switcher"
+// Usage:
+// <div data-controller="view-switcher">
+//   <a data-view="table" data-action="click->view-switcher#switch">Table</a>
+//   <a data-view="kanban" data-action="click->view-switcher#switch">Kanban</a>
+// </div>
 export default class extends Controller {
-  static targets = ["kanbanButton", "listButton"]
+  static targets = ["kanbanButton", "listButton", "button"]
   static values = {
     currentView: String
   }
@@ -11,6 +16,16 @@ export default class extends Controller {
     // Load saved preference from localStorage
     const savedView = localStorage.getItem("preferredView") || this.currentViewValue || "kanban"
     this.updateView(savedView, false)
+  }
+
+  // Generic switch method that reads the view from data-view attribute
+  switch(event) {
+    const view = event.currentTarget.dataset.view
+    if (view) {
+      // Save preference but let the link navigate naturally
+      localStorage.setItem("preferredView", view)
+      this.updateButtonStates(view)
+    }
   }
 
   switchToKanban(event) {
@@ -28,6 +43,18 @@ export default class extends Controller {
     localStorage.setItem("preferredView", view)
     
     // Update button states
+    this.updateButtonStates(view)
+
+    // Navigate if needed
+    if (navigate) {
+      const url = new URL(window.location)
+      url.searchParams.set("view", view)
+      Turbo.visit(url.toString())
+    }
+  }
+
+  updateButtonStates(view) {
+    // Update legacy button targets
     if (this.hasKanbanButtonTarget && this.hasListButtonTarget) {
       if (view === "kanban") {
         this.kanbanButtonTarget.classList.add("active")
@@ -38,11 +65,18 @@ export default class extends Controller {
       }
     }
 
-    // Navigate if needed
-    if (navigate) {
-      const url = new URL(window.location)
-      url.searchParams.set("view", view)
-      Turbo.visit(url.toString())
+    // Update generic button targets with data-view
+    if (this.hasButtonTarget) {
+      this.buttonTargets.forEach(button => {
+        const buttonView = button.dataset.view
+        if (buttonView === view) {
+          button.classList.add("bg-gray-100", "dark:bg-gray-700", "text-gray-900", "dark:text-white")
+          button.classList.remove("text-gray-600", "dark:text-gray-400")
+        } else {
+          button.classList.remove("bg-gray-100", "dark:bg-gray-700", "text-gray-900", "dark:text-white")
+          button.classList.add("text-gray-600", "dark:text-gray-400")
+        }
+      })
     }
   }
 }

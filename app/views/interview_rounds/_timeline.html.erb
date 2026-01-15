@@ -1,226 +1,200 @@
-<%# Interview Rounds Timeline Component %>
+<%# Interview Rounds Timeline Component - Seamless Design %>
 
-<div class="flow-root">
-  <ul role="list" class="-mb-8">
-    <% rounds.each_with_index do |round, index| %>
-      <li>
-        <div class="relative pb-8">
-          <% unless index == rounds.size - 1 %>
-            <span
-              class="
-                absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200
-                dark:bg-gray-700
-              "
-              aria-hidden="true"
-            ></span>
-          <% end %>
+<div class="space-y-0">
+  <% rounds.each_with_index do |round, index| %>
+    <div class="relative <%= 'border-b border-gray-100 dark:border-gray-700/50' unless index == rounds.size - 1 %>">
+      <%# Timeline connector line %>
+      <% unless index == rounds.size - 1 %>
+        <div class="absolute left-5 top-14 bottom-0 w-px bg-gradient-to-b from-gray-200 to-transparent dark:from-gray-700" aria-hidden="true"></div>
+      <% end %>
 
-          <div class="relative flex space-x-3">
-            <!-- Icon -->
-            <div>
-              <span
-                class="
-                  h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white dark:ring-gray-800
-                  <%= case round.result.to_sym
-                  when :passed then 'bg-green-500'
-                  when :failed then 'bg-red-500'
-                  when :waitlisted then 'bg-yellow-500'
-                  else 'bg-gray-400'
-                  end %>
-                "
-              >
-                <% if round.completed? %>
-                  <svg
-                    class="h-5 w-5 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                <% else %>
-                  <svg
-                    class="h-5 w-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                <% end %>
-              </span>
-            </div>
-
-            <!-- Content -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">
-                    <%= round.stage_display_name %>
-                  </p>
-                  <% if round.interviewer_display.present? %>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                      with <%= round.interviewer_display %>
-                    </p>
-                  <% end %>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <% if round.completed? %>
-                    <span
-                      class="
-                        inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                        <%= case round.result.to_sym
-                        when :passed then 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                        when :failed then 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                        when :waitlisted then 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                        else 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                        end %>
-                      "
-                    >
-                      <%= round.result.to_s.titleize %>
-                    </span>
-                  <% else %>
-                    <span
-                      class="
-                        inline-flex items-center px-2 py-0.5 rounded text-xs
-                        font-medium bg-blue-100 text-blue-800
-                        dark:bg-blue-900/20 dark:text-blue-400
-                      "
-                    >
-                      Upcoming
-                    </span>
-                  <% end %>
-
-                  <%= link_to edit_interview_application_interview_round_path(round.interview_application, round),
-                      class: "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" do %>
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                  <% end %>
-                </div>
-              </div>
-
-              <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                <% if round.scheduled_at.present? %>
-                  <p>
-                    <%= round.completed? ? "Completed" : "Scheduled for" %>
-                    <%= round.scheduled_at.strftime("%B %d, %Y at %I:%M %p") %>
-                  </p>
-                <% end %>
-
-                <% if round.duration_minutes.present? %>
-                  <p class="mt-1">Duration: <%= round.formatted_duration %></p>
-                <% end %>
-
-                <% if round.notes.present? %>
-                  <p class="mt-2"><%= round.notes %></p>
-                <% end %>
-              </div>
-
-              <!-- Self-Reflection Section -->
-              <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <% if round.interview_feedback.present? %>
-                  <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                      <h4 class="text-sm font-medium text-gray-900 dark:text-white">
-                        Self-Reflection
-                      </h4>
-                      <div class="flex items-center gap-2">
-                        <%= link_to edit_interview_application_interview_round_interview_feedback_path(round.interview_application, round),
-                            class: "text-primary-600 hover:text-primary-700 dark:text-primary-400 text-xs" do %>
-                          Edit
-                        <% end %>
-                        <%= link_to interview_application_interview_round_interview_feedback_path(round.interview_application, round),
-                            method: :delete,
-                            data: { confirm: "Are you sure?" },
-                            class: "text-red-600 hover:text-red-700 dark:text-red-400 text-xs" do %>
-                          Delete
-                        <% end %>
-                      </div>
-                    </div>
-
-                    <% feedback = round.interview_feedback %>
-                    <% if feedback.went_well.present? %>
-                      <div class="mb-3">
-                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          What Went Well
-                        </p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                          <%= feedback.went_well %>
-                        </p>
-                      </div>
-                    <% end %>
-
-                    <% if feedback.to_improve.present? %>
-                      <div class="mb-3">
-                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          What to Improve
-                        </p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                          <%= feedback.to_improve %>
-                        </p>
-                      </div>
-                    <% end %>
-
-                    <% if feedback.self_reflection.present? %>
-                      <div>
-                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Overall Reflection
-                        </p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                          <%= feedback.self_reflection %>
-                        </p>
-                      </div>
-                    <% end %>
-                  </div>
-                <% else %>
-                  <div class="flex items-center justify-between">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                      No self-reflection yet
-                    </p>
-                    <%= link_to new_interview_application_interview_round_interview_feedback_path(round.interview_application, round),
-                        class: "inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 rounded-lg" do %>
-                      <svg
-                        class="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                      Add Self-Reflection
-                    <% end %>
-                  </div>
-                <% end %>
-              </div>
+      <div class="py-6 first:pt-0">
+        <%# Header Row %>
+        <div class="flex items-start gap-4">
+          <%# Status Icon %>
+          <div class="flex-shrink-0 relative z-10">
+            <div class="
+              h-10 w-10 rounded-xl flex items-center justify-center
+              <%= case round.result.to_sym
+              when :passed then 'bg-emerald-500 text-white'
+              when :failed then 'bg-red-500 text-white'
+              when :waitlisted then 'bg-amber-500 text-white'
+              else 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+              end %>
+            ">
+              <% if round.completed? && round.result.to_sym == :passed %>
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+              <% elsif round.completed? && round.result.to_sym == :failed %>
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              <% else %>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              <% end %>
             </div>
           </div>
+
+          <%# Main Content %>
+          <div class="flex-1 min-w-0 pt-1">
+            <%# Title & Status %>
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                  <%= round.stage_display_name %>
+                </h3>
+                <span class="
+                  inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium
+                  <%= case round.result.to_sym
+                  when :passed then 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                  when :failed then 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
+                  when :waitlisted then 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
+                  else 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'
+                  end %>
+                ">
+                  <%= round.completed? ? round.result.to_s.titleize : 'Upcoming' %>
+                </span>
+              </div>
+              <%= link_to edit_interview_application_interview_round_path(round.interview_application, round),
+                  class: "p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors" do %>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              <% end %>
+            </div>
+
+            <%# Interviewer %>
+            <% if round.interviewer_display.present? %>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                with <%= round.interviewer_display %>
+              </p>
+            <% end %>
+
+            <%# Meta info - inline chips %>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <% if round.scheduled_at.present? %>
+                <span class="inline-flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <%= round.scheduled_at.strftime("%b %d, %Y · %I:%M %p") %>
+                </span>
+              <% end %>
+
+              <% if round.duration_minutes.present? %>
+                <span class="inline-flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <%= round.formatted_duration %>
+                </span>
+              <% end %>
+
+              <% if round.video_link.present? %>
+                <%= link_to round.video_link, target: "_blank", rel: "noopener noreferrer",
+                    class: "inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:underline" do %>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                  </svg>
+                  Join Meeting
+                <% end %>
+              <% end %>
+
+              <% if round.source_email.present? %>
+                <%= link_to signal_path(round.source_email),
+                    class: "inline-flex items-center gap-1.5 text-gray-400 dark:text-gray-500 hover:text-primary-600 dark:hover:text-primary-400" do %>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                  <span class="text-xs">from email</span>
+                <% end %>
+              <% end %>
+            </div>
+
+            <%# Notes %>
+            <% if round.notes.present? %>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 pl-3 border-l-2 border-gray-200 dark:border-gray-700">
+                <%= round.notes %>
+              </p>
+            <% end %>
+
+            <%# Feedback Section - Seamless integration %>
+            <% if round.interview_feedback.present? %>
+              <% feedback = round.interview_feedback %>
+              <div class="space-y-3">
+                <%# AI-Extracted Feedback %>
+                <% if feedback.ai_summary.present? %>
+                  <div class="flex items-start gap-2">
+                    <span class="inline-flex items-center gap-1 shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+                      </svg>
+                      AI
+                    </span>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                      <%= feedback.ai_summary %>
+                    </p>
+                  </div>
+                <% end %>
+
+                <%# User Self-Reflection - Compact inline %>
+                <% if feedback.went_well.present? || feedback.to_improve.present? %>
+                  <div class="flex flex-wrap gap-3">
+                    <% if feedback.went_well.present? %>
+                      <div class="flex items-start gap-2 flex-1 min-w-[200px]">
+                        <svg class="w-4 h-4 mt-0.5 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><%= feedback.went_well %></p>
+                      </div>
+                    <% end %>
+                    <% if feedback.to_improve.present? %>
+                      <div class="flex items-start gap-2 flex-1 min-w-[200px]">
+                        <svg class="w-4 h-4 mt-0.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                        <p class="text-sm text-gray-600 dark:text-gray-400"><%= feedback.to_improve %></p>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <% if feedback.self_reflection.present? %>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 italic pl-3 border-l-2 border-gray-200 dark:border-gray-700">
+                    <%= feedback.self_reflection %>
+                  </p>
+                <% end %>
+
+                <%# Edit/Delete links %>
+                <div class="flex items-center gap-3 text-xs">
+                  <%= link_to edit_interview_application_interview_round_interview_feedback_path(round.interview_application, round),
+                      class: "text-gray-400 hover:text-primary-600 dark:hover:text-primary-400" do %>
+                    Edit reflection
+                  <% end %>
+                  <%= link_to interview_application_interview_round_interview_feedback_path(round.interview_application, round),
+                      method: :delete,
+                      data: { confirm: "Delete this reflection?" },
+                      class: "text-gray-400 hover:text-red-600 dark:hover:text-red-400" do %>
+                    Delete
+                  <% end %>
+                </div>
+              </div>
+            <% else %>
+              <%# Add reflection prompt %>
+              <%= link_to new_interview_application_interview_round_interview_feedback_path(round.interview_application, round),
+                  class: "inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors" do %>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add reflection
+              <% end %>
+            <% end %>
+          </div>
         </div>
-      </li>
-    <% end %>
-  </ul>
+      </div>
+    </div>
+  <% end %>
 </div>

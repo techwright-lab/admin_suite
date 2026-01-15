@@ -39,15 +39,15 @@ class DashboardController < ApplicationController
   def calculate_needs_attention
     items = []
 
-    # Emails needing review
+    # Signals needing attention
     email_count = Current.user.synced_emails.needs_review.count
     if email_count > 0
       items << {
-        type: :emails,
+        type: :signals,
         count: email_count,
-        message: "#{email_count} #{'email'.pluralize(email_count)} need review",
-        path: inbox_index_path,
-        icon: "mail",
+        message: "#{email_count} #{'signal'.pluralize(email_count)} need attention",
+        path: signals_path,
+        icon: "bolt",
         color: "amber"
       }
     end
@@ -187,4 +187,3 @@ class DashboardController < ApplicationController
       .count
   end
 end
-

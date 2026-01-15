@@ -38,7 +38,8 @@
         id="settings_tab"
         name="tab"
         class="form-control"
-        onchange="window.location = this.value"
+        data-controller="click-actions"
+        data-action="change->click-actions#redirectToValue"
         aria-label="Select settings section"
       >
         <% nav_items.each do |item| %>

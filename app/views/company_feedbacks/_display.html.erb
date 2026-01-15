@@ -1,56 +1,157 @@
-<%# Company Feedback Display Component %>
+<%# Company Feedback Display Component - Enhanced UI %>
 
-<div class="space-y-4">
-  <% if feedback.received_at.present? %>
-    <div class="text-sm text-gray-500 dark:text-gray-400">
-      Received <%= time_ago_in_words(feedback.received_at) %> ago
+<div class="space-y-6">
+  <%# Header with feedback type badge and timestamp %>
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <% if feedback.feedback_type.present? %>
+        <% case feedback.feedback_type %>
+        <% when "rejection" %>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"/>
+            </svg>
+            Rejection
+          </span>
+        <% when "offer" %>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/>
+            </svg>
+            Offer Received
+          </span>
+        <% else %>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/>
+            </svg>
+            Feedback
+          </span>
+        <% end %>
+      <% end %>
     </div>
-  <% end %>
 
+    <% if feedback.received_at.present? %>
+      <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>Received <%= time_ago_in_words(feedback.received_at) %> ago</span>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Main Feedback Content %>
   <% if feedback.feedback_text.present? %>
-    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-      <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Feedback</h4>
-      <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-        <%= feedback.feedback_text %>
-      </p>
+    <div class="relative">
+      <div class="absolute -left-3 top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-primary-500 to-primary-300 dark:from-primary-600 dark:to-primary-400"></div>
+      <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 ml-2">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="p-1.5 rounded-lg bg-primary-100 dark:bg-primary-900/30">
+            <svg class="w-4 h-4 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+            </svg>
+          </div>
+          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Feedback Summary</h4>
+        </div>
+        <div class="prose prose-sm max-w-none text-gray-600 dark:text-gray-300">
+          <%= simple_format(feedback.feedback_text, class: "whitespace-pre-wrap leading-relaxed") %>
+        </div>
+      </div>
     </div>
   <% end %>
 
+  <%# Rejection Reason - Only show for rejections %>
   <% if feedback.rejection_reason.present? %>
-    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-      <h4 class="text-sm font-medium text-red-900 dark:text-red-400 mb-2">Rejection Reason</h4>
-      <p class="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
-        <%= feedback.rejection_reason %>
-      </p>
+    <div class="relative">
+      <div class="absolute -left-3 top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-red-500 to-red-300 dark:from-red-600 dark:to-red-400"></div>
+      <div class="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-5 ml-2">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30">
+            <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <h4 class="text-sm font-semibold text-red-900 dark:text-red-400">Why It Didn't Work Out</h4>
+        </div>
+        <div class="prose prose-sm max-w-none text-red-700 dark:text-red-300/90">
+          <%= simple_format(feedback.rejection_reason, class: "whitespace-pre-wrap leading-relaxed") %>
+        </div>
+      </div>
     </div>
   <% end %>
 
+  <%# Next Steps - For offers or positive outcomes %>
   <% if feedback.next_steps.present? %>
-    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-      <h4 class="text-sm font-medium text-green-900 dark:text-green-400 mb-2">Next Steps</h4>
-      <p class="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap">
-        <%= feedback.next_steps %>
-      </p>
+    <div class="relative">
+      <div class="absolute -left-3 top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-emerald-300 dark:from-emerald-600 dark:to-emerald-400"></div>
+      <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-5 ml-2">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+            </svg>
+          </div>
+          <h4 class="text-sm font-semibold text-emerald-900 dark:text-emerald-400">Next Steps</h4>
+        </div>
+        <div class="prose prose-sm max-w-none text-emerald-700 dark:text-emerald-300/90">
+          <%= simple_format(feedback.next_steps, class: "whitespace-pre-wrap leading-relaxed") %>
+        </div>
+      </div>
     </div>
   <% end %>
 
+  <%# Self Reflection - User's own notes %>
   <% if feedback.self_reflection.present? %>
-    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-      <h4 class="text-sm font-medium text-blue-900 dark:text-blue-400 mb-2">Your Reflection</h4>
-      <p class="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
-        <%= feedback.self_reflection %>
-      </p>
+    <div class="relative">
+      <div class="absolute -left-3 top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-300 dark:from-blue-600 dark:to-blue-400"></div>
+      <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl p-5 ml-2">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
+          <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-400">Your Reflection</h4>
+        </div>
+        <div class="prose prose-sm max-w-none text-blue-700 dark:text-blue-300/90">
+          <%= simple_format(feedback.self_reflection, class: "whitespace-pre-wrap leading-relaxed") %>
+        </div>
+      </div>
     </div>
   <% end %>
 
-  <div class="flex items-center justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+  <%# Source indicator if from email %>
+  <% if feedback.source_email.present? %>
+    <div class="flex items-center gap-2 pt-2 text-xs text-gray-400 dark:text-gray-500">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+      <span>Automatically extracted from email</span>
+    </div>
+  <% end %>
+
+  <%# Actions Footer %>
+  <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700/50">
+    <div class="flex items-center gap-2">
+      <% if feedback.source_email.present? %>
+        <%= link_to signal_path(feedback.source_email),
+            class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors" do %>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+          View Source Email
+        <% end %>
+      <% end %>
+    </div>
+
     <%= link_to edit_interview_application_company_feedback_path(feedback.interview_application),
-        class: "inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white" do %>
-      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors" do %>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
       </svg>
       Edit Feedback
     <% end %>
   </div>
 </div>
-

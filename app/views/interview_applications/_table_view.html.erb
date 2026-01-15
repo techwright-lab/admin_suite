@@ -130,7 +130,9 @@
                 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors
                 cursor-pointer
               "
-              onclick="window.location='<%= interview_application_path(application) %>'"
+              data-controller="click-actions"
+              data-action="click->click-actions#navigate"
+              data-click-actions-url-value="<%= interview_application_path(application) %>"
             >
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
@@ -182,7 +184,7 @@
               </td>
               <td
                 class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                onclick="event.stopPropagation()"
+                data-action="click->click-actions#stopPropagation"
               >
                 <div class="flex items-center justify-end gap-2">
                   <%= link_to edit_interview_application_path(application),

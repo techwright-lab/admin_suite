@@ -95,14 +95,19 @@ namespace :billing do
 end
 
 # =================================================================
-# Email & Opportunities
+# Signals (Email Intelligence) & Opportunities
 # =================================================================
-resources :inbox, only: [ :index, :show ] do
+resources :signals, only: [ :index, :show ] do
   member do
     patch :match_application
     patch :ignore
+    post :execute_action
   end
 end
+
+# Legacy inbox route redirects to signals
+get "/inbox", to: redirect("/signals")
+get "/inbox/:id", to: redirect("/signals/%{id}")
 
 resources :opportunities, only: [ :index, :show ] do
   member do

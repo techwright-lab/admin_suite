@@ -53,6 +53,10 @@ module Ai
       interview_prep_strength_positioning
       assistant_chat
       assistant_tool_call
+      signal_extraction
+      interview_round_extraction
+      round_feedback_extraction
+      application_status_extraction
     ].freeze
 
     # Status values

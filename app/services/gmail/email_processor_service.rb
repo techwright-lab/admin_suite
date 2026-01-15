@@ -109,6 +109,30 @@ class Gmail::EmailProcessorService
       /we\s+have\s+an\s+opening/i,
       /new\s+opportunity/i,
       /career\s+opportunity/i
+    ],
+    round_feedback: [
+      # Pass/move forward patterns
+      /you('ve| have)?\s+(passed|cleared|moved forward)/i,
+      /pleased\s+to\s+inform\s+you/i,
+      /congratulations.*next\s+(round|stage)/i,
+      /moving\s+(you\s+)?(forward|ahead)/i,
+      /advancing\s+to\s+(the\s+)?next/i,
+      /proceed(ing)?\s+to\s+(the\s+)?(next|final)/i,
+      /happy\s+to\s+share.*(passed|moved)/i,
+      /great\s+news.*(passed|next\s+round)/i,
+      # Rejection patterns (for single round, not full rejection)
+      /unfortunately.*not\s+(moving|proceeding)/i,
+      /decided\s+not\s+to\s+move\s+forward/i,
+      # Feedback patterns
+      /feedback\s+(from|on)\s+your\s+(interview|round)/i,
+      /interview\s+feedback/i,
+      /results?\s+(of|from)\s+(your\s+)?interview/i,
+      /outcome\s+(of|from)\s+(your\s+)?interview/i,
+      /update\s+on\s+your\s+(interview|round)/i,
+      # Waitlist patterns
+      /waitlist(ed)?/i,
+      /hold\s+for\s+now/i,
+      /keep\s+you\s+in\s+mind/i
     ]
   }.freeze
 

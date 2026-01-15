@@ -4,8 +4,10 @@
 class InterviewRound < ApplicationRecord
   STAGES = [ :screening, :technical, :hiring_manager, :culture_fit, :other ].freeze
   RESULTS = [ :pending, :passed, :failed, :waitlisted ].freeze
+  CONFIRMATION_SOURCES = %w[calendly goodtime greenhouse lever manual other].freeze
 
   belongs_to :interview_application
+  belongs_to :source_email, class_name: "SyncedEmail", optional: true, foreign_key: :source_email_id
   has_one :interview_feedback, dependent: :destroy
 
   enum :stage, STAGES, default: :screening
@@ -77,5 +79,30 @@ class InterviewRound < ApplicationRecord
     return interviewer_name if interviewer_role.blank?
 
     "#{interviewer_name} (#{interviewer_role})"
+  end
+
+  # Checks if round has a video link
+  # @return [Boolean] True if video link exists
+  def has_video_link?
+    video_link.present?
+  end
+
+  # Checks if round was created from email
+  # @return [Boolean] True if created from email
+  def from_email?
+    source_email_id.present?
+  end
+
+  # Returns friendly confirmation source name
+  # @return [String] Confirmation source display name
+  def confirmation_source_display
+    case confirmation_source
+    when "calendly" then "Calendly"
+    when "goodtime" then "GoodTime"
+    when "greenhouse" then "Greenhouse"
+    when "lever" then "Lever"
+    when "manual" then "Direct Email"
+    else confirmation_source&.titleize || "Unknown"
+    end
   end
 end

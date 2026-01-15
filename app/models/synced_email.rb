@@ -3,6 +3,9 @@
 # SyncedEmail model for tracking emails synced from Gmail
 # Links emails to interview applications and tracks processing status
 #
+# Includes AI-powered signal extraction to derive actionable intelligence
+# from email content (company info, recruiter details, job information).
+#
 # @example
 #   email = SyncedEmail.create_from_gmail_message(user, account, message)
 #   email.process!
@@ -13,6 +16,7 @@ class SyncedEmail < ApplicationRecord
     application_confirmation
     interview_invite
     interview_reminder
+    round_feedback
     rejection
     offer
     follow_up
@@ -28,6 +32,7 @@ class SyncedEmail < ApplicationRecord
     application_confirmation
     interview_invite
     interview_reminder
+    round_feedback
     rejection
     offer
     follow_up
@@ -37,6 +42,15 @@ class SyncedEmail < ApplicationRecord
 
   # Types that represent potential opportunities
   OPPORTUNITY_TYPES = %w[recruiter_outreach interview_invite follow_up].freeze
+
+  # Extraction status values
+  EXTRACTION_STATUSES = %w[pending processing completed failed skipped].freeze
+
+  # Backend actions that require user decision (not automatic)
+  # Note: match_application is handled by the dropdown in the detail panel
+  SUGGESTED_ACTIONS = %w[
+    start_application
+  ].freeze
 
   belongs_to :user
   belongs_to :connected_account
@@ -88,6 +102,24 @@ class SyncedEmail < ApplicationRecord
 
   # Store accessors for metadata
   store_accessor :metadata, :to_email, :cc_emails, :reply_to, :importance
+
+  # Store accessors for extracted signal intelligence
+  # Company information
+  store_accessor :extracted_data,
+    :signal_company_name, :signal_company_website, :signal_company_careers_url, :signal_company_domain,
+    # Recruiter information
+    :signal_recruiter_name, :signal_recruiter_email, :signal_recruiter_title, :signal_recruiter_linkedin,
+    # Job information
+    :signal_job_title, :signal_job_department, :signal_job_location, :signal_job_url, :signal_job_salary_hint,
+    # Action links (LLM-classified URLs with dynamic labels) and backend actions
+    :signal_action_links, :signal_suggested_actions
+
+  # Extraction scopes
+  scope :extraction_pending, -> { where(extraction_status: "pending") }
+  scope :extraction_completed, -> { where(extraction_status: "completed") }
+  scope :extraction_failed, -> { where(extraction_status: "failed") }
+  scope :needs_extraction, -> { where(extraction_status: [ "pending", "failed" ]) }
+  scope :has_signals, -> { where.not(extracted_data: {}) }
 
   # Creates a SyncedEmail from a parsed Gmail message
   #
@@ -275,6 +307,133 @@ class SyncedEmail < ApplicationRecord
     email_type == "recruiter_outreach"
   end
 
+  # Signal Extraction Methods
+  # -------------------------
+
+  # Checks if signal extraction has been completed
+  #
+  # @return [Boolean]
+  def extraction_completed?
+    extraction_status == "completed"
+  end
+
+  # Checks if this email has extracted signals
+  #
+  # @return [Boolean]
+  def has_signals?
+    extracted_data.present? && extracted_data.keys.any?
+  end
+
+  # Checks if this email has company information extracted
+  #
+  # @return [Boolean]
+  def has_company_signal?
+    signal_company_name.present?
+  end
+
+  # Checks if this email has recruiter information extracted
+  #
+  # @return [Boolean]
+  def has_recruiter_signal?
+    signal_recruiter_name.present? || signal_recruiter_email.present?
+  end
+
+  # Checks if this email has job information extracted
+  #
+  # @return [Boolean]
+  def has_job_signal?
+    signal_job_title.present? || signal_job_url.present?
+  end
+
+  # Checks if this email has action links extracted
+  #
+  # @return [Boolean]
+  def has_action_links?
+    signal_action_links.present? && signal_action_links.any?
+  end
+
+  # Returns the list of backend actions for this email
+  #
+  # @return [Array<String>]
+  def suggested_actions
+    signal_suggested_actions || []
+  end
+
+  # Returns action links sorted by priority (1=highest)
+  # Each link has: url, action_label, priority
+  #
+  # @return [Array<Hash>]
+  def action_links
+    links = signal_action_links || []
+    links.sort_by { |link| link["priority"] || 5 }
+  end
+
+  # Returns the highest priority action link (usually scheduling or apply)
+  #
+  # @return [Hash, nil]
+  def primary_action_link
+    action_links.first
+  end
+
+  # Checks if there's a scheduling-related action link
+  #
+  # @return [Boolean]
+  def has_scheduling_link?
+    action_links.any? do |link|
+      label = link["action_label"].to_s.downcase
+      label.include?("schedule") || label.include?("book") || label.include?("calendar")
+    end
+  end
+
+  # Returns scheduling-related action links
+  #
+  # @return [Array<Hash>]
+  def scheduling_links
+    action_links.select do |link|
+      label = link["action_label"].to_s.downcase
+      label.include?("schedule") || label.include?("book") || label.include?("calendar")
+    end
+  end
+
+  # Marks extraction as started
+  #
+  # @return [Boolean]
+  def mark_extraction_processing!
+    update!(extraction_status: "processing")
+  end
+
+  # Updates with extraction results
+  #
+  # @param data [Hash] Extracted data
+  # @param confidence [Float] Confidence score (0.0-1.0)
+  # @return [Boolean]
+  def update_extraction!(data, confidence: nil)
+    update!(
+      extracted_data: data,
+      extraction_status: "completed",
+      extraction_confidence: confidence,
+      extracted_at: Time.current
+    )
+  end
+
+  # Marks extraction as failed
+  #
+  # @param reason [String] Failure reason
+  # @return [Boolean]
+  def mark_extraction_failed!(reason = nil)
+    update!(
+      extraction_status: "failed",
+      extracted_data: extracted_data.merge("extraction_error" => reason)
+    )
+  end
+
+  # Marks extraction as skipped (not worth extracting)
+  #
+  # @return [Boolean]
+  def mark_extraction_skipped!
+    update!(extraction_status: "skipped")
+  end
+
   # Returns all emails in this conversation thread
   # Includes this email, ordered chronologically (oldest first)
   #
@@ -355,10 +514,12 @@ class SyncedEmail < ApplicationRecord
   def safe_html_body
     return nil unless body_html.present?
 
+    cleaned_html = strip_unwanted_html(body_html)
+
     # First pass: Rails sanitizer with safe list of tags
     # Note: style attribute removed to prevent CSS-based attacks
     sanitized = ActionController::Base.helpers.sanitize(
-      body_html,
+      cleaned_html,
       tags: %w[p br div span a ul ol li strong b em i u h1 h2 h3 h4 h5 h6 blockquote pre code table tr td th thead tbody hr img],
       attributes: %w[href src alt title class target]
     )
@@ -369,6 +530,35 @@ class SyncedEmail < ApplicationRecord
   end
 
   private
+
+  # Removes unwanted HTML elements (style/script/head/etc.) and hidden content
+  # before sanitization to avoid rendering raw CSS/JS text.
+  #
+  # @param html [String] Raw HTML string
+  # @return [String] Cleaned HTML string
+  def strip_unwanted_html(html)
+    fragment = Nokogiri::HTML::DocumentFragment.parse(html)
+
+    # Remove non-content elements entirely
+    fragment.css("style, script, noscript, head, title, meta, link").remove
+
+    # Remove elements hidden via inline styles
+    fragment.css("*[style]").each do |node|
+      style = node["style"].to_s.downcase
+      if style.include?("display:none") || style.include?("visibility:hidden")
+        node.remove
+      end
+    end
+
+    # Remove HTML comments
+    fragment.traverse do |node|
+      node.remove if node.comment?
+    end
+
+    fragment.to_html
+  rescue StandardError
+    html
+  end
 
   # Validates and sanitizes URL schemes in href and src attributes
   # Blocks dangerous schemes like javascript:, data:, vbscript:, etc.

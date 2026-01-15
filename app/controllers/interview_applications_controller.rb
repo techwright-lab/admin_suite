@@ -104,6 +104,12 @@ class InterviewApplicationsController < ApplicationController
     @company_feedback = @application.company_feedback
     @synced_emails = @application.synced_emails.recent
     @application_timeline = ApplicationTimelineService.new(@application)
+    @extracted_company_careers_url = @synced_emails
+      .find { |email| email.signal_company_careers_url.present? }
+      &.signal_company_careers_url
+    @extracted_action_links = build_extracted_action_links(@synced_emails)
+    @join_interview_link = build_join_interview_link(@next_upcoming_round, @extracted_action_links)
+    @reschedule_link = build_reschedule_link(@extracted_action_links)
 
     @prep_artifacts_by_kind = @application.interview_prep_artifacts.recent_first.index_by(&:kind)
     focus = @prep_artifacts_by_kind["focus_areas"]&.content
@@ -364,6 +370,52 @@ class InterviewApplicationsController < ApplicationController
   end
 
   private
+
+  # Builds a de-duplicated list of action links extracted from emails
+  #
+  # @param emails [Enumerable<SyncedEmail>]
+  # @return [Array<Hash>]
+  def build_extracted_action_links(emails)
+    require "set"
+    seen = Set.new
+
+    Array(emails).flat_map(&:action_links).each_with_object([]) do |link, links|
+      url = link["url"].to_s.strip
+      next if url.blank? || seen.include?(url)
+
+      seen.add(url)
+      links << link
+    end
+  end
+
+  # Picks a join interview link from rounds or extracted links
+  #
+  # @param next_round [InterviewRound, nil]
+  # @param links [Array<Hash>]
+  # @return [String, nil]
+  def build_join_interview_link(next_round, links)
+    return next_round.video_link if next_round&.video_link.present?
+
+    join_link = links.find do |link|
+      label = link["action_label"].to_s.downcase
+      label.include?("join") || label.include?("zoom") || label.include?("meet")
+    end
+
+    join_link&.dig("url")
+  end
+
+  # Picks a reschedule/scheduling link from extracted links
+  #
+  # @param links [Array<Hash>]
+  # @return [String, nil]
+  def build_reschedule_link(links)
+    link = links.find do |item|
+      label = item["action_label"].to_s.downcase
+      label.include?("reschedule") || label.include?("schedule") || label.include?("book")
+    end
+
+    link&.dig("url")
+  end
 
   def set_application
     @application = Current.user.interview_applications.not_deleted.find(params[:id])

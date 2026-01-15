@@ -101,9 +101,9 @@
         </div>
         <button
           type="button"
-          data-controller="modal"
-          data-action="click->modal#open"
-          data-modal-target-value="delete-account-modal"
+          data-controller="click-actions"
+          data-action="click->click-actions#openModal"
+          data-click-actions-modal-id-value="delete-account-modal"
           class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm transition-colors"
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@
 </div>
 
 <!-- Delete Account Modal -->
-<div id="delete-account-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+<div id="delete-account-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" data-controller="modal" data-action="click->modal#closeBackground keydown.esc@window->modal#hide" aria-labelledby="modal-title" role="dialog" aria-modal="true">
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity" aria-hidden="true"></div>
     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
@@ -153,7 +153,7 @@
           <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
             Delete My Account
           </button>
-          <button type="button" onclick="document.getElementById('delete-account-modal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm">
+          <button type="button" data-controller="click-actions" data-action="click->click-actions#hideModal" data-click-actions-modal-id-value="delete-account-modal" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm">
             Cancel
           </button>
         </div>
@@ -161,24 +161,4 @@
     </div>
   </div>
 </div>
-
-<script>
-  // Simple modal toggle
-  document.addEventListener('DOMContentLoaded', function() {
-    const deleteBtn = document.querySelector('[data-modal-target-value="delete-account-modal"]');
-    const modal = document.getElementById('delete-account-modal');
-    
-    if (deleteBtn && modal) {
-      deleteBtn.addEventListener('click', function() {
-        modal.classList.remove('hidden');
-      });
-      
-      modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-          modal.classList.add('hidden');
-        }
-      });
-    }
-  });
-</script>
 

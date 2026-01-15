@@ -190,4 +190,53 @@ class InterviewRoundTest < ActiveSupport::TestCase
     @round.interviewer_name = nil
     assert_nil @round.interviewer_display
   end
+
+  # New email automation fields
+  test "has source_email_id attribute" do
+    assert_respond_to @round, :source_email_id
+    assert_respond_to @round, :source_email
+  end
+
+  test "has video_link attribute" do
+    @round.video_link = "https://zoom.us/j/123456789"
+    assert_equal "https://zoom.us/j/123456789", @round.video_link
+  end
+
+  test "has confirmation_source attribute" do
+    @round.confirmation_source = "goodtime"
+    assert_equal "goodtime", @round.confirmation_source
+  end
+
+  test "belongs to source_email optionally" do
+    round = create(:interview_round, interview_application: @application)
+    assert_nil round.source_email
+
+    # Create a synced email and link it
+    user = @application.user
+    connected_account = create(:connected_account, user: user)
+    synced_email = SyncedEmail.create!(
+      user: user,
+      connected_account: connected_account,
+      gmail_id: "test_id",
+      from_email: "test@example.com",
+      subject: "Test"
+    )
+
+    round.update!(source_email_id: synced_email.id)
+    assert_equal synced_email, round.source_email
+  end
+
+  test "confirmation_source can be set to common values" do
+    @round.confirmation_source = "calendly"
+    @round.save!
+    assert_equal "calendly", @round.confirmation_source
+
+    @round.confirmation_source = "goodtime"
+    @round.save!
+    assert_equal "goodtime", @round.confirmation_source
+
+    @round.confirmation_source = "manual"
+    @round.save!
+    assert_equal "manual", @round.confirmation_source
+  end
 end

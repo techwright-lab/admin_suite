@@ -109,7 +109,7 @@
     <!-- Mobile doc selector -->
     <div class="lg:hidden mb-4">
       <label for="mobile-doc-select" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Select Document</label>
-      <select id="mobile-doc-select" onchange="window.location.href=this.value" class="form-input w-full">
+      <select id="mobile-doc-select" data-controller="click-actions" data-action="change->click-actions#redirectToValue" class="form-input w-full">
         <% @files.each do |group_name, files| %>
           <optgroup label="<%= group_name %>">
             <% files.each do |file_path| %>

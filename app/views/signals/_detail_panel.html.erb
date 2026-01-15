@@ -1,0 +1,170 @@
+<%# locals: (email:, thread_emails:, application: nil) %>
+
+<div class="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800 lg:bg-gray-50 lg:dark:bg-gray-900">
+  <!-- Header with all actions consolidated -->
+  <div class="flex-shrink-0 relative overflow-hidden bg-gradient-to-r from-slate-50 to-gray-100 dark:from-gray-800 dark:to-gray-850 border-b border-gray-200/80 dark:border-gray-700/80">
+    <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary-100/30 to-transparent dark:from-primary-900/10 rounded-full blur-3xl"></div>
+    
+    <div class="relative px-5 py-3">
+      <!-- Row 1: Title and primary actions -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white leading-snug truncate">
+            <%= email.clean_subject %>
+          </h2>
+        </div>
+
+        <!-- Primary Actions -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <% if email.recruiter_outreach? && email.opportunity.present? %>
+            <%= link_to opportunity_path(email.opportunity),
+                class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors",
+                title: "View opportunity" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+              </svg>
+              Opportunity
+            <% end %>
+          <% end %>
+          
+          <%# Start Application button %>
+          <% if !email.matched? && (email.has_company_signal? || email.signal_company_name.present?) %>
+            <%= button_to execute_action_signal_path(email, action_type: 'start_application'),
+                method: :post,
+                class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors",
+                title: "Start tracking this opportunity" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+              Start Application
+            <% end %>
+          <% end %>
+          
+          <% unless email.matched? %>
+            <%= button_to ignore_signal_path(email),
+                method: :patch,
+                class: "p-2 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors",
+                title: "Dismiss this signal",
+                data: { turbo_confirm: "Dismiss this signal?" } do %>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+              </svg>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      
+      <!-- Row 2: Context badges and quick action links -->
+      <div class="mt-2 flex items-center gap-2 flex-wrap">
+        <%# Application/Company context %>
+        <% if application.present? %>
+          <%= link_to interview_application_path(application), 
+              class: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm hover:border-primary-300 dark:hover:border-primary-600 transition-colors" do %>
+            <div class="w-5 h-5 bg-gray-100 dark:bg-gray-600 rounded flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">
+              <%= application.company.name[0].upcase %>
+            </div>
+            <span class="font-medium text-gray-900 dark:text-white"><%= application.company.name %></span>
+            <span class="text-gray-400">·</span>
+            <span class="text-gray-500 dark:text-gray-400"><%= application.job_role.title %></span>
+          <% end %>
+        <% elsif email.signal_company_name.present? || email.company.present? %>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+            <%= email.signal_company_name || email.company&.name %>
+          </span>
+        <% end %>
+        
+        <%# Recruiter info inline %>
+        <% if email.has_recruiter_signal? %>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-sm text-cyan-700 dark:text-cyan-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <%= email.signal_recruiter_name %>
+            <% if email.signal_recruiter_title.present? %>
+              <span class="text-cyan-500 dark:text-cyan-400 text-xs">· <%= email.signal_recruiter_title.truncate(25) %></span>
+            <% end %>
+          </span>
+        <% end %>
+        
+        <%# Thread count %>
+        <% if thread_emails.size > 1 %>
+          <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <%= thread_emails.size %>
+          </span>
+        <% end %>
+
+        <%# Divider before action links %>
+        <% if email.has_action_links? %>
+          <span class="text-gray-300 dark:text-gray-600">|</span>
+          
+          <%# Quick action links from signal extraction %>
+          <% email.action_links.each do |link| %>
+            <% 
+              priority = link["priority"] || 5
+              color_class = case [priority, 5].min
+                when 1 then 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300'
+                when 2 then 'text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300'
+                else 'text-violet-700 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300'
+              end
+            %>
+            <%= link_to link["url"], 
+                target: "_blank", 
+                rel: "noopener noreferrer",
+                class: "inline-flex items-center gap-1 px-2 py-1 text-xs font-medium #{color_class} hover:underline" do %>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+              <%= link["action_label"] %>
+            <% end %>
+          <% end %>
+        <% end %>
+        
+        <%# Confidence indicator %>
+        <% if email.extraction_completed? && email.extraction_confidence.present? %>
+          <span class="ml-auto text-xs text-gray-400 dark:text-gray-500">
+            <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <%= (email.extraction_confidence * 100).round %>%
+          </span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversation Thread -->
+  <div class="flex-1 overflow-y-auto">
+    <%= render "signals/conversation", thread_emails: thread_emails, current_email: email %>
+  </div>
+
+  <!-- Match to Application (if not matched) -->
+  <% unless email.matched? %>
+    <div class="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-t border-amber-200/60 dark:border-amber-800/40">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-amber-800 dark:text-amber-200">Not matched to an application</p>
+          <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Match this email to track your interview progress</p>
+        </div>
+      </div>
+      
+      <%= form_with url: match_application_signal_path(email), method: :patch, class: "mt-3 flex items-center gap-2" do |f| %>
+        <%= f.select :application_id,
+            options_from_collection_for_select(Current.user.interview_applications.includes(:company, :job_role).where(status: :active).order("companies.name"), :id, ->(a) { "#{a.company.name} - #{a.job_role.title}" }),
+            { include_blank: "Select application..." },
+            class: "form-select flex-1 !text-sm !rounded-xl !border-amber-200 dark:!border-amber-700 focus:!ring-amber-500 focus:!border-amber-500" %>
+        <%= f.submit "Match", class: "flex-shrink-0 px-5 py-2.5 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/25 transition-all duration-200 hover:shadow-xl cursor-pointer" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

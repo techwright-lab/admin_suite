@@ -297,3 +297,6 @@ load Rails.root.join("db/seeds/blog_posts.rb")
 
 # Load email sync test data
 load Rails.root.join("db/seeds/email_sync_data.rb")
+
+# Load email automation test data
+load Rails.root.join("db/seeds/email_automation_test.rb")

@@ -80,4 +80,34 @@ job_postprocess_prompt = Ai::JobPostprocessPrompt.find_or_create_by!(name: "Job 
 end
 puts "  - Created: #{job_postprocess_prompt.name} (active: #{job_postprocess_prompt.active})"
 
+signal_extraction_prompt = Ai::SignalExtractionPrompt.find_or_create_by!(name: "Signal Extraction - Default") do |prompt|
+  prompt.description = "Prompt template for extracting actionable signals from interview-related emails"
+  prompt.prompt_template = Ai::SignalExtractionPrompt.default_prompt_template
+  prompt.variables = Ai::SignalExtractionPrompt.default_variables
+  prompt.system_prompt = Ai::SignalExtractionPrompt.default_system_prompt
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{signal_extraction_prompt.name} (active: #{signal_extraction_prompt.active})"
+
+status_extraction_prompt = Ai::StatusExtractionPrompt.find_or_create_by!(name: "Status Extraction - Default") do |prompt|
+  prompt.description = "Prompt template for extracting application status changes from emails"
+  prompt.prompt_template = Ai::StatusExtractionPrompt.default_prompt_template
+  prompt.variables = Ai::StatusExtractionPrompt.default_variables
+  prompt.system_prompt = Ai::StatusExtractionPrompt.default_system_prompt
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{status_extraction_prompt.name} (active: #{status_extraction_prompt.active})"
+
+interview_extraction_prompt = Ai::InterviewExtractionPrompt.find_or_create_by!(name: "Interview Extraction - Default") do |prompt|
+  prompt.description = "Prompt template for extracting interview details from scheduling confirmation emails"
+  prompt.prompt_template = Ai::InterviewExtractionPrompt.default_prompt_template
+  prompt.variables = Ai::InterviewExtractionPrompt.default_variables
+  prompt.system_prompt = Ai::InterviewExtractionPrompt.default_system_prompt
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{interview_extraction_prompt.name} (active: #{interview_extraction_prompt.active})"
+
 puts "LLM Prompts created: #{Ai::LlmPrompt.count} total"
