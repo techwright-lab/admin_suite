@@ -1,10 +1,10 @@
-<%# locals: (user:, billing_customer:, billing_history:) %>
+<%# locals: (user:, billing_customer:, billing_history:, billing_portal_url:, billing_update_payment_url:, billing_update_subscription_url:, subscription_history: [], order_history: [], payment_method: nil) %>
 
 <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
   <div class="mb-6">
     <h2 class="text-xl font-bold text-gray-900 dark:text-white">Billing</h2>
     <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-      View your payment method, invoices, and billing history.
+      View your payment method, receipts, and billing history.
     </p>
   </div>
 
@@ -13,14 +13,34 @@
     <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-5">
       <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div class="flex items-center gap-4">
+          <%# Card brand icon %>
           <div class="w-12 h-12 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-center">
-            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-            </svg>
+            <% if payment_method&.dig(:card_brand).present? %>
+              <% card_brand = payment_method[:card_brand].to_s.downcase %>
+              <% if card_brand == "visa" %>
+                <span class="text-xl font-bold text-blue-600">VISA</span>
+              <% elsif card_brand == "mastercard" %>
+                <span class="text-lg font-bold text-orange-600">MC</span>
+              <% elsif card_brand == "amex" %>
+                <span class="text-lg font-bold text-blue-700">AMEX</span>
+              <% else %>
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+              <% end %>
+            <% else %>
+              <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+            <% end %>
           </div>
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-white">Payment Method</h3>
-            <% if billing_customer %>
+            <% if payment_method&.dig(:card_brand).present? %>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                <%= payment_method[:card_brand].to_s.capitalize %> ending in <%= payment_method[:card_last_four] %>
+              </p>
+            <% elsif billing_customer %>
               <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 Managed through LemonSqueezy
               </p>
@@ -32,8 +52,10 @@
           </div>
         </div>
 
-        <% if billing_customer %>
-          <%= link_to billing_portal_path,
+        <% if billing_portal_url.present? || billing_update_payment_url.present? %>
+          <%= link_to (billing_update_payment_url || billing_portal_url || billing_portal_path),
+              target: "_blank",
+              rel: "noopener noreferrer",
               class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors" do %>
             Update Payment Method
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,15 +66,20 @@
       </div>
     </div>
 
-    <%# Billing History %>
+    <%# Billing History - Combined view %>
     <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Billing History</h3>
-          <% if billing_customer %>
-            <%= link_to billing_portal_path,
-                class: "text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium" do %>
-              View all invoices →
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Payment History</h3>
+          <% if billing_portal_url.present? %>
+            <%= link_to (billing_portal_url || billing_portal_path),
+                target: "_blank",
+                rel: "noopener noreferrer",
+                class: "text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium inline-flex items-center gap-1" do %>
+              Manage billing
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
             <% end %>
           <% end %>
         </div>
@@ -66,7 +93,7 @@
             </svg>
           </div>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            No billing history yet. Your invoices and receipts will appear here once you subscribe.
+            No payment history yet. Your receipts will appear here once you make a purchase.
           </p>
         </div>
       <% else %>
@@ -75,19 +102,19 @@
             <div class="px-5 py-4 flex items-center justify-between gap-4">
               <div class="flex items-center gap-4 min-w-0">
                 <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-                  <% if entry[:status] == 'active' %>
+                  <% if entry[:status] == 'paid' || entry[:status] == 'active' %>
                     bg-green-100 dark:bg-green-900/30
-                  <% elsif entry[:status] == 'cancelled' %>
+                  <% elsif entry[:status] == 'cancelled' || entry[:status] == 'refunded' %>
                     bg-amber-100 dark:bg-amber-900/30
                   <% else %>
                     bg-gray-100 dark:bg-gray-800
                   <% end %>
                 ">
-                  <% if entry[:status] == 'active' %>
+                  <% if entry[:status] == 'paid' || entry[:status] == 'active' %>
                     <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                  <% elsif entry[:status] == 'cancelled' %>
+                  <% elsif entry[:status] == 'cancelled' || entry[:status] == 'refunded' %>
                     <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -100,14 +127,20 @@
                 <div class="min-w-0">
                   <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
                     <%= entry[:plan_name] %>
+                    <% if entry[:is_one_time] %>
+                      <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">(One-time)</span>
+                    <% end %>
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">
                     <%= entry[:date]&.strftime("%B %d, %Y") %>
+                    <% if entry[:order_number].present? %>
+                      · Order #<%= entry[:order_number] %>
+                    <% end %>
                   </p>
                 </div>
               </div>
 
-              <div class="flex items-center gap-4">
+              <div class="flex items-center gap-3">
                 <div class="text-right">
                   <p class="text-sm font-medium text-gray-900 dark:text-white">
                     $<%= format("%.2f", entry[:amount]) %>
@@ -117,22 +150,58 @@
                   </p>
                 </div>
 
-                <% if billing_customer %>
-                  <%= link_to billing_portal_path,
-                      class: "inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-                      title: "View receipt in billing portal" do %>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Receipt
+                <div class="flex items-center gap-2">
+                  <%# Receipt button (always available for paid orders) %>
+                  <% if entry[:receipt_url].present? %>
+                    <%= link_to entry[:receipt_url],
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                        title: "View receipt" do %>
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                      </svg>
+                      Receipt
+                    <% end %>
                   <% end %>
-                <% end %>
+
+                  <%# Invoice button (for subscriptions, may require user to generate) %>
+                  <% if entry[:invoice_url].present? %>
+                    <%= link_to entry[:invoice_url],
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors",
+                        title: "View or generate invoice" do %>
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                      </svg>
+                      Invoice
+                    <% end %>
+                  <% end %>
+                </div>
               </div>
             </div>
           <% end %>
         </div>
       <% end %>
     </div>
+
+    <%# Note about invoices %>
+    <% if subscription_history.present? %>
+      <div class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
+        <div class="flex gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="text-sm text-blue-700 dark:text-blue-300">
+            <p class="font-medium">About Invoices</p>
+            <p class="mt-1 text-blue-600 dark:text-blue-400">
+              Invoices for subscription payments can be generated through the billing portal. Click "Invoice" to view or generate a formal invoice with your details.
+            </p>
+          </div>
+        </div>
+      </div>
+    <% end %>
 
     <%# Billing Support %>
     <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">

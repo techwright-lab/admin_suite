@@ -16,7 +16,7 @@ module Resumes
   #     end
   #   end
   #
-  class AiSkillExtractorService
+  class AiSkillExtractorService < ApplicationService
     attr_reader :user_resume
 
     # Minimum confidence threshold to accept extraction
@@ -70,7 +70,12 @@ module Resumes
 
       success_result(result)
     rescue StandardError => e
-      notify_extraction_error(e)
+      notify_error(
+        e,
+        context: "resume_skill_extraction",
+        user: user_resume&.user,
+        user_resume_id: user_resume&.id
+      )
       error_result(e.message)
     end
 
@@ -82,118 +87,62 @@ module Resumes
     # @param content_size [Integer] Size of resume text in bytes
     # @return [Hash] Extraction result
     def extract_with_providers(prompt, content_size)
-      provider_chain.each do |provider_name|
-        result = try_provider(provider_name, prompt, content_size)
-        next unless result
-
-        if result[:confidence] && result[:confidence] >= MIN_CONFIDENCE
-          return result.merge(success: true)
-        end
-      end
-
-      { success: false, error: "All providers failed or returned low confidence" }
-    end
-
-    # Tries a single provider
-    #
-    # @param provider_name [String] Provider name
-    # @param prompt [String] Extraction prompt
-    # @param content_size [Integer] Size of content in bytes
-    # @return [Hash, nil] Result or nil on failure
-    def try_provider(provider_name, prompt, content_size)
-      provider = get_provider_instance(provider_name)
       prompt_template = Ai::ResumeSkillExtractionPrompt.active_prompt
       system_message = prompt_template&.system_prompt.presence || Ai::ResumeSkillExtractionPrompt.default_system_prompt
 
-      unless provider.available?
-        Rails.logger.info("Resume skill extractor: #{provider_name} unavailable")
-        return nil
-      end
-
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = provider.run(prompt, system_message: system_message)
-      latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round
-
-      if response[:rate_limit]
-        Rails.logger.warn("Resume skill extractor: #{provider_name} rate limited")
-        log_extraction_result(provider_name, response[:model], response, nil, latency_ms, prompt, content_size)
-        return nil
-      end
-
-      if response[:error]
-        Rails.logger.warn("Resume skill extractor: #{provider_name} error - #{response[:error]}")
-        log_extraction_result(provider_name, response[:model], response, nil, latency_ms, prompt, content_size)
-        return nil
-      end
-
-      parsed = parse_response(response[:content])
-
-      # Log the extraction result
-      log_extraction_result(provider_name, response[:model], response, parsed, latency_ms, prompt, content_size)
-
-      parsed.merge(
-        provider: provider_name,
-        model: response[:model],
-        raw_response: response[:content]
-      )
-    rescue StandardError => e
-      Rails.logger.error("Resume skill extractor: #{provider_name} exception - #{e.message}")
-      notify_extraction_error(e, provider_name)
-      nil
-    end
-
-    # Logs the extraction result to Ai::LlmApiLog
-    #
-    # @param provider_name [String] Provider name
-    # @param model [String] Model identifier
-    # @param response [Hash] Raw LLM response
-    # @param parsed [Hash, nil] Parsed response data
-    # @param latency_ms [Integer] Latency in milliseconds
-    # @param prompt [String] The prompt used
-    # @param content_size [Integer] Size of content in bytes
-    def log_extraction_result(provider_name, model, response, parsed, latency_ms, prompt, content_size)
-      prompt_template = Ai::ResumeSkillExtractionPrompt.active_prompt
-
-      logger = Ai::ApiLoggerService.new(
-        operation_type: :resume_extraction,
-        loggable: user_resume,
-        provider: provider_name,
-        model: model || "unknown",
-        llm_prompt: prompt_template
-      )
-
-      log_data = {
-        confidence: parsed&.dig(:confidence),
-        input_tokens: response[:input_tokens],
-        output_tokens: response[:output_tokens],
-        error: response[:error],
-        rate_limit: response[:rate_limit],
-        provider_request: response[:provider_request],
-        provider_response: response[:provider_response],
-        provider_error_response: response[:provider_error_response],
-        http_status: response[:http_status],
-        response_headers: response[:response_headers],
-        provider_endpoint: response[:provider_endpoint]
-      }
-
-      # Add parsed fields for successful extractions
-      if parsed.present? && parsed[:skills].present?
-        log_data.merge!(
-          skills: parsed[:skills],
-          summary: parsed[:summary],
-          strengths: parsed[:strengths],
-          domains: parsed[:domains]
-        )
-      end
-
-      logger.record_result(
-        log_data,
-        latency_ms: latency_ms,
+      runner = Ai::ProviderRunnerService.new(
+        provider_chain: provider_chain,
         prompt: prompt,
-        content_size: content_size
+        content_size: content_size,
+        system_message: system_message,
+        provider_for: method(:get_provider_instance),
+        logger_builder: lambda { |provider_name, provider|
+          Ai::ApiLoggerService.new(
+            operation_type: :resume_extraction,
+            loggable: user_resume,
+            provider: provider_name,
+            model: provider.respond_to?(:model_name) ? provider.model_name : "unknown",
+            llm_prompt: prompt_template
+          )
+        },
+        operation: :resume_extraction,
+        loggable: user_resume,
+        user: user_resume&.user,
+        error_context: {
+          severity: "warning",
+          user_resume_id: user_resume&.id
+        }
       )
-    rescue => e
-      Rails.logger.warn("Failed to log resume extraction result: #{e.message}")
+
+      result = runner.run do |response|
+        parsed = parse_response(response[:content])
+        log_data = {
+          confidence: parsed&.dig(:confidence)
+        }
+
+        if parsed.present? && parsed[:skills].present?
+          log_data.merge!(
+            skills: parsed[:skills],
+            summary: parsed[:summary],
+            strengths: parsed[:strengths],
+            domains: parsed[:domains]
+          )
+        end
+
+        confidence = parsed[:confidence].to_f
+        accept = confidence >= MIN_CONFIDENCE
+        [ parsed, log_data, accept ]
+      end
+
+      return { success: false, error: "All providers failed or returned low confidence" } unless result[:success]
+
+      raw_response = result.dig(:result, :raw_response)
+      result[:parsed].merge(
+        success: true,
+        provider: result[:provider],
+        model: result[:model],
+        raw_response: raw_response
+      )
     end
 
     # Builds the extraction prompt
@@ -547,22 +496,6 @@ module Resumes
         error: message,
         skills: []
       }
-    end
-
-    # Notifies of extraction errors via ExceptionNotifier
-    #
-    # @param exception [Exception] The exception
-    # @param provider_name [String, nil] Provider name if applicable
-    def notify_extraction_error(exception, provider_name = nil)
-      ExceptionNotifier.notify(exception, {
-        context: "ai_resume_extraction",
-        severity: "error",
-        ai_context: {
-          operation: "resume_extraction",
-          provider_name: provider_name,
-          user_resume_id: user_resume&.id
-        }
-      })
     end
   end
 end

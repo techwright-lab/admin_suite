@@ -13,7 +13,7 @@ module Scraping
   # - This service is expensive; it should be used selectively (heuristics + caching).
   # - It returns full page HTML and also provides cleaned_html using Nokogiri cleaner.
   # - Wrapped with Ruby Timeout to prevent indefinite hangs from Selenium.
-  class RenderedHtmlFetcherService
+  class RenderedHtmlFetcherService < ApplicationService
     DEFAULT_TIMEOUT_SECONDS = 30
     DEFAULT_WAIT_SECONDS = 10
     # Overall timeout for the entire operation (page load + wait + processing)
@@ -70,32 +70,35 @@ module Scraping
       end
     rescue RenderedFetchTimeoutError => e
       Rails.logger.error("Rendered fetch hard timeout after #{HARD_TIMEOUT_SECONDS}s for #{url}")
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "rendered_html_fetch_timeout",
         severity: "warning",
         url: url,
         job_listing_id: job_listing.id,
         scraping_attempt_id: scraping_attempt&.id,
         timeout_seconds: HARD_TIMEOUT_SECONDS
-      })
+      )
       error_result("Rendered fetch timed out after #{HARD_TIMEOUT_SECONDS} seconds")
     rescue Selenium::WebDriver::Error::WebDriverError => e
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "rendered_html_fetch",
         severity: "error",
         url: url,
         job_listing_id: job_listing.id,
         scraping_attempt_id: scraping_attempt&.id
-      })
+      )
       error_result("Rendered fetch failed: #{e.message}")
     rescue StandardError => e
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "rendered_html_fetch",
         severity: "error",
         url: url,
         job_listing_id: job_listing.id,
         scraping_attempt_id: scraping_attempt&.id
-      })
+      )
       error_result("Rendered fetch failed: #{e.message}")
     end
 

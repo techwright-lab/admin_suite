@@ -48,6 +48,19 @@
           class: "form-select" %>
     </div>
 
+    <%# Round Type %>
+    <div>
+      <%= form.label :interview_round_type_id, "Round Type", class: "form-label" %>
+      <% available_types = @application.job_role&.available_round_types || InterviewRoundType.enabled.universal.ordered %>
+      <%= form.select :interview_round_type_id, 
+          available_types.map { |rt| [rt.name, rt.id] },
+          { include_blank: "Select type (optional)" },
+          class: "form-select" %>
+      <p class="form-help-text text-xs">
+        Helps generate tailored interview prep
+      </p>
+    </div>
+
     <%# Custom Stage Name %>
     <div>
       <%= form.label :stage_name, "Custom Stage Name (Optional)", class: "form-label" %>

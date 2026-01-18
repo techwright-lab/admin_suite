@@ -73,16 +73,14 @@ module ApiFetchers
       end
     rescue => e
       log_error("Lever API fetch failed", e)
-
-      # Notify exception with API fetch context
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "lever_api_fetch",
         severity: "error",
         url: url,
         company_slug: company_slug,
         job_id: job_id
-      })
-
+      )
       { error: e.message, confidence: 0.0 }
     end
 

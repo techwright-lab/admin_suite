@@ -42,14 +42,15 @@ module Scraping
           stop_success
         rescue => e
           Support::AttemptLifecycle.log_error(context, "API extraction failed", e)
-          ExceptionNotifier.notify(e, {
+          notify_error(
+            e,
             context: "api_extraction",
             severity: "error",
             board_type: context.board_type,
             company_slug: context.company_slug,
             job_id: context.job_id,
             url: context.job_listing.url
-          })
+          )
           continue
         end
 

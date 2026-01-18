@@ -6,6 +6,25 @@ module Billing
     # POST /billing/checkout/:plan_key
     def create
       plan = Billing::Plan.find_by!(key: params[:plan_key])
+
+      # Prepare plan switch (cancel conflicting plans before checkout)
+      switcher = Billing::PlanSwitcher.new(Current.user)
+      switch_result = switcher.prepare_switch(plan)
+
+      if switch_result[:cancelled_subscription]
+        Rails.logger.info(
+          "[billing] checkout cancelled existing subscription for plan switch " \
+          "user_id=#{Current.user.id} new_plan=#{plan.key}"
+        )
+      end
+
+      if switch_result[:deactivated_grant]
+        Rails.logger.info(
+          "[billing] checkout deactivated existing purchase grant for plan switch " \
+          "user_id=#{Current.user.id} new_plan=#{plan.key}"
+        )
+      end
+
       url = Billing::Providers::LemonSqueezy.new.create_checkout(user: Current.user, plan: plan)
 
       # Important: LemonSqueezy checkout is on a different origin. If this action is

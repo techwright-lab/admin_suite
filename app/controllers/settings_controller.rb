@@ -476,6 +476,7 @@ class SettingsController < ApplicationController
   def load_subscription_data
     @entitlements = Billing::Entitlements.for(@user)
     @plans = Billing::Catalog.published_plans
+    load_billing_action_urls
   end
 
   # Loads billing data for the billing tab
@@ -483,35 +484,120 @@ class SettingsController < ApplicationController
   def load_billing_data
     @billing_customer = @user.billing_customers.find_by(provider: "lemonsqueezy")
     @billing_history = load_billing_history
+    load_billing_action_urls
+    load_payment_method_info
   end
 
-  # Loads billing history from subscriptions and webhook events
+  # Loads payment method info from the latest subscription with card details.
+  #
+  # @return [void]
+  def load_payment_method_info
+    subscription_with_card = @user.billing_subscriptions
+      .where(provider: "lemonsqueezy")
+      .where.not(card_brand: nil)
+      .order(updated_at: :desc)
+      .first
+
+    @payment_method = if subscription_with_card&.card_brand.present?
+      {
+        card_brand: subscription_with_card.card_brand,
+        card_last_four: subscription_with_card.card_last_four
+      }
+    end
+  end
+
+  # Loads billing history using orders as the source of truth.
+  #
+  # Each order represents a payment. Orders linked to subscriptions show invoice button,
+  # one-time orders (Sprint) only show receipt button.
+  #
   # @return [Array<Hash>]
   def load_billing_history
-    # Get subscription events that indicate payments
-    # Only include subscriptions that have a plan associated (excludes incomplete subscriptions)
-    subscriptions = @user.billing_subscriptions
-      .includes(:plan)
-      .where.not(billing_plans: { id: nil })
-      .where.not(current_period_starts_at: nil)
-      .order(current_period_starts_at: :desc)
-      .limit(10)
+    orders = @user.billing_orders
+      .includes(:subscription)
+      .where(provider: "lemonsqueezy")
+      .where(status: "paid")
+      .order(created_at: :desc)
+      .limit(15)
 
-    # Group by period start date + plan to avoid duplicates from status updates
-    subscriptions.group_by { |s| [ s.current_period_starts_at&.to_date, s.plan_id ] }
-      .map do |(_date, _plan_id), subs|
-        sub = subs.first  # Take the most relevant record from the group
-        {
-          date: sub.current_period_starts_at || sub.created_at,
-          plan_name: sub.plan.name,
-          amount: sub.plan.amount_cents.to_i / 100.0,
-          currency: sub.plan.currency || "usd",
-          status: sub.status,
-          subscription_id: sub.external_subscription_id
-        }
+    @subscription_history = []
+    @order_history = []
+
+    history = orders.map do |order|
+      entry = build_billing_entry_from_order(order)
+
+      if order.subscription.present?
+        @subscription_history << entry
+      else
+        @order_history << entry
       end
-      .sort_by { |entry| entry[:date] }
-      .reverse
+
+      entry
+    end
+
+    history.sort_by { |e| e[:date] || Time.at(0) }.reverse
+  end
+
+  # Builds a billing history entry from an order.
+  #
+  # @param order [Billing::Order]
+  # @return [Hash]
+  def build_billing_entry_from_order(order)
+    subscription = order.subscription
+    plan = subscription&.plan || resolve_plan_for_order(order)
+    is_one_time = plan&.one_time? || subscription.nil?
+
+    # Get product name from order data (actual purchase), fallback to plan name
+    product_name = order.metadata&.dig("raw", "first_order_item", "product_name") ||
+                   plan&.name ||
+                   "Payment"
+
+    {
+      type: is_one_time ? :order : :subscription,
+      date: order.created_at,
+      plan_name: product_name,
+      amount: (order.total_cents || 0) / 100.0,
+      currency: order.currency || "usd",
+      status: order.status,
+      order_id: order.external_order_id,
+      order_number: order.order_number,
+      receipt_url: order.receipt_url,
+      invoice_url: subscription&.latest_invoice_url, # Only subscriptions have invoices
+      is_one_time: is_one_time
+    }
+  end
+
+  # Resolves the plan for an order based on variant_id in metadata.
+  #
+  # @param order [Billing::Order]
+  # @return [Billing::Plan, nil]
+  def resolve_plan_for_order(order)
+    variant_id = order.metadata&.dig("raw", "first_order_item", "variant_id")
+    return nil if variant_id.blank?
+
+    mapping = Billing::ProviderMapping.find_by(provider: "lemonsqueezy", external_variant_id: variant_id.to_s)
+    mapping&.plan
+  end
+
+  # Loads billing action URLs from stored metadata.
+  #
+  # @return [void]
+  def load_billing_action_urls
+    @billing_customer ||= @user.billing_customers.find_by(provider: "lemonsqueezy")
+    subscription = latest_billing_subscription
+    @billing_portal_url = @billing_customer&.customer_portal_url || subscription&.customer_portal_url
+    @billing_update_payment_url = subscription&.update_payment_method_url
+    @billing_update_subscription_url = subscription&.update_subscription_url
+  end
+
+  # Returns the most recently updated billing subscription.
+  #
+  # @return [Billing::Subscription, nil]
+  def latest_billing_subscription
+    @latest_billing_subscription ||= @user.billing_subscriptions
+      .where(provider: "lemonsqueezy")
+      .order(updated_at: :desc)
+      .first
   end
 
   # =================================================================

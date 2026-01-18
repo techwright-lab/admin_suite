@@ -21,6 +21,8 @@ class AnalyzeResumeJob < ApplicationJob
   # @param user_resume [UserResume] The resume to analyze
   # @return [void]
   def perform(user_resume)
+    @user_resume = user_resume
+
     # Skip if already analyzed
     if user_resume.analyzed?
       Rails.logger.info("Resume #{user_resume.id} already analyzed, skipping")
@@ -47,6 +49,19 @@ class AnalyzeResumeJob < ApplicationJob
       RecomputeFitAssessmentsForUserJob.perform_later(user_resume.user_id)
     else
       Rails.logger.error("Failed to analyze resume #{user_resume.id}: #{result[:error]}")
+      notify_error(
+        RuntimeError.new(result[:error]),
+        context: "resume_analysis",
+        severity: "warning",
+        user: user_resume.user,
+        user_resume_id: user_resume.id
+      )
     end
+  rescue StandardError => e
+    handle_error(e,
+      context: "resume_analysis",
+      user: @user_resume&.user,
+      user_resume_id: @user_resume&.id
+    )
   end
 end

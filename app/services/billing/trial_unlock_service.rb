@@ -13,7 +13,7 @@ module Billing
   # @example
   #   result = Billing::TrialUnlockService.new(user: Current.user, trigger: :first_feedback_after_cv).run
   #   result[:unlocked] # => true/false
-  class TrialUnlockService
+  class TrialUnlockService < ApplicationService
     TRIAL_DURATION = 72.hours
 
     REASON = "insight_triggered"
@@ -28,9 +28,11 @@ module Billing
       "pattern_detection" => { "enabled" => true },
       "assistant_access" => { "enabled" => true },
       "interview_prepare_access" => { "enabled" => true },
+      "round_prep_access" => { "enabled" => true },
       # Quotas (absolute caps) to control AI spend during trial
       "ai_summaries" => { "enabled" => true, "limit" => 25 },
       "interview_prepare_refreshes" => { "enabled" => true, "limit" => 10 },
+      "round_prep_generations" => { "enabled" => true, "limit" => 10 },
       "assistant_messages" => { "enabled" => true, "limit" => 50 }
     }.freeze
 
@@ -67,7 +69,14 @@ module Billing
         { unlocked: true, grant: grant, expires_at: grant.expires_at }
       end
     rescue => e
-      ExceptionNotifier.notify(e, context: "payment", severity: "error", user: { id: user&.id, email: user&.email_address }, trigger: trigger, metadata: metadata)
+      notify_error(
+        e,
+        context: "payment",
+        severity: "error",
+        user: user,
+        trigger: trigger,
+        metadata: metadata
+      )
       { unlocked: false, grant: nil, expires_at: nil }
     end
 

@@ -14,7 +14,7 @@ module Signals
   #     # Feedback captured
   #   end
   #
-  class CompanyFeedbackProcessor
+  class CompanyFeedbackProcessor < ApplicationService
     attr_reader :synced_email, :application
 
     # Initialize the processor
@@ -47,7 +47,13 @@ module Signals
         skip_result("No feedback content found in email")
       end
     rescue StandardError => e
-      notify_error(e)
+      notify_error(
+        e,
+        context: "company_feedback_processor",
+        user: synced_email&.user,
+        synced_email_id: synced_email&.id,
+        application_id: application&.id
+      )
       { success: false, error: e.message }
     end
 
@@ -150,18 +156,6 @@ module Signals
       end
 
       parts.join("\n\n").strip
-    end
-
-    # Notifies of processing errors
-    #
-    # @param exception [Exception]
-    def notify_error(exception)
-      ExceptionNotifier.notify(exception, {
-        context: "company_feedback_processor",
-        severity: "error",
-        synced_email_id: synced_email&.id,
-        application_id: application&.id
-      })
     end
   end
 end

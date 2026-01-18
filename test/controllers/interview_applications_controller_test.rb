@@ -45,4 +45,3 @@ class InterviewApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Learn About Toptal Culture"
   end
 end
-

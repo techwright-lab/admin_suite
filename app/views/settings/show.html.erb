@@ -107,12 +107,21 @@
         <%= render "settings/subscription",
             user: @user,
             entitlements: @entitlements,
-            plans: @plans %>
+            plans: @plans,
+            billing_portal_url: @billing_portal_url,
+            billing_update_payment_url: @billing_update_payment_url,
+            billing_update_subscription_url: @billing_update_subscription_url %>
       <% when "billing" %>
         <%= render "settings/billing",
             user: @user,
             billing_customer: @billing_customer,
-            billing_history: @billing_history || [] %>
+            billing_history: @billing_history || [],
+            subscription_history: @subscription_history || [],
+            order_history: @order_history || [],
+            payment_method: @payment_method,
+            billing_portal_url: @billing_portal_url,
+            billing_update_payment_url: @billing_update_payment_url,
+            billing_update_subscription_url: @billing_update_subscription_url %>
       <% else %>
         <%= render "settings/profile", user: @user, companies: @companies, job_roles: @job_roles %>
       <% end %>

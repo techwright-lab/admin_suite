@@ -8,7 +8,7 @@ module Scraping
   # - Produce a clean Markdown version for display
   #
   # This is deliberately "best effort" and should not fail the scrape.
-  class AiJobPostProcessorService
+  class AiJobPostProcessorService < ApplicationService
     attr_reader :job_listing, :scraping_attempt
 
     # @param job_listing [JobListing]
@@ -35,50 +35,59 @@ module Scraping
           .gsub("{{html_content}}", content_html)
       end
 
-      provider_chain.each do |provider_name|
-        provider = get_provider_instance(provider_name)
-        next unless provider.available?
-
-        system_message = prompt_template&.system_prompt.presence || Ai::JobPostprocessPrompt.default_system_prompt
-        result = provider.run(prompt, system_message: system_message)
-        parsed = parse_json_result(result[:content])
-        confidence = parsed[:confidence].to_f
-
-        Ai::ApiLoggerService.new(
-          operation_type: :job_postprocess,
-          loggable: job_listing,
-          provider: result[:provider],
-          model: result[:model],
-          llm_prompt: prompt_template
-        ).record(prompt: prompt, content_size: content_html.bytesize) do
-          parsed.merge(
-            content: result[:content],
-            input_tokens: result[:input_tokens],
-            output_tokens: result[:output_tokens],
-            confidence: confidence,
-            provider_request: result[:provider_request],
-            provider_response: result[:provider_response],
-            provider_error_response: result[:provider_error_response],
-            http_status: result[:http_status],
-            response_headers: result[:response_headers],
-            provider_endpoint: result[:provider_endpoint],
-            error: result[:error],
-            error_type: result[:error_type]
+      system_message = prompt_template&.system_prompt.presence || Ai::JobPostprocessPrompt.default_system_prompt
+      runner = Ai::ProviderRunnerService.new(
+        provider_chain: provider_chain,
+        prompt: prompt,
+        content_size: content_html.bytesize,
+        system_message: system_message,
+        provider_for: method(:get_provider_instance),
+        logger_builder: lambda { |name, provider_instance|
+          Ai::ApiLoggerService.new(
+            operation_type: :job_postprocess,
+            loggable: job_listing,
+            provider: name,
+            model: provider_instance.respond_to?(:model_name) ? provider_instance.model_name : "unknown",
+            llm_prompt: prompt_template
           )
-        end
+        },
+        operation: :job_postprocess,
+        loggable: job_listing,
+        user: job_listing&.user,
+        error_context: {
+          severity: "warning",
+          job_listing_id: job_listing&.id,
+          scraping_attempt_id: scraping_attempt&.id,
+          url: url
+        }
+      )
 
-        return parsed if confidence > 0.0
+      result = runner.run do |response|
+        parsed = parse_json_result(response[:content])
+        confidence = parsed[:confidence].to_f
+        log_data = parsed.merge(
+          content: response[:content],
+          confidence: confidence,
+          error: response[:error],
+          error_type: response[:error_type]
+        )
+        accept = confidence > 0.0
+        [ parsed, log_data, accept ]
       end
+
+      return result[:parsed] if result[:success]
 
       { error: "No provider available", confidence: 0.0 }
     rescue => e
-      ExceptionNotifier.notify(e, {
-        context: "ai_job_postprocess",
+      notify_ai_error(
+        e,
+        operation: "job_postprocess",
+        loggable: job_listing,
         severity: "warning",
         job_listing_id: job_listing.id,
         scraping_attempt_id: scraping_attempt&.id,
         url: url
-      })
+      )
       { error: e.message, confidence: 0.0 }
     end
 
@@ -86,10 +95,10 @@ module Scraping
 
     def parse_json_result(text)
       return { error: "No response", confidence: 0.0 } if text.blank?
-      json_match = text.match(/\{.*\}/m)
-      return { error: "No JSON found", confidence: 0.0 } unless json_match
 
-      data = JSON.parse(json_match[0])
+      data = Ai::ResponseParserService.new(text).parse
+      return { error: "No JSON found", confidence: 0.0 } unless data
+
       normalize_parsed_data(data)
     rescue JSON::ParserError => e
       { error: "Invalid JSON: #{e.message}", confidence: 0.0 }

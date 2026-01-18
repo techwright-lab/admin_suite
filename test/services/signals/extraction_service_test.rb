@@ -82,4 +82,3 @@ class Signals::ExtractionServiceTest < ActiveSupport::TestCase
     refute_includes prompt, "hidden secret"
   end
 end
-

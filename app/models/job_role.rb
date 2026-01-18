@@ -49,6 +49,14 @@ class JobRole < ApplicationRecord
     category&.name
   end
 
+  # Returns available interview round types for this job role.
+  # Includes universal types (no department) and types specific to this role's department.
+  #
+  # @return [ActiveRecord::Relation<InterviewRoundType>] Available round types
+  def available_round_types
+    InterviewRoundType.enabled.for_department(category_id).ordered
+  end
+
   # Merges a source job role into a target job role
   #
   # @param source [JobRole] The job role to be merged (will be deleted)

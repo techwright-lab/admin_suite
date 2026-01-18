@@ -59,7 +59,7 @@ env:
     - LEMONSQUEEZY_API_KEY
     - LEMONSQUEEZY_STORE_ID
     - LEMONSQUEEZY_WEBHOOK_SECRET
-
+    - OTEL_EXPORTER_OTLP_HEADERS
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
@@ -71,7 +71,7 @@ env:
     # Set number of cores available to the application on each server (default: 1).
     # WEB_CONCURRENCY: 2
 
-    RAILS_LOG_LEVEL: debug
+    RAILS_LOG_LEVEL: info
     RAILS_ENV: production
     AWS_REGION: "eu-central-1"
     BASE_URL: "https://gleania.com"
@@ -83,7 +83,10 @@ env:
     POSTGRES_DB: gleania_production
     OPENAI_ORGANIZATION_ID: org-pjb9CpfGrDZbkQf5s0gvxwu2
     APP_DOMAIN: gleania.com
-
+    OTEL_EXPORTER_OTLP_ENDPOINT: https://otlp-gateway-prod-eu-west-2.grafana.net/otlp/
+    OTEL_TRACES_EXPORTER: otlp
+    OTEL_LOGS_EXPORTER: otlp
+    OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
 aliases:

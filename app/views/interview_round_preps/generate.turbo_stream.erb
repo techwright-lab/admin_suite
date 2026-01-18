@@ -1,0 +1,53 @@
+<%# Turbo Stream response for round prep generation %>
+
+<%# Show flash notice %>
+<%= turbo_stream.update "flash" do %>
+  <div class="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4 mb-4">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm font-medium text-blue-800 dark:text-blue-200">
+          Generating interview prep for <%= @round.stage_display_name %>...
+        </p>
+        <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
+          This may take a moment. The page will update when ready.
+        </p>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# Replace the prep content area with generating state %>
+<%= turbo_stream.replace "round_prep_content" do %>
+  <div id="round_prep_content" 
+       class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+       data-controller="auto-refresh"
+       data-auto-refresh-url-value="<%= status_interview_application_interview_round_prep_path(@application, @round, format: :turbo_stream) %>"
+       data-auto-refresh-interval-value="3000">
+    <div class="text-center py-12">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-4">
+        <svg class="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        Generating Your Interview Prep
+      </h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+        We're analyzing the round type, your history, and company patterns to create personalized preparation tips.
+      </p>
+      <div class="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400 dark:text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Usually takes 10-30 seconds
+      </div>
+    </div>
+  </div>
+<% end %>

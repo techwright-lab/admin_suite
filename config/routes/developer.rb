@@ -80,6 +80,7 @@ namespace :internal do
       end
       resources :interview_applications, only: [ :index, :show ]
       resources :interview_rounds, only: [ :index, :show ]
+      resources :interview_round_types, concerns: [ :toggleable ]
       resources :company_feedbacks, only: [ :index, :show ]
 
       # Blog Resources

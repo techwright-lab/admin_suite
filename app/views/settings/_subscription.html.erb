@@ -1,4 +1,4 @@
-<%# locals: (user:, entitlements:, plans:) %>
+<%# locals: (user:, entitlements:, plans:, billing_portal_url:, billing_update_payment_url:, billing_update_subscription_url:) %>
 
 <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
   <div class="mb-6">
@@ -57,31 +57,52 @@
       </div>
     <% end %>
 
-    <%# Current Plan Card %>
+    <%# Current Plan Card - Show effective plan (Sprint takes precedence over subscription) %>
     <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-5">
       <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div class="flex-1">
-          <div class="flex items-center gap-3">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-              <%= entitlements.plan&.name || "Free" %>
-            </h3>
-            <% status = entitlements.subscription_status %>
-            <% status_colors = {
-              free: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-              trial: "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300",
-              active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-              trialing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-              cancelled: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-              past_due: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-              expired: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-              inactive: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-            } %>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= status_colors[status] || status_colors[:free] %>">
-              <%= status.to_s.humanize %>
-            </span>
-          </div>
+          <% if entitlements.purchase_active? %>
+            <%# User has active one-time purchase (Sprint) %>
+            <% purchase_plan = entitlements.effective_plan %>
+            <div class="flex items-center gap-3">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <%= purchase_plan&.name || "Sprint Access" %>
+              </h3>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                Active
+              </span>
+            </div>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              One-time access • <%= entitlements.purchase_time_remaining_in_words %> remaining
+            </p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Expires <%= entitlements.purchase_expires_at&.strftime("%B %d, %Y") %>
+            </p>
+          <% else %>
+            <%# Regular subscription or free plan view %>
+            <div class="flex items-center gap-3">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <%= entitlements.subscription_plan&.name || "Free" %>
+              </h3>
+              <% status = entitlements.subscription_status %>
+              <% status_colors = {
+                free: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+                trial: "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300",
+                active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+                trialing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+                cancelled: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                past_due: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+                expired: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+                inactive: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+              } %>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= status_colors[status] || status_colors[:free] %>">
+                <%= status.to_s.humanize %>
+              </span>
+            </div>
+          <% end %>
 
-          <% if entitlements.active_subscription %>
+          <%# Status/renewal info for subscriptions only (not for Sprint) %>
+          <% if !entitlements.purchase_active? && entitlements.active_subscription %>
             <% sub = entitlements.active_subscription %>
             <% if entitlements.cancel_at_period_end? %>
               <div class="mt-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
@@ -105,42 +126,72 @@
                 Renews on <%= sub.current_period_ends_at.strftime("%B %d, %Y") %>
               </p>
             <% end %>
-          <% elsif entitlements.insight_trial_active? %>
+          <% elsif !entitlements.purchase_active? && entitlements.insight_trial_active? %>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Pro trial active • Upgrade to keep access after trial ends
+              Pro trial active • Subscribe to keep access after trial ends
             </p>
-          <% else %>
+          <% elsif !entitlements.purchase_active? && !entitlements.active_subscription %>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              You're on the free plan. Upgrade to unlock more features.
+              You're on the free plan. Choose a plan to unlock more features.
             </p>
           <% end %>
         </div>
 
         <div class="text-left sm:text-right">
-          <% current_plan = entitlements.plan %>
-          <% if current_plan&.free? %>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">$0</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">/month</div>
-          <% elsif current_plan %>
+          <% if entitlements.purchase_active? %>
+            <% purchase_plan = entitlements.effective_plan %>
             <div class="text-2xl font-bold text-gray-900 dark:text-white">
-              $<%= (current_plan.amount_cents.to_i / 100.0).round(2).to_s.sub(/\.0+\z/, "") %>
+              $<%= (purchase_plan.amount_cents.to_i / 100.0).round(2).to_s.sub(/\.0+\z/, "") %>
             </div>
             <div class="text-xs text-gray-500 dark:text-gray-400">
-              <%= current_plan.recurring? ? "/#{current_plan.interval.presence || 'month'}" : (current_plan.metadata["duration_label"].presence || "one-time") %>
+              <%= purchase_plan.metadata&.dig("duration_label").presence || "one-time" %>
             </div>
+          <% else %>
+            <% sub_plan = entitlements.subscription_plan %>
+            <% if sub_plan&.free? %>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">$0</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">/month</div>
+            <% elsif sub_plan %>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                $<%= (sub_plan.amount_cents.to_i / 100.0).round(2).to_s.sub(/\.0+\z/, "") %>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                <%= sub_plan.recurring? ? "/#{sub_plan.interval.presence || 'month'}" : (sub_plan.metadata["duration_label"].presence || "one-time") %>
+              </div>
+            <% end %>
           <% end %>
         </div>
       </div>
 
-      <%# Subscription Actions %>
-      <% if entitlements.active_subscription %>
+      <%# Subscription Actions - only show for subscriptions, not Sprint %>
+      <% if !entitlements.purchase_active? && entitlements.active_subscription %>
         <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
-          <%= link_to billing_portal_path,
+          <%= link_to (billing_update_payment_url || billing_portal_url || billing_portal_path),
+              target: "_blank",
+              rel: "noopener noreferrer",
               class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors" do %>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
             </svg>
             Manage Payment
+            <svg class="w-3 h-3 ml-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+          <% end %>
+
+          <% if billing_update_subscription_url.present? %>
+            <%= link_to billing_update_subscription_url,
+                target: "_blank",
+                rel: "noopener noreferrer",
+                class: "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Update Subscription
+              <svg class="w-3 h-3 ml-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+            <% end %>
           <% end %>
 
           <% if entitlements.cancel_at_period_end? %>
@@ -194,25 +245,56 @@
 
     <%# Available Plans - Hide when subscription is cancelled but still active %>
     <% show_plans = plans.present? && !entitlements.cancel_at_period_end? %>
+    <%# Determine if user has an active paid plan (subscription or one-time purchase) %>
+    <% has_active_paid_plan = entitlements.active_subscription.present? || entitlements.purchase_active? %>
     <% if show_plans %>
       <div>
         <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-          <% if entitlements.plan&.free? || entitlements.plan.nil? %>
-            Upgrade Your Plan
+          <% if has_active_paid_plan %>
+            Switch Plan
           <% else %>
-            Change Plan
+            Choose a Plan
           <% end %>
         </h3>
+
+        <% if has_active_paid_plan %>
+          <div class="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <div class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p class="text-sm text-amber-700 dark:text-amber-300">
+                <strong>Note:</strong> Switching plans will cancel your current plan.
+                <% if entitlements.active_subscription.present? %>
+                  Your subscription will be cancelled at the end of your current billing period, and any remaining time will be prorated.
+                <% else %>
+                  Your current one-time access will be replaced by the new plan.
+                <% end %>
+              </p>
+            </div>
+          </div>
+        <% end %>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <% plans.each do |plan| %>
-            <% is_current = entitlements.plan&.id == plan.id %>
+            <%# Check if this is the active one-time purchase plan (takes precedence) %>
+            <% is_active_purchase = plan.one_time? && entitlements.purchase_active? && entitlements.active_purchase_grant&.plan&.id == plan.id %>
+            <%# Check if this is the current subscription plan (only if no active purchase and has active subscription) %>
+            <% is_subscription = !entitlements.purchase_active? && entitlements.active_subscription.present? && entitlements.active_subscription.plan&.id == plan.id %>
+            <%# Check if this is the free plan and user has no active paid plan %>
+            <% is_free_current = plan.free? && !entitlements.purchase_active? && entitlements.active_subscription.nil? %>
+            <% is_current = is_active_purchase || is_subscription || is_free_current %>
             <div class="relative rounded-xl border <%= is_current ? 'border-primary-500 ring-2 ring-primary-500/20' : 'border-gray-200 dark:border-gray-700' %> bg-white dark:bg-gray-900 p-5 flex flex-col h-full">
               <% if plan.highlighted? && !is_current %>
                 <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 text-xs font-semibold text-white shadow-sm">
                   Recommended
                 </div>
               <% end %>
-              <% if is_current %>
+              <% if is_active_purchase %>
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-emerald-500 text-xs font-semibold text-white shadow-sm">
+                  Active
+                </div>
+              <% elsif is_subscription || is_free_current %>
                 <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary-500 text-xs font-semibold text-white shadow-sm">
                   Current Plan
                 </div>
@@ -261,19 +343,29 @@
               <% end %>
 
               <div class="mt-auto pt-4">
-                <% if is_current %>
+                <% if is_active_purchase %>
+                  <%# User has an active one-time purchase for this plan %>
+                  <div class="text-center">
+                    <span class="block w-full py-2.5 px-4 text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                      Active • <%= entitlements.purchase_time_remaining_in_words %> left
+                    </span>
+                  </div>
+                <% elsif is_subscription || is_free_current %>
                   <span class="block w-full text-center py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg">
                     Current Plan
                   </span>
-                <% elsif plan.free? %>
+                <% elsif plan.free? && has_active_paid_plan %>
+                  <%# User has paid plan and is looking at Free - show as available after current plan ends %>
                   <span class="block w-full text-center py-2.5 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                    Free Tier
+                    Available after current plan
                   </span>
                 <% else %>
-                  <%= button_to "Upgrade to #{plan.name}",
+                  <% button_label = has_active_paid_plan ? "Switch to #{plan.name}" : "Get #{plan.name}" %>
+                  <%= button_to button_label,
                       billing_checkout_path(plan_key: plan.key),
                       method: :post,
                       form: { data: { turbo: false } },
+                      data: has_active_paid_plan ? { turbo_confirm: "This will cancel your current plan. Are you sure you want to switch to #{plan.name}?" } : {},
                       class: "w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors shadow-sm" %>
                 <% end %>
               </div>

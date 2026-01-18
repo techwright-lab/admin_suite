@@ -22,6 +22,7 @@ class User < ApplicationRecord
   # =================================================================
   has_many :billing_customers, class_name: "Billing::Customer", dependent: :destroy
   has_many :billing_subscriptions, class_name: "Billing::Subscription", dependent: :destroy
+  has_many :billing_orders, class_name: "Billing::Order", dependent: :destroy
   has_many :billing_entitlement_grants, class_name: "Billing::EntitlementGrant", dependent: :destroy
   has_many :billing_usage_counters, class_name: "Billing::UsageCounter", dependent: :destroy
 

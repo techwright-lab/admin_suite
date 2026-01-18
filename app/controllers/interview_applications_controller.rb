@@ -160,10 +160,7 @@ class InterviewApplicationsController < ApplicationController
   # PATCH/PUT /interview_applications/:id
   def update
     if @application.update(application_params)
-      respond_to do |format|
-        format.html { redirect_to interview_applications_path, notice: "Application updated successfully!" }
-        format.turbo_stream { flash.now[:notice] = "Application updated successfully!" }
-      end
+      redirect_to interview_applications_path, notice: "Application updated successfully!"
     else
       @companies = Company.alphabetical.limit(100)
       @job_roles = JobRole.alphabetical.limit(100)

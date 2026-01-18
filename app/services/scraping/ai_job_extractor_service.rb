@@ -13,7 +13,7 @@ module Scraping
   #   if result[:confidence] >= 0.7
   #     # Use extracted data
   #   end
-  class AiJobExtractorService
+  class AiJobExtractorService < ApplicationService
     include Concerns::Loggable
 
     attr_reader :job_listing, :scraping_attempt, :url
@@ -65,51 +65,61 @@ module Scraping
     end
 
     def extract_with_providers(prompt, html_size)
-      provider_chain.each do |provider_name|
-        result = try_provider(provider_name, prompt, html_size)
-        if result && result[:confidence] && result[:confidence] >= 0.7
-          return result.merge(prompt_used: prompt)
-        elsif result && result[:confidence]
-          # Return low confidence result with prompt for logging
-          return result.merge(prompt_used: prompt)
-        end
-      end
-
-      extraction_error("All providers failed or returned low confidence")
-    end
-
-    def try_provider(provider_name, prompt, html_size)
-      provider = get_provider_instance(provider_name)
       prompt_template = Ai::JobExtractionPrompt.active_prompt
       system_message = prompt_template&.system_prompt.presence || Ai::JobExtractionPrompt.default_system_prompt
 
-      unless provider.available?
-        log_event("ai_extraction_provider_unavailable", { provider: provider_name })
-        return nil
+      runner = Ai::ProviderRunnerService.new(
+        provider_chain: provider_chain,
+        prompt: prompt,
+        content_size: html_size,
+        system_message: system_message,
+        provider_for: method(:get_provider_instance),
+        logger_builder: lambda { |provider_name, provider|
+          Ai::ApiLoggerService.new(
+            operation_type: :job_extraction,
+            loggable: @job_listing,
+            provider: provider_name,
+            model: provider.respond_to?(:model_name) ? provider.model_name : "unknown",
+            llm_prompt: prompt_template
+          )
+        },
+        on_rate_limit: lambda { |response, provider_name, _logger|
+          handle_rate_limit(provider_name, response)
+        },
+        on_error: lambda { |response, provider_name, _logger|
+          log_event("ai_extraction_failed", { provider: provider_name, error: response[:error] })
+        },
+        operation: :job_extraction,
+        loggable: @job_listing,
+        user: @job_listing&.user,
+        error_context: {
+          severity: "warning",
+          job_listing_id: @job_listing&.id,
+          url: @url
+        }
+      )
+
+      result = runner.run do |response|
+        parsed = parse_response(response[:content])
+        log_data = (parsed || {}).merge(
+          confidence: parsed&.dig(:confidence),
+          model: response[:model]
+        )
+        [ parsed, log_data, true ]
       end
 
-      result = provider.run(prompt, system_message: system_message)
+      return extraction_error("All providers failed or returned low confidence") unless result[:success]
 
-      if result[:rate_limit]
-        handle_rate_limit(provider_name, result)
-        log_extraction_result(result, nil, html_size, prompt: prompt)
-        return nil
+      confidence = result[:parsed][:confidence] || 0.0
+      if confidence >= 0.7
+        log_event("ai_extraction_succeeded", { provider: result[:provider], confidence: confidence })
+      else
+        log_event("ai_extraction_low_confidence", { provider: result[:provider], confidence: confidence })
       end
 
-      if result[:error]
-        log_event("ai_extraction_failed", { provider: provider_name, error: result[:error] })
-        log_extraction_result(result, nil, html_size, prompt: prompt)
-        return nil
-      end
-
-      parsed = parse_response(result[:content])
-      log_extraction(provider_name, result, parsed, html_size, prompt: prompt)
-
-      build_extraction_result(parsed, result, provider_name)
-    rescue => e
-      log_error("Provider #{provider_name} failed", e)
-      notify_extraction_error(e, provider_name)
-      nil
+      build_extraction_result(result[:parsed], result[:result].merge(model: result[:model]), result[:provider]).merge(
+        prompt_used: prompt
+      )
     end
 
     def handle_rate_limit(provider_name, result)
@@ -130,76 +140,13 @@ module Scraping
         model: result[:model],
         input_tokens: result[:input_tokens],
         output_tokens: result[:output_tokens],
-        raw_response: result[:content]
+        raw_response: result[:content] || result[:raw_response]
       )
-    end
-
-    def log_extraction(provider_name, result, parsed, html_size, prompt: nil)
-      confidence = parsed[:confidence] || 0.0
-
-      if confidence >= 0.7
-        log_event("ai_extraction_succeeded", { provider: provider_name, confidence: confidence })
-      else
-        log_event("ai_extraction_low_confidence", { provider: provider_name, confidence: confidence })
-      end
-
-      log_extraction_result(result, parsed, html_size, prompt: prompt)
-    end
-
-    def log_extraction_result(result, parsed, html_size, prompt: nil)
-      return unless @job_listing
-
-      prompt_template = Ai::JobExtractionPrompt.active_prompt
-
-      logger = Ai::ApiLoggerService.new(
-        operation_type: :job_extraction,
-        loggable: @job_listing,
-        provider: result[:provider],
-        model: result[:model],
-        llm_prompt: prompt_template
-      )
-
-      log_data = (parsed || {}).merge(
-        confidence: parsed&.dig(:confidence),
-        input_tokens: result[:input_tokens],
-        output_tokens: result[:output_tokens],
-        error: result[:error],
-        rate_limit: result[:rate_limit],
-        raw_response: result[:content],
-        provider_request: result[:provider_request],
-        provider_response: result[:provider_response],
-        provider_error_response: result[:provider_error_response],
-        http_status: result[:http_status],
-        response_headers: result[:response_headers],
-        provider_endpoint: result[:provider_endpoint]
-      )
-
-      logger.record_result(
-        log_data.merge(provider: result[:provider], model: result[:model]),
-        latency_ms: result[:latency_ms] || 0,
-        content_size: html_size,
-        prompt: prompt
-      )
-    rescue => e
-      Rails.logger.warn("Failed to log extraction result: #{e.message}")
     end
 
     def extraction_error(message)
       log_event("ai_extraction_failed", { error: message })
       { error: message, confidence: 0.0 }
-    end
-
-    def notify_extraction_error(exception, provider_name)
-      ExceptionNotifier.notify(exception, {
-        context: "ai_job_extraction",
-        severity: "error",
-        ai_context: {
-          operation: "job_extraction",
-          provider_name: provider_name,
-          job_listing_id: @job_listing&.id
-        },
-        url: @url
-      })
     end
 
     # Prompt building

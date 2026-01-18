@@ -57,6 +57,7 @@ module Ai
       interview_round_extraction
       round_feedback_extraction
       application_status_extraction
+      round_prep_comprehensive
     ].freeze
 
     # Status values

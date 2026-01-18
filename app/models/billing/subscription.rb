@@ -10,6 +10,14 @@ module Billing
 
     belongs_to :user
     belongs_to :plan, class_name: "Billing::Plan", optional: true
+    has_many :orders, class_name: "Billing::Order", foreign_key: :billing_subscription_id, dependent: :nullify
+
+    store_accessor :urls,
+      :customer_portal_url,
+      :update_payment_method_url,
+      :update_subscription_url,
+      :latest_invoice_url,
+      :latest_receipt_url
 
     validates :uuid, presence: true, uniqueness: true
     validates :provider, presence: true, inclusion: { in: PROVIDERS }

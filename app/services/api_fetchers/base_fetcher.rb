@@ -7,7 +7,7 @@ module ApiFetchers
   # and parsing responses.
   #
   # @abstract Subclass and override {#fetch} to implement
-  class BaseFetcher
+  class BaseFetcher < ApplicationService
     # Logs a structured event for API operations
     #
     # @param [String] event_name The event name

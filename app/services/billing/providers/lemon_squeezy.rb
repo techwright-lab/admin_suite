@@ -6,7 +6,7 @@ module Billing
     #
     # Uses the LemonSqueezy API to create hosted checkout URLs and relies on webhooks
     # to sync subscription state back into the app.
-    class LemonSqueezy
+    class LemonSqueezy < ApplicationService
       include HTTParty
 
       base_uri "https://api.lemonsqueezy.com/v1"
@@ -73,12 +73,12 @@ module Billing
 
         url
       rescue => e
-        ExceptionNotifier.notify(
+        notify_error(
           e,
           context: "payment",
           severity: "error",
+          user: user,
           tags: { provider: "lemonsqueezy", operation: "create_checkout" },
-          user: { id: user&.id, email: user&.email_address },
           plan_key: plan&.key
         )
         raise
@@ -94,14 +94,14 @@ module Billing
 
         started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-        response = self.class.post(
+        response = self.class.get(
           "/customers/#{customer.external_customer_id}/portal",
           headers: request_headers
         )
 
         parsed = response.parsed_response.is_a?(Hash) ? response.parsed_response : {}
-        url = parsed.dig("data", "attributes", "url") ||
-          parsed.dig("data", "attributes", "urls", "customer_portal")
+        url = parsed.dig("data", "attributes", "urls", "customer_portal") ||
+          parsed.dig("data", "attributes", "url")
 
         duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
         Rails.logger.info("[billing] lemonsqueezy customer_portal status=#{response.code} duration_ms=#{duration_ms} customer_id=#{customer.id}")
@@ -111,7 +111,7 @@ module Billing
 
         url
       rescue => e
-        ExceptionNotifier.notify(
+        notify_error(
           e,
           context: "payment",
           severity: "error",
@@ -158,7 +158,7 @@ module Billing
         subscription.update!(cancel_at_period_end: true)
         true
       rescue => e
-        ExceptionNotifier.notify(
+        notify_error(
           e,
           context: "payment",
           severity: "error",
@@ -205,7 +205,7 @@ module Billing
         subscription.update!(cancel_at_period_end: false)
         true
       rescue => e
-        ExceptionNotifier.notify(
+        notify_error(
           e,
           context: "payment",
           severity: "error",

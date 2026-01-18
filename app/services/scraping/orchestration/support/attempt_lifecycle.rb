@@ -124,14 +124,15 @@ module Scraping
             url: context.job_listing.url
           }.to_json)
 
-          ExceptionNotifier.notify(exception, {
+          ApplicationService.new.notify_error(
+            exception,
             context: "scraping_orchestration",
             severity: "error",
             error_message: message,
             job_listing_id: context.job_listing.id,
             scraping_attempt_id: context.attempt&.id,
             url: context.job_listing.url
-          })
+          )
         end
 
         def extract_domain(url)

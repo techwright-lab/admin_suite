@@ -3,7 +3,7 @@
 module Scraping
   module Orchestration
     module Steps
-      class BaseStep
+      class BaseStep < ApplicationService
         def call(_context)
           raise NotImplementedError
         end

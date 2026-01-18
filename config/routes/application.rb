@@ -18,6 +18,12 @@ resources :interview_applications, path: "applications" do
 
   resources :interview_rounds, path: "interviews" do
     resource :interview_feedback, path: "feedbacks"
+
+    # Round-specific interview prep
+    resource :prep, controller: "interview_round_preps", only: [ :show ] do
+      post :generate
+      get :status
+    end
   end
   resource :company_feedback, path: "feedback"
 

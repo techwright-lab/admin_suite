@@ -45,7 +45,7 @@ module Billing
       grants.each do |g|
         # Keep the window valid: expires_at must remain > starts_at.
         min_expiry = g.starts_at + 1.second
-        g.update!(expires_at: [now, min_expiry].max)
+        g.update!(expires_at: [ now, min_expiry ].max)
       end
 
       grants.size
@@ -66,10 +66,14 @@ module Billing
 
     def build_all_entitlements
       Billing::Feature.all.each_with_object({}) do |feature, h|
-        h[feature.key] = { "enabled" => true }
+        # For quota features, set limit to nil (unlimited)
+        # This explicitly overrides any base plan limits
+        if feature.kind == "quota"
+          h[feature.key] = { "enabled" => true, "limit" => nil }
+        else
+          h[feature.key] = { "enabled" => true }
+        end
       end
     end
   end
 end
-
-

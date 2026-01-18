@@ -85,4 +85,7 @@ Rails.application.configure do
   config.active_record.encryption.primary_key = "dev_primary_key_32_characters___"
   config.active_record.encryption.deterministic_key = "dev_deterministic_key_32_chars__"
   config.active_record.encryption.key_derivation_salt = "dev_key_derivation_salt_value___"
+
+  config.hosts << "gleania.com"
+  config.hosts << "maggot-improved-coral.ngrok-free.app"
 end

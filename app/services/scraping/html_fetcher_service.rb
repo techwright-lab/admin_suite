@@ -14,7 +14,7 @@ module Scraping
   #     html_content = result[:html_content]
   #     cached_data = result[:cached_data]
   #   end
-  class HtmlFetcherService
+  class HtmlFetcherService < ApplicationService
     include Concerns::Loggable
 
     attr_reader :job_listing, :scraping_attempt, :url
@@ -115,15 +115,13 @@ module Scraping
       error_result("Request timeout: #{e.message}")
     rescue => e
       log_error("HTML fetch failed", e)
-
-      # Notify exception for HTML fetch failures
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "html_fetch",
         severity: "error",
         url: @url,
         job_listing_id: @job_listing.id
-      })
-
+      )
       error_result("Failed to fetch HTML: #{e.message}")
     end
 

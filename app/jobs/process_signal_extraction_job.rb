@@ -23,41 +23,50 @@ class ProcessSignalExtractionJob < ApplicationJob
   # @param synced_email_id [Integer] The synced email ID to process
   # @return [void]
   def perform(synced_email_id)
-    synced_email = SyncedEmail.find(synced_email_id)
+    @synced_email = SyncedEmail.find(synced_email_id)
 
     # Skip if already extracted
-    return if synced_email.extraction_completed?
+    return if @synced_email.extraction_completed?
 
     # Skip if extraction was skipped (not suitable for extraction)
-    return if synced_email.extraction_status == "skipped"
+    return if @synced_email.extraction_status == "skipped"
 
     Rails.logger.info("Processing signal extraction for email #{synced_email_id}")
 
-    # Run AI extraction
-    service = Signals::ExtractionService.new(synced_email)
+    # Run AI extraction (service handles its own error notification)
+    service = Signals::ExtractionService.new(@synced_email)
     result = service.extract
 
     if result[:success]
       Rails.logger.info("Successfully extracted signals for email #{synced_email_id}")
 
       # Log key extracted data
-      synced_email.reload
-      if synced_email.signal_company_name.present?
-        Rails.logger.info("  Company: #{synced_email.signal_company_name}")
+      @synced_email.reload
+      if @synced_email.signal_company_name.present?
+        Rails.logger.info("  Company: #{@synced_email.signal_company_name}")
       end
 
       # Process automated actions based on email type
-      process_email_actions(synced_email)
+      process_email_actions(@synced_email)
     elsif result[:skipped]
       Rails.logger.info("Skipped signal extraction for email #{synced_email_id}: #{result[:reason]}")
     else
       Rails.logger.warn("Failed to extract signals for email #{synced_email_id}: #{result[:error]}")
     end
+  rescue StandardError => e
+    # Note: Individual services (ExtractionService, processors) handle their own error notifications.
+    # This catch is for unexpected errors outside the service calls.
+    handle_error(e,
+      context: "signal_extraction",
+      user: @synced_email&.user,
+      synced_email_id: synced_email_id
+    )
   end
 
   private
 
   # Processes automated actions based on email type
+  # Note: Individual processors handle their own error notifications.
   #
   # @param synced_email [SyncedEmail]
   def process_email_actions(synced_email)

@@ -8,6 +8,7 @@ class Category < ApplicationRecord
 
   has_many :job_roles, dependent: :nullify
   has_many :skill_tags, dependent: :nullify
+  has_many :interview_round_types, dependent: :nullify
 
   validates :name, presence: true
   validates :kind, presence: true

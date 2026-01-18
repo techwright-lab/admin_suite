@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_18_100850) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -222,6 +222,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
     t.jsonb "metadata", default: {}, null: false
     t.string "provider", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "urls", default: {}, null: false
     t.bigint "user_id", null: false
     t.uuid "uuid", null: false
     t.index ["provider", "external_customer_id"], name: "index_billing_customers_on_provider_and_external_customer_id", unique: true
@@ -231,6 +232,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
   end
 
   create_table "billing_entitlement_grants", force: :cascade do |t|
+    t.bigint "billing_plan_id"
     t.datetime "created_at", null: false
     t.jsonb "entitlements", default: {}, null: false
     t.datetime "expires_at", null: false
@@ -241,6 +243,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.uuid "uuid", null: false
+    t.index ["billing_plan_id"], name: "index_billing_entitlement_grants_on_billing_plan_id"
     t.index ["user_id", "source", "reason"], name: "idx_on_user_id_source_reason_078dd5f8d4"
     t.index ["user_id", "starts_at", "expires_at"], name: "idx_on_user_id_starts_at_expires_at_9816456602"
     t.index ["user_id"], name: "index_billing_entitlement_grants_on_user_id"
@@ -259,6 +262,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
     t.uuid "uuid", null: false
     t.index ["key"], name: "index_billing_features_on_key", unique: true
     t.index ["uuid"], name: "index_billing_features_on_uuid", unique: true
+  end
+
+  create_table "billing_orders", force: :cascade do |t|
+    t.bigint "billing_customer_id"
+    t.bigint "billing_subscription_id"
+    t.datetime "created_at", null: false
+    t.string "currency"
+    t.string "external_order_id", null: false
+    t.string "identifier"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "order_number"
+    t.string "provider", null: false
+    t.string "receipt_url"
+    t.string "status"
+    t.integer "total_cents"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", null: false
+    t.index ["billing_customer_id"], name: "index_billing_orders_on_billing_customer_id"
+    t.index ["billing_subscription_id"], name: "index_billing_orders_on_billing_subscription_id"
+    t.index ["provider", "external_order_id"], name: "index_billing_orders_on_provider_and_external_order_id", unique: true
+    t.index ["provider", "user_id"], name: "index_billing_orders_on_provider_and_user_id"
+    t.index ["user_id"], name: "index_billing_orders_on_user_id"
+    t.index ["uuid"], name: "index_billing_orders_on_uuid", unique: true
   end
 
   create_table "billing_plan_entitlements", force: :cascade do |t|
@@ -313,6 +340,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
   create_table "billing_subscriptions", force: :cascade do |t|
     t.boolean "cancel_at_period_end", default: false, null: false
     t.datetime "cancelled_at"
+    t.string "card_brand"
+    t.string "card_last_four"
     t.datetime "created_at", null: false
     t.datetime "current_period_ends_at"
     t.datetime "current_period_starts_at"
@@ -323,6 +352,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
     t.string "status", default: "inactive", null: false
     t.datetime "trial_ends_at"
     t.datetime "updated_at", null: false
+    t.jsonb "urls", default: {}, null: false
     t.bigint "user_id", null: false
     t.uuid "uuid", null: false
     t.index ["current_period_ends_at"], name: "index_billing_subscriptions_on_current_period_ends_at"
@@ -607,12 +637,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
     t.index ["uuid"], name: "index_interview_prep_artifacts_on_uuid", unique: true
   end
 
+  create_table "interview_round_prep_artifacts", force: :cascade do |t|
+    t.jsonb "content", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "generated_at"
+    t.string "inputs_digest"
+    t.bigint "interview_round_id", null: false
+    t.string "kind", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["inputs_digest"], name: "index_interview_round_prep_artifacts_on_inputs_digest"
+    t.index ["interview_round_id", "kind"], name: "idx_round_prep_artifacts_unique", unique: true
+    t.index ["interview_round_id"], name: "index_interview_round_prep_artifacts_on_interview_round_id"
+  end
+
+  create_table "interview_round_types", force: :cascade do |t|
+    t.bigint "category_id"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "disabled_at"
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id", "position"], name: "index_interview_round_types_on_category_id_and_position"
+    t.index ["category_id"], name: "index_interview_round_types_on_category_id"
+    t.index ["slug"], name: "index_interview_round_types_on_slug", unique: true
+  end
+
   create_table "interview_rounds", force: :cascade do |t|
     t.datetime "completed_at"
     t.string "confirmation_source"
     t.datetime "created_at", null: false
     t.integer "duration_minutes"
     t.bigint "interview_application_id", null: false
+    t.bigint "interview_round_type_id"
     t.string "interviewer_name"
     t.string "interviewer_role"
     t.text "notes"
@@ -626,6 +685,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
     t.string "video_link"
     t.index ["interview_application_id", "position"], name: "idx_on_interview_application_id_position_2ffa3d90ee"
     t.index ["interview_application_id"], name: "index_interview_rounds_on_interview_application_id"
+    t.index ["interview_round_type_id"], name: "index_interview_rounds_on_interview_round_type_id"
     t.index ["result"], name: "index_interview_rounds_on_result"
     t.index ["source_email_id"], name: "index_interview_rounds_on_source_email_id"
     t.index ["stage"], name: "index_interview_rounds_on_stage"
@@ -1288,7 +1348,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
   add_foreign_key "assistant_turns", "llm_api_logs"
   add_foreign_key "assistant_user_memories", "users"
   add_foreign_key "billing_customers", "users"
+  add_foreign_key "billing_entitlement_grants", "billing_plans", on_delete: :nullify
   add_foreign_key "billing_entitlement_grants", "users"
+  add_foreign_key "billing_orders", "billing_customers"
+  add_foreign_key "billing_orders", "billing_subscriptions"
+  add_foreign_key "billing_orders", "users"
   add_foreign_key "billing_plan_entitlements", "billing_features", column: "feature_id"
   add_foreign_key "billing_plan_entitlements", "billing_plans", column: "plan_id"
   add_foreign_key "billing_provider_mappings", "billing_plans", column: "plan_id"
@@ -1310,7 +1374,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_14_012303) do
   add_foreign_key "interview_prep_artifacts", "interview_applications"
   add_foreign_key "interview_prep_artifacts", "llm_api_logs"
   add_foreign_key "interview_prep_artifacts", "users"
+  add_foreign_key "interview_round_prep_artifacts", "interview_rounds"
+  add_foreign_key "interview_round_types", "categories"
   add_foreign_key "interview_rounds", "interview_applications"
+  add_foreign_key "interview_rounds", "interview_round_types"
   add_foreign_key "interview_skill_tags", "interview_applications", column: "interview_id"
   add_foreign_key "interview_skill_tags", "skill_tags"
   add_foreign_key "job_listings", "companies"

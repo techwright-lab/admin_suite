@@ -19,6 +19,7 @@ User.destroy_all
 load Rails.root.join("db/seeds/llm_provider_configs.rb")
 load Rails.root.join("db/seeds/llm_prompts.rb")
 load Rails.root.join("db/seeds/blog_posts.rb")
+load Rails.root.join("db/seeds/interview_round_types.rb")
 
 # Create companies
 # puts "Creating companies..."
@@ -296,7 +297,3 @@ load Rails.root.join("db/seeds/blog_posts.rb")
 # puts "- #{SkillTag.count} skill tags"
 
 # Load email sync test data
-load Rails.root.join("db/seeds/email_sync_data.rb")
-
-# Load email automation test data
-load Rails.root.join("db/seeds/email_automation_test.rb")

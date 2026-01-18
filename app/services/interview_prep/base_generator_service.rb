@@ -2,7 +2,7 @@
 
 module InterviewPrep
   # Base class for LLM-backed prep generation with provider fallback and logging.
-  class BaseGeneratorService
+  class BaseGeneratorService < ApplicationService
     # @param user [User]
     # @param interview_application [InterviewApplication]
     def initialize(user:, interview_application:)
@@ -27,7 +27,7 @@ module InterviewPrep
 
       inputs = inputs_builder.build
       prompt = build_prompt(inputs)
-      result = run_with_providers(prompt, inputs)
+      result = run_with_providers(prompt)
 
       if result[:success]
         artifact.assign_attributes(
@@ -77,7 +77,6 @@ module InterviewPrep
     end
 
     def build_prompt(inputs)
-      template_record = prompt_class.active_prompt
       vars = {
         candidate_profile: JSON.generate(inputs[:candidate_profile]),
         job_context: JSON.generate(inputs[:job_context]),
@@ -85,101 +84,64 @@ module InterviewPrep
         feedback_themes: JSON.generate(inputs[:feedback_themes])
       }
 
-      return template_record.build_prompt(vars) if template_record
-
-      # Fallback to code-defined default prompt (safe for new environments).
-      prompt = prompt_class.default_prompt_template.dup
-      vars.each { |k, v| prompt.gsub!("{{#{k}}}", v.to_s) }
-      prompt
+      Ai::PromptBuilderService.new(
+        prompt_class: prompt_class,
+        variables: vars
+      ).run
     end
 
     def provider_chain
       LlmProviders::ProviderConfigHelper.all_providers
     end
 
-    def run_with_providers(prompt, inputs)
+    def run_with_providers(prompt)
       template_record = prompt_class.active_prompt
       system_message =
         template_record&.system_prompt.presence ||
         (prompt_class.respond_to?(:default_system_prompt) ? prompt_class.default_system_prompt : nil)
 
-      provider_chain.each do |provider_name|
-        provider = provider_for(provider_name)
-        next unless provider.available?
-
-        response = provider.run(prompt, system_message: system_message)
-        logger = Ai::ApiLoggerService.new(
-          operation_type: operation_type,
-          loggable: application,
-          provider: provider_name,
-          model: response[:model] || provider.model_name,
-          llm_prompt: template_record
-        )
-
-        if response[:rate_limit]
-          logger.record_result(
-            {
-              error: "rate_limited",
-              rate_limit: true,
-              provider_request: response[:provider_request],
-              provider_error_response: response[:provider_error_response],
-              http_status: response[:http_status],
-              response_headers: response[:response_headers],
-              provider_endpoint: response[:provider_endpoint]
-            },
-            latency_ms: response[:latency_ms] || 0,
-            prompt: prompt,
-            content_size: prompt.bytesize
+      runner = Ai::ProviderRunnerService.new(
+        provider_chain: provider_chain,
+        prompt: prompt,
+        content_size: prompt.bytesize,
+        system_message: system_message,
+        provider_for: method(:provider_for),
+        logger_builder: lambda { |provider_name, provider|
+          Ai::ApiLoggerService.new(
+            operation_type: operation_type,
+            loggable: application,
+            provider: provider_name,
+            model: provider.respond_to?(:model_name) ? provider.model_name : "unknown",
+            llm_prompt: template_record
           )
-          next
-        end
+        },
+        operation: operation_type,
+        loggable: application,
+        user: user,
+        error_context: {
+          severity: "warning",
+          application_id: application&.id
+        }
+      )
 
-        if response[:error]
-          logger.record_result(
-            {
-              error: response[:error],
-              error_type: response[:error_type],
-              provider_request: response[:provider_request],
-              provider_error_response: response[:provider_error_response],
-              http_status: response[:http_status],
-              response_headers: response[:response_headers],
-              provider_endpoint: response[:provider_endpoint]
-            },
-            latency_ms: response[:latency_ms] || 0,
-            prompt: prompt,
-            content_size: prompt.bytesize
-          )
-          next
-        end
-
+      result = runner.run do |response|
         parsed = parse_json(response[:content])
         normalized = normalize_parsed(parsed)
-        loggable_result = normalized.merge(
-          raw_response: response[:content],
-          input_tokens: response[:input_tokens],
-          output_tokens: response[:output_tokens],
-          extracted_fields: normalized.keys.map(&:to_s),
-          provider_request: response[:provider_request],
-          provider_response: response[:provider_response],
-          http_status: response[:http_status],
-          response_headers: response[:response_headers],
-          provider_endpoint: response[:provider_endpoint]
+        log_data = normalized.merge(
+          extracted_fields: normalized.keys.map(&:to_s)
         )
-
-        log = logger.record_result(
-          loggable_result,
-          latency_ms: response[:latency_ms] || 0,
-          prompt: prompt,
-          content_size: prompt.bytesize
-        )
-
-        return { success: true, content: normalized, provider: provider_name, model: response[:model], llm_api_log_id: log.id }
-      rescue StandardError => e
-        Rails.logger.warn("#{self.class} provider #{provider_name} failed: #{e.message}")
-        next
+        [ normalized, log_data, true ]
       end
 
-      { success: false, error: "All providers failed" }
+      return { success: false, error: result[:error] } unless result[:success]
+
+      {
+        success: true,
+        content: result[:parsed],
+        provider: result[:provider],
+        model: result[:model],
+        llm_api_log_id: result[:llm_api_log_id]
+      }
     end
 
     def provider_for(provider_name)
@@ -193,10 +155,10 @@ module InterviewPrep
     end
 
     def parse_json(text)
-      json_match = text.to_s.match(/\{.*\}/m)
-      raise "No JSON found" unless json_match
+      parsed = Ai::ResponseParserService.new(text).parse
+      raise "No JSON found" unless parsed
 
-      JSON.parse(json_match[0])
+      parsed
     end
 
     # Subclasses can override to enforce schema/shape.

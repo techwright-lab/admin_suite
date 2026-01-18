@@ -8,6 +8,9 @@ module Billing
     PROVIDERS = %w[lemonsqueezy].freeze
 
     belongs_to :user
+    has_many :orders, class_name: "Billing::Order", foreign_key: :billing_customer_id, dependent: :nullify
+
+    store_accessor :urls, :customer_portal_url, :latest_receipt_url
 
     validates :uuid, presence: true, uniqueness: true
     validates :provider, presence: true, inclusion: { in: PROVIDERS }

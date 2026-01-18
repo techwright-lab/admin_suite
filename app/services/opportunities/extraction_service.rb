@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
 module Opportunities
-  # Service for AI-powered extraction of job opportunity details from recruiter emails
-  #
-  # Uses configured LLM providers to extract structured data like company name,
-  # job role, links, and key details from unstructured email content.
-  # Logs all LLM calls to Ai::LlmApiLog for observability.
-  #
-  # @example
-  #   service = Opportunities::ExtractionService.new(opportunity)
-  #   result = service.extract
-  #   if result[:success]
-  #     # Update opportunity with extracted data
-  #   end
-  #
-  class ExtractionService
+# Service for AI-powered extraction of job opportunity details from recruiter emails
+#
+# Uses configured LLM providers to extract structured data like company name,
+# job role, links, and key details from unstructured email content.
+# Logs all LLM calls to Ai::LlmApiLog for observability.
+#
+# @example
+#   service = Opportunities::ExtractionService.new(opportunity)
+#   result = service.extract
+#   if result[:success]
+#     # Update opportunity with extracted data
+#   end
+#
+class ExtractionService < ApplicationService
     attr_reader :opportunity
 
     # Initialize the service
@@ -43,10 +43,15 @@ module Opportunities
       else
         { success: false, error: result[:error] || "Extraction failed" }
       end
-    rescue StandardError => e
-      notify_extraction_error(e)
-      { success: false, error: e.message }
-    end
+  rescue StandardError => e
+    notify_error(
+      e,
+      context: "opportunity_extraction",
+      user: opportunity&.user,
+      opportunity_id: opportunity&.id
+    )
+    { success: false, error: e.message }
+  end
 
     private
 
@@ -74,16 +79,15 @@ module Opportunities
     def build_prompt
       subject = synced_email.subject || "(No subject)"
       body = synced_email.body_preview || synced_email.snippet || ""
+      vars = {
+        subject: subject,
+        body: body.truncate(4000)
+      }
 
-      prompt_template = Ai::EmailExtractionPrompt.active_prompt
-
-      if prompt_template
-        prompt_template.build_prompt(subject: subject, body: body.truncate(4000))
-      else
-        Ai::EmailExtractionPrompt.default_prompt_template
-          .gsub("{{subject}}", subject)
-          .gsub("{{body}}", body.truncate(4000))
-      end
+      Ai::PromptBuilderService.new(
+        prompt_class: Ai::EmailExtractionPrompt,
+        variables: vars
+      ).run
     end
 
     # Extracts data using LLM providers
@@ -94,96 +98,48 @@ module Opportunities
       prompt_template = Ai::EmailExtractionPrompt.active_prompt
       system_message = prompt_template&.system_prompt.presence || Ai::EmailExtractionPrompt.default_system_prompt
 
-      provider_chain.each do |provider_name|
-        provider = get_provider_instance(provider_name)
-        next unless provider&.available?
-
-        begin
-          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          result = provider.run(prompt, max_tokens: 2000, temperature: 0.1, system_message: system_message)
-          latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round
-
-          if result[:error]
-            Rails.logger.warn("Provider #{provider_name} returned error: #{result[:error]}")
-            log_extraction_result(provider_name, result[:model], result, nil, latency_ms, prompt)
-            next
-          end
-
-          parsed = parse_response(result[:content])
-
-          # Log the extraction result
-          log_extraction_result(
-            provider_name,
-            result[:model],
-            result,
-            parsed,
-            latency_ms,
-            prompt
+    runner = Ai::ProviderRunnerService.new(
+        provider_chain: provider_chain,
+        prompt: prompt,
+        content_size: (synced_email.body_preview || synced_email.snippet || "").bytesize,
+        system_message: system_message,
+        provider_for: method(:get_provider_instance),
+        run_options: { max_tokens: 2000, temperature: 0.1 },
+        logger_builder: lambda { |provider_name, provider|
+          Ai::ApiLoggerService.new(
+            operation_type: :email_extraction,
+            loggable: opportunity,
+            provider: provider_name,
+            model: provider.respond_to?(:model_name) ? provider.model_name : "unknown",
+            llm_prompt: prompt_template
           )
+      },
+      operation: :email_extraction,
+      loggable: opportunity,
+      user: opportunity&.user,
+      error_context: {
+        severity: "warning",
+        opportunity_id: opportunity&.id
+      }
+      )
 
-          if parsed[:confidence_score] && parsed[:confidence_score] >= 0.5
-            return { success: true, data: parsed, provider: provider_name }
-          end
-        rescue StandardError => e
-          Rails.logger.warn("Provider #{provider_name} failed: #{e.message}")
-          notify_extraction_error(e, provider_name)
-          next
-        end
+      result = runner.run do |response|
+        parsed = parse_response(response[:content])
+        log_data = {
+          confidence: parsed&.dig(:confidence_score),
+          company_name: parsed&.dig(:company_name),
+          job_role_title: parsed&.dig(:job_role_title),
+          job_url: parsed&.dig(:job_url)
+        }.compact
+
+        confidence = parsed[:confidence_score].to_f
+        accept = confidence >= 0.5
+        [ parsed, log_data, accept ]
       end
+
+      return { success: true, data: result[:parsed], provider: result[:provider] } if result[:success]
 
       { success: false, error: "All providers failed or returned low confidence" }
-    end
-
-    # Logs the extraction result to Ai::LlmApiLog
-    #
-    # @param provider_name [String] Provider name
-    # @param model [String] Model identifier
-    # @param result [Hash] Raw LLM result
-    # @param parsed [Hash, nil] Parsed response data
-    # @param latency_ms [Integer] Latency in milliseconds
-    # @param prompt [String] The prompt used
-    def log_extraction_result(provider_name, model, result, parsed, latency_ms, prompt)
-      prompt_template = Ai::EmailExtractionPrompt.active_prompt
-
-      logger = Ai::ApiLoggerService.new(
-        operation_type: :email_extraction,
-        loggable: opportunity,
-        provider: provider_name,
-        model: model || "unknown",
-        llm_prompt: prompt_template
-      )
-
-      log_data = {
-        confidence: parsed&.dig(:confidence_score),
-        input_tokens: result[:input_tokens],
-        output_tokens: result[:output_tokens],
-        error: result[:error],
-        rate_limit: result[:rate_limit],
-        provider_request: result[:provider_request],
-        provider_response: result[:provider_response],
-        provider_error_response: result[:provider_error_response],
-        http_status: result[:http_status],
-        response_headers: result[:response_headers],
-        provider_endpoint: result[:provider_endpoint]
-      }
-
-      # Add parsed fields for successful extractions
-      if parsed.present?
-        log_data.merge!(
-          company_name: parsed[:company_name],
-          job_role_title: parsed[:job_role_title],
-          job_url: parsed[:job_url]
-        )
-      end
-
-      logger.record_result(
-        log_data,
-        latency_ms: latency_ms,
-        prompt: prompt,
-        content_size: (synced_email.body_preview || synced_email.snippet || "").bytesize
-      )
-    rescue => e
-      Rails.logger.warn("Failed to log email extraction result: #{e.message}")
     end
 
     # Returns the provider chain
@@ -271,21 +227,5 @@ module Opportunities
 
       opportunity.update!(updates)
     end
-
-    # Notifies of extraction errors via ExceptionNotifier
-    #
-    # @param exception [Exception] The exception
-    # @param provider_name [String, nil] Provider name if applicable
-    def notify_extraction_error(exception, provider_name = nil)
-      ExceptionNotifier.notify(exception, {
-        context: "ai_email_extraction",
-        severity: "error",
-        ai_context: {
-          operation: "email_extraction",
-          provider_name: provider_name,
-          opportunity_id: opportunity&.id
-        }
-      })
-    end
-  end
+end
 end

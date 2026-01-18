@@ -32,5 +32,12 @@ class GenerateInterviewPrepPackJob < ApplicationJob
     InterviewPrep::GenerateFocusAreasService.new(user: user, interview_application: interview_application).call
     InterviewPrep::GenerateQuestionFramingService.new(user: user, interview_application: interview_application).call
     InterviewPrep::GenerateStrengthPositioningService.new(user: user, interview_application: interview_application).call
+  rescue StandardError => e
+    handle_error(e,
+      context: "interview_prep_generation",
+      user: user,
+      interview_application_id: interview_application&.id,
+      reraise: false # Don't retry - each service handles its own failures
+    )
   end
 end

@@ -13,7 +13,7 @@ module Signals
   #     # Action completed successfully
   #   end
   #
-  class ActionExecutor
+  class ActionExecutor < ApplicationService
     attr_reader :synced_email, :user, :action_type, :params
 
     # Valid backend action types that require user decision
@@ -51,13 +51,13 @@ module Signals
       handler.execute
     rescue StandardError => e
       Rails.logger.error("Signal action execution failed: #{e.class} - #{e.message}")
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "signal_action",
-        severity: "error",
+        user: user,
         action_type: action_type,
-        synced_email_id: synced_email&.id,
-        user_id: user&.id
-      })
+        synced_email_id: synced_email&.id
+      )
       { success: false, error: e.message }
     end
 

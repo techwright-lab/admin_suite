@@ -64,8 +64,31 @@ module Admin
           field :metadata, type: :json, help: "Free-form plan metadata (e.g. marketing copy variants)."
         end
       end
+
+      show do
+        sidebar do
+          panel :details, title: "Details", fields: [ :key, :name, :description, :plan_type, :interval, :currency, :amount_cents, :sort_order, :highlighted ]
+          panel :timestamps, title: "Timestamps", fields: [ :created_at, :updated_at ]
+        end
+
+        main do
+          panel :provider_mappings, title: "Provider Mappings",
+                association: :provider_mappings,
+                display: :table,
+                columns: [ :provider, :product_id, :variant_id ],
+                link_to: :internal_developer_ops_billing_provider_mapping_path
+          panel :features, title: "Features",
+                association: :features, display: :table,
+                columns: [ :key, :name, :description, :kind, :unit ],
+                link_to: :internal_developer_ops_billing_feature_path
+          panel :entitlements, title: "Entitlements",
+                association: :plan_entitlements,
+                display: :table,
+                columns: [ :feature, :enabled, :limit ],
+                link_to: :internal_developer_ops_billing_plan_entitlement_path
+          panel :metadata, title: "Metadata", fields: [ :metadata ]
+        end
+      end
     end
   end
 end
-
-

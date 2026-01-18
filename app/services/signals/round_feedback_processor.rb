@@ -13,7 +13,7 @@ module Signals
   #     # Round result updated and feedback created
   #   end
   #
-  class RoundFeedbackProcessor
+  class RoundFeedbackProcessor < ApplicationService
     attr_reader :synced_email, :application
 
     # Email types that this processor handles
@@ -71,7 +71,15 @@ module Signals
         end
       end
     rescue StandardError => e
-      notify_error(e)
+      notify_error(
+        e,
+        context: "round_feedback_processor",
+        user: synced_email&.user,
+        synced_email_id: synced_email&.id,
+        application_id: application&.id,
+        email_type: synced_email&.email_type,
+        company: application&.company&.name
+      )
       Rails.logger.error("[RoundFeedbackProcessor] Error processing email ##{synced_email&.id}: #{e.message}")
       { success: false, error: e.message }
     end
@@ -111,95 +119,40 @@ module Signals
       prompt_template = Ai::RoundFeedbackExtractionPrompt.active_prompt
       system_message = prompt_template&.system_prompt.presence || Ai::RoundFeedbackExtractionPrompt.default_system_prompt
 
-      provider_chain.each do |provider_name|
-        provider = get_provider_instance(provider_name)
-        next unless provider&.available?
-
-        Rails.logger.info("[RoundFeedbackProcessor] Trying provider: #{provider_name}")
-        start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-
-        begin
-          result = provider.run(prompt, max_tokens: 1500, temperature: 0.1, system_message: system_message)
-          latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round
-
-          # Log the API call
-          parsed = result[:error] ? nil : parse_response(result[:content])
-          log = log_extraction_result(provider_name, result[:model], result, parsed, latency_ms, prompt)
-
-          if result[:error]
-            Rails.logger.warn("[RoundFeedbackProcessor] Provider #{provider_name} error: #{result[:error]}")
-            next
-          end
-
-          if result[:rate_limit]
-            Rails.logger.warn("[RoundFeedbackProcessor] Provider #{provider_name} rate limited")
-            next
-          end
-
-          if parsed && (parsed[:confidence_score].nil? || parsed[:confidence_score] >= MIN_CONFIDENCE_SCORE)
-            Rails.logger.info("[RoundFeedbackProcessor] Successfully extracted with #{provider_name} (confidence: #{parsed[:confidence_score]}, result: #{parsed[:result]})")
-            return {
-              success: true,
-              data: parsed,
-              provider: provider_name,
-              llm_api_log_id: log&.id,
-              latency_ms: latency_ms
-            }
-          else
-            Rails.logger.warn("[RoundFeedbackProcessor] Low confidence (#{parsed&.dig(:confidence_score)}) from #{provider_name}")
-          end
-        rescue StandardError => e
-          latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round
-          Rails.logger.warn("[RoundFeedbackProcessor] Provider #{provider_name} failed (#{latency_ms}ms): #{e.message}")
-          notify_provider_error(e, provider_name, latency_ms)
-          next
-        end
-      end
-
-      { success: false, error: "Failed to extract feedback data from email" }
-    end
-
-    # Logs the extraction result to Ai::LlmApiLog
-    #
-    # @param provider_name [String] Provider name
-    # @param model [String] Model identifier
-    # @param result [Hash] Raw LLM result
-    # @param parsed [Hash, nil] Parsed response data
-    # @param latency_ms [Integer] Latency in milliseconds
-    # @param prompt [String] The prompt used
-    # @return [Ai::LlmApiLog, nil]
-    def log_extraction_result(provider_name, model, result, parsed, latency_ms, prompt)
-      prompt_template = Ai::RoundFeedbackExtractionPrompt.active_prompt
-
-      logger = Ai::ApiLoggerService.new(
-        operation_type: OPERATION_TYPE,
+      runner = Ai::ProviderRunnerService.new(
+        provider_chain: provider_chain,
+        prompt: prompt,
+        content_size: extract_body_content.bytesize,
+        system_message: system_message,
+        provider_for: method(:get_provider_instance),
+        run_options: { max_tokens: 1500, temperature: 0.1 },
+        logger_builder: lambda { |provider_name, provider|
+          Ai::ApiLoggerService.new(
+            operation_type: OPERATION_TYPE,
+            loggable: synced_email,
+            provider: provider_name,
+            model: provider.respond_to?(:model_name) ? provider.model_name : "unknown",
+            llm_prompt: prompt_template
+          )
+        },
+        operation: OPERATION_TYPE,
         loggable: synced_email,
-        provider: provider_name,
-        model: model || "unknown",
-        llm_prompt: prompt_template
+        user: synced_email&.user,
+        error_context: {
+          severity: "warning",
+          synced_email_id: synced_email&.id,
+          application_id: application&.id
+        }
       )
 
-      log_data = {
-        confidence: parsed&.dig(:confidence_score),
-        input_tokens: result[:input_tokens],
-        output_tokens: result[:output_tokens],
-        error: result[:error],
-        rate_limit: result[:rate_limit],
-        provider_request: result[:provider_request],
-        provider_response: result[:provider_response],
-        provider_error_response: result[:provider_error_response],
-        http_status: result[:http_status],
-        response_headers: result[:response_headers],
-        provider_endpoint: result[:provider_endpoint]
-      }
-
-      # Add parsed fields for successful extractions
-      if parsed.present?
+      result = runner.run do |response|
+        parsed = parse_response(response[:content])
         round_context = parsed[:round_context] || {}
         feedback = parsed[:feedback] || {}
         next_steps = parsed[:next_steps] || {}
 
-        log_data.merge!(
+        log_data = {
+          confidence: parsed&.dig(:confidence_score),
           result: parsed[:result],
           sentiment: parsed[:sentiment],
           stage_mentioned: round_context[:stage_mentioned],
@@ -207,18 +160,26 @@ module Signals
           has_detailed_feedback: feedback[:has_detailed_feedback],
           has_next_round: next_steps[:has_next_round],
           extracted_fields: extract_field_names(parsed)
-        )
+        }.compact
+
+        confidence_score = parsed[:confidence_score]
+        if confidence_score && confidence_score < MIN_CONFIDENCE_SCORE
+          Rails.logger.warn("[RoundFeedbackProcessor] Low confidence (#{confidence_score}) from provider")
+        end
+        accept = confidence_score.nil? || confidence_score >= MIN_CONFIDENCE_SCORE
+        [ parsed, log_data, accept ]
       end
 
-      logger.record_result(
-        log_data,
-        latency_ms: latency_ms,
-        prompt: prompt,
-        content_size: extract_body_content.bytesize
-      )
-    rescue StandardError => e
-      Rails.logger.warn("[RoundFeedbackProcessor] Failed to log extraction result: #{e.message}")
-      nil
+      return { success: false, error: "Failed to extract feedback data from email" } unless result[:success]
+
+      Rails.logger.info("[RoundFeedbackProcessor] Successfully extracted with #{result[:provider]} (confidence: #{result[:parsed]&.dig(:confidence_score)}, result: #{result[:parsed]&.dig(:result)})")
+      {
+        success: true,
+        data: result[:parsed],
+        provider: result[:provider],
+        llm_api_log_id: result[:llm_api_log_id],
+        latency_ms: result[:latency_ms]
+      }
     end
 
     # Extracts field names that were populated
@@ -253,26 +214,19 @@ module Signals
       from_name = synced_email.from_name || ""
       company_name = application.company&.name || synced_email.signal_company_name || ""
       recent_rounds = build_recent_rounds_context
+      vars = {
+        subject: subject,
+        body: body.truncate(5000),
+        from_email: from_email,
+        from_name: from_name,
+        company_name: company_name,
+        recent_rounds: recent_rounds
+      }
 
-      prompt_template = Ai::RoundFeedbackExtractionPrompt.active_prompt
-      if prompt_template
-        prompt_template.build_prompt(
-          subject: subject,
-          body: body.truncate(5000),
-          from_email: from_email,
-          from_name: from_name,
-          company_name: company_name,
-          recent_rounds: recent_rounds
-        )
-      else
-        Ai::RoundFeedbackExtractionPrompt.default_prompt_template
-          .gsub("{{subject}}", subject)
-          .gsub("{{body}}", body.truncate(5000))
-          .gsub("{{from_email}}", from_email)
-          .gsub("{{from_name}}", from_name)
-          .gsub("{{company_name}}", company_name)
-          .gsub("{{recent_rounds}}", recent_rounds)
-      end
+      Ai::PromptBuilderService.new(
+        prompt_class: Ai::RoundFeedbackExtractionPrompt,
+        variables: vars
+      ).run
     end
 
     # Builds context about recent interview rounds
@@ -313,12 +267,10 @@ module Signals
     # @param content [String] Raw LLM response
     # @return [Hash, nil]
     def parse_response(content)
-      return nil if content.blank?
+      parsed = Ai::ResponseParserService.new(content).parse(symbolize: true)
+      return parsed if parsed
 
-      cleaned = content.gsub(/```json\n?/, "").gsub(/```\n?/, "").strip
-      JSON.parse(cleaned, symbolize_names: true)
-    rescue JSON::ParserError => e
-      Rails.logger.warn("[RoundFeedbackProcessor] Failed to parse JSON: #{e.message}")
+      Rails.logger.warn("[RoundFeedbackProcessor] Failed to parse JSON")
       nil
     end
 
@@ -509,37 +461,6 @@ module Signals
       when "ollama" then LlmProviders::OllamaProvider.new
       else nil
       end
-    end
-
-    # Notifies of processing errors
-    #
-    # @param exception [Exception]
-    def notify_error(exception)
-      ExceptionNotifier.notify(exception, {
-        context: "round_feedback_processor",
-        severity: "error",
-        synced_email_id: synced_email&.id,
-        application_id: application&.id,
-        email_type: synced_email&.email_type,
-        company: application&.company&.name,
-        user: { id: synced_email&.user_id, email: synced_email&.user&.email_address }
-      })
-    end
-
-    # Notifies of AI provider errors with rich context
-    #
-    # @param exception [Exception]
-    # @param provider_name [String]
-    # @param latency_ms [Integer, nil] Processing time if available
-    def notify_provider_error(exception, provider_name, latency_ms = nil)
-      ExceptionNotifier.notify_ai_error(exception, {
-        operation: "round_feedback_extraction",
-        severity: "warning",
-        provider_name: provider_name,
-        analyzable_type: "SyncedEmail",
-        analyzable_id: synced_email&.id,
-        processing_time_ms: latency_ms
-      })
     end
   end
 end

@@ -94,7 +94,8 @@ class ExceptionNotifier
 
         # Set user context
         if defined?(Current) && Current.respond_to?(:user) && Current.user.present?
-          scope.set_user(email: Current.user.email, id: Current.user.id)
+          current_email = Current.user.try(:email_address) || Current.user.try(:email)
+          scope.set_user(email: current_email, id: Current.user.id)
         elsif options[:user].present?
           scope.set_user(email: options[:user][:email], id: options[:user][:id])
         end

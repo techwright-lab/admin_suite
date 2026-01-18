@@ -3,7 +3,7 @@
 # Controller for managing interview rounds within an application
 class InterviewRoundsController < ApplicationController
   before_action :set_application
-  before_action :set_round, only: [:show, :edit, :update, :destroy]
+  before_action :set_round, only: [ :show, :edit, :update, :destroy ]
 
   # GET /interview_applications/:interview_application_id/interview_rounds
   def index
@@ -87,7 +87,8 @@ class InterviewRoundsController < ApplicationController
       :interviewer_role,
       :notes,
       :result,
-      :position
+      :position,
+      :interview_round_type_id
     ])
   end
 
@@ -112,4 +113,3 @@ class InterviewRoundsController < ApplicationController
     ).run
   end
 end
-

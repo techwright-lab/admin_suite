@@ -10,6 +10,9 @@ module LlmProviders
   # - Images: JPEG, PNG, GIF, WebP
   # - Documents: PDF, DOCX (via file input)
   class OpenaiProvider < BaseProvider
+    # Request timeout in seconds for API calls
+    REQUEST_TIMEOUT = 120
+
     # Supported image MIME types
     SUPPORTED_IMAGE_TYPES = %w[
       image/jpeg
@@ -79,10 +82,14 @@ module LlmProviders
       if  Setting.helicone_enabled?
         client = OpenAI::Client.new(
           access_token: Rails.application.credentials.dig(:helicone, :api_key),
-          base_url: Rails.application.credentials.dig(:helicone, :base_url)
+          uri_base: Rails.application.credentials.dig(:helicone, :base_url),
+          request_timeout: REQUEST_TIMEOUT
         )
       else
-        client = OpenAI::Client.new(access_token: api_key)
+        client = OpenAI::Client.new(
+          access_token: api_key,
+          request_timeout: REQUEST_TIMEOUT
+        )
       end
 
       response = client.responses.create(parameters: @last_provider_request)

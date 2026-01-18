@@ -6,7 +6,7 @@
 #   service = Gmail::SyncService.new(connected_account)
 #   result = service.run
 #
-class Gmail::SyncService
+class Gmail::SyncService < ApplicationService
   # Keywords that indicate an email might be interview-related
   INTERVIEW_KEYWORDS = [
     "interview",
@@ -168,24 +168,26 @@ class Gmail::SyncService
       { success: false, error: e.message, needs_reauth: true }
     rescue Google::Apis::Error => e
       Rails.logger.error "Gmail API error: #{e.message}"
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "gmail_sync",
         severity: "error",
+        user: user,
         operation: "gmail_api",
-        connected_account_id: connected_account.id,
-        user: { id: user&.id, email: user&.email_address }
-      })
+        connected_account_id: connected_account.id
+      )
       { success: false, error: "Gmail API error: #{e.message}" }
     rescue StandardError => e
       Rails.logger.error "Gmail sync error: #{e.class} - #{e.message}"
       Rails.logger.error e.backtrace.first(10).join("\n")
-      ExceptionNotifier.notify(e, {
+      notify_error(
+        e,
         context: "gmail_sync",
         severity: "error",
+        user: user,
         operation: "sync_run",
-        connected_account_id: connected_account.id,
-        user: { id: user&.id, email: user&.email_address }
-      })
+        connected_account_id: connected_account.id
+      )
       { success: false, error: "Sync failed: #{e.message}" }
     end
   end
@@ -381,12 +383,13 @@ class Gmail::SyncService
     }
   rescue StandardError => e
     Rails.logger.error "Failed to parse email #{message.id}: #{e.class} - #{e.message}"
-    ExceptionNotifier.notify(e, {
+    notify_error(
+      e,
       context: "gmail_sync",
       severity: "warning",
-      gmail_message_id: message.id,
-      user: { id: user&.id, email: user&.email_address }
-    })
+      user: user,
+      gmail_message_id: message.id
+    )
     nil
   end
 
@@ -480,13 +483,14 @@ class Gmail::SyncService
     nil
   rescue StandardError => e
     Rails.logger.error "Failed to extract body part (#{mime_type}): #{e.class} - #{e.message}"
-    ExceptionNotifier.notify(e, {
+    notify_error(
+      e,
       context: "gmail_sync",
       severity: "warning",
+      user: user,
       operation: "extract_body_part",
-      mime_type: mime_type,
-      user: { id: user&.id, email: user&.email_address }
-    })
+      mime_type: mime_type
+    )
     nil
   end
 
@@ -667,13 +671,14 @@ class Gmail::SyncService
     opportunity
   rescue StandardError => e
     Rails.logger.error "Failed to create opportunity from email #{synced_email.id}: #{e.class} - #{e.message}"
-    ExceptionNotifier.notify(e, {
+    notify_error(
+      e,
       context: "gmail_sync",
       severity: "error",
+      user: user,
       operation: "create_opportunity",
-      synced_email_id: synced_email.id,
-      user: { id: user&.id, email: user&.email_address }
-    })
+      synced_email_id: synced_email.id
+    )
     nil
   end
 end

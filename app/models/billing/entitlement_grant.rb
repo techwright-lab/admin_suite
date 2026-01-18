@@ -8,9 +8,10 @@ module Billing
   class EntitlementGrant < ApplicationRecord
     self.table_name = "billing_entitlement_grants"
 
-    SOURCES = %w[trial admin promo].freeze
+    SOURCES = %w[trial admin promo purchase].freeze
 
     belongs_to :user
+    belongs_to :plan, class_name: "Billing::Plan", foreign_key: :billing_plan_id, optional: true
 
     validates :uuid, presence: true, uniqueness: true
     validates :source, presence: true, inclusion: { in: SOURCES }

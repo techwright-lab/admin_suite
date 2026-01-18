@@ -1,0 +1,146 @@
+<%# Round Prep Show Page %>
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <%# Back link %>
+  <div class="mb-6">
+    <%= link_to interview_application_path(@application, anchor: "rounds"),
+        class: "inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Back to Application
+    <% end %>
+  </div>
+
+  <%# Page Title %>
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Interview Prep</h1>
+    <p class="text-gray-500 dark:text-gray-400">
+      <%= @round.stage_display_name %> at <%= @application.display_company&.name || 'Company' %>
+    </p>
+  </div>
+
+  <%# Flash messages container for Turbo Stream updates %>
+  <div id="flash">
+    <% if flash[:notice].present? %>
+      <div class="rounded-md bg-green-50 dark:bg-green-900/20 p-4 mb-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-green-800 dark:text-green-200"><%= flash[:notice] %></p>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    <% if flash[:alert].present? %>
+      <div class="rounded-md bg-red-50 dark:bg-red-900/20 p-4 mb-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-red-800 dark:text-red-200"><%= flash[:alert] %></p>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <%# Round Info Card %>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+    <div class="flex items-start justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <%= @round.stage_display_name %>
+        </h2>
+        <% if @round.interview_round_type.present? %>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <%= @round.interview_round_type.name %>
+          </p>
+        <% end %>
+        <% if @round.scheduled_at.present? %>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            <svg class="w-4 h-4 inline-block mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <%= @round.scheduled_at.strftime("%B %d, %Y at %I:%M %p") %>
+          </p>
+        <% end %>
+      </div>
+
+      <%# Generate/Regenerate Button %>
+      <% if @entitlements.allowed?(:round_prep_access) %>
+        <% remaining = @entitlements.remaining(:round_prep_generations) %>
+        <% can_generate = remaining.nil? || remaining > 0 %>
+
+        <% if can_generate %>
+          <%= button_to @prep&.has_content? ? "Regenerate" : "Generate Prep",
+              generate_interview_application_interview_round_prep_path(@application, @round),
+              method: :post,
+              class: "inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500",
+              data: { turbo_confirm: @prep&.has_content? ? "This will regenerate the prep content. Continue?" : nil } %>
+        <% else %>
+          <span class="text-sm text-gray-500 dark:text-gray-400">
+            Monthly quota reached
+          </span>
+        <% end %>
+      <% else %>
+        <%= link_to billing_portal_path, class: "inline-flex items-center gap-2 px-4 py-2 border border-primary-300 dark:border-primary-700 text-sm font-medium rounded-md text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          Upgrade for Prep
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Quota info %>
+    <% if @entitlements.allowed?(:round_prep_access) %>
+      <% remaining = @entitlements.remaining(:round_prep_generations) %>
+      <% if remaining.present? %>
+        <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          <%= remaining %> prep generation<%= remaining == 1 ? '' : 's' %> remaining this month
+        </p>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# Prep Content %>
+  <% if @prep&.generating? %>
+    <%# Show generating state with auto-refresh %>
+    <div id="round_prep_content" 
+         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+         data-controller="auto-refresh"
+         data-auto-refresh-url-value="<%= status_interview_application_interview_round_prep_path(@application, @round, format: :turbo_stream) %>"
+         data-auto-refresh-interval-value="3000">
+      <div class="text-center py-12">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-4">
+          <svg class="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          Generating Your Interview Prep
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+          We're analyzing the round type, your history, and company patterns to create personalized preparation tips.
+        </p>
+        <div class="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400 dark:text-gray-500">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Usually takes 10-30 seconds
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div id="round_prep_content" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <%= render "interview_rounds/round_prep" %>
+    </div>
+  <% end %>
+</div>

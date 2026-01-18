@@ -80,23 +80,25 @@ module Scraping
           stop_failure
         rescue AiExtractionTimeoutError => e
           Rails.logger.error("AI extraction timed out after #{AI_EXTRACTION_TIMEOUT_SECONDS}s for job_listing=#{context.job_listing.id}")
-          ExceptionNotifier.notify(e, {
+          notify_error(
+            e,
             context: "ai_extraction_timeout",
             severity: "warning",
             url: context.job_listing.url,
             job_listing_id: context.job_listing.id,
             timeout_seconds: AI_EXTRACTION_TIMEOUT_SECONDS
-          })
+          )
           Support::AttemptLifecycle.fail!(context, failed_step: "ai_extraction", error_message: "AI extraction timed out after #{AI_EXTRACTION_TIMEOUT_SECONDS} seconds")
           stop_failure
         rescue => e
           Support::AttemptLifecycle.log_error(context, "AI extraction failed", e)
-          ExceptionNotifier.notify(e, {
+          notify_error(
+            e,
             context: "ai_extraction",
             severity: "error",
             url: context.job_listing.url,
             job_listing_id: context.job_listing.id
-          })
+          )
           Support::AttemptLifecycle.fail!(context, failed_step: "ai_extraction", error_message: e.message)
           stop_failure
         end

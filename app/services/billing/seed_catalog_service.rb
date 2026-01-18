@@ -76,6 +76,10 @@ module Billing
         { key: "interview_prepare_access", name: "Interview prepare access", kind: "boolean", description: "Access to the Prepare tab coaching experience", unit: nil },
         { key: "interview_prepare_refreshes", name: "Interview prepare refresh quota", kind: "quota", description: "Prep pack refresh quota", unit: "refreshes" },
 
+        # Round-specific interview prep (per-round coaching)
+        { key: "round_prep_access", name: "Round prep access", kind: "boolean", description: "Access to round-specific interview prep", unit: nil },
+        { key: "round_prep_generations", name: "Round prep generation quota", kind: "quota", description: "Round-specific prep generation quota", unit: "generations" },
+
         # Internal feature used by the 72-hour trial grant.
         { key: "pro_trial_access", name: "Pro trial access", kind: "boolean", description: "Unlocked during earned Pro trial window", unit: nil }
       ]
@@ -121,7 +125,8 @@ module Billing
               "Unlimited interviews & feedback entries",
               "Full career signal extraction",
               "Experience-backed insights over time",
-              "Assistant access (fair use)"
+              "Assistant access (fair use)",
+              "Interview preparation access"
             ]
           }
         },
@@ -142,7 +147,8 @@ module Billing
               "Higher AI limits",
               "Deeper CV ↔ interview cross-analysis",
               "Faster insight refresh",
-              "Priority background processing"
+              "Priority background processing",
+              "Interview preparation access"
             ]
           }
         },
@@ -180,6 +186,8 @@ module Billing
         { plan_key: "free", feature_key: "insight_export", enabled: false },
         { plan_key: "free", feature_key: "interview_prepare_access", enabled: false },
         { plan_key: "free", feature_key: "interview_prepare_refreshes", enabled: true, limit: 0 },
+        { plan_key: "free", feature_key: "round_prep_access", enabled: false },
+        { plan_key: "free", feature_key: "round_prep_generations", enabled: true, limit: 0 },
 
         # Pro
         { plan_key: "pro_monthly", feature_key: "cv_parsing_basic", enabled: true },
@@ -197,6 +205,8 @@ module Billing
         { plan_key: "pro_monthly", feature_key: "insight_export", enabled: true },
         { plan_key: "pro_monthly", feature_key: "interview_prepare_access", enabled: true },
         { plan_key: "pro_monthly", feature_key: "interview_prepare_refreshes", enabled: true, limit: 10 },
+        { plan_key: "pro_monthly", feature_key: "round_prep_access", enabled: true },
+        { plan_key: "pro_monthly", feature_key: "round_prep_generations", enabled: true, limit: 20 },
 
         # Sprint
         { plan_key: "sprint_one_time", feature_key: "cv_parsing_basic", enabled: true },
@@ -213,7 +223,9 @@ module Billing
         { plan_key: "sprint_one_time", feature_key: "background_processing_priority", enabled: true },
         { plan_key: "sprint_one_time", feature_key: "insight_export", enabled: true },
         { plan_key: "sprint_one_time", feature_key: "interview_prepare_access", enabled: true },
-        { plan_key: "sprint_one_time", feature_key: "interview_prepare_refreshes", enabled: true, limit: 50 }
+        { plan_key: "sprint_one_time", feature_key: "interview_prepare_refreshes", enabled: true, limit: 50 },
+        { plan_key: "sprint_one_time", feature_key: "round_prep_access", enabled: true },
+        { plan_key: "sprint_one_time", feature_key: "round_prep_generations", enabled: true, limit: 100 }
       ]
     end
   end

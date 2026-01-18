@@ -29,9 +29,29 @@ module Billing
       @at = at
     end
 
+    # Returns the subscription-based plan (does not consider one-time purchases).
+    #
+    # @return [Billing::Plan, nil]
+    def subscription_plan
+      active_subscription&.plan || Billing::Plan.find_by(key: "free")
+    end
+
+    # Returns the effective plan, considering both subscriptions and one-time purchase grants.
+    # One-time purchases (like Sprint) take precedence over subscriptions while active.
+    #
+    # @return [Billing::Plan, nil]
+    def effective_plan
+      @effective_plan ||= begin
+        purchase_plan = active_purchase_grant&.plan
+        purchase_plan || subscription_plan
+      end
+    end
+
+    # Alias for backward compatibility.
+    #
     # @return [Billing::Plan, nil]
     def plan
-      active_subscription&.plan || Billing::Plan.find_by(key: "free")
+      effective_plan
     end
 
     # @param feature_key [String, Symbol]
@@ -63,6 +83,52 @@ module Billing
     # @return [Billing::Subscription, nil]
     def active_subscription
       @active_subscription ||= Billing::Subscription.where(user: user).active.order(updated_at: :desc).detect { |s| s.active_at?(at: at) }
+    end
+
+    # Returns the active one-time purchase grant if present (e.g., Sprint).
+    # Purchase grants have source="purchase" and reason starting with "one_time_purchase:".
+    #
+    # @return [Billing::EntitlementGrant, nil]
+    def active_purchase_grant
+      @active_purchase_grant ||= Billing::EntitlementGrant
+        .where(user: user, source: "purchase")
+        .where("reason LIKE ?", "one_time_purchase:%")
+        .active_at(at)
+        .order(expires_at: :desc)
+        .first
+    end
+
+    # @return [Boolean]
+    def purchase_active?
+      active_purchase_grant.present?
+    end
+
+    # Returns when the one-time purchase expires.
+    #
+    # @return [Time, nil]
+    def purchase_expires_at
+      active_purchase_grant&.expires_at
+    end
+
+    # Returns the time remaining for the one-time purchase in words.
+    #
+    # @return [String, nil]
+    def purchase_time_remaining_in_words
+      return nil unless purchase_active?
+
+      seconds = [ (purchase_expires_at - Time.current).to_i, 0 ].max
+      days = seconds / 86400
+      hours = (seconds % 86400) / 3600
+
+      if days > 1
+        "#{days} days"
+      elsif days == 1
+        "1 day"
+      elsif hours > 0
+        "#{hours} hour#{'s' if hours != 1}"
+      else
+        "less than an hour"
+      end
     end
 
     # Returns the active insight-triggered trial grant if present.

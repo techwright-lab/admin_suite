@@ -14,7 +14,7 @@ module Signals
   #     # Email has been updated with extracted signals
   #   end
   #
-  class ExtractionService
+  class ExtractionService < ApplicationService
     attr_reader :synced_email
 
     # Minimum confidence score to accept extraction results
@@ -51,7 +51,13 @@ module Signals
         { success: false, error: result[:error] || "Extraction failed" }
       end
     rescue StandardError => e
-      notify_extraction_error(e)
+      notify_error(
+        e,
+        context: "signal_extraction_service",
+        user: synced_email&.user,
+        synced_email_id: synced_email&.id,
+        email_type: synced_email&.email_type
+      )
       synced_email.mark_extraction_failed!(e.message)
       { success: false, error: e.message }
     end
@@ -100,25 +106,18 @@ module Signals
       from_email = synced_email.from_email || ""
       from_name = synced_email.from_name || ""
       email_type = synced_email.email_type || "unknown"
+      vars = {
+        subject: subject,
+        body: body.truncate(6000),
+        from_email: from_email,
+        from_name: from_name,
+        email_type: email_type
+      }
 
-      prompt_template = Ai::SignalExtractionPrompt.active_prompt
-
-      if prompt_template
-        prompt_template.build_prompt(
-          subject: subject,
-          body: body.truncate(6000),
-          from_email: from_email,
-          from_name: from_name,
-          email_type: email_type
-        )
-      else
-        Ai::SignalExtractionPrompt.default_prompt_template
-          .gsub("{{subject}}", subject)
-          .gsub("{{body}}", body.truncate(6000))
-          .gsub("{{from_email}}", from_email)
-          .gsub("{{from_name}}", from_name)
-          .gsub("{{email_type}}", email_type)
-      end
+      Ai::PromptBuilderService.new(
+        prompt_class: Ai::SignalExtractionPrompt,
+        variables: vars
+      ).run
     end
 
     # Extracts the best available body content
@@ -143,97 +142,48 @@ module Signals
       prompt_template = Ai::SignalExtractionPrompt.active_prompt
       system_message = prompt_template&.system_prompt.presence || Ai::SignalExtractionPrompt.default_system_prompt
 
-      provider_chain.each do |provider_name|
-        provider = get_provider_instance(provider_name)
-        next unless provider&.available?
-
-        begin
-          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          result = provider.run(prompt, max_tokens: 2000, temperature: 0.1, system_message: system_message)
-          latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000).round
-
-          if result[:error]
-            Rails.logger.warn("Provider #{provider_name} returned error: #{result[:error]}")
-            log_extraction_result(provider_name, result[:model], result, nil, latency_ms, prompt)
-            next
-          end
-
-          parsed = parse_response(result[:content])
-
-          # Log the extraction result
-          log_extraction_result(
-            provider_name,
-            result[:model],
-            result,
-            parsed,
-            latency_ms,
-            prompt
-          )
-
-          if parsed[:confidence_score] && parsed[:confidence_score] >= MIN_CONFIDENCE_SCORE
-            return { success: true, data: parsed, provider: provider_name }
-          end
-        rescue StandardError => e
-          Rails.logger.warn("Provider #{provider_name} failed: #{e.message}")
-          notify_extraction_error(e, provider_name)
-          next
-        end
-      end
-
-      { success: false, error: "All providers failed or returned low confidence" }
-    end
-
-    # Logs the extraction result to Ai::LlmApiLog
-    #
-    # @param provider_name [String] Provider name
-    # @param model [String] Model identifier
-    # @param result [Hash] Raw LLM result
-    # @param parsed [Hash, nil] Parsed response data
-    # @param latency_ms [Integer] Latency in milliseconds
-    # @param prompt [String] The prompt used
-    def log_extraction_result(provider_name, model, result, parsed, latency_ms, prompt)
-      prompt_template = Ai::SignalExtractionPrompt.active_prompt
-
-      logger = Ai::ApiLoggerService.new(
-        operation_type: :signal_extraction,
-        loggable: synced_email,
-        provider: provider_name,
-        model: model || "unknown",
-        llm_prompt: prompt_template
-      )
-
-      log_data = {
-        confidence: parsed&.dig(:confidence_score),
-        input_tokens: result[:input_tokens],
-        output_tokens: result[:output_tokens],
-        error: result[:error],
-        rate_limit: result[:rate_limit],
-        provider_request: result[:provider_request],
-        provider_response: result[:provider_response],
-        provider_error_response: result[:provider_error_response],
-        http_status: result[:http_status],
-        response_headers: result[:response_headers],
-        provider_endpoint: result[:provider_endpoint]
-      }
-
-      # Add parsed fields for successful extractions
-      if parsed.present?
-        log_data.merge!(
-          company_name: parsed.dig(:company, :name),
-          recruiter_name: parsed.dig(:recruiter, :name),
-          job_title: parsed.dig(:job, :title),
-          suggested_actions: parsed[:suggested_actions]
-        )
-      end
-
-      logger.record_result(
-        log_data,
-        latency_ms: latency_ms,
+      runner = Ai::ProviderRunnerService.new(
+        provider_chain: provider_chain,
         prompt: prompt,
-        content_size: extract_body_content.bytesize
+        content_size: extract_body_content.bytesize,
+        system_message: system_message,
+        provider_for: method(:get_provider_instance),
+        run_options: { max_tokens: 2000, temperature: 0.1 },
+        logger_builder: lambda { |provider_name, provider|
+          Ai::ApiLoggerService.new(
+            operation_type: :signal_extraction,
+            loggable: synced_email,
+            provider: provider_name,
+            model: provider.respond_to?(:model_name) ? provider.model_name : "unknown",
+            llm_prompt: prompt_template
+          )
+        },
+        operation: :signal_extraction,
+        loggable: synced_email,
+        user: synced_email&.user,
+        error_context: {
+          severity: "warning",
+          synced_email_id: synced_email&.id,
+          email_type: synced_email&.email_type
+        }
       )
-    rescue => e
-      Rails.logger.warn("Failed to log signal extraction result: #{e.message}")
+
+      result = runner.run do |response|
+        parsed = parse_response(response[:content])
+        log_data = {
+          confidence: parsed&.dig(:confidence_score),
+          company_name: parsed&.dig(:company, :name),
+          recruiter_name: parsed&.dig(:recruiter, :name),
+          job_title: parsed&.dig(:job, :title),
+          suggested_actions: parsed&.dig(:suggested_actions)
+        }.compact
+        accept = parsed[:confidence_score] && parsed[:confidence_score] >= MIN_CONFIDENCE_SCORE
+        [ parsed, log_data, accept ]
+      end
+
+      return { success: true, data: result[:parsed], provider: result[:provider] } if result[:success]
+
+      { success: false, error: result[:error] || "All providers failed or returned low confidence" }
     end
 
     # Returns the provider chain
@@ -265,16 +215,8 @@ module Signals
     # @param response_text [String]
     # @return [Hash]
     def parse_response(response_text)
-      return { confidence_score: 0.0 } unless response_text.present?
-
-      # Try to extract JSON from the response
-      json_match = response_text.match(/\{.*\}/m)
-      return { confidence_score: 0.0 } unless json_match
-
-      data = JSON.parse(json_match[0])
-      data.deep_symbolize_keys
-    rescue JSON::ParserError
-      { confidence_score: 0.0 }
+      parsed = Ai::ResponseParserService.new(response_text).parse(symbolize: true)
+      parsed || { confidence_score: 0.0 }
     end
 
     # Updates the email with extracted signal data
@@ -441,23 +383,6 @@ module Signals
 
       # Link sender to email if not already
       synced_email.update!(email_sender: sender) unless synced_email.email_sender_id == sender.id
-    end
-
-    # Notifies of extraction errors via ExceptionNotifier
-    #
-    # @param exception [Exception] The exception
-    # @param provider_name [String, nil] Provider name if applicable
-    def notify_extraction_error(exception, provider_name = nil)
-      ExceptionNotifier.notify(exception, {
-        context: "signal_extraction",
-        severity: "error",
-        ai_context: {
-          operation: "signal_extraction",
-          provider_name: provider_name,
-          synced_email_id: synced_email&.id,
-          email_type: synced_email&.email_type
-        }
-      })
     end
 
     # Extracts text content from HTML while removing noisy elements.

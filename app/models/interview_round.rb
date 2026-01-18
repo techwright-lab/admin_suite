@@ -8,7 +8,9 @@ class InterviewRound < ApplicationRecord
 
   belongs_to :interview_application
   belongs_to :source_email, class_name: "SyncedEmail", optional: true, foreign_key: :source_email_id
+  belongs_to :interview_round_type, optional: true
   has_one :interview_feedback, dependent: :destroy
+  has_many :prep_artifacts, class_name: "InterviewRoundPrepArtifact", dependent: :destroy
 
   enum :stage, STAGES, default: :screening
   enum :result, RESULTS, default: :pending
@@ -104,5 +106,29 @@ class InterviewRound < ApplicationRecord
     when "manual" then "Direct Email"
     else confirmation_source&.titleize || "Unknown"
     end
+  end
+
+  # Returns the round type name for display
+  # @return [String, nil] Round type name or nil if not set
+  def round_type_name
+    interview_round_type&.name
+  end
+
+  # Returns the round type slug for prep matching
+  # @return [String, nil] Round type slug or nil if not set
+  def round_type_slug
+    interview_round_type&.slug
+  end
+
+  # Returns the comprehensive prep artifact if it exists and is completed
+  # @return [InterviewRoundPrepArtifact, nil] The prep artifact or nil
+  def prep
+    prep_artifacts.completed.find_by(kind: :comprehensive)
+  end
+
+  # Checks if prep has been generated for this round
+  # @return [Boolean] True if prep exists and is completed
+  def has_prep?
+    prep.present?
   end
 end

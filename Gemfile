@@ -199,3 +199,15 @@ gem "redcarpet", "~> 3.6"
 
 # Runtime contracts / schema validation (use at boundaries like LLM tool calls/results)
 gem "dry-schema"
+
+group :production do
+  # OpenTelemetry for observability
+  gem "opentelemetry-sdk"
+  gem "opentelemetry-logs-sdk"
+  gem "opentelemetry-exporter-otlp"
+  gem "opentelemetry-instrumentation-rails"
+  gem "opentelemetry-instrumentation-logger"
+  gem "opentelemetry-instrumentation-net_http"
+  gem "opentelemetry-instrumentation-pg"
+  gem "opentelemetry-exporter-otlp-logs", "~> 0.2.2"
+end
