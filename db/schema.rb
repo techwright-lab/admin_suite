@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_18_100850) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_25_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "action_text_rich_texts", force: :cascade do |t|
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "record_id", null: false
+    t.string "record_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["record_type", "record_id", "name"], name: "index_action_text_rich_texts_uniqueness", unique: true
+  end
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
@@ -471,6 +481,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_100850) do
     t.index ["provider", "uid"], name: "index_connected_accounts_on_provider_and_uid", unique: true
     t.index ["user_id", "provider"], name: "index_connected_accounts_on_user_id_and_provider"
     t.index ["user_id"], name: "index_connected_accounts_on_user_id"
+  end
+
+  create_table "developers", force: :cascade do |t|
+    t.text "access_token"
+    t.string "avatar_url"
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "last_login_at"
+    t.string "last_login_ip"
+    t.integer "login_count", default: 0
+    t.string "name"
+    t.text "refresh_token"
+    t.string "techwright_uid", null: false
+    t.datetime "token_expires_at"
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_developers_on_email"
+    t.index ["enabled"], name: "index_developers_on_enabled"
+    t.index ["techwright_uid"], name: "index_developers_on_techwright_uid", unique: true
   end
 
   create_table "domains", force: :cascade do |t|

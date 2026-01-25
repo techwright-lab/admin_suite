@@ -5,26 +5,44 @@ module Internal
     # Base controller for the new admin framework at /internal/developer
     #
     # Provides common functionality for all developer portal controllers:
-    # - Admin authentication
+    # - Developer authentication via TechWright SSO
     # - Layout configuration
     # - Resource discovery and resolution
     class BaseController < ApplicationController
       include ActionView::RecordIdentifier
+
+      # Skip regular user authentication - developers use TechWright SSO
+      allow_unauthenticated_access
+
       before_action :require_admin!
       layout "developer"
 
       helper Internal::Developer::BaseHelper
-      helper_method :current_portal, :navigation_items, :resource_config
+      helper_method :current_portal, :navigation_items, :resource_config, :current_developer
 
       private
 
-      # Requires admin access
+      # Requires developer authentication via TechWright SSO
       #
       # @return [void]
       def require_admin!
-        unless Current.user&.admin?
-          redirect_to root_path, alert: "You don't have permission to access this area."
+        unless developer_authenticated?
+          redirect_to internal_developer_login_path
         end
+      end
+
+      # Checks if a developer is currently authenticated
+      #
+      # @return [Boolean]
+      def developer_authenticated?
+        current_developer.present?
+      end
+
+      # Returns the currently authenticated developer
+      #
+      # @return [Developer, nil]
+      def current_developer
+        @current_developer ||= ::Developer.enabled.find_by(id: session[:developer_id])
       end
 
       # Returns the current portal (ops, ai, or assistant)

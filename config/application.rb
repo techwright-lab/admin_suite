@@ -14,7 +14,9 @@ module Gleania
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    # Note: `omniauth` is ignored because OmniAuth strategies extend the OmniAuth
+    # gem's namespace which doesn't follow Zeitwerk's naming conventions.
+    config.autoload_lib(ignore: %w[assets tasks omniauth])
 
     # Domain-oriented code organization
     # Add app/domains as a Zeitwerk root so app/domains/assistant/** maps to Assistant::*

@@ -7,9 +7,21 @@
 #
 # Structure:
 #   /internal/developer           - Main dashboard
+#   /internal/developer/login     - TechWright SSO login page
+#   /internal/developer/logout    - Logout
 #   /internal/developer/ops/*     - Ops Portal (Content, Users, Email, Scraping)
 #   /internal/developer/ai/*      - AI Portal (LLM Prompts, Provider Configs)
 #   /internal/developer/assistant/* - Assistant Portal (Threads, Tools, Memory)
+
+# =================================================================
+# Developer Portal Authentication (TechWright SSO)
+# =================================================================
+get "/internal/developer/login", to: "internal/developer/sessions#new", as: :internal_developer_login
+delete "/internal/developer/logout", to: "internal/developer/sessions#destroy", as: :internal_developer_logout
+
+# TechWright OAuth callback - separate from regular OAuth callbacks
+get "/auth/techwright/callback", to: "internal/developer/sessions#create"
+post "/auth/techwright/callback", to: "internal/developer/sessions#create"
 
 namespace :internal do
   namespace :developer do

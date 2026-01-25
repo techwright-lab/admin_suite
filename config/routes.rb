@@ -49,9 +49,22 @@ Rails.application.routes.draw do
 
   # =================================================================
   # Engine Mounts (Internal Tools)
+  # Require developer authentication via TechWright SSO
   # =================================================================
+
+  # Redirect /internal to developer portal or login
+  get "/internal", to: "internal/developer/sessions#redirect_root"
+
   namespace :internal do
-    mount MissionControl::Jobs::Engine, at: "/jobs"
+    # Mission Control Jobs - protected by developer authentication
+    constraints DeveloperAuthenticatedConstraint.new do
+      mount MissionControl::Jobs::Engine, at: "/jobs"
+    end
+
+    # Redirect to developer login if not authenticated for /internal/jobs
+    get "/jobs", to: redirect("/internal/developer/login")
+    get "/jobs/*path", to: redirect("/internal/developer/login")
+
     mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
   end
 

@@ -40,15 +40,31 @@
         Docs
       <% end %>
 
-      <!-- User menu -->
+      <!-- Developer menu -->
       <div class="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-700">
         <div class="text-right hidden sm:block">
-          <p class="text-sm font-medium text-slate-900 dark:text-white"><%= Current.user&.name || Current.user&.email_address %></p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Admin</p>
+          <p class="text-sm font-medium text-slate-900 dark:text-white"><%= current_developer&.name || current_developer&.email %></p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Developer</p>
         </div>
-        <div class="flex items-center justify-center w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-semibold text-sm">
-          <%= Current.user&.name&.first&.upcase || Current.user&.email_address&.first&.upcase || "A" %>
-        </div>
+        <% if current_developer&.avatar_url.present? %>
+          <img src="<%= current_developer.avatar_url %>" 
+               alt="<%= current_developer.name || current_developer.email %>" 
+               class="w-9 h-9 rounded-full object-cover">
+        <% else %>
+          <div class="flex items-center justify-center w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-semibold text-sm">
+            <%= current_developer&.name&.first&.upcase || current_developer&.email&.first&.upcase || "D" %>
+          </div>
+        <% end %>
+        
+        <!-- Logout button -->
+        <%= button_to internal_developer_logout_path, method: :delete, 
+            class: "ml-2 p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors",
+            title: "Sign out",
+            data: { turbo_confirm: "Are you sure you want to sign out?" } do %>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        <% end %>
       </div>
     </div>
   </div>
