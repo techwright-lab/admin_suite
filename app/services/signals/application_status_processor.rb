@@ -332,15 +332,21 @@ module Signals
     def create_rejection_feedback(data)
       rejection = data[:rejection_details] || {}
       feedback = data[:feedback] || {}
+      feedback_text = feedback[:feedback_text].to_s.strip
+      feedback_text = rejection[:reason].to_s.strip if feedback_text.blank?
 
-      # Don't create duplicate feedback
-      return if application.company_feedback.present?
+      existing_feedback = application.company_feedback
+      if existing_feedback.present?
+        update_company_feedback(existing_feedback, feedback_text)
+        attach_rejection_feedback_to_latest_round(feedback_text)
+        return
+      end
 
       fb = CompanyFeedback.create!(
         interview_application: application,
         source_email_id: synced_email.id,
         feedback_type: "rejection",
-        feedback_text: feedback[:feedback_text],
+        feedback_text: feedback_text.presence,
         rejection_reason: build_rejection_reason(rejection),
         received_at: synced_email.email_date || Time.current,
         self_reflection: nil, # User can add later
@@ -348,8 +354,47 @@ module Signals
       )
 
       Rails.logger.info("[ApplicationStatusProcessor] Created rejection CompanyFeedback ##{fb.id}")
+      attach_rejection_feedback_to_latest_round(feedback_text)
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.warn("[ApplicationStatusProcessor] Failed to create rejection feedback: #{e.message}")
+    end
+
+    # Updates existing company feedback with new text
+    #
+    # @param existing_feedback [CompanyFeedback]
+    # @param feedback_text [String]
+    def update_company_feedback(existing_feedback, feedback_text)
+      return if feedback_text.blank?
+
+      existing_text = existing_feedback.feedback_text.to_s.strip
+      return if existing_text.include?(feedback_text)
+
+      updated_text = [ existing_text.presence, feedback_text.presence ].compact.join("\n\n")
+      existing_feedback.update!(feedback_text: updated_text)
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.warn("[ApplicationStatusProcessor] Failed to update rejection feedback: #{e.message}")
+    end
+
+    # Attaches rejection feedback to the latest round (if any)
+    #
+    # @param feedback_text [String]
+    def attach_rejection_feedback_to_latest_round(feedback_text)
+      return if feedback_text.blank?
+
+      round = application.latest_round
+      return unless round
+      return if round.interview_feedback.present?
+
+      InterviewFeedback.create!(
+        interview_round: round,
+        went_well: nil,
+        to_improve: nil,
+        ai_summary: nil,
+        interviewer_notes: feedback_text,
+        recommended_action: "Review feedback and apply learnings to future interviews"
+      )
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.warn("[ApplicationStatusProcessor] Failed to create round feedback: #{e.message}")
     end
 
     # Builds rejection reason text

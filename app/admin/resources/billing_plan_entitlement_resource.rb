@@ -16,7 +16,7 @@ module Admin
         columns do
           column :plan, ->(e) { e.plan&.key }, header: "Plan"
           column :feature, ->(e) { e.feature&.key }, header: "Feature"
-          column :enabled
+          column :enabled, type: :toggle, toggle_field: :enabled
           column :limit
           column :updated_at, ->(e) { e.updated_at&.strftime("%b %d, %H:%M") }
         end
@@ -38,5 +38,3 @@ module Admin
     end
   end
 end
-
-

@@ -52,7 +52,6 @@ class Gmail::EmailProcessorService
       /not\s+(be\s+)?moving\s+forward/i,
       /decided\s+(not\s+)?to\s+proceed/i,
       /position\s+has\s+been\s+filled/i,
-      /other\s+candidates/i,
       /not\s+a\s+(good\s+)?fit/i,
       /won'?t\s+be\s+(moving|proceeding)/i,
       /pursuing\s+other\s+candidates/i
@@ -136,6 +135,26 @@ class Gmail::EmailProcessorService
     ]
   }.freeze
 
+  # Priority order when multiple email types match
+  EMAIL_TYPE_PRIORITY = %w[
+    rejection
+    round_feedback
+    offer
+    assessment
+    scheduling
+    interview_invite
+    application_confirmation
+    follow_up
+    thank_you
+    recruiter_outreach
+  ].freeze
+
+  SELF_SENT_TYPE_BLACKLIST = %w[
+    rejection
+    round_feedback
+    offer
+  ].freeze
+
   # @return [SyncedEmail] The email to process
   attr_reader :synced_email
 
@@ -190,17 +209,18 @@ class Gmail::EmailProcessorService
   #
   # @return [void]
   def classify_email_type
-    content = [
-      synced_email.subject,
-      synced_email.snippet,
-      synced_email.body_preview
-    ].compact.join(" ")
+    content = classification_content
+    matched_types = EMAIL_TYPE_PATTERNS.filter_map do |type, patterns|
+      type.to_s if patterns.any? { |pattern| content.match?(pattern) }
+    end
 
-    EMAIL_TYPE_PATTERNS.each do |type, patterns|
-      if patterns.any? { |pattern| content.match?(pattern) }
-        synced_email.email_type = type.to_s
-        return
-      end
+    if self_sent_email?
+      matched_types -= SELF_SENT_TYPE_BLACKLIST
+    end
+
+    if matched_types.any?
+      synced_email.email_type = choose_email_type(matched_types)
+      return
     end
 
     # Boost relevance: If from a target company but no pattern matched,
@@ -212,6 +232,74 @@ class Gmail::EmailProcessorService
 
     # Default to "other" if no pattern matched and not from target company
     synced_email.email_type = "other"
+  end
+
+  # Chooses the email type based on priority order
+  #
+  # @param matched_types [Array<String>]
+  # @return [String]
+  def choose_email_type(matched_types)
+    EMAIL_TYPE_PRIORITY.find { |type| matched_types.include?(type) } || matched_types.first
+  end
+
+  # Builds the content used for email classification
+  #
+  # @return [String]
+  def classification_content
+    subject = synced_email.subject.to_s
+    body = primary_body_content
+    return [subject, body].join(" ").strip if body.present?
+
+    [subject, synced_email.snippet, synced_email.body_preview].compact.join(" ")
+  end
+
+  # Extracts the primary body content (removes quoted replies/forwards)
+  #
+  # @return [String]
+  def primary_body_content
+    body = synced_email.body_preview.presence || synced_email.snippet.to_s
+    return "" if body.blank?
+
+    lines = body.split("\n")
+    cutoff = lines.index { |line| reply_separator?(line) }
+    trimmed_lines = cutoff ? lines[0...cutoff] : lines
+    trimmed_lines = trimmed_lines.reject { |line| line.lstrip.start_with?(">") }
+    trimmed = trimmed_lines.join("\n")
+    trimmed = trimmed.strip
+    trimmed.presence || body
+  end
+
+  # Checks if a line indicates the start of quoted content
+  #
+  # @param line [String]
+  # @return [Boolean]
+  def reply_separator?(line)
+    normalized = line.to_s.strip
+    [
+      /^On .+ wrote:$/i,
+      /^On .+sent:$/i,
+      /^On .+wrote$/i,
+      /^From:\s+/i,
+      /^Sent:\s+/i,
+      /^To:\s+/i,
+      /^Subject:\s+/i,
+      /^-----Original Message-----/i,
+      /^----- Forwarded message -----/i,
+      /^Begin forwarded message:/i
+    ].any? { |pattern| normalized.match?(pattern) }
+  end
+
+  # Checks if the email was sent by the user
+  #
+  # @return [Boolean]
+  def self_sent_email?
+    sender = synced_email.from_email.to_s.downcase
+    return false if sender.blank?
+
+    account_email = synced_email.connected_account&.email.to_s.downcase
+    user_email = synced_email.user&.email_address.to_s.downcase
+
+    sender == account_email || sender == user_email
   end
 
   # Checks if the email is from a company the user is targeting
@@ -347,11 +435,40 @@ class Gmail::EmailProcessorService
 
   # Finds an application that matches this email
   #
+  # Uses multiple strategies in order of reliability:
+  # 1. Thread-based matching (same conversation = same application)
+  # 2. Sender consistency (emails from same person go to same application)
+  # 3. Company name matching
+  # 4. Sender's assigned company
+  # 5. Domain-based matching
+  #
   # @return [InterviewApplication, nil]
   def find_matching_application
     user = synced_email.user
 
-    # Strategy 1: Match by company name
+    # Strategy 1: Match by email thread (same thread = same application)
+    # This is highest priority to maintain conversation continuity
+    if synced_email.thread_id.present?
+      existing = SyncedEmail.where(user: user, thread_id: synced_email.thread_id)
+        .where.not(interview_application_id: nil)
+        .first
+      return existing.interview_application if existing
+    end
+
+    # Strategy 2: Match by sender consistency (same sender = same application)
+    # If we already have emails from this sender matched to an active application,
+    # keep them together to avoid splitting conversations across applications
+    if synced_email.from_email.present?
+      existing = SyncedEmail.where(user: user, from_email: synced_email.from_email)
+        .where.not(interview_application_id: nil)
+        .joins(:interview_application)
+        .where(interview_applications: { status: :active })
+        .order(email_date: :desc)
+        .first
+      return existing.interview_application if existing
+    end
+
+    # Strategy 3: Match by company name
     if synced_email.detected_company.present?
       company = Company.where("LOWER(name) = ?", synced_email.detected_company.downcase).first
       if company
@@ -364,7 +481,7 @@ class Gmail::EmailProcessorService
       end
     end
 
-    # Strategy 2: Match by sender's company
+    # Strategy 4: Match by sender's company
     if synced_email.email_sender&.effective_company
       app = user.interview_applications
         .where(company: synced_email.email_sender.effective_company)
@@ -374,17 +491,9 @@ class Gmail::EmailProcessorService
       return app if app
     end
 
-    # Strategy 3: Match by sender domain to application companies
+    # Strategy 5: Match by sender domain to application companies
     app = match_by_sender_domain(user)
     return app if app
-
-    # Strategy 4: Match by email thread (same thread = same application)
-    if synced_email.thread_id.present?
-      existing = SyncedEmail.where(user: user, thread_id: synced_email.thread_id)
-        .where.not(interview_application_id: nil)
-        .first
-      return existing.interview_application if existing
-    end
 
     nil
   end

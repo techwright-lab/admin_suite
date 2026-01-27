@@ -16,7 +16,15 @@ module Admin
         columns do
           column :provider
           column :event_type, header: "Event"
-          column :status
+          column :status, type: :label, label_color: ->(we) {
+            case we.status.to_sym
+            when :pending then :amber
+            when :processed then :green
+            when :failed then :red
+            when :ignored then :slate
+            else :gray
+            end
+          }
           column :received_at
           column :processed_at
           column :idempotency_key, header: "Key"
@@ -50,5 +58,3 @@ module Admin
     end
   end
 end
-
-

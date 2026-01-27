@@ -25,7 +25,14 @@ module Admin
           column :operation_type, ->(log) { log.operation_type&.humanize }, header: "Operation"
           column :provider
           column :model
-          column :status
+          column :status, type: :label, label_color: ->(log) {
+            case log.status.to_sym
+            when :success then :green
+            when :failed then :red
+            when :pending then :amber
+            else :gray
+            end
+          }
           column :latency, ->(log) { log.latency_ms ? "#{log.latency_ms}ms" : "—" }
           column :tokens, ->(log) { "#{log.input_tokens || 0} / #{log.output_tokens || 0}" }, header: "In/Out Tokens"
           column :created_at, ->(log) { log.created_at.strftime("%b %d, %H:%M:%S") }, sortable: true

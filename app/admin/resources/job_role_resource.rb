@@ -23,7 +23,7 @@ module Admin
 
         columns do
           column :title
-          column :category, ->(jr) { jr.category&.name }
+          column :category, ->(jr) { jr.category&.name }, type: :label, label_color: :blue
           column :job_listings_count, ->(jr) { jr.job_listings.count }, header: "Listings"
           column :applications_count, ->(jr) { jr.interview_applications.count }, header: "Apps"
         end
@@ -63,4 +63,3 @@ module Admin
     end
   end
 end
-

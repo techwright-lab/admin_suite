@@ -1,6 +1,14 @@
-<div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+<div 
+  class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-4"
+  data-controller="kanban-drag"
+  data-kanban-drag-url-value="<%= interview_applications_path %>"
+>
   <% InterviewApplication::PIPELINE_STAGES.each do |stage| %>
-    <div class="flex flex-col min-w-0">
+    <div 
+      class="flex flex-col min-w-0"
+      data-kanban-drag-target="column"
+      data-stage="<%= stage %>"
+    >
       <!-- Column Header -->
       <div
         class="
@@ -13,6 +21,7 @@
             <%= stage.to_s.titleize %>
           </h3>
           <span
+            data-count
             class="
               inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full
               <%= case stage
@@ -31,9 +40,12 @@
 
       <!-- Column Content -->
       <div
+        data-cards
         class="
           bg-gray-50 dark:bg-gray-900/50 border border-gray-200
-          dark:border-gray-700 rounded-b-lg p-2 min-h-[500px] space-y-2
+          dark:border-gray-700 rounded-b-lg p-2 space-y-2
+          transition-all duration-200
+          h-[calc(100vh-280px)] overflow-y-auto
         "
       >
         <% applications = @applications_by_pipeline_stage[stage] || [] %>

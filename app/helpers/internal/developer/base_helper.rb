@@ -4,6 +4,7 @@ module Internal
   module Developer
     # Helper methods for the developer portal
     module BaseHelper
+      include Pagy::Frontend
       # Returns the color scheme for a portal
       #
       # @param portal_key [Symbol] Portal identifier
@@ -45,6 +46,9 @@ module Internal
           field = column.toggle_field || column.name
           render partial: "internal/developer/shared/toggle_cell",
                  locals: { record: record, field: field }
+        elsif column.type == :label
+          value = column.content.is_a?(Proc) ? column.content.call(record) : (record.public_send(column.name) rescue nil)
+          render_label_badge(value, color: column.label_color, size: column.label_size, record: record)
         elsif column.content.is_a?(Proc)
           column.content.call(record)
         else
@@ -612,7 +616,9 @@ module Internal
 
           # Content
           content_padding = position == :sidebar ? "p-4" : "p-6"
-          content_padding = "pt-0 px-6 pb-6" if is_association && position == :main
+          if is_association && position == :main
+            content_padding = section.paginate ? "pt-0 px-6 pb-0" : "pt-0 px-6 pb-6"
+          end
           content_padding = "pt-0 p-4" if is_association && position == :sidebar
 
           concat(content_tag(:div, class: content_padding) do
@@ -738,21 +744,106 @@ module Internal
           return render_association_card_single(associated, section)
         end
 
-        # Apply limit if specified
-        associated = associated.limit(section.limit) if section.limit && associated.respond_to?(:limit)
+        items = associated
+        pagy = nil
 
-        # Convert to array for rendering
-        items = associated.to_a
+        if section.paginate
+          per_page = (section.per_page || section.limit || 20).to_i
+          per_page = 1 if per_page < 1
+          page_param = association_page_param(section)
+          page = params[page_param].presence || 1
+          total_count = if associated.respond_to?(:count)
+            associated.count
+          else
+            associated.to_a.size
+          end
+
+          pagy = Pagy.new(count: total_count, page: page, limit: per_page, page_param: page_param)
+          if associated.respond_to?(:offset)
+            items = associated.offset(pagy.offset).limit(per_page)
+          else
+            items = Array.wrap(associated)[pagy.offset, per_page] || []
+          end
+        elsif section.limit
+          if associated.respond_to?(:limit)
+            items = associated.limit(section.limit)
+          else
+            items = Array.wrap(associated).first(section.limit)
+          end
+        end
+
+        items = Array.wrap(items)
 
         return content_tag(:p, "None found", class: "text-slate-400 italic text-sm") if items.empty?
 
-        case section.display
-        when :table
-          render_association_table(items, section)
-        when :cards
-          render_association_cards(items, section)
+        content_tag(:div) do
+          case section.display
+          when :table
+            concat(render_association_table(items, section))
+          when :cards
+            concat(render_association_cards(items, section))
+          else
+            concat(render_association_list(items, section))
+          end
+
+          concat(render_association_pagination(pagy)) if pagy
+        end
+      end
+
+      def association_page_param(section)
+        "#{section.association}_page"
+      end
+
+      def render_association_pagination(pagy)
+        content_tag(:div, class: "-mx-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 px-6 py-3") do
+          content_tag(:nav, class: "flex items-center justify-between", "aria-label" => "Pagination") do
+            concat(pagy_prev_link(pagy))
+            concat(pagy_page_links(pagy))
+            concat(pagy_next_link(pagy))
+          end
+        end
+      end
+
+      def pagy_prev_link(pagy)
+        if pagy.prev
+          link_to("Prev", pagy_url_for(pagy, pagy.prev),
+            class: "px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors")
         else
-          render_association_list(items, section)
+          content_tag(:span, "Prev",
+            class: "px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed")
+        end
+      end
+
+      def pagy_next_link(pagy)
+        if pagy.next
+          link_to("Next", pagy_url_for(pagy, pagy.next),
+            class: "px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors")
+        else
+          content_tag(:span, "Next",
+            class: "px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed")
+        end
+      end
+
+      def pagy_page_links(pagy)
+        content_tag(:div, class: "flex items-center gap-1") do
+          pagy.series.each do |item|
+            concat(render_pagy_series_item(pagy, item))
+          end
+        end
+      end
+
+      def render_pagy_series_item(pagy, item)
+        case item
+        when Integer
+          link_to(item, pagy_url_for(pagy, item),
+            class: "px-2.5 py-1 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors")
+        when String
+          content_tag(:span, item,
+            class: "px-2.5 py-1 text-sm font-semibold text-white bg-indigo-600 border border-indigo-600 rounded")
+        when :gap
+          content_tag(:span, "…", class: "px-2 text-sm text-slate-400 dark:text-slate-500")
+        else
+          ""
         end
       end
 
@@ -878,20 +969,24 @@ module Internal
       # @param section [ShowSectionDefinition] Section definition
       # @return [String] HTML safe table
       def render_association_table(items, section)
+        resource_columns = association_resource_columns(section)
+
         # Smart column detection if not specified
         columns = if section.columns.present?
-          section.columns
+          section.columns.map { |col| resolve_association_column(col, resource_columns) }
+        elsif resource_columns.any?
+          resource_columns
         else
           detect_table_columns(items.first)
         end
 
-        content_tag(:div, class: "overflow-x-auto -mx-6 -mt-1 -mb-6") do
+        content_tag(:div, class: "overflow-x-auto -mx-6 -mt-1") do
           content_tag(:table, class: "min-w-full divide-y divide-slate-200 dark:divide-slate-700") do
             # Header
             concat(content_tag(:thead, class: "bg-slate-50/50 dark:bg-slate-900/30") do
               content_tag(:tr) do
                 columns.each do |col|
-                  header = col.to_s.gsub(/_id$/, "").humanize
+                  header = association_column_definition?(col) ? col.header : col.to_s.gsub(/_id$/, "").humanize
                   concat(content_tag(:th, header, class: "px-4 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider first:pl-6"))
                 end
                 if section.link_to.present?
@@ -908,9 +1003,13 @@ module Internal
 
                 concat(content_tag(:tr, class: row_class, data: link_path ? { turbo_frame: "_top" } : {}) do
                   columns.each_with_index do |col, idx|
-                    value = item.public_send(col) rescue nil
-                    formatted = format_table_cell_enhanced(item, col, value, link_path && idx == 0)
                     td_class = idx == 0 ? "px-4 py-3 text-sm first:pl-6" : "px-4 py-3 text-sm"
+                    formatted = if association_column_definition?(col)
+                      render_association_column_value(item, col, section, link_path && idx == 0)
+                    else
+                      value = item.public_send(col) rescue nil
+                      format_table_cell_enhanced(item, col, value, link_path && idx == 0)
+                    end
                     concat(content_tag(:td, formatted, class: td_class))
                   end
 
@@ -927,6 +1026,57 @@ module Internal
             end)
           end
         end
+      end
+
+      def association_resource_columns(section)
+        resource = section.resource
+        return [] unless resource.respond_to?(:index_config)
+
+        resource.index_config&.columns_list || []
+      end
+
+      def association_column_definition?(column)
+        column.is_a?(Admin::Base::Resource::ColumnDefinition)
+      end
+
+      def resolve_association_column(column, resource_columns)
+        return column unless column.is_a?(Symbol) || column.is_a?(String)
+
+        resource_columns.find { |resource_column| resource_column.name.to_sym == column.to_sym } || column
+      end
+
+      def render_association_column_value(item, column, section, is_primary)
+        if column.type == :toggle
+          field = (column.toggle_field || column.name).to_sym
+          toggle_url = toggle_url_for_resource(section.resource, item, field)
+          return render partial: "internal/developer/shared/toggle_cell",
+                 locals: { record: item, field: field, toggle_url: toggle_url }
+        end
+        if column.type == :label
+          value = column.content.is_a?(Proc) ? column.content.call(item) : (item.public_send(column.name) rescue nil)
+          return render_label_badge(value, color: column.label_color, size: column.label_size, record: item)
+        end
+
+        value = if column.content.is_a?(Proc)
+          column.content.call(item)
+        else
+          item.public_send(column.name) rescue nil
+        end
+
+        format_table_cell_enhanced(item, column.name, value, is_primary)
+      end
+
+      def toggle_url_for_resource(resource, record, field)
+        return nil unless resource&.portal_name && resource.respond_to?(:resource_name_plural)
+
+        internal_developer_resource_toggle_path(
+          portal: resource.portal_name,
+          resource_name: resource.resource_name_plural,
+          id: record.id,
+          field: field
+        )
+      rescue StandardError
+        nil
       end
 
       # Detects appropriate columns for a table based on record attributes
@@ -1155,6 +1305,31 @@ module Internal
         content_tag(:span, status_str.titleize, class: "inline-flex items-center #{padding} rounded-full font-medium #{colors}")
       end
 
+      def render_label_badge(value, color: nil, size: :md, record: nil)
+        return content_tag(:span, "—", class: "text-slate-400") if value.blank?
+
+        label_color = resolve_label_option(color, record).presence || :slate
+        label_size = resolve_label_option(size, record).presence || :md
+        colors = label_badge_colors(label_color)
+        padding = label_size.to_s == "sm" ? "px-1.5 py-0.5 text-xs" : "px-2 py-1 text-xs"
+
+        content_tag(:span, value.to_s, class: "inline-flex items-center #{padding} rounded-md font-medium #{colors}")
+      end
+
+      def resolve_label_option(option, record)
+        return option.call(record) if option.is_a?(Proc)
+
+        option
+      end
+
+      def label_badge_colors(color)
+        if color.present?
+          "bg-#{color.to_s.downcase}-100 dark:bg-#{color.to_s.downcase}-900/30 text-#{color.to_s.downcase}-700 dark:text-#{color.to_s.downcase}-400"
+        else
+          "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+        end
+      end
+
       # Renders a form field based on its configuration
       #
       # @param f [ActionView::Helpers::FormBuilder] Form builder
@@ -1186,6 +1361,9 @@ module Internal
               f.number_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
             when :toggle
               render_toggle_field(f, field, resource)
+            when :label
+              label_value = resource.public_send(field.name) rescue nil
+              render_label_badge(label_value, color: field.label_color, size: field.label_size, record: resource)
             when :select
               collection = field.collection.is_a?(Proc) ? field.collection.call : field.collection
               f.select(field.name, collection, { include_blank: true }, class: field_class, disabled: field.readonly)

@@ -26,7 +26,13 @@ module Admin
           column :id
           column :title
           column :user, ->(t) { t.user&.email_address }
-          column :status, sortable: true
+          column :status, sortable: true, type: :label, label_color: ->(t) {
+            case t.status.to_sym
+            when :open then :green
+            when :closed then :slate
+            else :gray
+            end
+          }
           column :last_activity_at, ->(t) { t.last_activity_at&.strftime("%b %d, %H:%M") }, sortable: true
           column :created_at, ->(t) { t.created_at&.strftime("%b %d, %H:%M") }, sortable: true
         end

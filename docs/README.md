@@ -2,6 +2,16 @@
 
 This folder contains all project documentation, progress reports, and technical specifications.
 
+## Folder-based organization (Developer Portal docs viewer)
+
+The Developer Portal docs viewer automatically groups docs into sidebar sections based on the **top-level folder** under `docs/`.
+
+- `docs/cicd/*` → **CICD**
+- `docs/features/*` → **Features**
+- (future) `docs/billing/*` → **Billing**, etc.
+
+Docs that live directly under `docs/*.md` are grouped using filename conventions for backward compatibility (e.g. `ASSISTANT_*`, `GOOGLE_*`, `TEST*`), but the preferred long-term approach is **folders**.
+
 ## 📚 Documentation Index
 
 ### 🛠️ Developer Portal (Admin)
@@ -32,11 +42,19 @@ This folder contains all project documentation, progress reports, and technical 
 - **[AUTOCOMPLETE_DESIGN.md](AUTOCOMPLETE_DESIGN.md)** - Autocomplete component design
 
 ### 🔐 Authentication & Security
+- **[`security/DATA_CLASSIFICATION_POLICY.md`](security/DATA_CLASSIFICATION_POLICY.md)** - Data classification levels and handling requirements
+- **[`security/DATA_INVENTORY.md`](security/DATA_INVENTORY.md)** - Data inventory / data map (elements → protection levels)
 - **[GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md)** - Google OAuth configuration
 - **[TURNSTILE_SETUP.md](TURNSTILE_SETUP.md)** - Cloudflare Turnstile setup
 
 ### ⚙️ Systems
 - **[JOB_LISTING_EXTRACTION_SYSTEM.md](JOB_LISTING_EXTRACTION_SYSTEM.md)** - Job listing scraping and extraction
+
+### 🚀 CI/CD
+- **[`cicd/RUNBOOK.md`](cicd/RUNBOOK.md)** - CI/CD runbooks index (CASA Tier 2 evidence)
+- **[`cicd/runbooks/01_CI.md`](cicd/runbooks/01_CI.md)** - CI process (GitHub Actions)
+- **[`cicd/runbooks/02_DEPLOYMENT.md`](cicd/runbooks/02_DEPLOYMENT.md)** - Deployment process (Kamal)
+- **[`cicd/runbooks/03_SECRETS_AND_CREDENTIALS.md`](cicd/runbooks/03_SECRETS_AND_CREDENTIALS.md)** - Secrets management (Rails encrypted credentials)
 
 ---
 

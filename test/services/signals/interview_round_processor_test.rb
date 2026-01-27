@@ -156,6 +156,28 @@ class Signals::InterviewRoundProcessorTest < ActiveSupport::TestCase
     assert_equal "No email content", result[:reason]
   end
 
+  test "skips when only scheduling link is present without a confirmed time" do
+    @mock_provider.response[:content] = JSON.generate({
+      interview: {
+        scheduled_at: nil,
+        duration_minutes: 30,
+        stage: "screening"
+      },
+      logistics: {
+        video_link: nil
+      },
+      confirmation_source: "calendly",
+      confidence_score: 0.9
+    })
+
+    processor = build_processor(@email)
+    result = processor.process
+
+    assert_not result[:success]
+    assert result[:skipped]
+    assert_equal "Insufficient scheduling signal", result[:reason]
+  end
+
   # Provider chain tests
   test "tries next provider when first fails" do
     fail_provider = MockProvider.new
@@ -283,6 +305,37 @@ class Signals::InterviewRoundProcessorTest < ActiveSupport::TestCase
     # Should not create a new round
     assert_equal existing_round.id, @application.interview_rounds.last.id
     assert_equal "https://zoom.us/j/999", existing_round.reload.video_link
+  end
+
+  test "updates most recent unscheduled round when confirmed time arrives" do
+    unscheduled_round = create(:interview_round,
+      interview_application: @application,
+      stage: :screening,
+      scheduled_at: nil,
+      video_link: nil,
+      created_at: 2.days.ago
+    )
+
+    scheduled_at = 3.days.from_now
+    @mock_provider.response[:content] = JSON.generate({
+      interview: {
+        scheduled_at: scheduled_at.iso8601,
+        duration_minutes: 30,
+        stage: "screening"
+      },
+      logistics: {
+        video_link: "https://zoom.us/j/777"
+      },
+      confidence_score: 0.9
+    })
+
+    processor = build_processor(@email)
+    result = processor.process
+
+    assert result[:success]
+    assert_equal unscheduled_round.id, result[:round].id
+    assert_equal scheduled_at.to_i, result[:round].scheduled_at.to_i
+    assert_equal "https://zoom.us/j/777", result[:round].video_link
   end
 
   # API logging tests

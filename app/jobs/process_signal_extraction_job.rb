@@ -74,65 +74,10 @@ class ProcessSignalExtractionJob < ApplicationJob
 
     Rails.logger.info("Processing automated actions for email #{synced_email.id} (type: #{synced_email.email_type})")
 
-    case synced_email.email_type
-    when "scheduling", "interview_invite", "interview_reminder"
-      process_interview_round(synced_email)
-    when "round_feedback"
-      process_round_feedback(synced_email)
-    when "rejection", "offer"
-      process_status_change(synced_email)
-    end
+    Signals::EmailStateOrchestrator.new(synced_email).call
 
     # Always try to capture feedback if available
     process_company_feedback(synced_email) if synced_email.matched?
-  end
-
-  # Processes interview round creation
-  #
-  # @param synced_email [SyncedEmail]
-  def process_interview_round(synced_email)
-    processor = Signals::InterviewRoundProcessor.new(synced_email)
-    result = processor.process
-
-    if result[:success]
-      Rails.logger.info("Created/updated interview round from email #{synced_email.id}: #{result[:action]}")
-    elsif result[:skipped]
-      Rails.logger.info("Skipped interview round processing: #{result[:reason]}")
-    else
-      Rails.logger.warn("Failed to process interview round: #{result[:error]}")
-    end
-  end
-
-  # Processes round feedback
-  #
-  # @param synced_email [SyncedEmail]
-  def process_round_feedback(synced_email)
-    processor = Signals::RoundFeedbackProcessor.new(synced_email)
-    result = processor.process
-
-    if result[:success]
-      Rails.logger.info("Processed round feedback from email #{synced_email.id}: #{result[:action]}")
-    elsif result[:skipped]
-      Rails.logger.info("Skipped round feedback processing: #{result[:reason]}")
-    else
-      Rails.logger.warn("Failed to process round feedback: #{result[:error]}")
-    end
-  end
-
-  # Processes application status change
-  #
-  # @param synced_email [SyncedEmail]
-  def process_status_change(synced_email)
-    processor = Signals::ApplicationStatusProcessor.new(synced_email)
-    result = processor.process
-
-    if result[:success]
-      Rails.logger.info("Processed status change from email #{synced_email.id}: #{result[:action]}")
-    elsif result[:skipped]
-      Rails.logger.info("Skipped status change processing: #{result[:reason]}")
-    else
-      Rails.logger.warn("Failed to process status change: #{result[:error]}")
-    end
   end
 
   # Processes company feedback capture

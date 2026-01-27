@@ -8,10 +8,13 @@
 <%
   value = record.public_send(field)
   toggle_url ||= begin
-    url_for(action: :toggle, id: record.id)
+    url_for(action: :toggle, id: record.id, field: field)
   rescue ActionController::UrlGenerationError
     # Fallback to generic toggle endpoint
-    url_for(controller: controller_path, action: :toggle, id: record.id) rescue nil
+    portal = controller_path.split("/")[2]
+    internal_developer_resource_toggle_path(portal: portal, resource_name: controller_name, id: record.id, field: field)
+  rescue StandardError
+    nil
   end
 %>
 
@@ -31,4 +34,3 @@
     </span>
   <% end %>
 <% end %>
-

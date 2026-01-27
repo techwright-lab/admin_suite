@@ -23,7 +23,14 @@ module Admin
 
         columns do
           column :thread, ->(t) { t.thread&.display_title&.truncate(30) }
-          column :status
+          column :status, type: :label, label_color: ->(t) {
+            case t.status.to_sym
+            when :success then :green
+            when :error then :red
+            when :pending then :amber
+            else :gray
+            end
+          }
           column :trace_id, ->(t) { t.trace_id&.truncate(12) }
           column :latency_ms, ->(t) { t.latency_ms ? "#{t.latency_ms}ms" : "—" }, header: "Latency"
           column :created_at, ->(t) { t.created_at.strftime("%b %d, %H:%M") }

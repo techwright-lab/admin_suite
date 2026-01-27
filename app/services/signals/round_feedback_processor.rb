@@ -359,6 +359,9 @@ module Signals
     # @param data [Hash]
     # @return [InterviewRound, nil]
     def create_round_from_feedback(data)
+      existing = attach_feedback_to_latest_round(data)
+      return existing if existing
+
       round_context = data[:round_context] || {}
       stage = infer_stage_from_text(round_context[:stage_mentioned] || "") || :other
       result = map_result(data[:result])
@@ -382,6 +385,28 @@ module Signals
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.warn("[RoundFeedbackProcessor] Failed to create round: #{e.message}")
       nil
+    end
+
+    # Attaches feedback to latest round when app is already rejected
+    #
+    # @param data [Hash]
+    # @return [InterviewRound, nil]
+    def attach_feedback_to_latest_round(data)
+      return nil unless application&.rejected?
+      return nil unless data.dig(:feedback, :has_detailed_feedback)
+
+      round_context = data[:round_context] || {}
+      has_matching_signal = round_context[:stage_mentioned].present? ||
+        round_context[:interviewer_mentioned].present? ||
+        round_context[:date_mentioned].present?
+      return nil if has_matching_signal
+
+      round = application.latest_round
+      return nil unless round
+      return round if round.interview_feedback.present?
+
+      create_interview_feedback(round, data)
+      round
     end
 
     # Creates interview feedback record

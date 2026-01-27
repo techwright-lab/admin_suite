@@ -24,8 +24,8 @@ class DashboardController < ApplicationController
   # @return [Hash] Stats data
   def calculate_quick_stats
     {
-      active_applications: Current.user.interview_applications.where(status: :active).count,
-      total_applications: Current.user.interview_applications.count,
+      active_applications: Current.user.interview_applications.not_deleted.where(status: :active).count,
+      total_applications: Current.user.interview_applications.not_deleted.count,
       interviews_this_week: interviews_this_week_count,
       emails_to_review: Current.user.synced_emails.needs_review.count,
       skills_count: Current.user.user_skills.count,
@@ -101,7 +101,7 @@ class DashboardController < ApplicationController
     activities = []
 
     # Recent applications (last 5)
-    Current.user.interview_applications.recent.limit(5).each do |app|
+    Current.user.interview_applications.not_deleted.recent.limit(5).each do |app|
       activities << {
         type: :application,
         title: "Applied to #{app.job_role.title}",
@@ -115,7 +115,7 @@ class DashboardController < ApplicationController
     # Recent interview rounds (last 5)
     Current.user.interview_rounds
       .joins(:interview_application)
-      .where(interview_applications: { user_id: Current.user.id })
+      .where(interview_applications: { user_id: Current.user.id, deleted_at: nil })
       .order(created_at: :desc)
       .limit(5)
       .includes(interview_application: [ :company, :job_role ])
@@ -139,7 +139,7 @@ class DashboardController < ApplicationController
   #
   # @return [Hash] Pipeline counts by stage
   def pipeline_summary
-    base = Current.user.interview_applications.where(status: :active)
+    base = Current.user.interview_applications.not_deleted.where(status: :active)
 
     {
       applied: base.where(pipeline_stage: :applied).count,
@@ -157,7 +157,7 @@ class DashboardController < ApplicationController
   def upcoming_interviews
     Current.user.interview_rounds
       .joins(:interview_application)
-      .where(interview_applications: { user_id: Current.user.id })
+      .where(interview_applications: { user_id: Current.user.id, deleted_at: nil })
       .where("scheduled_at > ? AND scheduled_at < ?", Time.current, 7.days.from_now)
       .where(completed_at: nil)
       .order(scheduled_at: :asc)
@@ -171,7 +171,7 @@ class DashboardController < ApplicationController
   def interviews_this_week_count
     Current.user.interview_rounds
       .joins(:interview_application)
-      .where(interview_applications: { user_id: Current.user.id })
+      .where(interview_applications: { user_id: Current.user.id, deleted_at: nil })
       .where("scheduled_at >= ? AND scheduled_at <= ?", Time.current.beginning_of_week, Time.current.end_of_week)
       .where(completed_at: nil)
       .count
@@ -182,6 +182,7 @@ class DashboardController < ApplicationController
   # @return [Integer]
   def stale_applications_count
     Current.user.interview_applications
+      .not_deleted
       .where(status: :active)
       .where("updated_at < ?", 14.days.ago)
       .count

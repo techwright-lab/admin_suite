@@ -171,7 +171,9 @@
           <div>
             <%= form.label :job_listing_url, "Job Listing URL (Optional)", class: "form-label" %>
             <%= form.url_field :job_listing_url,
+                value: @application&.job_listing&.url,
                 placeholder: "https://example.com/jobs/123",
+                autocomplete: "url",
                 class: "form-input" %>
             <p class="form-help-text">
               We'll automatically fetch job details from this URL

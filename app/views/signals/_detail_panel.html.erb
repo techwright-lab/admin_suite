@@ -31,8 +31,12 @@
           <% if !email.matched? && (email.has_company_signal? || email.signal_company_name.present?) %>
             <%= button_to execute_action_signal_path(email, action_type: 'start_application'),
                 method: :post,
-                class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors",
-                title: "Start tracking this opportunity" do %>
+                class: "start-application-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                title: "Start tracking this opportunity",
+                data: { 
+                  turbo: false,
+                  disable_with: "Creating..."
+                } do %>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
               </svg>
@@ -163,7 +167,9 @@
             options_from_collection_for_select(Current.user.interview_applications.includes(:company, :job_role).where(status: :active).order("companies.name"), :id, ->(a) { "#{a.company.name} - #{a.job_role.title}" }),
             { include_blank: "Select application..." },
             class: "form-select flex-1 !text-sm !rounded-xl !border-amber-200 dark:!border-amber-700 focus:!ring-amber-500 focus:!border-amber-500" %>
-        <%= f.submit "Match", class: "flex-shrink-0 px-5 py-2.5 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/25 transition-all duration-200 hover:shadow-xl cursor-pointer" %>
+        <%= f.submit "Match",
+          class: "flex-shrink-0 px-5 py-2.5 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/25 transition-all duration-200 hover:shadow-xl cursor-pointer",
+          data: { disable_with: "Matching..." } %>
       <% end %>
     </div>
   <% end %>

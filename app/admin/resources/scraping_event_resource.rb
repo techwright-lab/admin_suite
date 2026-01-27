@@ -23,7 +23,15 @@ module Admin
 
         columns do
           column :step_name, ->(e) { e.event_type_display }, header: "Step"
-          column :status
+          column :status, type: :label, label_color: ->(e) {
+            case e.status.to_sym
+            when :started then :amber
+            when :success then :green
+            when :failed then :red
+            when :skipped then :purple
+            else :gray
+            end
+          }
           column :duration, ->(e) { e.duration_ms ? "#{e.duration_ms}ms" : "—" }
           column :scraping_attempt, ->(e) { "##{e.scraping_attempt_id}" }, header: "Attempt"
           column :created_at, ->(e) { e.created_at.strftime("%b %d, %H:%M:%S") }

@@ -91,7 +91,7 @@ module Scraping
         },
         operation: :job_extraction,
         loggable: @job_listing,
-        user: @job_listing&.user,
+        user: job_listing_user,
         error_context: {
           severity: "warning",
           job_listing_id: @job_listing&.id,
@@ -120,6 +120,10 @@ module Scraping
       build_extraction_result(result[:parsed], result[:result].merge(model: result[:model]), result[:provider]).merge(
         prompt_used: prompt
       )
+    end
+
+    def job_listing_user
+      @job_listing.interview_applications.order(created_at: :desc).first&.user
     end
 
     def handle_rate_limit(provider_name, result)

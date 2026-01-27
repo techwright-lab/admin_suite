@@ -25,7 +25,7 @@ module Admin
           column :name
           column :type, ->(p) { p.type.demodulize.titleize }
           column :version
-          column :active, ->(p) { p.active? ? "Active" : "Inactive" }
+          column :active, type: :toggle, toggle_field: :active
         end
 
         filters do

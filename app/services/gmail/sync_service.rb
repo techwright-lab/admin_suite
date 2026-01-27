@@ -287,10 +287,14 @@ class Gmail::SyncService < ApplicationService
 
     # Also fetch emails from companies user has applied to or is targeting
     # These are always relevant regardless of keywords
-    user_domains = user_company_email_domains
-    user_company_query = user_domains.any? ? " OR (#{user_domains.map { |d| "from:#{d}" }.join(' OR ')})" : ""
+    user_company_query = user_company_email_query
 
-    "after:#{after_date} in:inbox -in:spam -in:trash #{exclusions} (#{all_keywords} OR #{ats_only}#{user_company_query})"
+    # Also fetch emails from known recruiters for this user
+    known_recruiter_query = known_recruiter_sender_query
+
+    query_parts = [all_keywords, ats_only, user_company_query, known_recruiter_query].compact
+
+    "after:#{after_date} in:inbox -in:spam -in:trash #{exclusions} (#{query_parts.join(' OR ')})"
   end
 
   # Returns email domains for companies the user has applied to or is targeting
@@ -316,6 +320,57 @@ class Gmail::SyncService < ApplicationService
         extract_domain_from_company(company)
       end.uniq
     end
+  end
+
+  # Builds a Gmail query fragment for user company domains
+  #
+  # @return [String, nil] Query fragment or nil if no domains
+  def user_company_email_query
+    user_domains = user_company_email_domains
+    return nil if user_domains.empty?
+
+    "(#{user_domains.map { |d| "from:#{d}" }.join(' OR ')})"
+  end
+
+  # Builds a Gmail query fragment for known recruiter senders
+  # Includes known recruiter emails and names from prior synced emails
+  #
+  # @return [String, nil] Query fragment or nil if no known senders
+  def known_recruiter_sender_query
+    sender_types = %w[recruiter hr hiring_manager]
+    senders = EmailSender.joins(:synced_emails)
+      .where(synced_emails: { user_id: user.id })
+      .where(sender_type: sender_types)
+      .order(last_seen_at: :desc)
+      .limit(25)
+
+    sender_emails = senders.map(&:email).filter_map do |email|
+      next if email.blank?
+      "from:#{email}"
+    end
+
+    sender_ids = senders.map(&:id)
+    sender_names = if sender_ids.any?
+      user.synced_emails
+        .where(email_sender_id: sender_ids)
+        .where.not(from_name: [nil, ""])
+        .distinct
+        .limit(10)
+        .pluck(:from_name)
+    else
+      []
+    end
+
+    name_terms = sender_names.filter_map do |name|
+      clean_name = name.to_s.delete('"').strip
+      next if clean_name.blank?
+      %(from:"#{clean_name}")
+    end
+
+    terms = (sender_emails + name_terms).uniq
+    return nil if terms.empty?
+
+    "(#{terms.join(' OR ')})"
   end
 
   # Extracts email domain from a company's website
@@ -559,7 +614,7 @@ class Gmail::SyncService < ApplicationService
         end
 
         # Check for recruiter outreach and create opportunity
-        if is_new_email && result[:email_type] == "recruiter_outreach"
+        if result[:email_type] == "recruiter_outreach" && synced_email.opportunity.blank?
           opportunity = create_opportunity_from_email(synced_email)
           stats[:opportunities_count] += 1 if opportunity
         elsif synced_email.reload.matched?
@@ -661,8 +716,6 @@ class Gmail::SyncService < ApplicationService
     return nil if synced_email.opportunity.present?
 
     detector = Gmail::OpportunityDetectorService.new(synced_email)
-    return nil unless detector.recruiter_outreach?
-
     opportunity = detector.create_opportunity!
 
     # Queue background job for AI extraction

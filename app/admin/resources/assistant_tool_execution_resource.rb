@@ -27,7 +27,18 @@ module Admin
         columns do
           column :created_at, ->(te) { te.created_at.strftime("%b %d, %H:%M") }, header: "Time"
           column :tool_key, header: "Tool"
-          column :status
+          column :status, type: :label, label_color: ->(te) {
+            case te.status.to_sym
+            when :proposed then :amber
+            when :queued then :blue
+            when :running then :indigo
+            when :success then :green
+            when :error then :red
+            when :cancelled then :slate
+            when :confirmation_required then :purple
+            else :gray
+            end
+          }
           column :requires_confirmation, ->(te) { te.requires_confirmation? ? "Required" : "No" }, header: "Confirmation"
           column :trace_id, ->(te) { te.trace_id&.truncate(12) }
         end

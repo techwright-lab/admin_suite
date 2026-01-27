@@ -154,11 +154,7 @@ namespace :internal do
       resources :html_scraping_logs, only: [ :index, :show ]
 
       # System Resources
-      resources :settings do
-        member do
-          post :toggle
-        end
-      end
+      resources :settings
     end
 
     # =================================================================
@@ -176,7 +172,6 @@ namespace :internal do
 
       resources :llm_provider_configs do
         member do
-          post :toggle
           post :test_provider
           post :enable
           post :disable
@@ -200,7 +195,6 @@ namespace :internal do
       # Tool Resources
       resources :tools do
         member do
-          post :toggle
           post :enable
           post :disable
         end
@@ -247,5 +241,10 @@ namespace :internal do
       post ":id/execute_action/:action_name", to: "resources#execute_action", as: :execute_action
       post "bulk_action/:action_name", to: "resources#bulk_action", as: :bulk_action
     end
+
+    # =================================================================
+    # Generic toggle endpoint for any resource with toggle columns
+    # =================================================================
+    post ":portal/:resource_name/:id/toggle", to: "resources#toggle", as: :resource_toggle
   end
 end

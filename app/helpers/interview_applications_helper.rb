@@ -106,6 +106,59 @@ module InterviewApplicationsHelper
     end
   end
 
+  # Returns available pipeline stage transitions for an application
+  #
+  # Checks the AASM state machine to determine which transitions
+  # are valid from the current state.
+  #
+  # @param application [InterviewApplication] The application to check
+  # @return [Array<Hash>] Array of hashes with :stage and :label keys
+  def available_pipeline_stage_transitions(application)
+    InterviewApplication::PIPELINE_STAGES.filter_map do |stage|
+      next if stage.to_s == application.pipeline_stage
+      event = pipeline_stage_event_for(stage)
+      next unless event && application.aasm(:pipeline_stage).may_fire_event?(event)
+      { stage: stage, label: stage.to_s.titleize }
+    end
+  end
+
+  # Maps a pipeline stage to its corresponding AASM event
+  #
+  # @param stage [Symbol] The target pipeline stage
+  # @return [Symbol, nil] The AASM event name or nil if not found
+  def pipeline_stage_event_for(stage)
+    {
+      screening: :move_to_screening,
+      interviewing: :move_to_interviewing,
+      offer: :move_to_offer,
+      closed: :move_to_closed,
+      applied: :move_to_applied
+    }[stage]
+  end
+
+  # Returns icon color class for a pipeline stage
+  #
+  # Used for styling icons in the pipeline stage actions menu.
+  #
+  # @param stage [Symbol] The pipeline stage
+  # @return [String] Tailwind CSS color class
+  def pipeline_stage_icon_color(stage)
+    case stage
+    when :applied
+      "text-gray-500"
+    when :screening
+      "text-blue-500"
+    when :interviewing
+      "text-purple-500"
+    when :offer
+      "text-green-500"
+    when :closed
+      "text-gray-500"
+    else
+      "text-gray-500"
+    end
+  end
+
   private
 
   # Returns CSS class mappings for a timeline event type

@@ -24,7 +24,14 @@ module Admin
 
         columns do
           column :event_type, header: "Event"
-          column :severity
+          column :severity, type: :label, label_color: ->(e) {
+            case e.severity.to_sym
+            when :info then :blue
+            when :warn then :amber
+            when :error then :red
+            else :gray
+            end
+          }
           column :thread, ->(e) { e.thread&.display_title&.truncate(25) }
           column :trace_id, ->(e) { e.trace_id&.truncate(12) }
           column :created_at, ->(e) { e.created_at.strftime("%b %d, %H:%M:%S") }

@@ -64,7 +64,7 @@ class ScrapingAttempt < ApplicationRecord
     end
 
     event :start_extract do
-      transitions from: :fetching, to: :extracting
+      transitions from: [ :fetching, :retrying ], to: :extracting
     end
 
     event :mark_completed do

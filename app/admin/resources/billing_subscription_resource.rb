@@ -16,10 +16,10 @@ module Admin
         columns do
           column :user_id, header: "User ID"
           column :provider
-          column :status
+          column :status, type: :label, label_color: :green
           column :plan, ->(s) { s.plan&.key }, header: "Plan"
           column :external_subscription_id, header: "External ID"
-          column :current_period_ends_at
+          column :current_period_ends_at, ->(s) { s.current_period_ends_at&.strftime("%b %d, %H:%M") }
           column :updated_at, ->(s) { s.updated_at&.strftime("%b %d, %H:%M") }
         end
       end
@@ -38,5 +38,3 @@ module Admin
     end
   end
 end
-
-

@@ -129,11 +129,14 @@ module LlmProviders
 
       record_token_usage(message)
 
+      message_id = message&.id.to_s
+      message_id = "unknown" if message_id.blank?
       parsed = {
+        raw_response: message_hash,
         content: content,
         tool_calls: parsed[:tool_calls],
         content_blocks: parsed[:content_blocks],
-        message_id: message&.id,
+        message_id: message_id,
         provider_request: @last_provider_request,
         provider_response: message_hash.is_a?(Hash) ? message_hash : message_hash.to_s,
         provider_endpoint: @last_provider_endpoint,

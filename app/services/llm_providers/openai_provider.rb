@@ -301,7 +301,11 @@ module LlmProviders
       response_id = response_data["id"] || response_data[:id]
       usage = response_data["usage"] || {}
 
+      response_id = response_data["id"] || response_data[:id]
+      response_id = response_id.to_s
+      response_id = "unknown" if response_id.blank?
       parsed = {
+        raw_response: response_data,
         content: content,
         tool_calls: tool_calls,
         response_id: response_id,

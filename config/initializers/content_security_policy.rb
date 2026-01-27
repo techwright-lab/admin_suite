@@ -52,9 +52,13 @@ Rails.application.configure do
                        "https://*.lemonsqueezy.com",
                        "https://ga.jspm.io"
 
-    # Form submissions: only to self
+    # Form submissions: self and OAuth providers
+    # Include both www and non-www variants to handle redirects
     policy.form_action :self,
-                       "https://accounts.google.com"  # OAuth
+                       "https://gleania.com",        # Non-www variant for OAuth initiation
+                       "https://www.gleania.com",   # WWW variant for OAuth initiation
+                       "https://accounts.google.com", # Google OAuth
+                       "https://techwright.io"       # TechWright SSO
 
     # Frame ancestors: prevent clickjacking - only allow self
     policy.frame_ancestors :self

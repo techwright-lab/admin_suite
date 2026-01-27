@@ -287,13 +287,15 @@ module Admin
             css_class: options[:class],
             type: options[:type],
             toggle_field: options[:toggle_field],
+            label_color: options[:label_color],
+            label_size: options[:label_size],
             sortable: options[:sortable] || false
           )
         end
       end
 
       # Column definition
-      ColumnDefinition = Struct.new(:name, :content, :render, :header, :css_class, :type, :toggle_field, :sortable, keyword_init: true)
+      ColumnDefinition = Struct.new(:name, :content, :render, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
 
       # Filter builder for index view
       class FiltersBuilder
@@ -399,7 +401,9 @@ module Admin
             multiple: options[:multiple] || false,
             creatable: options[:creatable] || false,
             preview: options[:preview] != false,
-            variants: options[:variants]
+            variants: options[:variants],
+            label_color: options[:label_color],
+            label_size: options[:label_size]
           )
         end
 
@@ -438,7 +442,7 @@ module Admin
         :name, :type, :required, :label, :help, :placeholder,
         :collection, :create_url, :accept, :rows, :readonly,
         :if_condition, :unless_condition, :multiple, :creatable,
-        :preview, :variants,
+        :preview, :variants, :label_color, :label_size,
         keyword_init: true
       )
 
@@ -503,7 +507,7 @@ module Admin
         # @return [void]
         def panel(name, **options)
           section_def = build_section(name, options)
-          
+
           case @current_target
           when :sidebar
             @sidebar_sections << section_def
@@ -533,6 +537,8 @@ module Admin
             columns: options[:columns] || [],
             link_to: options[:link_to],
             resource: options[:resource],
+          paginate: options[:paginate] || options[:pagination] || false,
+          per_page: options[:per_page],
             collapsible: options[:collapsible] || false,
             collapsed: options[:collapsed] || false
           )
@@ -542,7 +548,7 @@ module Admin
       # Show section definition
       ShowSectionDefinition = Struct.new(
         :name, :fields, :association, :limit, :render, :title,
-        :display, :columns, :link_to, :resource, :collapsible, :collapsed,
+        :display, :columns, :link_to, :resource, :paginate, :per_page, :collapsible, :collapsed,
         keyword_init: true
       )
 

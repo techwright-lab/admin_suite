@@ -23,7 +23,14 @@ module Admin
 
         columns do
           column :domain
-          column :status
+          column :status, type: :label, label_color: ->(log) {
+            case log.status.to_sym
+            when :success then :green
+            when :partial then :amber
+            when :failed then :red
+            else :gray
+            end
+          }
           column :extraction_rate, ->(log) { "#{(log.extraction_rate.to_f * 100).round(1)}%" }, header: "Rate"
           column :duration, ->(log) { log.duration_ms ? "#{log.duration_ms}ms" : "—" }
           column :fetch_mode, header: "Mode"

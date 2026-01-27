@@ -148,6 +148,7 @@
                   name="url"
                   required
                   placeholder="https://boards.greenhouse.io/company/jobs/123"
+                  autocomplete="url"
                   class="
                     w-full px-3 py-2 border border-gray-300 dark:border-gray-600
                     rounded-lg shadow-sm focus:outline-none focus:ring-2
@@ -156,7 +157,7 @@
                   "
                   data-application-modal-target="urlInput"
                   data-action="input->application-modal#checkUrlSource"
-                />
+                >
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Supports Greenhouse, Lever, LinkedIn, Indeed, and other job boards
                 </p>
@@ -340,7 +341,9 @@
           <div>
             <%= form.label :job_listing_url, "Job Listing URL (Optional)", class: "form-label" %>
             <%= form.url_field :job_listing_url,
+                value: @application&.job_listing&.url,
                 placeholder: "https://example.com/jobs/123",
+                autocomplete: "url",
                 class: "form-input" %>
             <p class="form-help-text">
               We'll automatically fetch job details from this URL

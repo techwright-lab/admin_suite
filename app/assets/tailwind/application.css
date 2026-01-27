@@ -177,6 +177,52 @@ body {
 }
 
 /* Email HTML content styles */
+.email-html-content {
+  @apply text-sm leading-relaxed;
+  
+  /* Reset table styling for email layouts */
+  table {
+    @apply w-full border-collapse;
+  }
+  
+  td, th {
+    @apply align-top p-0;
+  }
+}
+
+/* Default: constrain ALL images in email content strictly */
+.email-html-content img {
+  max-width: 100% !important;
+  max-height: 60px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Social media icons - very common in signatures */
+.email-html-content img[src*="linkedin"],
+.email-html-content img[src*="licdn"],
+.email-html-content img[src*="facebook"],
+.email-html-content img[src*="fbcdn"],
+.email-html-content img[src*="twitter"],
+.email-html-content img[src*="instagram"],
+.email-html-content img[src*="youtube"],
+.email-html-content img[src*="static.licdn"],
+.email-html-content img.email-social-icon {
+  max-width: 28px !important;
+  max-height: 28px !important;
+}
+
+/* Company logos (usually wider) */
+.email-html-content img[alt*="logo" i],
+.email-html-content img[alt*="toptal" i],
+.email-html-content img[src*="logo"] {
+  max-width: 150px !important;
+  max-height: 50px !important;
+}
+
 .email-html-content a {
   @apply text-primary-600 dark:text-primary-400 underline decoration-primary-400/50 dark:decoration-primary-500/50 underline-offset-2 hover:text-primary-700 dark:hover:text-primary-300 hover:decoration-primary-600 dark:hover:decoration-primary-400 transition-colors;
 }
@@ -186,12 +232,66 @@ body {
 }
 
 .email-html-content p {
-  @apply my-2;
+  @apply my-1;
 }
 
+/* Collapse excessive whitespace in emails */
 .email-html-content br + br {
   @apply hidden;
 }
+
+.email-html-content div:empty,
+.email-html-content p:empty,
+.email-html-content span:empty,
+.email-html-content td:empty,
+.email-html-content tr:empty,
+.email-html-content table:empty {
+  @apply hidden;
+}
+
+/* Hide elements with only whitespace */
+.email-html-content div:has(> br:only-child),
+.email-html-content p:has(> br:only-child) {
+  @apply hidden;
+}
+
+/* Remove leading whitespace at start of email */
+.email-html-content > br:first-child,
+.email-html-content > div:first-child:empty,
+.email-html-content > p:first-child:empty {
+  @apply hidden;
+}
+
+/* Normalize spacing for LinkedIn-style table layouts */
+.email-html-content table p {
+  @apply my-0;
+}
+
+.email-html-content table br {
+  display: none;
+}
+
+/* Lists in emails */
+.email-html-content ul,
+.email-html-content ol {
+  @apply my-2 pl-5;
+}
+
+.email-html-content li {
+  @apply my-1;
+}
+
+/* Headings */
+.email-html-content h1,
+.email-html-content h2,
+.email-html-content h3,
+.email-html-content h4 {
+  @apply font-semibold mt-3 mb-1 text-gray-900 dark:text-gray-100;
+}
+
+.email-html-content h1 { @apply text-lg; }
+.email-html-content h2 { @apply text-base; }
+.email-html-content h3, .email-html-content h4 { @apply text-sm; }
 
 /* Button styles for public pages */
 .btn-primary-glow {

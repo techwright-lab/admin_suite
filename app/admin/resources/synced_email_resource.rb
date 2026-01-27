@@ -30,10 +30,28 @@ module Admin
           column :subject, ->(se) { se.subject&.truncate(50) }
           column :from_email, header: "From"
           column :user, ->(se) { se.user&.email_address }
-          column :status
+          column :status, type: :label, label_color: ->(se) {
+            case se.status.to_sym
+            when :pending then :amber
+            when :processed then :green
+            when :ignored then :slate
+            when :failed then :red
+            when :auto_ignored then :slate
+            else :gray
+            end
+          }
           column :email_type, header: "Type"
-          column :extraction_status, header: "Extraction"
-          column :matched, ->(se) { se.interview_application_id? ? "Yes" : "No" }
+          column :extraction_status, type: :label, label_color: ->(se) {
+            case se.extraction_status.to_sym
+            when :pending then :amber
+            when :processing then :indigo
+            when :completed then :green
+            when :failed then :red
+            when :skipped then :purple
+            else :gray
+            end
+          }
+          column :matched, type: :label, label_color: ->(se) { se.interview_application_id? ? :green : :amber }
           column :email_date, ->(se) { se.email_date&.strftime("%b %d, %H:%M") }
         end
 

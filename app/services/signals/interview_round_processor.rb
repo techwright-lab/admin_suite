@@ -57,8 +57,14 @@ module Signals
         return { success: false, error: extraction[:error] }
       end
 
+      data = extraction[:data]
+      scheduled_at = parse_scheduled_time(data.dig(:interview, :scheduled_at))
+      unless scheduling_signal_present?(data, scheduled_at)
+        return skip_result("Insufficient scheduling signal")
+      end
+
       # Create or update interview round
-      round = create_or_update_round(extraction[:data])
+      round = create_or_update_round(data, scheduled_at)
 
       if round.persisted?
         Rails.logger.info("[InterviewRoundProcessor] Created round ##{round.id} for email ##{synced_email.id}")
@@ -252,35 +258,60 @@ module Signals
     # Creates or updates interview round from extracted data
     #
     # @param data [Hash] Extracted interview data
+    # @param scheduled_at [DateTime, nil]
     # @return [InterviewRound]
-    def create_or_update_round(data)
+    def create_or_update_round(data, scheduled_at)
       interview_data = data[:interview] || {}
-
-      # Parse scheduled time
-      scheduled_at = parse_scheduled_time(interview_data[:scheduled_at])
 
       # Determine stage
       stage = map_stage(interview_data[:stage])
 
       # Find existing round by scheduled time (within 1 hour window)
-      existing = find_existing_round(scheduled_at) if scheduled_at
+      existing = find_existing_round(scheduled_at, stage) if scheduled_at
 
       if existing
-        update_existing_round(existing, data)
+        update_existing_round(existing, data, scheduled_at)
       else
         create_new_round(data, scheduled_at, stage)
       end
+    end
+
+    # Checks if extracted data indicates a true scheduling signal
+    #
+    # @param data [Hash]
+    # @param scheduled_at [DateTime, nil]
+    # @return [Boolean]
+    def scheduling_signal_present?(data, scheduled_at)
+      logistics_data = data[:logistics] || {}
+      confirmation_source = data[:confirmation_source].to_s
+
+      return true if scheduled_at.present?
+      return true if logistics_data[:video_link].present?
+      return true if data[:is_rescheduled] || data[:is_cancelled]
+
+      # Do not treat scheduling links alone as confirmation.
+      # Requests to schedule (Calendly/GoodTime links) often lack a confirmed time.
+      false
     end
 
     # Finds existing round by scheduled time
     #
     # @param scheduled_at [DateTime]
     # @return [InterviewRound, nil]
-    def find_existing_round(scheduled_at)
+    def find_existing_round(scheduled_at, stage)
       return nil unless scheduled_at
 
-      application.interview_rounds
+      matched_by_time = application.interview_rounds
         .where(scheduled_at: (scheduled_at - 1.hour)..(scheduled_at + 1.hour))
+        .first
+
+      return matched_by_time if matched_by_time
+
+      # Fallback: if we previously created an unscheduled round, update it
+      application.interview_rounds
+        .where(scheduled_at: nil, stage: stage.to_s)
+        .where("created_at >= ?", 14.days.ago)
+        .order(created_at: :desc)
         .first
     end
 
@@ -289,12 +320,13 @@ module Signals
     # @param round [InterviewRound]
     # @param data [Hash]
     # @return [InterviewRound]
-    def update_existing_round(round, data)
+    def update_existing_round(round, data, scheduled_at)
       interview_data = data[:interview] || {}
       interviewer_data = data[:interviewer] || {}
       logistics_data = data[:logistics] || {}
 
       updates = {}
+      updates[:scheduled_at] = scheduled_at if scheduled_at.present? && round.scheduled_at.blank?
       updates[:video_link] = logistics_data[:video_link] if logistics_data[:video_link].present?
       updates[:source_email_id] = synced_email.id
       updates[:confirmation_source] = data[:confirmation_source] if data[:confirmation_source].present?

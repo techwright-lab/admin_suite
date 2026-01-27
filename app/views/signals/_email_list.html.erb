@@ -1,6 +1,50 @@
-<%# locals: (grouped_emails:, unmatched_emails:, selected_email_id: nil, pagy_unmatched: nil) %>
+<%# locals: (grouped_emails:, unmatched_emails:, selected_email_id: nil, pagy_unmatched: nil, show_unified_list: false, all_emails: [], pagy_all: nil) %>
 
 <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
+  <% if show_unified_list %>
+    <!-- Unified Chronological List (All tab) -->
+    <% if all_emails.any? %>
+      <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
+        <% all_emails.each do |email| %>
+          <%= render "signals/email_row", email: email, selected: selected_email_id == email.id, show_company: true %>
+        <% end %>
+      </div>
+      
+      <% if pagy_all && pagy_all.pages > 1 %>
+        <div class="px-4 py-3 bg-gray-50/80 dark:bg-gray-800/80 border-t border-gray-200/60 dark:border-gray-700/40">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-gray-600 dark:text-gray-400">
+              Page <%= pagy_all.page %> of <%= pagy_all.pages %>
+            </span>
+            <div class="flex gap-2">
+              <% preserved_params = { relevance: params[:relevance], q: params[:q], status: params[:status], type: params[:type], company_id: params[:company_id] }.compact %>
+              <% if pagy_all.prev %>
+                <%= link_to "← Previous", signals_path(preserved_params.merge(page: pagy_all.prev)),
+                  class: "px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors",
+                  data: { turbo_frame: "_top" } %>
+              <% end %>
+              <% if pagy_all.next %>
+                <%= link_to "Next →", signals_path(preserved_params.merge(page: pagy_all.next)),
+                  class: "px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors",
+                  data: { turbo_frame: "_top" } %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <!-- Empty state for unified list -->
+      <div class="p-12 text-center">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">No emails found</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Try adjusting your filters or search query</p>
+      </div>
+    <% end %>
+  <% else %>
   <!-- Signals Needing Attention -->
   <% if unmatched_emails.any? %>
     <div class="bg-gradient-to-b from-amber-50 to-amber-50/50 dark:from-amber-900/20 dark:to-amber-900/10">
@@ -144,4 +188,5 @@
       <% end %>
     </div>
   <% end %>
+  <% end %> <%# Close the else block for show_unified_list %>
 </div>

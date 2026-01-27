@@ -222,4 +222,134 @@ class SyncedEmailTest < ActiveSupport::TestCase
     @email.save!
     assert_equal "test@example.com", @email.from_email
   end
+
+  # safe_html_body tests
+  test "safe_html_body returns nil when body_html is blank" do
+    @email.body_html = nil
+    assert_nil @email.safe_html_body
+
+    @email.body_html = ""
+    assert_nil @email.safe_html_body
+  end
+
+  test "safe_html_body preserves safe inline styles" do
+    @email.body_html = '<div style="color: #333; text-align: center; padding: 10px;">Content</div>'
+    result = @email.safe_html_body
+
+    assert_includes result, "color: #333"
+    assert_includes result, "text-align: center"
+    assert_includes result, "padding: 10px"
+  end
+
+  test "safe_html_body preserves background colors" do
+    @email.body_html = '<div style="background-color: #0077B5; background: white;">LinkedIn</div>'
+    result = @email.safe_html_body
+
+    assert_includes result, "background-color: #0077B5"
+    assert_includes result, "background: white"
+  end
+
+  test "safe_html_body preserves font styles" do
+    @email.body_html = '<span style="font-weight: bold; font-size: 16px; font-family: Arial;">Text</span>'
+    result = @email.safe_html_body
+
+    assert_includes result, "font-weight: bold"
+    assert_includes result, "font-size: 16px"
+    assert_includes result, "font-family: Arial"
+  end
+
+  test "safe_html_body preserves border styles" do
+    @email.body_html = '<div style="border: 1px solid #ccc; border-radius: 5px;">Box</div>'
+    result = @email.safe_html_body
+
+    assert_includes result, "border: 1px solid #ccc"
+    assert_includes result, "border-radius: 5px"
+  end
+
+  test "safe_html_body removes javascript in style values" do
+    @email.body_html = '<div style="background: url(javascript:alert(1));">Malicious</div>'
+    result = @email.safe_html_body
+
+    assert_not_includes result, "javascript:"
+  end
+
+  test "safe_html_body removes expression() in style values" do
+    @email.body_html = '<div style="width: expression(alert(1));">Malicious</div>'
+    result = @email.safe_html_body
+
+    assert_not_includes result, "expression("
+  end
+
+  test "safe_html_body removes vbscript in style values" do
+    @email.body_html = '<div style="background: url(vbscript:alert(1));">Malicious</div>'
+    result = @email.safe_html_body
+
+    assert_not_includes result, "vbscript:"
+  end
+
+  test "safe_html_body removes unsafe url() but keeps safe ones" do
+    @email.body_html = '<div style="background: url(https://example.com/image.png);">Safe URL</div>'
+    result = @email.safe_html_body
+
+    assert_includes result, "url(https://example.com/image.png)"
+  end
+
+  test "safe_html_body removes position and other dangerous properties" do
+    @email.body_html = '<div style="position: fixed; z-index: 9999; top: 0;">Overlay</div>'
+    result = @email.safe_html_body
+
+    # Position and z-index are not in the safe list
+    assert_not_includes result, "position:"
+    assert_not_includes result, "z-index:"
+  end
+
+  test "safe_html_body removes style attribute when no safe properties remain" do
+    @email.body_html = '<div style="position: fixed;">Only unsafe</div>'
+    result = @email.safe_html_body
+
+    # The style attribute should be removed entirely
+    assert_not_includes result, 'style="'
+  end
+
+  test "safe_html_body sanitizes complex email with multiple styles" do
+    @email.body_html = <<~HTML
+      <div style="max-width: 600px; margin: 0 auto; background-color: #f4f4f4;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 20px; text-align: center; background-color: #0077B5;">
+              <span style="color: white; font-size: 24px; font-weight: bold;">LinkedIn</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px; background: white;">
+              <p style="color: #333; line-height: 1.6;">Hello!</p>
+            </td>
+          </tr>
+        </table>
+      </div>
+    HTML
+
+    result = @email.safe_html_body
+
+    # Should preserve safe styles
+    assert_includes result, "max-width: 600px"
+    assert_includes result, "background-color: #0077B5"
+    assert_includes result, "color: white"
+    assert_includes result, "font-size: 24px"
+    assert_includes result, "padding: 20px"
+    assert_includes result, "text-align: center"
+  end
+
+  test "SAFE_STYLE_PROPERTIES constant includes expected properties" do
+    expected = %w[
+      text-align color background-color background
+      font-weight font-size padding margin border border-radius
+      width max-width height display
+    ]
+
+    expected.each do |prop|
+      assert_includes SyncedEmail::SAFE_STYLE_PROPERTIES, prop,
+        "Expected SAFE_STYLE_PROPERTIES to include #{prop}"
+    end
+  end
 end

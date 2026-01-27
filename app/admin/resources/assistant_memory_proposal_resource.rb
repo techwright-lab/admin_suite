@@ -24,7 +24,14 @@ module Admin
 
         columns do
           column :user, ->(mp) { mp.user&.email_address }
-          column :status
+          column :status, type: :label, label_color: ->(mp) {
+            case mp.status.to_sym
+            when :pending then :amber
+            when :accepted then :green
+            when :rejected then :red
+            else :gray
+            end
+          }
           column :items_count, ->(mp) { mp.proposed_items&.size || 0 }, header: "Items"
           column :thread, ->(mp) { mp.thread&.display_title&.truncate(25) }
           column :created_at, ->(mp) { mp.created_at.strftime("%b %d, %H:%M") }

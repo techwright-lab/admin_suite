@@ -23,7 +23,19 @@ module Admin
 
         columns do
           column :job_listing, ->(sa) { sa.job_listing&.title&.truncate(40) }
-          column :status
+          column :status, type: :label, label_color: ->(sa) {
+            case sa.status.to_sym
+            when :pending then :amber
+            when :fetching then :yellow
+            when :extracting then :amber
+            when :completed then :green
+            when :failed then :red
+            when :retrying then :indigo
+            when :dead_letter then :slate
+            when :manual then :purple
+            else :gray
+            end
+          }
           column :domain
           column :extraction_method
           column :duration, ->(sa) { sa.duration_seconds ? "#{sa.duration_seconds}s" : "—" }

@@ -1,0 +1,23 @@
+<%# Pipeline Stage Actions Menu %>
+<%# Renders available pipeline stage transitions as menu items %>
+<%# 
+  Required locals:
+    - application: InterviewApplication instance
+%>
+
+<% transitions = available_pipeline_stage_transitions(application) %>
+<% if transitions.any? %>
+  <div class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+    Move to Stage
+  </div>
+  <% transitions.each do |transition| %>
+    <%= button_to update_pipeline_stage_interview_application_path(application, pipeline_stage: transition[:stage]),
+        method: :patch,
+        class: "w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+        role: "menuitem" do %>
+      <span class="w-4 h-4 mr-2 rounded-full <%= pipeline_stage_badge_classes(transition[:stage]) %>"></span>
+      <%= transition[:label] %>
+    <% end %>
+  <% end %>
+  <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+<% end %>

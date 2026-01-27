@@ -2,7 +2,12 @@
 <% display_company = application.display_company %>
 <% display_job_role = application.display_job_role %>
 
-<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow group">
+<div 
+  class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all group cursor-grab active:cursor-grabbing"
+  data-kanban-drag-target="card"
+  data-application-id="<%= application.slug %>"
+  draggable="true"
+>
   
   <!-- Clickable Area for Navigation -->
   <%= link_to interview_application_path(application), class: "block" do %>
@@ -89,7 +94,7 @@
       <% end %>
       
       <!-- Quick Actions Dropdown -->
-      <div class="relative" data-controller="dropdown">
+      <div class="relative" data-controller="dropdown" data-dropdown-fixed-value="true">
         <button 
           type="button"
           data-action="click->dropdown#toggle"
@@ -103,9 +108,14 @@
         
         <div 
           data-dropdown-target="menu"
-          class="hidden absolute right-0 bottom-full mb-1 w-44 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50"
+          class="hidden w-44 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-[100]"
         >
           <div class="py-1" role="menu">
+            <%# Pipeline Stage Actions %>
+            <% unless application.deleted? %>
+              <%= render "pipeline_stage_actions", application: application %>
+            <% end %>
+            
             <% if application.deleted? %>
               <%= button_to restore_interview_application_path(application), 
                   method: :patch,

@@ -17,4 +17,3 @@ module Internal
     end
   end
 end
-

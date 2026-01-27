@@ -20,7 +20,8 @@ module Admin
           column :interval
           column :amount_cents, header: "Amount (cents)"
           column :currency
-          column :published
+          column :published, type: :toggle, toggle_field: :published
+          column :highlighted, type: :toggle, toggle_field: :highlighted
           column :updated_at, ->(p) { p.updated_at&.strftime("%b %d, %H:%M") }
         end
 
@@ -79,13 +80,17 @@ module Admin
                 link_to: :internal_developer_ops_billing_provider_mapping_path
           panel :features, title: "Features",
                 association: :features, display: :table,
-                columns: [ :key, :name, :description, :kind, :unit ],
-                link_to: :internal_developer_ops_billing_feature_path
+                columns: [ :key, :name, :kind, :unit ],
+                resource: Admin::Resources::BillingFeatureResource,
+                link_to: :internal_developer_ops_billing_feature_path,
+                paginate: true, per_page: 10
           panel :entitlements, title: "Entitlements",
                 association: :plan_entitlements,
                 display: :table,
                 columns: [ :feature, :enabled, :limit ],
-                link_to: :internal_developer_ops_billing_plan_entitlement_path
+                resource: Admin::Resources::BillingPlanEntitlementResource,
+                link_to: :internal_developer_ops_billing_plan_entitlement_path,
+                paginate: true, per_page: 5
           panel :metadata, title: "Metadata", fields: [ :metadata ]
         end
       end

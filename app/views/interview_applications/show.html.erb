@@ -112,6 +112,24 @@
             class="hidden absolute right-0 mt-2 w-56 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50"
           >
             <div class="py-1" role="menu">
+              <%# Pipeline Stage Actions %>
+              <% transitions = available_pipeline_stage_transitions(@application) %>
+              <% if transitions.any? %>
+                <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Move to Stage
+                </div>
+                <% transitions.each do |transition| %>
+                  <%= button_to update_pipeline_stage_interview_application_path(@application, pipeline_stage: transition[:stage]),
+                      method: :patch,
+                      class: "w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+                      role: "menuitem" do %>
+                    <span class="w-4 h-4 mr-3 rounded-full <%= pipeline_stage_badge_classes(transition[:stage]) %>"></span>
+                    <%= transition[:label] %>
+                  <% end %>
+                <% end %>
+                <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+              <% end %>
+              
               <% if @application.active? %>
                 <!-- Status Actions for Active Applications -->
                 <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">

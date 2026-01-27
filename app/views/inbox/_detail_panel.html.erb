@@ -102,7 +102,9 @@
             options_from_collection_for_select(Current.user.interview_applications.includes(:company, :job_role).where(status: :active).order("companies.name"), :id, ->(a) { "#{a.company.name} - #{a.job_role.title}" }),
             { include_blank: "Select application..." },
             class: "form-select flex-1 !text-sm !rounded-xl !border-amber-200 dark:!border-amber-700 focus:!ring-amber-500 focus:!border-amber-500" %>
-        <%= f.submit "Match", class: "flex-shrink-0 px-5 py-2.5 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/25 transition-all duration-200 hover:shadow-xl cursor-pointer" %>
+        <%= f.submit "Match",
+          class: "flex-shrink-0 px-5 py-2.5 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/25 transition-all duration-200 hover:shadow-xl cursor-pointer",
+          data: { disable_with: "Matching..." } %>
       <% end %>
     </div>
   <% end %>

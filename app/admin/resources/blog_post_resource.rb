@@ -24,7 +24,7 @@ module Admin
         columns do
           column :title
           column :slug
-          column :status
+          column :status, type: :label, label_color: ->(bp) { bp.status == "published" ? :green : :slate }
           column :author_name, header: "Author"
           column :published_at, ->(bp) { bp.published_at&.strftime("%b %d, %Y") || "—" }
         end

@@ -90,6 +90,41 @@ module Internal
         end
       end
 
+      # POST /internal/developer/:portal/:resource_name/:id/toggle
+      def toggle
+        field = toggle_field_param
+
+        unless field
+          respond_to do |format|
+            format.turbo_stream { head :unprocessable_entity }
+            format.html { redirect_to resource_url(@resource), alert: "Toggle field is missing." }
+          end
+          return
+        end
+
+        unless toggleable_fields.include?(field)
+          respond_to do |format|
+            format.turbo_stream { head :unprocessable_entity }
+            format.html { redirect_to resource_url(@resource), alert: "Toggle field is not allowed." }
+          end
+          return
+        end
+
+        current_value = !!@resource.public_send(field)
+        @resource.update!(field => !current_value)
+
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.replace(
+              dom_id(@resource, :toggle),
+              partial: "internal/developer/shared/toggle_cell",
+              locals: { record: @resource, field: field }
+            )
+          end
+          format.html { redirect_to resource_url(@resource), notice: "#{resource_config.human_name} updated." }
+        end
+      end
+
       # POST /internal/developer/:resources/bulk_action/:action_name
       def bulk_action
         action_name = params[:action_name].to_sym
@@ -329,6 +364,21 @@ module Internal
 
         key = param_keys.find { |k| params.key?(k) }
         params.require(key).permit(permitted_fields + array_fields)
+      end
+
+      def toggle_field_param
+        field = params[:field].presence
+        field&.to_sym
+      end
+
+      def toggleable_fields
+        return [] unless resource_config&.index_config&.columns_list
+
+        resource_config.index_config.columns_list.filter_map do |column|
+          next unless column.type == :toggle
+
+          (column.toggle_field || column.name).to_sym
+        end
       end
 
       # Returns the URL for a resource

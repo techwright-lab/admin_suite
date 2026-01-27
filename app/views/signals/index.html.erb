@@ -164,7 +164,10 @@
             grouped_emails: @grouped_emails, 
             unmatched_emails: @unmatched_emails,
             pagy_unmatched: @pagy_unmatched,
-            selected_email_id: @selected_email&.id %>
+            selected_email_id: @selected_email&.id,
+            show_unified_list: @show_unified_list,
+            all_emails: @all_emails || [],
+            pagy_all: @pagy_all %>
       <% end %>
 
       <!-- Stats Footer -->

@@ -68,27 +68,73 @@ module Internal
           abs_path.relative_path_from(base).to_s
         end
 
-        # Group files by prefix (ASSISTANT_, ADMIN_, etc.)
-        groups = files.group_by do |path|
-          name = File.basename(path, ".md")
-          if name.start_with?("ASSISTANT_")
-            "Assistant"
-          elsif name.start_with?("ADMIN_")
-            "Admin UI"
-          elsif name.start_with?("GOOGLE_")
-            "Google Integration"
-          elsif name.start_with?("TEST")
-            "Testing"
-          elsif name == "README"
-            "Overview"
-          else
-            "Other"
-          end
+        groups = files.group_by { |path| group_name_for_path(path) }
+
+        # Sort groups with preferred order, then alphabetically
+        preferred_order = [
+          "Overview",
+          "CICD",
+          "Developer Portal",
+          "Billing",
+          "Google Integration",
+          "Testing",
+          "Assistant",
+          "Admin UI",
+          "Features",
+          "Other"
+        ]
+
+        groups.sort_by { |k, _| [ preferred_order.index(k) || 999, k ] }.to_h
+      end
+
+      def group_name_for_path(relative_path)
+        # Folder-based grouping: docs/<folder>/* -> "<Folder>" section
+        folder = relative_path.to_s.split(File::SEPARATOR).first
+        if folder.present? && folder != File.basename(relative_path.to_s)
+          return humanize_folder_name(folder)
         end
 
-        # Sort groups with preferred order
-        preferred_order = %w[Overview Assistant Admin\ UI Google\ Integration Testing Other]
-        groups.sort_by { |k, _| preferred_order.index(k) || 999 }.to_h
+        # Root files (docs/*.md): keep legacy prefix grouping for backward compatibility
+        legacy_group_for_basename(File.basename(relative_path.to_s, ".md"))
+      end
+
+      def legacy_group_for_basename(name)
+        if name == "README"
+          "Overview"
+        elsif name.start_with?("ASSISTANT_")
+          "Assistant"
+        elsif name.start_with?("ADMIN_")
+          "Admin UI"
+        elsif name.start_with?("GOOGLE_")
+          "Google Integration"
+        elsif name.start_with?("TEST")
+          "Testing"
+        elsif name.start_with?("DEVELOPER_PORTAL_")
+          "Developer Portal"
+        elsif name.include?("BILLING") || name.include?("SUBSCRIPTION")
+          "Billing"
+        else
+          "Other"
+        end
+      end
+
+      def humanize_folder_name(folder)
+        normalized = folder.to_s.tr("_", " ").tr("-", " ").strip
+        acronyms = {
+          "cicd" => "CICD",
+          "ci cd" => "CICD",
+          "ai" => "AI",
+          "ops" => "Ops",
+          "oauth" => "OAuth",
+          "ui" => "UI",
+          "ux" => "UX",
+          "api" => "API"
+        }
+
+        key = normalized.downcase
+        return acronyms[key] if acronyms.key?(key)
+
+        normalized.titleize
       end
 
       def resolve_doc_path!(relative_path)
@@ -115,4 +161,3 @@ module Internal
     end
   end
 end
-

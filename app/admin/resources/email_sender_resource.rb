@@ -28,8 +28,18 @@ module Admin
           column :name
           column :domain
           column :company, ->(es) { es.company&.name || "—" }
-          column :sender_type
-          column :verified, ->(es) { es.verified? ? "Yes" : "No" }, type: :toggle, toggle_field: :verified
+          column :sender_type, type: :label, label_color: ->(es) {
+            case es.sender_type.to_sym
+            when :recruiter then :green
+            when :hiring_manager then :blue
+            when :hr then :purple
+            when :ats_system then :indigo
+            when :company then :green
+            when :unknown then :slate
+            else :gray
+            end
+          }
+          column :verified, type: :toggle, toggle_field: :verified
         end
 
         filters do

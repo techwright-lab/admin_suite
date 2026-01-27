@@ -64,8 +64,9 @@ export default class extends Controller {
 
   // Navigates to the URL specified in data-click-actions-url-value
   navigate(event) {
-    // Don't navigate if clicking on interactive elements inside
-    if (event.target.closest('a, button, input, select, textarea, [data-action]')) {
+    // Don't navigate if clicking on interactive elements inside (excluding the controller element itself)
+    const clickedInteractive = event.target.closest('a, button, input, select, textarea, [data-action]')
+    if (clickedInteractive && clickedInteractive !== this.element) {
       return
     }
     if (this.hasUrlValue) {

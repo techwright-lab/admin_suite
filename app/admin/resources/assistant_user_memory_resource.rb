@@ -34,14 +34,14 @@ module Admin
 
         filters do
           filter :source, type: :select, options: [
-            ["All Sources", ""],
-            ["User", "user"],
-            ["Assistant", "assistant"]
+            [ "All Sources", "" ],
+            [ "User", "user" ],
+            [ "Assistant", "assistant" ]
           ]
           filter :active, type: :select, options: [
-            ["All", ""],
-            ["Active", "true"],
-            ["Expired", "false"]
+            [ "All", "" ],
+            [ "Active", "true" ],
+            [ "Expired", "false" ]
           ]
           filter :user_id, type: :number, label: "User ID"
         end
@@ -49,18 +49,18 @@ module Admin
 
       show do
         sidebar do
-          panel :meta, title: "Metadata", fields: [:source, :expires_at]
-          panel :timestamps, title: "Timestamps", fields: [:created_at, :updated_at]
+          panel :meta, title: "Metadata", fields: [ :source, :expires_at ]
+          panel :timestamps, title: "Timestamps", fields: [ :created_at, :updated_at ]
         end
-        
+
         main do
-          panel :user, title: "User", fields: [:user]
-          panel :memory, title: "Memory Content", fields: [:key, :value]
+          panel :user, title: "User", fields: [ :user ]
+          panel :memory, title: "Memory Content", fields: [ :key, :value ]
         end
       end
 
       actions do
-        action :delete, method: :delete, label: "Delete", 
+        action :delete, method: :delete, label: "Delete",
                confirm: "Delete this memory? This cannot be undone.",
                color: :danger
       end
@@ -69,4 +69,3 @@ module Admin
     end
   end
 end
-

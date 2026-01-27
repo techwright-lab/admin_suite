@@ -160,6 +160,10 @@ class InterviewApplicationsController < ApplicationController
   # PATCH/PUT /interview_applications/:id
   def update
     if @application.update(application_params)
+      job_listing_url = params.dig(:interview_application, :job_listing_url)
+      if job_listing_url.present?
+        CreateJobListingFromUrlService.new(@application, job_listing_url).call
+      end
       redirect_to interview_applications_path, notice: "Application updated successfully!"
     else
       @companies = Company.alphabetical.limit(100)
@@ -219,20 +223,23 @@ class InterviewApplicationsController < ApplicationController
 
     if event_method && @application.aasm(:pipeline_stage).may_fire_event?(event_method)
       if @application.send("#{event_method}!")
+        notice = "Moved to #{target_stage.to_s.titleize}"
         respond_to do |format|
-          format.html { redirect_to interview_applications_path }
-          format.turbo_stream
+          format.html { redirect_back fallback_location: interview_applications_path, notice: notice, status: :see_other }
+          format.turbo_stream { redirect_back fallback_location: interview_applications_path, notice: notice, status: :see_other }
           format.json { render json: { success: true, pipeline_stage: @application.pipeline_stage } }
         end
       else
         respond_to do |format|
-          format.html { redirect_to interview_applications_path, alert: "Failed to update stage" }
+          format.html { redirect_back fallback_location: interview_applications_path, alert: "Failed to update stage", status: :see_other }
+          format.turbo_stream { redirect_back fallback_location: interview_applications_path, alert: "Failed to update stage", status: :see_other }
           format.json { render json: { success: false, errors: @application.errors }, status: :unprocessable_entity }
         end
       end
     else
       respond_to do |format|
-        format.html { redirect_to interview_applications_path, alert: "Invalid stage transition" }
+        format.html { redirect_back fallback_location: interview_applications_path, alert: "Invalid stage transition", status: :see_other }
+        format.turbo_stream { redirect_back fallback_location: interview_applications_path, alert: "Invalid stage transition", status: :see_other }
         format.json { render json: { success: false, errors: [ "Invalid stage transition" ] }, status: :unprocessable_entity }
       end
     end

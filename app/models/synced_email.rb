@@ -52,6 +52,21 @@ class SyncedEmail < ApplicationRecord
     start_application
   ].freeze
 
+  # Safe CSS properties that can be preserved in email HTML
+  # These are visual properties that don't pose security risks
+  SAFE_STYLE_PROPERTIES = %w[
+    text-align text-decoration color background-color background
+    font-weight font-style font-size line-height font-family
+    padding padding-top padding-bottom padding-left padding-right
+    margin margin-top margin-bottom margin-left margin-right
+    border border-radius border-color border-width border-style
+    border-top border-bottom border-left border-right
+    width max-width min-width height max-height min-height
+    display vertical-align white-space word-wrap overflow
+    table-layout border-collapse border-spacing
+    list-style list-style-type
+  ].freeze
+
   belongs_to :user
   belongs_to :connected_account
   belongs_to :interview_application, optional: true
@@ -507,46 +522,85 @@ class SyncedEmail < ApplicationRecord
   #
   # Security measures:
   # - Allowlist of safe HTML tags only
-  # - No style attribute (prevents CSS-based attacks)
+  # - Style attributes sanitized to only allow safe CSS properties
   # - URL scheme validation for href/src (blocks javascript:, data:, etc.)
   #
   # @return [String, nil]
   def safe_html_body
     return nil unless body_html.present?
 
-    cleaned_html = strip_unwanted_html(body_html)
+    # First pass: Remove unwanted elements and extract/sanitize styles
+    # We extract styles because Rails sanitizer strips url() values
+    cleaned_html, style_map = strip_unwanted_html_with_styles(body_html)
 
-    # First pass: Rails sanitizer with safe list of tags
-    # Note: style attribute removed to prevent CSS-based attacks
+    # Second pass: Rails sanitizer with safe list of tags
+    # Exclude style attribute - Rails strips url() values
+    # Include data-se-style-id for style re-injection
+    # width/height preserved for proper image sizing
     sanitized = ActionController::Base.helpers.sanitize(
       cleaned_html,
       tags: %w[p br div span a ul ol li strong b em i u h1 h2 h3 h4 h5 h6 blockquote pre code table tr td th thead tbody hr img],
-      attributes: %w[href src alt title class target]
+      attributes: %w[href src alt title class target width height align valign data-se-style-id]
     )
 
-    # Second pass: Validate URL schemes in href and src attributes
+    # Third pass: Re-inject sanitized styles that were preserved
+    sanitized = reinject_styles(sanitized, style_map)
+
+    # Fourth pass: Validate URL schemes in href and src attributes
     # Only allow http, https, and mailto schemes
     sanitize_url_schemes(sanitized)
   end
 
   private
 
-  # Removes unwanted HTML elements (style/script/head/etc.) and hidden content
-  # before sanitization to avoid rendering raw CSS/JS text.
+  # Removes unwanted HTML elements and extracts sanitized styles
+  # Returns both cleaned HTML and a map of element IDs to their safe styles
+  #
+  # Rails sanitizer strips url() from styles, so we extract styles first,
+  # let Rails sanitize the rest, then re-inject the safe styles after.
   #
   # @param html [String] Raw HTML string
-  # @return [String] Cleaned HTML string
-  def strip_unwanted_html(html)
+  # @return [Array<String, Hash>] [cleaned_html, style_map]
+  def strip_unwanted_html_with_styles(html)
     fragment = Nokogiri::HTML::DocumentFragment.parse(html)
+    style_map = {}
+    style_counter = 0
 
     # Remove non-content elements entirely
     fragment.css("style, script, noscript, head, title, meta, link").remove
 
-    # Remove elements hidden via inline styles
+    # Remove elements hidden via inline styles, extract safe styles from others
     fragment.css("*[style]").each do |node|
       style = node["style"].to_s.downcase
-      if style.include?("display:none") || style.include?("visibility:hidden")
+      if style.include?("display:none") || style.include?("display: none") ||
+         style.include?("visibility:hidden") || style.include?("visibility: hidden") ||
+         style.include?("font-size:0") || style.include?("font-size: 0") ||
+         style.include?("line-height:0") || style.include?("line-height: 0") ||
+         style.include?("max-height:0") || style.include?("max-height: 0")
         node.remove
+        next
+      end
+
+      # Sanitize style attribute to only allow safe CSS properties
+      safe_style = extract_safe_styles(node["style"])
+      if safe_style.present?
+        # Store the safe style with a unique marker
+        style_id = "se-style-#{style_counter += 1}"
+        style_map[style_id] = safe_style
+        # Add a data attribute that Rails won't strip
+        node["data-se-style-id"] = style_id
+      end
+      # Remove the style attribute so Rails doesn't mangle it
+      node.remove_attribute("style")
+    end
+
+    # Remove tracking pixels and tiny images (1x1, 0x0, etc.)
+    fragment.css("img").each do |img|
+      width = img["width"].to_s.gsub(/\D/, "").to_i
+      height = img["height"].to_s.gsub(/\D/, "").to_i
+      # Remove if explicitly tiny (tracking pixels)
+      if (width > 0 && width <= 3) || (height > 0 && height <= 3)
+        img.remove
       end
     end
 
@@ -555,9 +609,83 @@ class SyncedEmail < ApplicationRecord
       node.remove if node.comment?
     end
 
-    fragment.to_html
+    # Remove empty elements that create whitespace (multiple passes)
+    2.times do
+      fragment.css("div, span, p, td, tr, table").each do |node|
+        # Check if element has no meaningful content
+        text_content = node.text.to_s.strip
+        has_images = node.css("img").any?
+        has_links = node.css("a").any? { |a| a.text.to_s.strip.present? }
+
+        # Remove if empty (no text, no images, no meaningful links)
+        if text_content.empty? && !has_images && !has_links
+          # Keep if it has child elements with content
+          has_content_children = node.children.any? do |child|
+            child.element? && (child.text.to_s.strip.present? || child.css("img").any?)
+          end
+          node.remove unless has_content_children
+        end
+      end
+    end
+
+    # Remove leading br tags
+    while (first = fragment.children.first) && first.name == "br"
+      first.remove
+    end
+
+    # Detect and mark signature sections (images after text content ends)
+    mark_signature_images(fragment)
+
+    [fragment.to_html, style_map]
   rescue StandardError
-    html
+    [html, {}]
+  end
+
+  # Marks images that appear to be in email signatures
+  # Signatures typically appear after the main text content
+  #
+  # @param fragment [Nokogiri::HTML::DocumentFragment]
+  def mark_signature_images(fragment)
+    all_images = fragment.css("img").to_a
+    return if all_images.empty?
+
+    # Find signature section by looking for common patterns
+    signature_indicators = [
+      "Best regards", "Kind regards", "Regards", "Thanks", "Thank you",
+      "Cheers", "Best,", "Sincerely", "Warmly", "Yours",
+      "Get Outlook", "Sent from", "—", "--"
+    ]
+
+    # Count images and their positions
+    total_text_length = fragment.text.to_s.length
+    
+    all_images.each_with_index do |img, idx|
+      src = img["src"].to_s.downcase
+      alt = img["alt"].to_s.downcase
+      
+      # Calculate approximate position of this image in the document
+      text_before_img = ""
+      img.traverse { |n| break if n == img; text_before_img += n.text.to_s if n.text? }
+      position_ratio = total_text_length > 0 ? text_before_img.length.to_f / total_text_length : 1.0
+
+      # Check if it's likely a social media icon by URL pattern
+      is_social_url = src.match?(/linkedin|facebook|twitter|instagram|youtube|social|fbcdn|licdn|static\.licdn/)
+      
+      # Check if it's likely a social media icon by alt text
+      is_social_alt = alt.match?(/linkedin|facebook|twitter|instagram|youtube|follow|connect/)
+      
+      # Check if image appears in latter half of email (signature area)
+      is_in_signature_area = position_ratio > 0.5
+      
+      # Check if multiple images appear consecutively (common for social icon rows)
+      has_sibling_images = idx > 0 || (idx < all_images.length - 1)
+      
+      # Mark as social icon if matches patterns
+      if is_social_url || is_social_alt || (is_in_signature_area && has_sibling_images && idx > 0)
+        existing_class = img["class"].to_s
+        img["class"] = "#{existing_class} email-social-icon".strip
+      end
+    end
   end
 
   # Validates and sanitizes URL schemes in href and src attributes
@@ -592,6 +720,105 @@ class SyncedEmail < ApplicationRecord
       else
         'src=""'
       end
+    end
+  end
+
+  # Re-injects sanitized styles that were extracted before Rails sanitization
+  # Replaces data-se-style-id attributes with the corresponding style attributes
+  #
+  # @param html [String] The HTML with data-se-style-id markers
+  # @param style_map [Hash] Map of style IDs to sanitized CSS strings
+  # @return [String] HTML with styles re-injected
+  def reinject_styles(html, style_map)
+    return html if html.blank? || style_map.empty?
+
+    fragment = Nokogiri::HTML::DocumentFragment.parse(html)
+
+    fragment.css("*[data-se-style-id]").each do |node|
+      style_id = node["data-se-style-id"]
+      safe_style = style_map[style_id]
+
+      if safe_style.present?
+        node["style"] = safe_style
+      end
+
+      # Always remove the marker attribute
+      node.remove_attribute("data-se-style-id")
+    end
+
+    fragment.to_html
+  rescue StandardError
+    html
+  end
+
+  # Sanitizes inline style attributes to only allow safe CSS properties
+  # Removes dangerous CSS like expressions, url() with javascript, etc.
+  #
+  # @param html [String] The HTML with style attributes
+  # @return [String] HTML with sanitized style attributes
+  def sanitize_inline_styles(html)
+    return html if html.blank?
+
+    fragment = Nokogiri::HTML::DocumentFragment.parse(html)
+
+    fragment.css("*[style]").each do |node|
+      original_style = node["style"].to_s
+      safe_style = extract_safe_styles(original_style)
+
+      if safe_style.present?
+        node["style"] = safe_style
+      else
+        node.remove_attribute("style")
+      end
+    end
+
+    fragment.to_html
+  rescue StandardError
+    html
+  end
+
+  # Extracts only safe CSS properties from a style string
+  # Filters out dangerous values like url(), expression(), javascript:
+  #
+  # @param style_string [String] The raw CSS style string
+  # @return [String] Filtered CSS declarations
+  def extract_safe_styles(style_string)
+    return "" if style_string.blank?
+
+    safe_declarations = style_string.split(";").filter_map do |declaration|
+      property, value = declaration.split(":", 2).map(&:strip)
+      next unless property.present? && value.present?
+
+      # Normalize property name for comparison
+      property_lower = property.downcase.gsub(/\s+/, "-")
+
+      # Only keep safe properties
+      next unless SAFE_STYLE_PROPERTIES.include?(property_lower)
+
+      # Reject dangerous values
+      value_lower = value.downcase
+      next if value_lower.include?("url(") && !safe_url_in_style?(value)
+      next if value_lower.include?("expression(")
+      next if value_lower.include?("javascript:")
+      next if value_lower.include?("vbscript:")
+      next if value_lower.include?("behavior:")
+      next if value_lower.include?("-moz-binding")
+
+      "#{property}: #{value}"
+    end
+
+    safe_declarations.join("; ")
+  end
+
+  # Checks if a url() in CSS is safe (http/https only)
+  #
+  # @param value [String] The CSS value containing url()
+  # @return [Boolean]
+  def safe_url_in_style?(value)
+    # Extract URL from url(...) or url("...") or url('...')
+    urls = value.scan(/url\s*\(\s*['"]?([^'")]+)['"]?\s*\)/i).flatten
+    urls.all? do |url|
+      url.strip.downcase.start_with?("http://", "https://", "/")
     end
   end
 

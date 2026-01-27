@@ -32,20 +32,20 @@ module Admin
 
         filters do
           filter :enabled, type: :select, options: [
-            ["All", ""],
-            ["Enabled", "true"],
-            ["Disabled", "false"]
+            [ "All", "" ],
+            [ "Enabled", "true" ],
+            [ "Disabled", "false" ]
           ]
           filter :provider_type, type: :select, label: "Provider", options: [
-            ["All Providers", ""],
-            ["OpenAI", "openai"],
-            ["Anthropic", "anthropic"],
-            ["Google", "google"]
+            [ "All Providers", "" ],
+            [ "OpenAI", "openai" ],
+            [ "Anthropic", "anthropic" ],
+            [ "Google", "google" ]
           ]
           filter :sort, type: :select, options: [
-            ["Priority", "priority"],
-            ["Name (A-Z)", "name"],
-            ["Provider", "provider_type"]
+            [ "Priority", "priority" ],
+            [ "Name (A-Z)", "name" ],
+            [ "Provider", "provider_type" ]
           ]
         end
       end
@@ -53,16 +53,16 @@ module Admin
       form do
         section "Provider Details" do
           field :name, required: true
-          
+
           row cols: 2 do
             field :provider_type, type: :select, required: true, collection: [
-              ["OpenAI", "openai"],
-              ["Anthropic", "anthropic"],
-              ["Google", "google"]
+              [ "OpenAI", "openai" ],
+              [ "Anthropic", "anthropic" ],
+              [ "Google", "google" ]
             ]
             field :llm_model, required: true, label: "Model", placeholder: "e.g., gpt-4, claude-3-opus"
           end
-          
+
           field :api_endpoint, type: :url, label: "API Endpoint", help: "Optional custom API endpoint"
         end
 
@@ -72,7 +72,7 @@ module Admin
             field :max_tokens, type: :number
             field :temperature, type: :number
           end
-          
+
           field :enabled, type: :toggle
         end
 
@@ -83,14 +83,14 @@ module Admin
 
       show do
         sidebar do
-          panel :config, title: "Configuration", fields: [:provider_type, :llm_model, :priority, :enabled]
-          panel :params, title: "Parameters", fields: [:max_tokens, :temperature]
-          panel :timestamps, title: "Timestamps", fields: [:created_at, :updated_at]
+          panel :config, title: "Configuration", fields: [ :provider_type, :llm_model, :priority, :enabled ]
+          panel :params, title: "Parameters", fields: [ :max_tokens, :temperature ]
+          panel :timestamps, title: "Timestamps", fields: [ :created_at, :updated_at ]
         end
-        
+
         main do
-          panel :details, title: "Provider Details", fields: [:name, :api_endpoint]
-          panel :settings, title: "Advanced Settings", fields: [:settings]
+          panel :details, title: "Provider Details", fields: [ :name, :api_endpoint ]
+          panel :settings, title: "Advanced Settings", fields: [ :settings ]
         end
       end
 
@@ -105,4 +105,3 @@ module Admin
     end
   end
 end
-

@@ -24,12 +24,26 @@ class SignalsController < ApplicationController
     @emails = filter_by_company(@emails)
     @emails = search_emails(@emails)
 
-    # Group emails by thread for display (showing latest in each thread)
-    @grouped_emails = group_emails_by_application(@emails)
+    # For "all" tab, show unified chronological list; otherwise split by matched/unmatched
+    @show_unified_list = @current_relevance == "all"
 
-    # Get unmatched emails grouped by thread (only latest email per thread)
-    unmatched_by_thread = group_emails_by_thread(@emails.unmatched)
-    @pagy_unmatched, @unmatched_emails = pagy_array(unmatched_by_thread, limit: 15, page_param: :unmatched_page)
+    if @show_unified_list
+      # Unified chronological list - group by thread and paginate all together
+      all_by_thread = group_emails_by_thread(@emails)
+      @pagy_all, @all_emails = pagy_array(all_by_thread, limit: 20, page_param: :page)
+      @grouped_emails = {}
+      @unmatched_emails = []
+      @pagy_unmatched = nil
+    else
+      # Split view: unmatched emails first, then matched grouped by application
+      @grouped_emails = group_emails_by_application(@emails)
+
+      # Get unmatched emails grouped by thread (only latest email per thread)
+      unmatched_by_thread = group_emails_by_thread(@emails.unmatched)
+      @pagy_unmatched, @unmatched_emails = pagy_array(unmatched_by_thread, limit: 15, page_param: :unmatched_page)
+      @all_emails = []
+      @pagy_all = nil
+    end
 
     # Load filter options
     @email_types = SyncedEmail::EMAIL_TYPES
@@ -48,9 +62,9 @@ class SignalsController < ApplicationController
     respond_to do |format|
       format.html do
         if turbo_frame_request_id == "email_list"
-          render inline: <<~ERB, locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, pagy_unmatched: @pagy_unmatched, selected_email_id: @selected_email&.id }
+          render inline: <<~ERB, locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, pagy_unmatched: @pagy_unmatched, selected_email_id: @selected_email&.id, show_unified_list: @show_unified_list, all_emails: @all_emails, pagy_all: @pagy_all }
             <%= turbo_frame_tag "email_list", class: "flex-1 overflow-y-auto" do %>
-              <%= render "signals/email_list", grouped_emails: grouped_emails, unmatched_emails: unmatched_emails, pagy_unmatched: pagy_unmatched, selected_email_id: selected_email_id %>
+              <%= render "signals/email_list", grouped_emails: grouped_emails, unmatched_emails: unmatched_emails, pagy_unmatched: pagy_unmatched, selected_email_id: selected_email_id, show_unified_list: show_unified_list, all_emails: all_emails, pagy_all: pagy_all %>
             <% end %>
           ERB
         else
@@ -93,9 +107,13 @@ class SignalsController < ApplicationController
       # Also match other emails in the same thread
       match_thread_emails(application) if @email.thread_id.present?
 
+      # Reprocess this email now that it is matched
+      Signals::EmailStateOrchestrator.new(@email).call
+
       respond_to do |format|
         format.html { redirect_to signals_path, notice: "Signal matched to #{application.company.name}." }
         format.turbo_stream do
+          flash.now[:notice] = "Signal matched to #{application.company.name}."
           @thread_emails = @email.thread_emails.includes(:email_sender)
           reload_email_list_data
           render turbo_stream: [
@@ -106,6 +124,9 @@ class SignalsController < ApplicationController
             turbo_stream.update("email_list",
               partial: "signals/email_list",
               locals: { grouped_emails: @grouped_emails, unmatched_emails: @unmatched_emails, pagy_unmatched: @pagy_unmatched, selected_email_id: @email.id }
+            ),
+            turbo_stream.update("flash",
+              partial: "shared/flash"
             ),
             turbo_stream.update("email_stats",
               html: email_stats_html
@@ -118,10 +139,15 @@ class SignalsController < ApplicationController
       respond_to do |format|
         format.html { redirect_to signals_path, alert: "Could not match signal to application." }
         format.turbo_stream do
-          render turbo_stream: turbo_stream.update(
-            "email_detail",
-            html: "<div class='p-4 text-red-600'>Could not match signal</div>"
-          )
+          flash.now[:alert] = "Could not match signal to application."
+          render turbo_stream: [
+            turbo_stream.update("email_detail",
+              html: "<div class='p-4 text-red-600'>Could not match signal</div>"
+            ),
+            turbo_stream.update("flash",
+              partial: "shared/flash"
+            )
+          ]
         end
         format.json { render json: { success: false }, status: :unprocessable_entity }
       end
@@ -186,14 +212,10 @@ class SignalsController < ApplicationController
           end
           format.json { render json: result }
         elsif result[:redirect_path]
-          # Internal redirect (new application page)
-          format.html { redirect_to result[:redirect_path], notice: result[:message] }
-          format.turbo_stream do
-            # Refresh the detail panel and redirect
-            render turbo_stream: [
-              turbo_stream.action(:redirect, result[:redirect_path])
-            ]
-          end
+          # Internal redirect (new application page) - flash will show on target page
+          flash[:notice] = result[:message]
+          format.html { redirect_to result[:redirect_path], status: :see_other }
+          format.turbo_stream { redirect_to result[:redirect_path], status: :see_other }
           format.json { render json: result }
         else
           # Action completed, refresh the view
