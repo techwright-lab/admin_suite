@@ -1,0 +1,115 @@
+{
+  "version": "2026-01-27",
+  "event": {
+    "event_type": "email",
+    "synced_email_id": 1002,
+    "thread_id": "thread_xyz",
+    "received_at": "2026-01-27T12:00:00Z",
+    "email_date": "2026-01-27T11:58:00Z",
+    "from": { "email": "recruiting@acme.com", "name": "Acme Recruiting" },
+    "to": [{ "email": "user@example.com", "name": "User" }],
+    "subject": "Great news — moving to the next round",
+    "body": {
+      "text": "Congratulations! You've passed the technical interview.\n\nThe team was impressed with your system design skills.\n\nNext up is a 30-minute call with the hiring manager.\n",
+      "source": "body_preview",
+      "truncated": false,
+      "normalization": { "replies_removed": true, "html_stripped": false, "whitespace_collapsed": true }
+    },
+    "links": []
+  },
+  "match": {
+    "matched": true,
+    "match_strategy": "from_email",
+    "interview_application_id": 2002,
+    "confidence": 0.8
+  },
+  "application": {
+    "id": 2002,
+    "status": "active",
+    "pipeline_stage": "interviewing",
+    "company": { "id": 3001, "name": "Acme", "website": "https://acme.com" },
+    "job_role": { "id": 4001, "title": "Software Engineer" },
+    "rounds_recent": [
+      {
+        "id": 5001,
+        "position": 1,
+        "stage": "technical",
+        "stage_name": "Technical Round",
+        "scheduled_at": "2026-01-25T18:00:00Z",
+        "result": "pending",
+        "interviewer_name": "Jordan Lee",
+        "source_email_id": 999
+      }
+    ]
+  },
+  "facts": {
+    "extraction": { "provider": "openai", "model": "unknown", "confidence": 0.78, "warnings": [] },
+    "classification": { "kind": "round_feedback", "confidence": 0.8, "evidence": ["You've passed the technical interview"] },
+    "entities": {
+      "company": { "name": "Acme", "website": "https://acme.com" },
+      "recruiter": { "name": null, "email": "recruiting@acme.com", "title": null },
+      "job": { "title": "Software Engineer", "department": null, "location": null, "url": null }
+    },
+    "action_links": [],
+    "key_insights": "Passed technical interview; hiring manager call next.",
+    "is_forwarded": false,
+    "scheduling": {
+      "is_scheduling_related": false,
+      "scheduled_at": null,
+      "timezone_hint": null,
+      "duration_minutes": 0,
+      "stage": null,
+      "round_type": null,
+      "stage_name": null,
+      "interviewer_name": null,
+      "interviewer_role": null,
+      "video_link": null,
+      "phone_number": null,
+      "location": null,
+      "is_rescheduled": false,
+      "is_cancelled": false,
+      "original_scheduled_at": null,
+      "evidence": []
+    },
+    "round_feedback": {
+      "has_round_feedback": true,
+      "result": "passed",
+      "stage_mentioned": "technical interview",
+      "round_type": "System Design",
+      "interviewer_mentioned": null,
+      "date_mentioned": null,
+      "feedback": {
+        "has_detailed_feedback": true,
+        "summary": "Strong system design performance.",
+        "strengths": ["System design"],
+        "improvements": [],
+        "full_feedback_text": "The team was impressed with your system design skills."
+      },
+      "next_steps": {
+        "has_next_round": true,
+        "next_round_type": "hiring_manager",
+        "next_round_hint": "30-minute call with the hiring manager",
+        "timeline_hint": null
+      },
+      "evidence": ["You've passed the technical interview", "Next up is a 30-minute call with the hiring manager"]
+    },
+    "status_change": {
+      "has_status_change": false,
+      "type": "no_change",
+      "is_final": null,
+      "effective_date": null,
+      "rejection_details": { "reason": null, "stage_rejected_at": null, "is_generic": false, "door_open": false },
+      "offer_details": {
+        "role_title": null,
+        "department": null,
+        "start_date": null,
+        "response_deadline": null,
+        "includes_compensation_info": false,
+        "compensation_hints": null,
+        "next_steps": null
+      },
+      "feedback": { "has_feedback": false, "feedback_text": null, "is_constructive": false },
+      "evidence": []
+    }
+  }
+}

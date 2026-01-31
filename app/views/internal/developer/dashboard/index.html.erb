@@ -33,7 +33,7 @@
   </div>
 
   <!-- Portal Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
     <!-- Ops Portal -->
     <%= link_to internal_developer_ops_root_path, class: "group relative bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl border border-amber-200 dark:border-amber-800/50 p-6 hover:shadow-lg hover:shadow-amber-500/10 transition-all" do %>
       <div class="flex items-center gap-3 mb-4">
@@ -52,6 +52,30 @@
         Manage companies, job roles, categories, skill tags, and support content.
       </p>
       <div class="flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400">
+        Enter Portal
+        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+    <% end %>
+
+    <!-- Email Portal -->
+    <%= link_to internal_developer_email_root_path, class: "group relative bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 p-6 hover:shadow-lg hover:shadow-emerald-500/10 transition-all" do %>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/50">
+          <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6m-6 4h10M5 6a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-emerald-900 dark:text-emerald-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-300">Email Portal</h2>
+          <p class="text-sm text-emerald-700 dark:text-emerald-400">Inbox & Signals</p>
+        </div>
+      </div>
+      <p class="text-sm text-emerald-800 dark:text-emerald-300 mb-4">
+        Inspect synced emails and step-by-step pipeline runs/events.
+      </p>
+      <div class="flex items-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
         Enter Portal
         <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -109,9 +133,10 @@
   </div>
 
   <!-- Quick Stats -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
     <%= stat_card("Total Resources", @stats[:total_resources]) %>
     <%= stat_card("Ops Resources", @stats[:ops_resources], color: :amber) %>
+    <%= stat_card("Email Resources", @stats[:email_resources], color: :emerald) %>
     <%= stat_card("AI Resources", @stats[:ai_resources], color: :cyan) %>
     <%= stat_card("Assistant Resources", @stats[:assistant_resources], color: :violet) %>
   </div>

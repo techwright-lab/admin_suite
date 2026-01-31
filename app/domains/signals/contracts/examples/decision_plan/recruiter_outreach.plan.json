@@ -1,0 +1,84 @@
+{
+  "version": "2026-01-27",
+  "decision": "apply",
+  "confidence": 0.75,
+  "reasons": ["recruiter_outreach_unmatched"],
+  "plan": [
+    {
+      "step_id": "create_opportunity",
+      "action": "create_opportunity",
+      "target": {
+        "application_id": null,
+        "round": { "selector": "none", "id": null, "scheduled_at": null, "window_minutes": 0, "stage": null, "result": null }
+      },
+      "params": {
+        "company_name": "Acme",
+        "job_title": "Senior Engineer",
+        "job_url": "https://boards.greenhouse.io/acme/jobs/123",
+        "recruiter_name": "Jane Recruiter",
+        "recruiter_email": "recruiter@acme.com",
+        "extracted_links": [
+          { "url": "https://boards.greenhouse.io/acme/jobs/123", "type": "job_posting", "description": "Job posting" }
+        ],
+        "source": { "synced_email_id": 1010 }
+      },
+      "preconditions": [],
+      "evidence": ["great fit"],
+      "risk": "low"
+    },
+    {
+      "step_id": "upsert_job_listing_from_url",
+      "action": "upsert_job_listing_from_url",
+      "target": {
+        "application_id": null,
+        "round": { "selector": "none", "id": null, "scheduled_at": null, "window_minutes": 0, "stage": null, "result": null }
+      },
+      "params": {
+        "url": "https://boards.greenhouse.io/acme/jobs/123",
+        "company_name": "Acme",
+        "job_role_title": "Senior Engineer",
+        "job_title": "Senior Engineer",
+        "source": { "synced_email_id": 1010 }
+      },
+      "preconditions": [],
+      "evidence": ["job posting: https://boards.greenhouse.io/acme/jobs/123"],
+      "risk": "low"
+    },
+    {
+      "step_id": "attach_job_listing_to_opportunity",
+      "action": "attach_job_listing_to_opportunity",
+      "target": {
+        "application_id": null,
+        "round": { "selector": "none", "id": null, "scheduled_at": null, "window_minutes": 0, "stage": null, "result": null }
+      },
+      "params": {
+        "url": "https://boards.greenhouse.io/acme/jobs/123",
+        "source": { "synced_email_id": 1010 }
+      },
+      "preconditions": [],
+      "evidence": ["job posting: https://boards.greenhouse.io/acme/jobs/123"],
+      "risk": "low"
+    },
+    {
+      "step_id": "enqueue_scrape_job_listing",
+      "action": "enqueue_scrape_job_listing",
+      "target": {
+        "application_id": null,
+        "round": { "selector": "none", "id": null, "scheduled_at": null, "window_minutes": 0, "stage": null, "result": null }
+      },
+      "params": {
+        "url": "https://boards.greenhouse.io/acme/jobs/123",
+        "force": false,
+        "source": { "synced_email_id": 1010 }
+      },
+      "preconditions": [],
+      "evidence": ["job posting: https://boards.greenhouse.io/acme/jobs/123"],
+      "risk": "low"
+    }
+  ],
+  "explain": {
+    "facts_used": ["facts.classification.kind", "facts.entities.job.url"],
+    "facts_ignored": []
+  }
+}
+

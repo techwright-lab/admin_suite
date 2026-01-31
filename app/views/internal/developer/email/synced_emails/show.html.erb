@@ -1,0 +1,200 @@
+<% content_for :title, "Synced Email ##{resource.id} - Email Portal" %>
+
+<% email = resource %>
+<% runs = email.email_pipeline_runs.order(created_at: :desc).includes(:events) %>
+<% latest_run = runs.first %>
+<% events = latest_run ? latest_run.events.in_order : [] %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="mb-6">
+    <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+      <%= link_to "Email Portal", internal_developer_email_root_path, class: "hover:text-emerald-600 dark:hover:text-emerald-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <%= link_to "Synced Emails", internal_developer_email_synced_emails_path, class: "hover:text-emerald-600 dark:hover:text-emerald-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span class="text-slate-900 dark:text-white font-mono">#<%= email.id %></span>
+    </nav>
+
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white truncate">
+          <%= email.subject.presence || "(No subject)" %>
+        </h1>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400 truncate">
+          From: <span class="font-mono"><%= email.from_email %></span>
+          <% if email.email_date.present? %>
+            • <span class="font-mono"><%= email.email_date.strftime("%b %d, %H:%M") %></span>
+          <% end %>
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <%= link_to internal_developer_email_synced_email_path(email, format: :json),
+          class: "inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-sm font-medium rounded-lg transition-colors" do %>
+          Export JSON
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <div class="lg:w-96 flex-shrink-0 space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <h3 class="font-medium text-slate-900 dark:text-white text-sm">Email Summary</h3>
+        </div>
+
+        <div class="p-4 space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</div>
+              <div class="mt-1"><%= render_status_badge(email.status) %></div>
+            </div>
+            <div>
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Type</div>
+              <div class="mt-1 text-sm text-slate-900 dark:text-white"><%= email.email_type.presence || "—" %></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Matched</div>
+              <div class="mt-1"><%= render_status_badge(email.matched? ? "yes" : "no", size: :sm) %></div>
+            </div>
+            <div>
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Extraction</div>
+              <div class="mt-1 text-sm text-slate-900 dark:text-white"><%= email.extraction_status %></div>
+            </div>
+          </div>
+
+          <% if latest_run.present? %>
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-700">
+              <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Latest Pipeline Run</div>
+              <%= link_to internal_developer_email_email_pipeline_run_path(latest_run),
+                class: "block p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors" do %>
+                <div class="flex items-center justify-between">
+                  <div class="text-sm font-medium text-slate-900 dark:text-white">Run #<%= latest_run.id %></div>
+                  <%= render_status_badge(latest_run.status, size: :sm) %>
+                </div>
+                <div class="mt-1 text-xs text-slate-500 dark:text-slate-400 font-mono">
+                  <%= latest_run.created_at.strftime("%b %d, %H:%M:%S") %>
+                  <% if latest_run.duration_ms.present? %>
+                    • <%= latest_run.duration_ms %>ms
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400">
+              No pipeline runs recorded yet.
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <h3 class="font-medium text-slate-900 dark:text-white text-sm">Canonical Body (preview)</h3>
+        </div>
+        <div class="p-4">
+          <%= render_text_block(email.body_preview.to_s.presence || email.snippet.to_s, :text) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-1 min-w-0 space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="font-medium text-slate-900 dark:text-white">Event Timeline</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400"><%= events.size %> events</span>
+          </div>
+        </div>
+
+        <div class="p-6">
+          <% if events.any? %>
+            <ol class="relative border-s border-slate-200 dark:border-slate-700">
+              <% events.each do |event| %>
+                <li class="mb-6 ms-4">
+                  <div class="absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-white dark:border-slate-800
+                    <%= event.status.to_s == 'success' ? 'bg-green-500' : (event.status.to_s == 'failed' ? 'bg-red-500' : (event.status.to_s == 'skipped' ? 'bg-slate-400' : 'bg-emerald-500')) %>">
+                  </div>
+
+                  <details class="group rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/20">
+                    <summary class="cursor-pointer list-none p-4 flex items-start justify-between gap-4">
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="text-xs font-mono text-slate-500 dark:text-slate-400">#<%= event.step_order %></span>
+                          <span class="text-sm font-semibold text-slate-900 dark:text-white"><%= event.event_type %></span>
+                          <%= render_status_badge(event.status, size: :sm) %>
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          <%= event.created_at.strftime("%b %d, %H:%M:%S") %>
+                          <% if event.duration_ms.present? %>
+                            • <span class="font-mono"><%= event.duration_ms %>ms</span>
+                          <% end %>
+                          <% if event.error_message.present? %>
+                            • <span class="text-red-600 dark:text-red-300"><%= event.error_message.to_s.truncate(120) %></span>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <%= link_to "Open",
+                          internal_developer_email_email_pipeline_event_path(event),
+                          class: "text-xs text-emerald-600 dark:text-emerald-400 hover:underline",
+                          data: { turbo_frame: "_top" } %>
+                        <svg class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                      </div>
+                    </summary>
+
+                    <div class="px-4 pb-4 space-y-4">
+                      <% if event.input_payload.present? && event.input_payload != {} %>
+                        <div>
+                          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Input</div>
+                          <%= render_json_block(event.input_payload) %>
+                        </div>
+                      <% end %>
+
+                      <% if event.output_payload.present? && event.output_payload != {} %>
+                        <div>
+                          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Output</div>
+                          <%= render_json_block(event.output_payload) %>
+                        </div>
+                      <% end %>
+
+                      <% if event.metadata.present? && event.metadata != {} %>
+                        <div>
+                          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Metadata</div>
+                          <%= render_json_block(event.metadata) %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </details>
+                </li>
+              <% end %>
+            </ol>
+          <% else %>
+            <div class="text-center py-10 text-sm text-slate-500 dark:text-slate-400">
+              No events recorded for the latest run.
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <h3 class="font-medium text-slate-900 dark:text-white">Raw Extracted Data (JSON)</h3>
+        </div>
+        <div class="p-6">
+          <%= render_json_block(email.extracted_data || {}) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

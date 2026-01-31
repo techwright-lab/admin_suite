@@ -1,0 +1,62 @@
+{
+  "version": "2026-01-27",
+  "decision": "apply",
+  "confidence": 0.79,
+  "reasons": ["round_feedback_detected", "explicit_pass_language"],
+  "plan": [
+    {
+      "step_id": "set_round_passed",
+      "action": "set_round_result",
+      "target": {
+        "application_id": 2002,
+        "round": {
+          "selector": "latest_pending",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": {
+        "result": "passed",
+        "completed_at": "2026-01-27T12:00:00Z",
+        "source": { "synced_email_id": 1002 }
+      },
+      "preconditions": ["application.rounds_recent.any(result==pending) == true"],
+      "evidence": ["You've passed the technical interview"],
+      "risk": "low"
+    },
+    {
+      "step_id": "create_round_feedback",
+      "action": "create_interview_feedback",
+      "target": {
+        "application_id": 2002,
+        "round": {
+          "selector": "latest_pending",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": {
+        "round_selector": "latest_pending",
+        "went_well": "• System design",
+        "to_improve": null,
+        "ai_summary": "Strong system design performance.",
+        "interviewer_notes": "The team was impressed with your system design skills.",
+        "recommended_action": "Prepare for hiring manager round",
+        "source": { "synced_email_id": 1002 }
+      },
+      "preconditions": ["round.interview_feedback == null"],
+      "evidence": ["The team was impressed with your system design skills"],
+      "risk": "low"
+    }
+  ],
+  "explain": {
+    "facts_used": ["facts.round_feedback.result", "facts.round_feedback.feedback.full_feedback_text"],
+    "facts_ignored": []
+  }
+}

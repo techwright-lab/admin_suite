@@ -23,6 +23,22 @@ class Ai::ProviderRunnerServiceTest < ActiveSupport::TestCase
     end
   end
 
+  class UnavailableProvider
+    attr_reader :model_name
+
+    def initialize(model_name:)
+      @model_name = model_name
+    end
+
+    def available?
+      false
+    end
+
+    def run(*)
+      raise "should_not_be_called"
+    end
+  end
+
   def build_logger(user, provider_name, provider)
     Ai::ApiLoggerService.new(
       operation_type: :assistant_chat,
@@ -133,5 +149,28 @@ class Ai::ProviderRunnerServiceTest < ActiveSupport::TestCase
 
     assert result[:success]
     assert_equal "anthropic", result[:provider]
+  end
+
+  test "logs provider_unavailable when provider is not configured" do
+    user = create(:user)
+    unavailable = UnavailableProvider.new(model_name: "gpt-4o-mini")
+
+    runner = Ai::ProviderRunnerService.new(
+      provider_chain: [ "openai" ],
+      prompt: "PROMPT",
+      content_size: 6,
+      provider_for: ->(_name) { unavailable },
+      logger_builder: ->(name, prov) { build_logger(user, name, prov) }
+    )
+
+    assert_difference "Ai::LlmApiLog.count", 1 do
+      result = runner.run { |_response| [ { "ok" => true }, {}, true ] }
+      assert_equal false, result[:success]
+    end
+
+    log = Ai::LlmApiLog.order(created_at: :desc).first
+    assert_equal "openai", log.provider
+    assert_equal "error", log.status
+    assert_equal "provider_unavailable", log.error_message
   end
 end

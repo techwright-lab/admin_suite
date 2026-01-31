@@ -6,7 +6,7 @@ class InterviewApplication < ApplicationRecord
   extend FriendlyId
   friendly_id :uuid, use: [ :slugged, :finders ]
 
-  STATUSES = [ :active, :archived, :rejected, :accepted ].freeze
+  STATUSES = [ :active, :archived, :rejected, :accepted, :on_hold, :withdrawn ].freeze
   PIPELINE_STAGES = [ :applied, :screening, :interviewing, :offer, :closed ].freeze
 
   belongs_to :user
@@ -39,6 +39,8 @@ class InterviewApplication < ApplicationRecord
     state :archived
     state :rejected
     state :accepted
+    state :on_hold
+    state :withdrawn
 
     event :archive do
       transitions from: :active, to: :archived
@@ -52,8 +54,16 @@ class InterviewApplication < ApplicationRecord
       transitions from: :active, to: :accepted
     end
 
+    event :hold do
+      transitions from: :active, to: :on_hold
+    end
+
+    event :withdraw do
+      transitions from: :active, to: :withdrawn
+    end
+
     event :reactivate do
-      transitions from: [ :archived, :rejected, :accepted ], to: :active
+      transitions from: [ :archived, :rejected, :accepted, :on_hold, :withdrawn ], to: :active
     end
   end
 
@@ -186,6 +196,8 @@ class InterviewApplication < ApplicationRecord
     when :accepted then "green"
     when :rejected then "red"
     when :archived then "gray"
+    when :on_hold then "yellow"
+    when :withdrawn then "gray"
     else "gray"
     end
   end

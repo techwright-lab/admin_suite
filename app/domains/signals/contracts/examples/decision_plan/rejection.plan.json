@@ -1,0 +1,75 @@
+{
+  "version": "2026-01-27",
+  "decision": "apply",
+  "confidence": 0.9,
+  "reasons": ["explicit_rejection_language"],
+  "plan": [
+    {
+      "step_id": "set_status_rejected",
+      "action": "set_application_status",
+      "target": {
+        "application_id": 2003,
+        "round": {
+          "selector": "latest_pending",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": { "status": "rejected" },
+      "preconditions": ["application.status == active"],
+      "evidence": ["move forward with other candidates"],
+      "risk": "high"
+    },
+    {
+      "step_id": "set_pipeline_closed",
+      "action": "set_pipeline_stage",
+      "target": {
+        "application_id": 2003,
+        "round": {
+          "selector": "latest",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": { "stage": "closed" },
+      "preconditions": ["application.pipeline_stage != closed"],
+      "evidence": ["Update on your application"],
+      "risk": "high"
+    },
+    {
+      "step_id": "create_company_feedback_rejection",
+      "action": "create_company_feedback",
+      "target": {
+        "application_id": 2003,
+        "round": {
+          "selector": "none",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": {
+        "feedback_type": "rejection",
+        "feedback_text": "Moving forward with other candidates",
+        "rejection_reason": "Moving forward with other candidates",
+        "next_steps": null,
+        "source": { "synced_email_id": 1003 }
+      },
+      "preconditions": ["application.company_feedback == null"],
+      "evidence": ["move forward with other candidates"],
+      "risk": "medium"
+    }
+  ],
+  "explain": {
+    "facts_used": ["facts.status_change.type", "facts.status_change.rejection_details.reason"],
+    "facts_ignored": []
+  }
+}

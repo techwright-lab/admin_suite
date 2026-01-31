@@ -7,6 +7,15 @@
 #   result = processor.run
 #
 class Gmail::EmailProcessorService
+  PROXY_SENDER_DOMAINS = %w[
+    linkedin.com
+    mail.linkedin.com
+  ].freeze
+
+  PROXY_SENDER_EMAILS = %w[
+    inmail-hit-reply@linkedin.com
+  ].freeze
+
   # Keywords for detecting email types
   EMAIL_TYPE_PATTERNS = {
     interview_invite: [
@@ -161,8 +170,10 @@ class Gmail::EmailProcessorService
   # Initialize the processor
   #
   # @param synced_email [SyncedEmail] The email to process
-  def initialize(synced_email)
+  # @param pipeline_run [Signals::EmailPipelineRun, nil] Optional pipeline run for observability
+  def initialize(synced_email, pipeline_run: nil)
     @synced_email = synced_email
+    @pipeline_recorder = Signals::Observability::EmailPipelineRecorder.for_run(pipeline_run)
   end
 
   # Runs the processing pipeline
@@ -172,9 +183,26 @@ class Gmail::EmailProcessorService
     return already_processed_result if synced_email.processed? || synced_email.ignored?
 
     ActiveRecord::Base.transaction do
-      classify_email_type
-      detect_company
-      match_to_application
+      if pipeline_recorder
+        pipeline_recorder.measure(:email_classification) do
+          classify_email_type
+          { "email_type" => synced_email.email_type }
+        end
+
+        pipeline_recorder.measure(:company_detection) do
+          detect_company
+          { "detected_company" => synced_email.detected_company }
+        end
+
+        pipeline_recorder.measure(:application_match) do
+          match_to_application
+          { "interview_application_id" => synced_email.interview_application_id }
+        end
+      else
+        classify_email_type
+        detect_company
+        match_to_application
+      end
       synced_email.save!
     end
 
@@ -204,11 +232,25 @@ class Gmail::EmailProcessorService
     }
   end
 
+  def pipeline_recorder
+    @pipeline_recorder
+  end
+
   # Classifies the email type based on content patterns
   # Emails from target companies get boosted relevance
   #
   # @return [void]
   def classify_email_type
+    # LinkedIn and similar proxy senders can include misleading keywords (e.g. "JOB OFFER")
+    # in the subject even when the content is just recruiter outreach.
+    if proxy_sender?
+      detector = Gmail::OpportunityDetectorService.new(synced_email)
+      if detector.recruiter_outreach?
+        synced_email.email_type = "recruiter_outreach"
+        return
+      end
+    end
+
     content = classification_content
     matched_types = EMAIL_TYPE_PATTERNS.filter_map do |type, patterns|
       type.to_s if patterns.any? { |pattern| content.match?(pattern) }
@@ -216,6 +258,11 @@ class Gmail::EmailProcessorService
 
     if self_sent_email?
       matched_types -= SELF_SENT_TYPE_BLACKLIST
+    end
+
+    # "job offer" alone is not strong enough signal for proxy senders (LinkedIn InMail, etc.)
+    if proxy_sender? && matched_types.include?("offer") && !strong_offer_signal?(content)
+      matched_types -= [ "offer" ]
     end
 
     if matched_types.any?
@@ -248,9 +295,9 @@ class Gmail::EmailProcessorService
   def classification_content
     subject = synced_email.subject.to_s
     body = primary_body_content
-    return [subject, body].join(" ").strip if body.present?
+    return [ subject, body ].join(" ").strip if body.present?
 
-    [subject, synced_email.snippet, synced_email.body_preview].compact.join(" ")
+    [ subject, synced_email.snippet, synced_email.body_preview ].compact.join(" ")
   end
 
   # Extracts the primary body content (removes quoted replies/forwards)
@@ -446,6 +493,13 @@ class Gmail::EmailProcessorService
   def find_matching_application
     user = synced_email.user
 
+    # Proxy senders (e.g. LinkedIn InMail) can only auto-match with high confidence.
+    # We treat "same thread already matched" as high-confidence, but we never use
+    # sender-consistency or other heuristics for proxy senders.
+    if proxy_sender?
+      return match_proxy_sender_by_thread(user)
+    end
+
     # Strategy 1: Match by email thread (same thread = same application)
     # This is highest priority to maintain conversation continuity
     if synced_email.thread_id.present?
@@ -536,5 +590,42 @@ class Gmail::EmailProcessorService
     uri.host&.gsub(/^www\./, "")&.downcase
   rescue URI::InvalidURIError
     nil
+  end
+
+  def proxy_sender?
+    from = synced_email.from_email.to_s.downcase
+    return true if PROXY_SENDER_EMAILS.include?(from)
+
+    domain = from.split("@").last
+    return false if domain.blank?
+
+    PROXY_SENDER_DOMAINS.include?(domain)
+  end
+
+  def match_proxy_sender_by_thread(user)
+    return nil if synced_email.thread_id.blank?
+
+    app_ids =
+      SyncedEmail.where(user: user, thread_id: synced_email.thread_id)
+        .where.not(interview_application_id: nil)
+        .distinct
+        .pluck(:interview_application_id)
+
+    return nil unless app_ids.size == 1
+
+    user.interview_applications.find_by(id: app_ids.first, status: :active) ||
+      user.interview_applications.find_by(id: app_ids.first)
+  end
+
+  def strong_offer_signal?(content)
+    return false if content.blank?
+
+    [
+      /offer\s+(letter|of\s+employment)/i,
+      /pleased\s+to\s+offer/i,
+      /extend(ing)?\s+(an?\s+)?offer/i,
+      /welcome\s+to\s+the\s+team/i,
+      /excited\s+to\s+have\s+you\s+join/i
+    ].any? { |pattern| content.match?(pattern) }
   end
 end

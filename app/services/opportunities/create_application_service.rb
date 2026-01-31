@@ -44,8 +44,14 @@ module Opportunities
         # Find or create job role
         job_role = find_or_create_job_role
 
-        # Create job listing if we have a URL
-        job_listing = create_job_listing_if_url_present(company, job_role)
+        # Prefer an existing job_listing already associated with the opportunity.
+        job_listing = opportunity.job_listing
+
+        # Create job listing if we have a URL and no job_listing is present yet.
+        job_listing ||= create_job_listing_if_url_present(company, job_role)
+
+        # Persist the job listing back onto the opportunity for reuse.
+        opportunity.update!(job_listing: job_listing) if job_listing.present? && opportunity.job_listing_id != job_listing.id
 
         # Create the interview application
         application = create_application(company, job_role, job_listing)
@@ -171,19 +177,13 @@ module Opportunities
     def create_job_listing_if_url_present(company, job_role)
       return nil unless opportunity.job_url.present?
 
-      # Check if job listing already exists for this URL
-      existing = JobListing.find_by(url: opportunity.job_url)
-      return existing if existing
-
-      # Create new job listing
-      JobListing.create!(
+      res = JobListings::UpsertFromUrlService.new(
         url: opportunity.job_url,
         company: company,
         job_role: job_role,
-        title: opportunity.job_role_title,
-        status: :active,
-        source_id: extract_source_id(opportunity.job_url)
-      )
+        title: opportunity.job_role_title
+      ).call
+      res[:job_listing]
     end
 
     # Creates the interview application

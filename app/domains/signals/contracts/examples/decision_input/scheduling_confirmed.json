@@ -1,0 +1,121 @@
+{
+  "version": "2026-01-27",
+  "event": {
+    "event_type": "email",
+    "synced_email_id": 1001,
+    "thread_id": "thread_abc",
+    "received_at": "2026-01-27T10:00:00Z",
+    "email_date": "2026-01-27T09:59:00Z",
+    "from": { "email": "scheduling@goodtime.io", "name": "GoodTime Scheduling" },
+    "to": [{ "email": "user@example.com", "name": "User" }],
+    "subject": "Interview Confirmed - Software Engineer at Acme",
+    "body": {
+      "text": "Your interview has been scheduled.\n\nRole: Software Engineer\nCompany: Acme\nDate: Tuesday, Jan 28, 2026\nTime: 2:00 PM PST\nDuration: 30 minutes\nInterviewer: Jordan Lee\nJoin Zoom: https://zoom.us/j/123456789\n",
+      "source": "body_preview",
+      "truncated": false,
+      "normalization": {
+        "replies_removed": true,
+        "html_stripped": false,
+        "whitespace_collapsed": false
+      }
+    },
+    "links": [
+      { "url": "https://zoom.us/j/123456789", "label_hint": "Join Zoom" }
+    ]
+  },
+  "match": {
+    "matched": true,
+    "match_strategy": "thread_id",
+    "interview_application_id": 2001,
+    "confidence": 0.9
+  },
+  "application": {
+    "id": 2001,
+    "status": "active",
+    "pipeline_stage": "applied",
+    "company": { "id": 3001, "name": "Acme", "website": "https://acme.com" },
+    "job_role": { "id": 4001, "title": "Software Engineer" },
+    "rounds_recent": []
+  },
+  "facts": {
+    "extraction": {
+      "provider": "openai",
+      "model": "unknown",
+      "confidence": 0.82,
+      "warnings": []
+    },
+    "classification": {
+      "kind": "scheduling",
+      "confidence": 0.86,
+      "evidence": ["Your interview has been scheduled"]
+    },
+    "entities": {
+      "company": { "name": "Acme", "website": "https://acme.com" },
+      "recruiter": { "name": null, "email": null, "title": null },
+      "job": { "title": "Software Engineer", "department": "Engineering", "location": null, "url": null }
+    },
+    "action_links": [
+      { "url": "https://zoom.us/j/123456789", "action_label": "Join Zoom Interview", "priority": 1 }
+    ],
+    "key_insights": "Interview confirmed with Zoom link.",
+    "is_forwarded": false,
+    "scheduling": {
+      "is_scheduling_related": true,
+      "scheduled_at": "2026-01-28T22:00:00Z",
+      "timezone_hint": "PST",
+      "duration_minutes": 30,
+      "stage": "screening",
+      "round_type": "Phone Screen",
+      "stage_name": "Recruiter Screen",
+      "interviewer_name": "Jordan Lee",
+      "interviewer_role": "Recruiter",
+      "video_link": "https://zoom.us/j/123456789",
+      "phone_number": null,
+      "location": null,
+      "is_rescheduled": false,
+      "is_cancelled": false,
+      "original_scheduled_at": null,
+      "evidence": ["Your interview has been scheduled", "Time: 2:00 PM PST", "Join Zoom: https://zoom.us/j/123456789"]
+    },
+    "round_feedback": {
+      "has_round_feedback": false,
+      "result": null,
+      "stage_mentioned": null,
+      "round_type": null,
+      "interviewer_mentioned": null,
+      "date_mentioned": null,
+      "feedback": {
+        "has_detailed_feedback": false,
+        "summary": null,
+        "strengths": [],
+        "improvements": [],
+        "full_feedback_text": null
+      },
+      "next_steps": {
+        "has_next_round": false,
+        "next_round_type": null,
+        "next_round_hint": null,
+        "timeline_hint": null
+      },
+      "evidence": []
+    },
+    "status_change": {
+      "has_status_change": false,
+      "type": "no_change",
+      "is_final": null,
+      "effective_date": null,
+      "rejection_details": { "reason": null, "stage_rejected_at": null, "is_generic": false, "door_open": false },
+      "offer_details": {
+        "role_title": null,
+        "department": null,
+        "start_date": null,
+        "response_deadline": null,
+        "includes_compensation_info": false,
+        "compensation_hints": null,
+        "next_steps": null
+      },
+      "feedback": { "has_feedback": false, "feedback_text": null, "is_constructive": false },
+      "evidence": []
+    }
+  }
+}

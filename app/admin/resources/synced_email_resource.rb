@@ -8,8 +8,8 @@ module Admin
     # Includes signal extraction debugging information.
     class SyncedEmailResource < Admin::Base::Resource
       model SyncedEmail
-      portal :ops
-      section :email
+      portal :email
+      section :inbox
 
       index do
         searchable :subject, :from_email, :from_name

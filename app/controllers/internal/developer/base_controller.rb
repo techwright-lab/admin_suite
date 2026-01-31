@@ -112,6 +112,7 @@ module Internal
       def build_navigation
         navigation = {
           ops: { label: "Ops Portal", icon: "settings", sections: {} },
+          email: { label: "Email Portal", icon: "inbox", sections: {} },
           ai: { label: "AI Portal", icon: "cpu", sections: {} },
           assistant: { label: "Assistant Portal", icon: "message-circle", sections: {} }
         }

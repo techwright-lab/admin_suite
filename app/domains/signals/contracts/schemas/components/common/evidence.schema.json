@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/components/common/evidence.schema.json",
+  "title": "Evidence",
+  "type": "array",
+  "items": {
+    "type": "string",
+    "minLength": 3,
+    "maxLength": 600
+  },
+  "maxItems": 10
+}

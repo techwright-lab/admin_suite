@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/components/event/email_event.schema.json",
+  "title": "Email Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_type", "synced_email_id", "from", "subject", "body", "links"],
+  "properties": {
+    "event_type": { "const": "email" },
+    "synced_email_id": { "type": "integer", "minimum": 1 },
+    "thread_id": { "type": ["string", "null"], "maxLength": 200 },
+    "received_at": { "type": ["string", "null"], "format": "date-time" },
+    "email_date": { "type": ["string", "null"], "format": "date-time" },
+    "from": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["email", "name"],
+      "properties": {
+        "email": { "type": ["string", "null"], "maxLength": 320 },
+        "name": { "type": ["string", "null"], "maxLength": 200 }
+      }
+    },
+    "to": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["email", "name"],
+        "properties": {
+          "email": { "type": "string", "maxLength": 320 },
+          "name": { "type": ["string", "null"], "maxLength": 200 }
+        }
+      },
+      "maxItems": 50,
+      "default": []
+    },
+    "subject": { "type": ["string", "null"], "maxLength": 500 },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "source", "truncated", "normalization"],
+      "properties": {
+        "text": { "$ref": "gleania://signals/contracts/schemas/components/common/non_empty_string.schema.json" },
+        "source": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/event_body_source" },
+        "truncated": { "type": "boolean" },
+        "normalization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["replies_removed", "html_stripped", "whitespace_collapsed"],
+          "properties": {
+            "replies_removed": { "type": "boolean" },
+            "html_stripped": { "type": "boolean" },
+            "whitespace_collapsed": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url", "label_hint"],
+        "properties": {
+          "url": { "type": "string", "maxLength": 2000 },
+          "label_hint": { "type": ["string", "null"], "maxLength": 200 }
+        }
+      },
+      "maxItems": 50
+    }
+  }
+}

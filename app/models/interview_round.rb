@@ -3,7 +3,7 @@
 # InterviewRound model representing individual interview rounds in an application process
 class InterviewRound < ApplicationRecord
   STAGES = [ :screening, :technical, :hiring_manager, :culture_fit, :other ].freeze
-  RESULTS = [ :pending, :passed, :failed, :waitlisted ].freeze
+  RESULTS = [ :pending, :passed, :failed, :waitlisted, :cancelled ].freeze
   CONFIRMATION_SOURCES = %w[calendly goodtime greenhouse lever manual other].freeze
 
   belongs_to :interview_application
@@ -70,6 +70,7 @@ class InterviewRound < ApplicationRecord
     when :passed then "green"
     when :failed then "red"
     when :waitlisted then "blue"
+    when :cancelled then "gray"
     else "gray"
     end
   end

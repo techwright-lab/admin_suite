@@ -54,6 +54,7 @@ module Ai
       assistant_chat
       assistant_tool_call
       signal_extraction
+      email_facts_extraction
       interview_round_extraction
       round_feedback_extraction
       application_status_extraction

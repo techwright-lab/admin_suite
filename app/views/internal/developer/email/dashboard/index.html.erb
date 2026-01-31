@@ -1,0 +1,100 @@
+<% content_for :title, "Email Portal - Developer" %>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="mb-8">
+    <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+      <%= link_to "Developer Portal", internal_developer_root_path, class: "hover:text-emerald-600 dark:hover:text-emerald-400" %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span class="text-slate-900 dark:text-white">Email Portal</span>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
+        <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6m-6 4h10M5 6a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Email Portal</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Synced emails + Signals pipeline timeline</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+    <%= health_card("Signals Pipeline (24h)", @health[:status], metrics: @health[:metrics]) %>
+
+    <%= link_to internal_developer_email_synced_emails_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors" do %>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">Synced Emails</h3>
+        <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= @stats[:total_emails] %></span>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Browse and inspect email artifacts</p>
+    <% end %>
+
+    <%= link_to internal_developer_email_email_pipeline_runs_path, class: "group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors" do %>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-medium text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">Pipeline Runs (24h)</h3>
+        <span class="text-lg font-bold text-slate-300 dark:text-slate-600"><%= @stats[:pipeline_runs_24h] %></span>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400">End-to-end runs (sync → job → decision)</p>
+    <% end %>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+    <%= stat_card("Matched", @stats[:matched], color: :green) %>
+    <%= stat_card("Unmatched", @stats[:unmatched], color: :amber) %>
+    <%= stat_card("Needs Review", @stats[:needs_review], color: :red) %>
+    <%= stat_card("Runs (24h)", @stats[:pipeline_runs_24h], color: :emerald) %>
+    <%= stat_card("Events (24h)", @stats[:pipeline_events_24h], color: :emerald) %>
+    <%= stat_card("Resources", Admin::Base::Resource.resources_for_portal(:email).count, color: :emerald) %>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="font-medium text-slate-900 dark:text-white">Recent Emails</h3>
+          <%= link_to "View all", internal_developer_email_synced_emails_path, class: "text-sm text-emerald-600 dark:text-emerald-400 hover:underline" %>
+        </div>
+      </div>
+      <div class="p-6 space-y-3">
+        <% @recent[:emails].each do |email| %>
+          <%= link_to internal_developer_email_synced_email_path(email), class: "block p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors" do %>
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-slate-900 dark:text-white truncate"><%= email.subject.presence || "(No subject)" %></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 truncate"><%= email.from_email %></div>
+              </div>
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-mono"><%= email.email_date&.strftime("%b %d, %H:%M") %></span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="font-medium text-slate-900 dark:text-white">Recent Pipeline Runs</h3>
+          <%= link_to "View all", internal_developer_email_email_pipeline_runs_path, class: "text-sm text-emerald-600 dark:text-emerald-400 hover:underline" %>
+        </div>
+      </div>
+      <div class="p-6 space-y-3">
+        <% @recent[:runs].each do |run| %>
+          <%= link_to internal_developer_email_email_pipeline_run_path(run), class: "block p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors" do %>
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-slate-900 dark:text-white truncate">Run #<%= run.id %> • <%= run.status %></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 truncate">Email #<%= run.synced_email_id %> • <%= run.trigger %></div>
+              </div>
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-mono"><%= run.created_at.strftime("%b %d, %H:%M") %></span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

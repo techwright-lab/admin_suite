@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/components/match/match.schema.json",
+  "title": "Email → Application Match",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["matched", "match_strategy", "interview_application_id", "confidence"],
+  "properties": {
+    "matched": { "type": "boolean" },
+    "match_strategy": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/match_strategy" },
+    "interview_application_id": { "type": ["integer", "null"], "minimum": 1 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "matched": { "const": true } }, "required": ["matched"] },
+      "then": {
+        "properties": { "interview_application_id": { "type": "integer" } },
+        "required": ["interview_application_id"]
+      }
+    },
+    {
+      "if": { "properties": { "matched": { "const": false } }, "required": ["matched"] },
+      "then": { "properties": { "interview_application_id": { "const": null } } }
+    }
+  ]
+}

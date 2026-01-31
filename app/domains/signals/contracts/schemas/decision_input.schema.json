@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/decision_input.schema.json",
+  "title": "Signals DecisionInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "event", "match", "application", "facts"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "event": { "$ref": "gleania://signals/contracts/schemas/components/event/email_event.schema.json" },
+    "match": { "$ref": "gleania://signals/contracts/schemas/components/match/match.schema.json" },
+    "application": {
+      "anyOf": [
+        { "$ref": "gleania://signals/contracts/schemas/components/application/application_snapshot.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "facts": { "$ref": "gleania://signals/contracts/schemas/components/facts/email_facts.schema.json" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "match": { "properties": { "matched": { "const": false } } } },
+        "required": ["match"]
+      },
+      "then": { "properties": { "application": { "type": "null" } } }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/components/common/iso_datetime.schema.json",
+  "title": "ISO8601 DateTime",
+  "type": "string",
+  "format": "date-time"
+}

@@ -67,7 +67,6 @@
           <%= link_to "Support Tickets", internal_developer_ops_support_tickets_path, class: "block px-3 py-1.5 rounded #{controller_name == 'support_tickets' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
           
           <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Email</div>
-          <%= link_to "Synced Emails", internal_developer_ops_synced_emails_path, class: "block px-3 py-1.5 rounded #{controller_name == 'synced_emails' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
           <%= link_to "Email Senders", internal_developer_ops_email_senders_path, class: "block px-3 py-1.5 rounded #{controller_name == 'email_senders' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
           
           <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Scraping</div>
@@ -77,6 +76,31 @@
           
           <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">System</div>
           <%= link_to "Settings", internal_developer_ops_settings_path, class: "block px-3 py-1.5 rounded #{controller_name == 'settings' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Email Portal -->
+    <div>
+      <% email_active = request.path.start_with?("/internal/developer/email") %>
+      <%= link_to internal_developer_email_root_path,
+          class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{email_active ? 'bg-emerald-500/20 text-white' : 'text-indigo-200 hover:bg-indigo-700/30 hover:text-white'}" do %>
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= email_active ? 'bg-emerald-500/30' : 'bg-indigo-800/50' %>">
+          <svg class="w-4 h-4 <%= email_active ? 'text-emerald-400' : 'text-indigo-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6m-6 4h10M5 6a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6z"/>
+          </svg>
+        </div>
+        <span class="font-medium">Email Portal</span>
+      <% end %>
+
+      <% if email_active %>
+        <div class="mt-1 ml-11 space-y-0.5 text-sm">
+          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">Inbox</div>
+          <%= link_to "Synced Emails", internal_developer_email_synced_emails_path, class: "block px-3 py-1.5 rounded #{controller_name == 'synced_emails' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+
+          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Pipeline</div>
+          <%= link_to "Pipeline Runs", internal_developer_email_email_pipeline_runs_path, class: "block px-3 py-1.5 rounded #{controller_name == 'email_pipeline_runs' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
+          <%= link_to "Pipeline Events", internal_developer_email_email_pipeline_events_path, class: "block px-3 py-1.5 rounded #{controller_name == 'email_pipeline_events' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
         </div>
       <% end %>
     </div>
@@ -174,7 +198,7 @@
     <div class="px-3 py-2 text-xs text-indigo-400">
       <div class="flex items-center justify-between">
         <span>Framework v2</span>
-        <span class="font-medium text-indigo-300">4 Portals</span>
+        <span class="font-medium text-indigo-300">5 Portals</span>
       </div>
     </div>
   </div>

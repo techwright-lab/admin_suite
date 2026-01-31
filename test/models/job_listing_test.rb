@@ -151,6 +151,22 @@ class JobListingTest < ActiveSupport::TestCase
     assert_nil @listing.salary_range
   end
 
+  test "#salary_range returns nil when salary is implausible" do
+    @listing.salary_min = 89
+    @listing.salary_max = 7
+    @listing.salary_currency = "USD"
+
+    assert_nil @listing.salary_range
+  end
+
+  test "#salary_range returns nil when currency is invalid" do
+    @listing.salary_min = 120000
+    @listing.salary_max = 150000
+    @listing.salary_currency = "US"
+
+    assert_nil @listing.salary_range
+  end
+
   test "#has_custom_sections? returns true when custom_sections present" do
     listing = create(:job_listing, :with_custom_sections, company: @company, job_role: @job_role)
     assert listing.has_custom_sections?

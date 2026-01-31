@@ -61,6 +61,7 @@ module Internal
           total_resources: Admin::Base::Resource.registered_resources.count,
           portals: Admin::Base::Resource.registered_resources.map(&:portal_name).uniq.compact.count,
           ops_resources: Admin::Base::Resource.resources_for_portal(:ops).count,
+          email_resources: Admin::Base::Resource.resources_for_portal(:email).count,
           ai_resources: Admin::Base::Resource.resources_for_portal(:ai).count,
           assistant_resources: Admin::Base::Resource.resources_for_portal(:assistant).count
         }
@@ -89,11 +90,11 @@ module Internal
         success_rate = total > 0 ? (successful.to_f / total * 100).round : 0
         status = if stuck > 5 || (total > 10 && success_rate < 50)
                    :critical
-                 elsif stuck > 0 || (total > 10 && success_rate < 80)
+        elsif stuck > 0 || (total > 10 && success_rate < 80)
                    :degraded
-                 else
+        else
                    :healthy
-                 end
+        end
 
         {
           status: status,
@@ -112,7 +113,7 @@ module Internal
         total = recent_logs.count
         successful = recent_logs.where(status: :success).count
         failed = recent_logs.where(status: :failed).count
-        
+
         # Calculate average latency
         avg_latency = recent_logs.where(status: :success).average(:latency_ms)&.round || 0
         total_cost_cents = recent_logs.sum(:estimated_cost_cents) || 0
@@ -121,11 +122,11 @@ module Internal
         success_rate = total > 0 ? (successful.to_f / total * 100).round : 0
         status = if total > 10 && success_rate < 80
                    :critical
-                 elsif total > 10 && success_rate < 95
+        elsif total > 10 && success_rate < 95
                    :degraded
-                 else
+        else
                    :healthy
-                 end
+        end
 
         {
           status: status,
@@ -142,7 +143,7 @@ module Internal
       def assistant_health
         recent_threads = ::Assistant::ChatThread.where("created_at > ?", 24.hours.ago)
         recent_executions = ::Assistant::ToolExecution.where("created_at > ?", 24.hours.ago)
-        
+
         total_threads = recent_threads.count
         total_executions = recent_executions.count
         pending_approvals = ::Assistant::ToolExecution.where(status: :pending_approval).count
@@ -150,9 +151,9 @@ module Internal
 
         status = if pending_approvals > 20 || failed_executions > 10
                    :degraded
-                 else
+        else
                    :healthy
-                 end
+        end
 
         {
           status: status,
@@ -192,4 +193,3 @@ module Internal
     end
   end
 end
-

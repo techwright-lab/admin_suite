@@ -72,7 +72,12 @@ module Ai
     def run
       provider_chain.each do |provider_name|
         provider = provider_for.call(provider_name)
-        next unless provider&.available?
+        next unless provider
+
+        unless provider.available?
+          log_unavailable_provider(provider_name, provider)
+          next
+        end
 
         response_model = nil
         accept = true
@@ -143,6 +148,24 @@ module Ai
       :loggable,
       :user,
       :error_context
+
+    def log_unavailable_provider(provider_name, provider)
+      logger = logger_builder.call(provider_name, provider)
+      logger.record_result(
+        {
+          error: "provider_unavailable",
+          error_type: "configuration",
+          provider_endpoint: (provider.respond_to?(:provider_endpoint) ? provider.provider_endpoint : nil)
+        }.compact,
+        latency_ms: 0,
+        prompt: prompt,
+        content_size: content_size
+      )
+    rescue StandardError => e
+      # best-effort only; never block the runner
+      handle_exception(e, provider_name, logger)
+      nil
+    end
 
     # Builds options for provider.run
     #

@@ -85,6 +85,12 @@ module Signals
       when :archived
         return nil unless @application.may_archive?
         @application.archive!
+      when :on_hold
+        return nil unless @application.respond_to?(:may_hold?) && @application.may_hold?
+        @application.hold!
+      when :withdrawn
+        return nil unless @application.respond_to?(:may_withdraw?) && @application.may_withdraw?
+        @application.withdraw!
       when :active
         return nil unless @application.may_reactivate?
         @application.reactivate!

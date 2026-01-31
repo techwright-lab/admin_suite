@@ -22,32 +22,20 @@ class CreateJobListingFromUrlService
   def call
     return nil if @url.blank?
 
-    normalized_url = normalize_url(@url)
+    res = JobListings::UpsertFromUrlService.new(
+      url: @url,
+      company: @application.company,
+      job_role: @application.job_role,
+      title: @application.job_role.title
+    ).call
 
-    # Find existing job listing by URL or create a new one
-    job_listing = JobListing.find_or_initialize_by(url: normalized_url)
+    job_listing = res[:job_listing]
 
-    if job_listing.new_record?
-      # Set basic attributes from the application
-      job_listing.company = @application.company
-      job_listing.job_role = @application.job_role
-      job_listing.title = @application.job_role.title
-      job_listing.status = :active
-      job_listing.source_id = extract_source_id(@url)
+    # Associate with the application
+    @application.update(job_listing: job_listing)
 
-      if job_listing.save
-        # Associate with the application
-        @application.update(job_listing: job_listing)
-
-        # Queue background job to scrape details
-        ScrapeJobListingJob.perform_later(job_listing)
-      end
-    else
-      # Just associate existing listing with the application
-      @application.update(job_listing: job_listing)
-      # Trigger scraping if we haven't successfully scraped yet
-      ScrapeJobListingJob.perform_later(job_listing) unless job_listing.scraped?
-    end
+    # Trigger scraping if we haven't successfully scraped yet
+    ScrapeJobListingJob.perform_later(job_listing) unless job_listing.scraped?
 
     job_listing
   rescue => e
@@ -56,32 +44,4 @@ class CreateJobListingFromUrlService
   end
 
   private
-
-  # Extract a source ID from the URL
-  #
-  # @param [String] url The URL to extract from
-  # @return [String, nil] The extracted ID or nil
-  def extract_source_id(url)
-    # Try to extract an ID from common URL patterns
-    # e.g., /jobs/123, /careers/456, etc.
-    match = url.match(%r{/(jobs?|careers?|positions?)/([^/\?]+)})
-    match ? match[2] : nil
-  end
-
-  # Normalizes a job listing URL by removing common tracking parameters
-  #
-  # @param [String] url The URL to normalize
-  # @return [String] Normalized URL
-  def normalize_url(url)
-    uri = URI.parse(url.strip)
-    return url.strip unless uri.query.present?
-
-    params = URI.decode_www_form(uri.query).reject do |key, _|
-      %w[utm_source utm_medium utm_campaign utm_content utm_term ref source].include?(key.downcase)
-    end
-    uri.query = params.any? ? URI.encode_www_form(params) : nil
-    uri.to_s
-  rescue URI::InvalidURIError
-    url.strip
-  end
 end

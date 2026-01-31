@@ -27,6 +27,10 @@ class Setting < ApplicationRecord
     js_rendering_enabled
     turnstile_enabled
     helicone_enabled
+    signals_decision_shadow_enabled
+    signals_decision_execution_enabled
+    signals_email_facts_extraction_enabled
+    signals_decision_opportunity_creation_enabled
   ]
 
   CACHE_KEY = "settings"
@@ -67,6 +71,14 @@ class Setting < ApplicationRecord
       setting.value = value
       setting.save!
       setting.value
+    end
+
+    def enable!(name)
+      set(name: name.to_s, value: true)
+    end
+
+    def disable!(name)
+      set(name: name, value: false)
     end
 
     def purge_cache

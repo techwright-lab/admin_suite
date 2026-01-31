@@ -1,0 +1,62 @@
+{
+  "version": "2026-01-27",
+  "decision": "apply",
+  "confidence": 0.83,
+  "reasons": ["scheduling_confirmed", "scheduled_at_present", "video_link_present"],
+  "plan": [
+    {
+      "step_id": "create_round_1",
+      "action": "create_round",
+      "target": {
+        "application_id": 2001,
+        "round": {
+          "selector": "none",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": {
+        "stage": "screening",
+        "stage_name": "Recruiter Screen",
+        "scheduled_at": "2026-01-28T22:00:00Z",
+        "duration_minutes": 30,
+        "interviewer_name": "Jordan Lee",
+        "interviewer_role": "Recruiter",
+        "video_link": "https://zoom.us/j/123456789",
+        "location": null,
+        "phone_number": null,
+        "notes": "📬 Created from email signal",
+        "source": { "synced_email_id": 1001 }
+      },
+      "preconditions": ["match.matched == true"],
+      "evidence": ["Your interview has been scheduled", "Join Zoom: https://zoom.us/j/123456789"],
+      "risk": "low"
+    },
+    {
+      "step_id": "set_stage_screening",
+      "action": "set_pipeline_stage",
+      "target": {
+        "application_id": 2001,
+        "round": {
+          "selector": "latest",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": { "stage": "screening" },
+      "preconditions": ["application.pipeline_stage != closed"],
+      "evidence": ["Interview Confirmed"],
+      "risk": "low"
+    }
+  ],
+  "explain": {
+    "facts_used": ["facts.classification.kind", "facts.scheduling.scheduled_at", "facts.scheduling.video_link"],
+    "facts_ignored": []
+  }
+}

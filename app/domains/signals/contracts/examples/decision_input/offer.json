@@ -1,0 +1,88 @@
+{
+  "version": "2026-01-27",
+  "event": {
+    "event_type": "email",
+    "synced_email_id": 1004,
+    "thread_id": "thread_offer",
+    "received_at": "2026-01-27T16:00:00Z",
+    "email_date": "2026-01-27T15:58:00Z",
+    "from": { "email": "hr@acme.com", "name": "Acme HR" },
+    "to": [{ "email": "user@example.com", "name": "User" }],
+    "subject": "Offer Letter - Senior Engineer at Acme",
+    "body": {
+      "text": "Congratulations! We are pleased to extend an offer for Senior Engineer.\nPlease review and respond by January 31st.\nStart date: February 10th.\n",
+      "source": "body_preview",
+      "truncated": false,
+      "normalization": { "replies_removed": true, "html_stripped": false, "whitespace_collapsed": true }
+    },
+    "links": []
+  },
+  "match": { "matched": true, "match_strategy": "domain", "interview_application_id": 2004, "confidence": 0.75 },
+  "application": {
+    "id": 2004,
+    "status": "active",
+    "pipeline_stage": "interviewing",
+    "company": { "id": 3001, "name": "Acme", "website": "https://acme.com" },
+    "job_role": { "id": 4002, "title": "Senior Engineer" },
+    "rounds_recent": []
+  },
+  "facts": {
+    "extraction": { "provider": "openai", "model": "unknown", "confidence": 0.8, "warnings": [] },
+    "classification": { "kind": "status_update", "confidence": 0.82, "evidence": ["extend an offer"] },
+    "entities": {
+      "company": { "name": "Acme", "website": "https://acme.com" },
+      "recruiter": { "name": null, "email": "hr@acme.com", "title": "HR" },
+      "job": { "title": "Senior Engineer", "department": null, "location": null, "url": null }
+    },
+    "action_links": [],
+    "key_insights": "Offer received; response deadline and start date mentioned.",
+    "is_forwarded": false,
+    "scheduling": {
+      "is_scheduling_related": false,
+      "scheduled_at": null,
+      "timezone_hint": null,
+      "duration_minutes": 0,
+      "stage": null,
+      "round_type": null,
+      "stage_name": null,
+      "interviewer_name": null,
+      "interviewer_role": null,
+      "video_link": null,
+      "phone_number": null,
+      "location": null,
+      "is_rescheduled": false,
+      "is_cancelled": false,
+      "original_scheduled_at": null,
+      "evidence": []
+    },
+    "round_feedback": {
+      "has_round_feedback": false,
+      "result": null,
+      "stage_mentioned": null,
+      "round_type": null,
+      "interviewer_mentioned": null,
+      "date_mentioned": null,
+      "feedback": { "has_detailed_feedback": false, "summary": null, "strengths": [], "improvements": [], "full_feedback_text": null },
+      "next_steps": { "has_next_round": false, "next_round_type": null, "next_round_hint": null, "timeline_hint": null },
+      "evidence": []
+    },
+    "status_change": {
+      "has_status_change": true,
+      "type": "offer",
+      "is_final": false,
+      "effective_date": "2026-01-27T16:00:00Z",
+      "rejection_details": { "reason": null, "stage_rejected_at": null, "is_generic": false, "door_open": false },
+      "offer_details": {
+        "role_title": "Senior Engineer",
+        "department": null,
+        "start_date": "February 10th",
+        "response_deadline": "January 31st",
+        "includes_compensation_info": false,
+        "compensation_hints": null,
+        "next_steps": "Review and respond"
+      },
+      "feedback": { "has_feedback": false, "feedback_text": null, "is_constructive": false },
+      "evidence": ["extend an offer", "respond by January 31st"]
+    }
+  }
+}

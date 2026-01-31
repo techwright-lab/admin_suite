@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/components/application/application_snapshot.schema.json",
+  "title": "InterviewApplication Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "status", "pipeline_stage", "company", "job_role", "rounds_recent"],
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "status": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/application_status" },
+    "pipeline_stage": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/pipeline_stage" },
+    "company": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "website"],
+      "properties": {
+        "id": { "type": ["integer", "null"], "minimum": 1 },
+        "name": { "type": ["string", "null"], "maxLength": 200 },
+        "website": { "type": ["string", "null"], "maxLength": 2000 }
+      }
+    },
+    "job_role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title"],
+      "properties": {
+        "id": { "type": ["integer", "null"], "minimum": 1 },
+        "title": { "type": ["string", "null"], "maxLength": 200 }
+      }
+    },
+    "rounds_recent": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "position",
+          "stage",
+          "stage_name",
+          "scheduled_at",
+          "result",
+          "interviewer_name",
+          "source_email_id"
+        ],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "position": { "type": "integer", "minimum": 1 },
+          "stage": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/round_stage" },
+          "stage_name": { "type": ["string", "null"], "maxLength": 200 },
+          "scheduled_at": { "type": ["string", "null"], "format": "date-time" },
+          "result": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/round_result" },
+          "interviewer_name": { "type": ["string", "null"], "maxLength": 200 },
+          "source_email_id": { "type": ["integer", "null"], "minimum": 1 }
+        }
+      }
+    }
+  }
+}

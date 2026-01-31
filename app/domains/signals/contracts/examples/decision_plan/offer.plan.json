@@ -1,0 +1,56 @@
+{
+  "version": "2026-01-27",
+  "decision": "apply",
+  "confidence": 0.84,
+  "reasons": ["explicit_offer_language"],
+  "plan": [
+    {
+      "step_id": "set_pipeline_offer",
+      "action": "set_pipeline_stage",
+      "target": {
+        "application_id": 2004,
+        "round": {
+          "selector": "none",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": { "stage": "offer" },
+      "preconditions": ["application.pipeline_stage != offer"],
+      "evidence": ["extend an offer"],
+      "risk": "medium"
+    },
+    {
+      "step_id": "create_company_feedback_offer",
+      "action": "create_company_feedback",
+      "target": {
+        "application_id": 2004,
+        "round": {
+          "selector": "none",
+          "id": null,
+          "scheduled_at": null,
+          "window_minutes": 0,
+          "stage": null,
+          "result": null
+        }
+      },
+      "params": {
+        "feedback_type": "offer",
+        "feedback_text": "Offer received for Senior Engineer.\nRespond by: January 31st\nStart date: February 10th",
+        "rejection_reason": null,
+        "next_steps": "Review and respond by January 31st",
+        "source": { "synced_email_id": 1004 }
+      },
+      "preconditions": ["application.company_feedback == null"],
+      "evidence": ["respond by January 31st", "Start date: February 10th"],
+      "risk": "low"
+    }
+  ],
+  "explain": {
+    "facts_used": ["facts.status_change.type", "facts.status_change.offer_details.response_deadline"],
+    "facts_ignored": []
+  }
+}

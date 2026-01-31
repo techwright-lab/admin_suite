@@ -3,6 +3,23 @@
 require "test_helper"
 
 class Billing::EntitlementsTest < ActiveSupport::TestCase
+  test "treats legacy plan keys as aliases for entitlement evaluation" do
+    user = create(:user)
+
+    create(:billing_plan, :free)
+
+    canonical_pro = create(:billing_plan, :pro, key: "pro_monthly")
+    legacy_pro = create(:billing_plan, key: "pro", name: "Pro (Legacy)", plan_type: "recurring", interval: "month", amount_cents: 1200, currency: "eur", published: false)
+
+    feature = create(:billing_feature, key: "round_prep_access", kind: "boolean")
+    create(:billing_plan_entitlement, plan: canonical_pro, feature: feature, enabled: true)
+    create(:billing_subscription, user: user, plan: legacy_pro, status: "active", current_period_ends_at: 1.month.from_now)
+
+    ent = Billing::Entitlements.for(user)
+    assert_equal canonical_pro, ent.plan
+    assert_equal true, ent.allowed?(:round_prep_access)
+  end
+
   test "falls back to free plan and respects plan entitlements" do
     user = create(:user)
 
@@ -57,5 +74,3 @@ class Billing::EntitlementsTest < ActiveSupport::TestCase
     assert_equal 18, ent.remaining(:ai_summaries)
   end
 end
-
-

@@ -8,6 +8,9 @@ class JobListing < ApplicationRecord
   STATUSES = [ :draft, :active, :closed ].freeze
   EXTRACTION_QUALITIES = [ :full, :partial, :limited, :manual ].freeze
   LIMITED_JOB_BOARDS = %w[linkedin indeed glassdoor].freeze
+  SALARY_CURRENCY_RE = /\A[A-Z]{3}\z/
+  MIN_ANNUAL_SALARY = 10_000
+  MAX_ANNUAL_SALARY = 2_000_000
 
   belongs_to :company
   belongs_to :job_role
@@ -42,7 +45,7 @@ class JobListing < ApplicationRecord
   # Returns salary range as a formatted string
   # @return [String, nil] Formatted salary range
   def salary_range
-    return nil if salary_min.nil? && salary_max.nil?
+    return nil unless salary_range_valid?
 
     currency_symbol = salary_currency == "USD" ? "$" : salary_currency
     min_formatted = salary_min ? number_with_delimiter(salary_min.to_i) : nil
@@ -55,6 +58,26 @@ class JobListing < ApplicationRecord
     elsif max_formatted
       "Up to #{currency_symbol}#{max_formatted} #{salary_currency}"
     end
+  end
+
+  # Returns whether salary_min/salary_max are safe to display.
+  #
+  # This is intentionally conservative: if the extracted salary looks implausible
+  # (too small, inverted range, invalid currency), we hide it.
+  #
+  # @return [Boolean]
+  def salary_range_valid?
+    return false if salary_min.nil? && salary_max.nil?
+    return false if salary_currency.blank? || salary_currency !~ SALARY_CURRENCY_RE
+
+    min = salary_min&.to_f
+    max = salary_max&.to_f
+
+    return false if min && (min < MIN_ANNUAL_SALARY || min > MAX_ANNUAL_SALARY)
+    return false if max && (max < MIN_ANNUAL_SALARY || max > MAX_ANNUAL_SALARY)
+    return false if min && max && max < min
+
+    true
   end
 
   # Checks if job listing has custom sections

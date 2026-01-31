@@ -199,6 +199,7 @@ gem "redcarpet", "~> 3.6"
 
 # Runtime contracts / schema validation (use at boundaries like LLM tool calls/results)
 gem "dry-schema"
+gem "json_schemer"
 
 group :production do
   # OpenTelemetry for observability

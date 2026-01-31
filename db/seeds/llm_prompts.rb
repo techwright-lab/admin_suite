@@ -110,4 +110,14 @@ interview_extraction_prompt = Ai::InterviewExtractionPrompt.find_or_create_by!(n
 end
 puts "  - Created: #{interview_extraction_prompt.name} (active: #{interview_extraction_prompt.active})"
 
+email_facts_extraction_prompt = Ai::EmailFactsExtractionPrompt.find_or_create_by!(name: "Email Facts Extraction - Default") do |prompt|
+  prompt.description = "Prompt template for extracting facts from emails"
+  prompt.prompt_template = Ai::EmailFactsExtractionPrompt.default_prompt_template
+  prompt.variables = Ai::EmailFactsExtractionPrompt.default_variables
+  prompt.system_prompt = Ai::EmailFactsExtractionPrompt.default_system_prompt
+  prompt.version = 1
+  prompt.active = true
+end
+puts "  - Created: #{email_facts_extraction_prompt.name} (active: #{email_facts_extraction_prompt.active})"
+
 puts "LLM Prompts created: #{Ai::LlmPrompt.count} total"

@@ -14,6 +14,7 @@ module Internal
         when :ops then "amber"
         when :ai then "cyan"
         when :assistant then "violet"
+        when :email then "emerald"
         else "slate"
         end
       end
@@ -30,6 +31,8 @@ module Internal
           '<svg class="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>'.html_safe
         when :assistant
           '<svg class="w-3 h-3 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>'.html_safe
+        when :email
+          '<svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6m-6 4h10M5 6a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6z"/></svg>'.html_safe
         else
           '<svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>'.html_safe
         end
@@ -300,6 +303,8 @@ module Internal
         case render_type
         when :prompt_template_preview
           render_prompt_template(resource)
+        when :billing_debug_snapshot
+          render_billing_debug_snapshot(resource)
         when :json_preview
           render_json_preview(resource)
         when :code_preview
@@ -318,6 +323,26 @@ module Internal
           render_llm_provider_payload(resource, kind: :provider_error_response)
         else
           content_tag(:p, "Unknown render type: #{render_type}", class: "text-slate-500 italic")
+        end
+      end
+
+      # Renders a billing debug snapshot for a user record.
+      #
+      # Intended for the internal developer portal.
+      #
+      # @param resource [ActiveRecord::Base] Expected to be a User
+      # @return [String]
+      def render_billing_debug_snapshot(resource)
+        unless resource.is_a?(User)
+          return content_tag(:p, "Billing debug snapshot is only supported for User records.", class: "text-slate-500 italic text-sm")
+        end
+
+        snapshot = Billing::DebugSnapshotService.new(user: resource).run
+        render_json_block(snapshot)
+      rescue StandardError => e
+        content_tag(:div, class: "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4") do
+          concat(content_tag(:p, "Failed to build billing debug snapshot.", class: "text-sm font-medium text-red-700 dark:text-red-300"))
+          concat(content_tag(:p, e.message.to_s, class: "mt-1 text-sm text-red-600 dark:text-red-400 font-mono"))
         end
       end
 

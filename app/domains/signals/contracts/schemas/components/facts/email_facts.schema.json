@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/components/facts/email_facts.schema.json",
+  "title": "EmailFacts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["extraction", "classification", "entities", "action_links", "key_insights", "is_forwarded", "scheduling", "round_feedback", "status_change"],
+  "properties": {
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model", "confidence", "warnings"],
+      "properties": {
+        "provider": { "type": ["string", "null"], "maxLength": 50 },
+        "model": { "type": ["string", "null"], "maxLength": 100 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "warnings": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 20 }
+      }
+    },
+
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "confidence", "evidence"],
+      "properties": {
+        "kind": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/facts_kind" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": { "$ref": "gleania://signals/contracts/schemas/components/common/evidence.schema.json" }
+      }
+    },
+
+    "entities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["company", "recruiter", "job"],
+      "properties": {
+        "company": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "website"],
+          "properties": {
+            "name": { "type": ["string", "null"], "maxLength": 200 },
+            "website": { "type": ["string", "null"], "maxLength": 2000 }
+          }
+        },
+        "recruiter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "email", "title"],
+          "properties": {
+            "name": { "type": ["string", "null"], "maxLength": 200 },
+            "email": { "type": ["string", "null"], "maxLength": 320 },
+            "title": { "type": ["string", "null"], "maxLength": 200 }
+          }
+        },
+        "job": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title", "department", "location", "url"],
+          "properties": {
+            "title": { "type": ["string", "null"], "maxLength": 200 },
+            "department": { "type": ["string", "null"], "maxLength": 200 },
+            "location": { "type": ["string", "null"], "maxLength": 200 },
+            "url": { "type": ["string", "null"], "maxLength": 2000 }
+          }
+        }
+      }
+    },
+
+    "action_links": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url", "action_label", "priority"],
+        "properties": {
+          "url": { "type": "string", "maxLength": 2000 },
+          "action_label": { "type": "string", "maxLength": 120 },
+          "priority": { "type": "integer", "minimum": 1, "maximum": 5 }
+        }
+      }
+    },
+
+    "key_insights": { "type": ["string", "null"], "maxLength": 2000 },
+    "is_forwarded": { "type": "boolean" },
+
+    "scheduling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_scheduling_related",
+        "scheduled_at",
+        "timezone_hint",
+        "duration_minutes",
+        "stage",
+        "round_type",
+        "stage_name",
+        "interviewer_name",
+        "interviewer_role",
+        "video_link",
+        "phone_number",
+        "location",
+        "is_rescheduled",
+        "is_cancelled",
+        "original_scheduled_at",
+        "evidence"
+      ],
+      "properties": {
+        "is_scheduling_related": { "type": "boolean" },
+        "scheduled_at": { "type": ["string", "null"], "format": "date-time" },
+        "timezone_hint": { "type": ["string", "null"], "maxLength": 50 },
+        "duration_minutes": { "type": "integer", "minimum": 0, "maximum": 600 },
+        "stage": {
+          "anyOf": [
+            { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/round_stage" },
+            { "type": "null" }
+          ]
+        },
+        "round_type": { "type": ["string", "null"], "maxLength": 100 },
+        "stage_name": { "type": ["string", "null"], "maxLength": 200 },
+        "interviewer_name": { "type": ["string", "null"], "maxLength": 200 },
+        "interviewer_role": { "type": ["string", "null"], "maxLength": 200 },
+        "video_link": { "type": ["string", "null"], "maxLength": 2000 },
+        "phone_number": { "type": ["string", "null"], "maxLength": 50 },
+        "location": { "type": ["string", "null"], "maxLength": 200 },
+        "is_rescheduled": { "type": "boolean" },
+        "is_cancelled": { "type": "boolean" },
+        "original_scheduled_at": { "type": ["string", "null"], "format": "date-time" },
+        "evidence": { "$ref": "gleania://signals/contracts/schemas/components/common/evidence.schema.json" }
+      }
+    },
+
+    "round_feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "has_round_feedback",
+        "result",
+        "stage_mentioned",
+        "round_type",
+        "interviewer_mentioned",
+        "date_mentioned",
+        "feedback",
+        "next_steps",
+        "evidence"
+      ],
+      "properties": {
+        "has_round_feedback": { "type": "boolean" },
+        "result": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/round_feedback_result" },
+        "stage_mentioned": { "type": ["string", "null"], "maxLength": 200 },
+        "round_type": { "type": ["string", "null"], "maxLength": 100 },
+        "interviewer_mentioned": { "type": ["string", "null"], "maxLength": 200 },
+        "date_mentioned": { "type": ["string", "null"], "maxLength": 100 },
+        "feedback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["has_detailed_feedback", "summary", "strengths", "improvements", "full_feedback_text"],
+          "properties": {
+            "has_detailed_feedback": { "type": "boolean" },
+            "summary": { "type": ["string", "null"], "maxLength": 800 },
+            "strengths": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 20 },
+            "improvements": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 20 },
+            "full_feedback_text": { "type": ["string", "null"], "maxLength": 5000 }
+          }
+        },
+        "next_steps": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["has_next_round", "next_round_type", "next_round_hint", "timeline_hint"],
+          "properties": {
+            "has_next_round": { "type": "boolean" },
+            "next_round_type": { "type": ["string", "null"], "maxLength": 100 },
+            "next_round_hint": { "type": ["string", "null"], "maxLength": 800 },
+            "timeline_hint": { "type": ["string", "null"], "maxLength": 200 }
+          }
+        },
+        "evidence": { "$ref": "gleania://signals/contracts/schemas/components/common/evidence.schema.json" }
+      }
+    },
+
+    "status_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "has_status_change",
+        "type",
+        "is_final",
+        "effective_date",
+        "rejection_details",
+        "offer_details",
+        "feedback",
+        "evidence"
+      ],
+      "properties": {
+        "has_status_change": { "type": "boolean" },
+        "type": { "$ref": "gleania://signals/contracts/schemas/components/common/enums.schema.json#/$defs/status_change_type" },
+        "is_final": { "type": ["boolean", "null"] },
+        "effective_date": { "type": ["string", "null"], "format": "date-time" },
+        "rejection_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reason", "stage_rejected_at", "is_generic", "door_open"],
+          "properties": {
+            "reason": { "type": ["string", "null"], "maxLength": 800 },
+            "stage_rejected_at": { "type": ["string", "null"], "maxLength": 100 },
+            "is_generic": { "type": "boolean" },
+            "door_open": { "type": "boolean" }
+          }
+        },
+        "offer_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "role_title",
+            "department",
+            "start_date",
+            "response_deadline",
+            "includes_compensation_info",
+            "compensation_hints",
+            "next_steps"
+          ],
+          "properties": {
+            "role_title": { "type": ["string", "null"], "maxLength": 200 },
+            "department": { "type": ["string", "null"], "maxLength": 200 },
+            "start_date": { "type": ["string", "null"], "maxLength": 100 },
+            "response_deadline": { "type": ["string", "null"], "maxLength": 100 },
+            "includes_compensation_info": { "type": "boolean" },
+            "compensation_hints": { "type": ["string", "null"], "maxLength": 400 },
+            "next_steps": { "type": ["string", "null"], "maxLength": 800 }
+          }
+        },
+        "feedback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["has_feedback", "feedback_text", "is_constructive"],
+          "properties": {
+            "has_feedback": { "type": "boolean" },
+            "feedback_text": { "type": ["string", "null"], "maxLength": 5000 },
+            "is_constructive": { "type": "boolean" }
+          }
+        },
+        "evidence": { "$ref": "gleania://signals/contracts/schemas/components/common/evidence.schema.json" }
+      }
+    }
+  }
+}

@@ -18,6 +18,7 @@ class Opportunity < ApplicationRecord
   belongs_to :user
   belongs_to :synced_email, optional: true
   belongs_to :interview_application, optional: true
+  belongs_to :job_listing, optional: true
   has_one :saved_job, dependent: :destroy
   has_one :fit_assessment, as: :fittable, dependent: :destroy
 
@@ -147,24 +148,6 @@ class Opportunity < ApplicationRecord
     end
   end
 
-  private
-
-  # @return [void]
-  def set_archived_as_ignored
-    update_columns(
-      archived_reason: "ignored",
-      archived_at: Time.current
-    )
-  end
-
-  # @return [void]
-  def clear_archived_metadata
-    update_columns(
-      archived_reason: nil,
-      archived_at: nil
-    )
-  end
-
   # Returns icon name for source type
   #
   # @return [String] Icon identifier
@@ -204,5 +187,23 @@ class Opportunity < ApplicationRecord
   def short_description(length = 100)
     text = key_details.presence || email_snippet
     text&.truncate(length) || ""
+  end
+
+  private
+
+  # @return [void]
+  def set_archived_as_ignored
+    update_columns(
+      archived_reason: "ignored",
+      archived_at: Time.current
+    )
+  end
+
+  # @return [void]
+  def clear_archived_metadata
+    update_columns(
+      archived_reason: nil,
+      archived_at: nil
+    )
   end
 end

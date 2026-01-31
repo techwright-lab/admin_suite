@@ -72,6 +72,9 @@ class SyncedEmail < ApplicationRecord
   belongs_to :interview_application, optional: true
   belongs_to :email_sender, optional: true
   has_one :opportunity, dependent: :nullify
+  has_many :email_pipeline_runs,
+    class_name: "Signals::EmailPipelineRun",
+    dependent: :destroy
 
   # Status enum
   enum :status, STATUSES, default: :pending
@@ -636,9 +639,9 @@ class SyncedEmail < ApplicationRecord
     # Detect and mark signature sections (images after text content ends)
     mark_signature_images(fragment)
 
-    [fragment.to_html, style_map]
+    [ fragment.to_html, style_map ]
   rescue StandardError
-    [html, {}]
+    [ html, {} ]
   end
 
   # Marks images that appear to be in email signatures
@@ -658,11 +661,11 @@ class SyncedEmail < ApplicationRecord
 
     # Count images and their positions
     total_text_length = fragment.text.to_s.length
-    
+
     all_images.each_with_index do |img, idx|
       src = img["src"].to_s.downcase
       alt = img["alt"].to_s.downcase
-      
+
       # Calculate approximate position of this image in the document
       text_before_img = ""
       img.traverse { |n| break if n == img; text_before_img += n.text.to_s if n.text? }
@@ -670,16 +673,16 @@ class SyncedEmail < ApplicationRecord
 
       # Check if it's likely a social media icon by URL pattern
       is_social_url = src.match?(/linkedin|facebook|twitter|instagram|youtube|social|fbcdn|licdn|static\.licdn/)
-      
+
       # Check if it's likely a social media icon by alt text
       is_social_alt = alt.match?(/linkedin|facebook|twitter|instagram|youtube|follow|connect/)
-      
+
       # Check if image appears in latter half of email (signature area)
       is_in_signature_area = position_ratio > 0.5
-      
+
       # Check if multiple images appear consecutively (common for social icon rows)
       has_sibling_images = idx > 0 || (idx < all_images.length - 1)
-      
+
       # Mark as social icon if matches patterns
       if is_social_url || is_social_alt || (is_in_signature_area && has_sibling_images && idx > 0)
         existing_class = img["class"].to_s

@@ -240,4 +240,68 @@ class Gmail::EmailProcessorServiceTest < ActiveSupport::TestCase
     assert_equal @application, matched_app
     assert_not_equal new_application, matched_app
   end
+
+  test "LinkedIn InMail proxy sender auto-matches only by thread (high confidence)" do
+    thread_id = "linkedin_thread_123"
+
+    create(:synced_email,
+      user: @user,
+      connected_account: @connected_account,
+      from_email: "inmail-hit-reply@linkedin.com",
+      thread_id: thread_id,
+      interview_application: @application,
+      email_date: 1.day.ago
+    )
+
+    new_email = create(:synced_email,
+      user: @user,
+      connected_account: @connected_account,
+      from_email: "inmail-hit-reply@linkedin.com",
+      thread_id: thread_id
+    )
+
+    service = Gmail::EmailProcessorService.new(new_email)
+    matched_app = service.send(:find_matching_application)
+
+    assert_equal @application, matched_app
+  end
+
+  test "LinkedIn InMail proxy sender does not auto-match by sender consistency across threads" do
+    create(:synced_email,
+      user: @user,
+      connected_account: @connected_account,
+      from_email: "inmail-hit-reply@linkedin.com",
+      thread_id: "thread_a",
+      interview_application: @application,
+      email_date: 1.day.ago
+    )
+
+    new_email = create(:synced_email,
+      user: @user,
+      connected_account: @connected_account,
+      from_email: "inmail-hit-reply@linkedin.com",
+      thread_id: "thread_b"
+    )
+
+    service = Gmail::EmailProcessorService.new(new_email)
+    matched_app = service.send(:find_matching_application)
+
+    assert_nil matched_app
+  end
+
+  test "LinkedIn InMail with JOB OFFER subject is classified as recruiter_outreach when content indicates outreach" do
+    new_email = create(:synced_email,
+      user: @user,
+      connected_account: @connected_account,
+      from_email: "inmail-hit-reply@linkedin.com",
+      subject: "Principal/Staff Engineer - JOB OFFER - fully remote",
+      snippet: "Hi Ravi, I'm reaching out about an opportunity that could be a great fit.",
+      body_preview: "Hi Ravi, I'm reaching out about an opportunity that could be a great fit."
+    )
+
+    service = Gmail::EmailProcessorService.new(new_email)
+    service.send(:classify_email_type)
+
+    assert_equal "recruiter_outreach", new_email.email_type
+  end
 end

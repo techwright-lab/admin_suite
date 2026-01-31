@@ -356,45 +356,115 @@ module Scraping
     # @param [Nokogiri::HTML::Document] doc The parsed HTML
     # @return [Hash] Salary data with :min, :max, :currency
     def extract_salary_data(doc)
-      # Try salary-specific selectors
+      # First try salary-specific selectors (best signal).
       salary_text = nil
+      salary_context = nil
       FIELD_SELECTORS[:salary].each do |selector|
         @selectors_tried[:salary] ||= []
         @selectors_tried[:salary] << selector
         element = doc.css(selector).first
-        if element
-          salary_text = element.text
-          break
-        end
+        next unless element
+
+        salary_text = element.text.to_s
+        salary_context = salary_text
+        break
       end
 
-      # Fallback to searching entire text
-      @selectors_tried[:salary] << "text_pattern_search" if salary_text.nil?
-      salary_text ||= doc.text
+      # Conservative fallback: only scan lines that likely relate to compensation.
+      if salary_text.nil?
+        @selectors_tried[:salary] << "text_pattern_search"
+        salary_text = compensation_candidate_text(doc.text.to_s)
+        salary_context = salary_text
+      end
 
-      # Parse salary patterns
-      patterns = [
-        /\$?\s*(\d{1,3}(?:,\d{3})*(?:k|K)?)\s*[-–—]\s*\$?\s*(\d{1,3}(?:,\d{3})*(?:k|K)?)\s*([A-Z]{3})?/,
-        /\$?\s*(\d{1,3}(?:,\d{3})*(?:k|K)?)\s+to\s+\$?\s*(\d{1,3}(?:,\d{3})*(?:k|K)?)\s*([A-Z]{3})?/,
-        /\$?\s*(\d{1,3}(?:,\d{3})*(?:k|K)?)\s*\+/,
-        /\$?\s*(\d{1,3}(?:,\d{3})*(?:k|K)?)/
+      return {} if salary_text.blank?
+
+      parsed = parse_salary_from_text(salary_text)
+      return {} unless parsed
+
+      normalized = Scraping::SalaryRangeValidator.normalize(
+        min: parsed[:min],
+        max: parsed[:max],
+        currency: parsed[:currency],
+        context_text: salary_context
+      )
+
+      return {} unless normalized[:valid]
+
+      { min: normalized[:min], max: normalized[:max], currency: normalized[:currency] }
+    end
+
+    # Extracts only the lines most likely to contain compensation.
+    #
+    # This prevents false positives like "89 - 7" pulled from unrelated prose.
+    #
+    # @param text [String]
+    # @return [String]
+    def compensation_candidate_text(text)
+      return "" if text.blank?
+
+      lines = text.to_s.split(/\r?\n/).map(&:strip).reject(&:blank?)
+      return "" if lines.empty?
+
+      needle = /\b(salary|compensation|pay|remuneration|total\s+comp|ote|base)\b|[$€£]|\b(usd|eur|gbp|pln|chf|cad|aud)\b/i
+      picked = lines.select { |l| l.match?(needle) }
+      picked.first(15).join("\n")
+    end
+
+    def parse_salary_from_text(text)
+      return nil if text.blank?
+
+      # Require some "money signal" in the text to avoid matching arbitrary numbers.
+      money_signal = /\b(salary|compensation|pay|remuneration|total\s+comp|ote|base)\b|[$€£]|\b(usd|eur|gbp|pln|chf|cad|aud)\b/i
+      return nil unless text.match?(money_signal)
+
+      # Range patterns (support k and decimals).
+      range_patterns = [
+        /(?<cur>[$€£])?\s*(?<min>\d[\d\s,\.]*\d\s*[kK]?)\s*(?:-|–|—|\bto\b)\s*(?<cur2>[$€£])?\s*(?<max>\d[\d\s,\.]*\d\s*[kK]?)\s*(?<code>[A-Z]{3})?/i,
+        /(?<min>\d[\d\s,\.]*\d\s*[kK]?)\s*(?<code>[A-Z]{3})\s*(?:-|–|—|\bto\b)\s*(?<max>\d[\d\s,\.]*\d\s*[kK]?)/i
       ]
 
-      patterns.each do |pattern|
-        match = salary_text.match(pattern)
-        next unless match
+      range_patterns.each do |re|
+        m = text.match(re)
+        next unless m
 
-        min_str = match[1]&.gsub(/[,\s]/, "")&.gsub(/k$/i, "000")
-        max_str = match[2]&.gsub(/[,\s]/, "")&.gsub(/k$/i, "000")
-        currency = match[3] || (salary_text.include?("$") ? "USD" : nil)
+        currency = currency_from_match(m)
+        return nil if currency.blank?
 
-        min = min_str.to_f if min_str
-        max = max_str.to_f if max_str
-
-        return { min: min, max: max, currency: currency || "USD" } if min || max
+        return {
+          min: m[:min],
+          max: m[:max],
+          currency: currency
+        }
       end
 
-      {}
+      # Single "min+" pattern. We still require a currency signal.
+      single_re = /(?<cur>[$€£])?\s*(?<min>\d[\d\s,\.]*\d\s*[kK]?)\s*\+\s*(?<code>[A-Z]{3})?/i
+      m = text.match(single_re)
+      return nil unless m
+
+      currency = currency_from_match(m)
+      return nil if currency.blank?
+
+      {
+        min: m[:min],
+        max: nil,
+        currency: currency
+      }
+    end
+
+    def currency_from_match(match)
+      code = match[:code].to_s.strip.upcase.presence
+      return code if code.present?
+
+      symbol = (match[:cur] || match[:cur2]).to_s.strip
+      case symbol
+      when "$" then "USD"
+      when "€" then "EUR"
+      when "£" then "GBP"
+      else
+        nil
+      end
     end
 
     # Extracts job description summary

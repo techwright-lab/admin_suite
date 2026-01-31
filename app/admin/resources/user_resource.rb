@@ -62,6 +62,7 @@ module Admin
 
         main do
           panel :profile, title: "Profile", fields: [ :name ]
+          panel :billing_debug, title: "Billing Debug", render: :billing_debug_snapshot
           panel :connected_accounts, title: "Connected Accounts",
                 association: :connected_accounts,
                 display: :table,

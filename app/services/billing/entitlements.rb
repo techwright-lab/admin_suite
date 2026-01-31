@@ -11,6 +11,16 @@ module Billing
   #   ent.allowed?(:pattern_detection)
   #   ent.remaining(:ai_summaries)
   class Entitlements
+    # Legacy plan key aliases for backwards compatibility.
+    #
+    # We previously used simpler keys like "pro" and "sprint". The billing catalog
+    # now uses more explicit keys ("pro_monthly", "sprint_one_time"), but older
+    # subscriptions/grants may still reference the legacy plan records.
+    PLAN_KEY_ALIASES = {
+      "pro" => "pro_monthly",
+      "sprint" => "sprint_one_time"
+    }.freeze
+
     class << self
       # @param user [User]
       # @param at [Time]
@@ -33,7 +43,7 @@ module Billing
     #
     # @return [Billing::Plan, nil]
     def subscription_plan
-      active_subscription&.plan || Billing::Plan.find_by(key: "free")
+      normalized_plan(active_subscription&.plan) || Billing::Plan.find_by(key: "free")
     end
 
     # Returns the effective plan, considering both subscriptions and one-time purchase grants.
@@ -42,7 +52,7 @@ module Billing
     # @return [Billing::Plan, nil]
     def effective_plan
       @effective_plan ||= begin
-        purchase_plan = active_purchase_grant&.plan
+        purchase_plan = normalized_plan(active_purchase_grant&.plan)
         purchase_plan || subscription_plan
       end
     end
@@ -235,7 +245,39 @@ module Billing
         end
       end
 
-      merged[key] || {}
+      spec = merged[key] || {}
+
+      # Admin/Developer access is intended to grant full, unrestricted access.
+      # Historically we expanded all features into the grant's entitlements JSON.
+      # If a feature is added later, older grants may not include it; treat an
+      # active admin grant as a wildcard override.
+      if admin_access_active?(grants)
+        feature = Billing::Feature.find_by(key: key)
+        if feature&.kind == "quota"
+          spec = spec.merge("enabled" => true, "limit" => nil)
+        else
+          spec = spec.merge("enabled" => true)
+        end
+      end
+
+      spec
+    end
+
+    # @param plan [Billing::Plan, nil]
+    # @return [Billing::Plan, nil]
+    def normalized_plan(plan)
+      return nil if plan.nil?
+
+      canonical_key = PLAN_KEY_ALIASES[plan.key]
+      return plan if canonical_key.blank?
+
+      Billing::Plan.find_by(key: canonical_key) || plan
+    end
+
+    # @param grants [Array<Billing::EntitlementGrant>]
+    # @return [Boolean]
+    def admin_access_active?(grants)
+      grants.any? { |g| g.source == "admin" && g.reason == "admin_developer" }
     end
 
     def plan_entitlements_hash

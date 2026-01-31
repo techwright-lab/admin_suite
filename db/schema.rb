@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_25_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_30_143549) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -514,6 +514,54 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_000001) do
     t.index ["slug"], name: "index_domains_on_slug", unique: true
   end
 
+  create_table "email_pipeline_events", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.text "error_message"
+    t.string "error_type"
+    t.string "event_type", null: false
+    t.jsonb "input_payload", default: {}, null: false
+    t.bigint "interview_application_id"
+    t.jsonb "metadata", default: {}, null: false
+    t.jsonb "output_payload", default: {}, null: false
+    t.bigint "run_id", null: false
+    t.datetime "started_at"
+    t.integer "status", default: 0, null: false
+    t.integer "step_order", null: false
+    t.bigint "synced_email_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_email_pipeline_events_on_created_at"
+    t.index ["event_type"], name: "index_email_pipeline_events_on_event_type"
+    t.index ["interview_application_id"], name: "index_email_pipeline_events_on_interview_application_id"
+    t.index ["run_id", "step_order"], name: "index_email_pipeline_events_on_run_id_and_step_order", unique: true
+    t.index ["run_id"], name: "index_email_pipeline_events_on_run_id"
+    t.index ["status"], name: "index_email_pipeline_events_on_status"
+    t.index ["synced_email_id"], name: "index_email_pipeline_events_on_synced_email_id"
+  end
+
+  create_table "email_pipeline_runs", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.bigint "connected_account_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.text "error_message"
+    t.string "error_type"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "mode", default: "unknown", null: false
+    t.datetime "started_at", null: false
+    t.integer "status", default: 0, null: false
+    t.bigint "synced_email_id", null: false
+    t.string "trigger", default: "gmail_sync", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["connected_account_id"], name: "index_email_pipeline_runs_on_connected_account_id"
+    t.index ["created_at"], name: "index_email_pipeline_runs_on_created_at"
+    t.index ["status"], name: "index_email_pipeline_runs_on_status"
+    t.index ["synced_email_id"], name: "index_email_pipeline_runs_on_synced_email_id"
+    t.index ["user_id"], name: "index_email_pipeline_runs_on_user_id"
+  end
+
   create_table "email_senders", force: :cascade do |t|
     t.bigint "auto_detected_company_id"
     t.bigint "company_id"
@@ -873,6 +921,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_000001) do
     t.jsonb "extracted_data", default: {}
     t.jsonb "extracted_links", default: []
     t.bigint "interview_application_id"
+    t.bigint "job_listing_id"
     t.string "job_role_title"
     t.string "job_url"
     t.text "key_details"
@@ -885,6 +934,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_000001) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["interview_application_id"], name: "index_opportunities_on_interview_application_id"
+    t.index ["job_listing_id"], name: "index_opportunities_on_job_listing_id"
     t.index ["source_type"], name: "index_opportunities_on_source_type"
     t.index ["status"], name: "index_opportunities_on_status"
     t.index ["synced_email_id"], name: "index_opportunities_on_synced_email_id"
@@ -1390,6 +1440,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_000001) do
   add_foreign_key "billing_usage_counters", "users"
   add_foreign_key "company_feedbacks", "interview_applications"
   add_foreign_key "connected_accounts", "users"
+  add_foreign_key "email_pipeline_events", "email_pipeline_runs", column: "run_id"
+  add_foreign_key "email_pipeline_events", "interview_applications"
+  add_foreign_key "email_pipeline_events", "synced_emails"
+  add_foreign_key "email_pipeline_runs", "connected_accounts"
+  add_foreign_key "email_pipeline_runs", "synced_emails"
+  add_foreign_key "email_pipeline_runs", "users"
   add_foreign_key "email_senders", "companies"
   add_foreign_key "email_senders", "companies", column: "auto_detected_company_id"
   add_foreign_key "fit_assessments", "users"
@@ -1414,6 +1470,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_000001) do
   add_foreign_key "job_roles", "categories"
   add_foreign_key "llm_api_logs", "llm_prompts"
   add_foreign_key "opportunities", "interview_applications"
+  add_foreign_key "opportunities", "job_listings"
   add_foreign_key "opportunities", "synced_emails"
   add_foreign_key "opportunities", "users"
   add_foreign_key "resume_skills", "skill_tags"

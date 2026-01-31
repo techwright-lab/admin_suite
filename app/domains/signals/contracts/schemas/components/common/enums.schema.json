@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gleania://signals/contracts/schemas/components/common/enums.schema.json",
+  "title": "Signals Contract Enums",
+  "type": "object",
+  "$defs": {
+    "pipeline_stage": {
+      "type": "string",
+      "enum": ["applied", "screening", "interviewing", "offer", "closed"]
+    },
+    "application_status": {
+      "type": "string",
+      "enum": ["active", "rejected", "accepted", "archived", "on_hold", "withdrawn"]
+    },
+    "round_stage": {
+      "type": "string",
+      "enum": ["screening", "technical", "hiring_manager", "culture_fit", "other"]
+    },
+    "round_result": {
+      "type": "string",
+      "enum": ["pending", "passed", "failed", "waitlisted", "cancelled"]
+    },
+    "facts_kind": {
+      "type": "string",
+      "enum": [
+        "scheduling",
+        "interview_invite",
+        "round_feedback",
+        "status_update",
+        "application_confirmation",
+        "recruiter_outreach",
+        "interview_assessment",
+        "info_request",
+        "info_follow_up",
+        "info_response",
+        "info_confirmation",
+        "info_reminder",
+        "info_cancellation",
+        "info_rescheduling",
+        "info_reconfirmation",
+        "info_reconfirmation_reminder",
+        "info_reconfirmation_cancellation",
+        "info_reconfirmation_rescheduling",
+        "potential_opportunity",
+        "other",
+        "unknown"
+      ]
+    },
+    "match_strategy": {
+      "type": ["string", "null"],
+      "enum": ["thread_id", "from_email", "company", "sender_company", "domain", "manual", "job_role", "recruiter_name", null]
+    },
+    "event_body_source": {
+      "type": "string",
+      "enum": ["body_preview", "body_html", "snippet"]
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["apply", "noop", "needs_review"]
+    },
+    "risk": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "plan_action": {
+      "type": "string",
+      "enum": [
+        "noop",
+        "set_pipeline_stage",
+        "set_application_status",
+        "create_round",
+        "update_round",
+        "set_round_result",
+        "create_interview_feedback",
+        "create_company_feedback",
+        "start_application",
+        "create_note",
+        "create_opportunity",
+        "upsert_job_listing_from_url",
+        "attach_job_listing_to_opportunity",
+        "enqueue_scrape_job_listing"
+      ]
+    },
+    "round_selector": {
+      "type": "string",
+      "enum": ["by_id", "latest", "latest_pending", "by_scheduled_at_window", "none", "by_stage", "by_result", "latest_scheduled"]
+    },
+    "status_change_type": {
+      "type": ["string", "null"],
+      "enum": ["rejection", "offer", "withdrawal", "ghosted", "on_hold", "no_change", "closed", "waitlisted", null]
+    },
+    "round_feedback_result": {
+      "type": ["string", "null"],
+      "enum": ["passed", "failed", "waitlisted", "unknown", "cancelled", null]
+    }
+  }
+}

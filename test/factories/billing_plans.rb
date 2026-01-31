@@ -23,7 +23,7 @@ FactoryBot.define do
     end
 
     trait :pro do
-      key { "pro" }
+      key { "pro_monthly" }
       name { "Pro" }
       plan_type { "recurring" }
       interval { "month" }
@@ -32,7 +32,7 @@ FactoryBot.define do
     end
 
     trait :sprint do
-      key { "sprint" }
+      key { "sprint_one_time" }
       name { "Sprint" }
       plan_type { "one_time" }
       interval { nil }
@@ -41,5 +41,3 @@ FactoryBot.define do
     end
   end
 end
-
-

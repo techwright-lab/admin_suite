@@ -292,7 +292,7 @@ class Gmail::SyncService < ApplicationService
     # Also fetch emails from known recruiters for this user
     known_recruiter_query = known_recruiter_sender_query
 
-    query_parts = [all_keywords, ats_only, user_company_query, known_recruiter_query].compact
+    query_parts = [ all_keywords, ats_only, user_company_query, known_recruiter_query ].compact
 
     "after:#{after_date} in:inbox -in:spam -in:trash #{exclusions} (#{query_parts.join(' OR ')})"
   end
@@ -353,7 +353,7 @@ class Gmail::SyncService < ApplicationService
     sender_names = if sender_ids.any?
       user.synced_emails
         .where(email_sender_id: sender_ids)
-        .where.not(from_name: [nil, ""])
+        .where.not(from_name: [ nil, "" ])
         .distinct
         .limit(10)
         .pluck(:from_name)
@@ -591,40 +591,90 @@ class Gmail::SyncService < ApplicationService
       next unless synced_email
 
       # Track if this is a new email
-      is_new_email = synced_email.created_at >= 1.minute.ago
+      # NOTE: We intentionally rely on the record's create/save changes instead of
+      # created_at comparisons. Gmail sync can take longer than a minute, and we
+      # also may see the same message again within a minute (which would otherwise
+      # create confusing "no-op" pipeline runs with only synced_email_upsert).
+      is_new_email = synced_email.previous_changes.key?("id")
       stats[:new_count] += 1 if is_new_email
+
+      recorder =
+        if is_new_email
+          Signals::Observability::EmailPipelineRecorder.start_for(
+            synced_email: synced_email,
+            user: user,
+            connected_account: connected_account,
+            trigger: "gmail_sync",
+            mode: "mixed",
+            metadata: {
+              "feature_flags" => {
+                "signals_decision_shadow_enabled" => Setting.signals_decision_shadow_enabled?,
+                "signals_decision_execution_enabled" => Setting.signals_decision_execution_enabled?,
+                "signals_email_facts_extraction_enabled" => Setting.signals_email_facts_extraction_enabled?
+              }
+            }
+          )
+        end
+
+      recorder&.event!(
+        event_type: :synced_email_upsert,
+        status: :success,
+        output_payload: {
+          "synced_email_id" => synced_email.id,
+          "status" => synced_email.status,
+          "extraction_status" => synced_email.extraction_status
+        }
+      )
 
       # Auto-ignore clearly irrelevant emails (marketing, notifications, etc.)
       if is_new_email && synced_email.pending? && clearly_irrelevant?(synced_email)
         synced_email.update!(status: :auto_ignored)
         stats[:auto_ignored_count] += 1
+        recorder&.finish_success!(metadata: { "final" => "auto_ignored", "reason" => "clearly_irrelevant" })
         next
       end
 
       # Process the email if it's pending
       if synced_email.pending?
-        result = Gmail::EmailProcessorService.new(synced_email).run
+        result = Gmail::EmailProcessorService.new(synced_email, pipeline_run: recorder&.run).run
         stats[:processed_count] += 1 if result[:success]
 
         # Auto-ignore emails classified as "other" (not job-related)
         if result[:email_type] == "other" && !synced_email.matched?
           synced_email.update!(status: :auto_ignored)
           stats[:auto_ignored_count] += 1
+          recorder&.finish_success!(metadata: { "final" => "auto_ignored", "reason" => "classified_other_unmatched" })
           next
         end
 
         # Check for recruiter outreach and create opportunity
         if result[:email_type] == "recruiter_outreach" && synced_email.opportunity.blank?
-          opportunity = create_opportunity_from_email(synced_email)
-          stats[:opportunities_count] += 1 if opportunity
+          unless Setting.signals_decision_opportunity_creation_enabled?
+            opportunity = create_opportunity_from_email(synced_email)
+            stats[:opportunities_count] += 1 if opportunity
+          end
         elsif synced_email.reload.matched?
           stats[:matched_count] += 1
         end
 
         # Queue signal extraction for relevant emails
-        queue_signal_extraction(synced_email) if is_new_email
+        if is_new_email
+          queued = queue_signal_extraction(synced_email, run_id: recorder&.run&.id)
+          if queued
+            recorder&.event!(
+              event_type: :signal_extraction_enqueued,
+              status: :success,
+              output_payload: { "job" => "ProcessSignalExtractionJob", "synced_email_id" => synced_email.id }
+            )
+          else
+            recorder&.finish_success!(metadata: { "final" => "no_job_enqueued" })
+          end
+        else
+          recorder&.finish_success!(metadata: { "final" => "processed_existing" }) if recorder
+        end
       elsif synced_email.matched?
         stats[:matched_count] += 1
+        recorder&.finish_success!(metadata: { "final" => "matched_existing" }) if recorder
       end
     end
 
@@ -699,13 +749,14 @@ class Gmail::SyncService < ApplicationService
   #
   # @param synced_email [SyncedEmail] The synced email
   # @return [void]
-  def queue_signal_extraction(synced_email)
+  def queue_signal_extraction(synced_email, run_id: nil)
     # Only queue if email is suitable for extraction
-    return if synced_email.auto_ignored? || synced_email.ignored?
-    return if synced_email.email_type == "other" && !synced_email.matched?
-    return if synced_email.extraction_status != "pending"
+    return false if synced_email.auto_ignored? || synced_email.ignored?
+    return false if synced_email.email_type == "other" && !synced_email.matched?
+    return false if synced_email.extraction_status != "pending"
 
-    ProcessSignalExtractionJob.perform_later(synced_email.id)
+    ProcessSignalExtractionJob.perform_later(synced_email.id, run_id)
+    true
   end
 
   # Creates an opportunity from a recruiter outreach email

@@ -132,13 +132,10 @@ namespace :internal do
           post :bulk_assign
         end
       end
-      resources :synced_emails do
-        member do
-          post :mark_processed
-          post :mark_needs_review
-          post :ignore
-        end
-      end
+
+      # Synced Emails have moved to the Email Portal.
+      get "synced_emails", to: redirect("/internal/developer/email/synced_emails")
+      get "synced_emails/:id", to: redirect("/internal/developer/email/synced_emails/%{id}")
 
       # Scraping Resources
       resources :scraping_attempts, only: [ :index, :show ] do
@@ -155,6 +152,24 @@ namespace :internal do
 
       # System Resources
       resources :settings
+    end
+
+    # =================================================================
+    # Email Portal - Synced Emails & Pipeline Observability
+    # =================================================================
+    namespace :email do
+      root to: "dashboard#index"
+
+      resources :synced_emails do
+        member do
+          post :mark_processed
+          post :mark_needs_review
+          post :ignore
+        end
+      end
+
+      resources :email_pipeline_runs, only: [ :index, :show ]
+      resources :email_pipeline_events, only: [ :index, :show ]
     end
 
     # =================================================================

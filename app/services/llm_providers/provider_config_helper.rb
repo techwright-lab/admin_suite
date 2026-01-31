@@ -31,7 +31,7 @@ module LlmProviders
       #
       # @return [Array<String>] Provider names
       def all_providers
-        [ default_provider ] + fallback_providers
+        ([ default_provider ] + fallback_providers).uniq
       end
     end
   end

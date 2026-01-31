@@ -21,7 +21,21 @@ module Billing
     # @return [Billing::EntitlementGrant]
     def grant!
       existing = active_admin_grant
-      return existing if existing.present?
+      if existing.present?
+        # Keep grants up to date as features evolve. Older grants may not include
+        # recently-added features, which would incorrectly block access.
+        desired_entitlements = build_all_entitlements
+        desired_expiry = Time.current + FAR_FUTURE_EXPIRY
+
+        if existing.entitlements != desired_entitlements || existing.expires_at < desired_expiry
+          existing.update!(
+            entitlements: desired_entitlements,
+            expires_at: desired_expiry
+          )
+        end
+
+        return existing
+      end
 
       Billing::EntitlementGrant.create!(
         user: user,
