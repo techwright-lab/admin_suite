@@ -187,6 +187,9 @@ gem "friendly_id"
 # Pagination
 gem "pagy", "~> 9.0"
 
+# Internal admin suite engine (local path during extraction)
+gem "admin_suite", path: "gems/admin_suite"
+
 # Blog: tags, markdown, SEO meta, newsletter
 gem "acts-as-taggable-on"
 gem "commonmarker"

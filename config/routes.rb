@@ -71,6 +71,9 @@ Rails.application.routes.draw do
     mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
   end
 
+  # AdminSuite engine (gem extraction validation)
+  mount AdminSuite::Engine, at: "/internal/admin_suite"
+
   # =================================================================
   # Draw Routes from Separate Files
   # =================================================================

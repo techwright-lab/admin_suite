@@ -2,70 +2,34 @@
 
 module Admin
   module Base
-    # Executes admin actions (single, bulk, and collection actions)
-    #
-    # Handles the execution of actions defined in resource classes,
-    # including permission checks, confirmation handling, and result processing.
-    #
-    # @example Single action
-    #   executor = Admin::Base::ActionExecutor.new(CompanyResource, :disable, Current.user)
-    #   result = executor.execute_member(company)
-    #
-    # @example Bulk action
-    #   executor = Admin::Base::ActionExecutor.new(CompanyResource, :bulk_disable, Current.user)
-    #   result = executor.execute_bulk([company1, company2])
     class ActionExecutor
-      attr_reader :resource_class, :action_name, :current_user
+      attr_reader :resource_class, :action_name, :actor
 
-      # Result of an action execution
+      alias_method :current_user, :actor
+
       Result = Struct.new(:success, :message, :redirect_url, :errors, keyword_init: true) do
-        def success?
-          success
-        end
-
-        def failure?
-          !success
-        end
+        def success? = success
+        def failure? = !success
       end
 
-      # Initializes the action executor
-      #
-      # @param resource_class [Class] The resource class
-      # @param action_name [Symbol] The action name
-      # @param current_user [User] The current user executing the action
-      def initialize(resource_class, action_name, current_user)
+      def initialize(resource_class, action_name, actor)
         @resource_class = resource_class
         @action_name = action_name
-        @current_user = current_user
+        @actor = actor
       end
 
-      # Executes a member action on a single record
-      #
-      # @param record [ActiveRecord::Base] The record to act on
-      # @param params [Hash] Additional parameters
-      # @return [Result]
       def execute_member(record, params = {})
         action = find_member_action
         return failure_result("Action not found") unless action
-
         return failure_result("Condition not met") unless condition_met?(action, record)
-
         execute_action(action, record, params)
       end
 
-      # Executes a bulk action on multiple records
-      #
-      # @param records [Array<ActiveRecord::Base>] Records to act on
-      # @param params [Hash] Additional parameters
-      # @return [Result]
       def execute_bulk(records, params = {})
         action = find_bulk_action
         return failure_result("Action not found") unless action
 
-        results = records.map do |record|
-          execute_action(action, record, params)
-        end
-
+        results = records.map { |record| execute_action(action, record, params) }
         success_count = results.count(&:success?)
         failure_count = results.count(&:failure?)
 
@@ -78,86 +42,62 @@ module Admin
         end
       end
 
-      # Executes a collection action
-      #
-      # @param scope [ActiveRecord::Relation] The collection scope
-      # @param params [Hash] Additional parameters
-      # @return [Result]
       def execute_collection(scope, params = {})
         action = find_collection_action
         return failure_result("Action not found") unless action
-
         execute_action(action, scope, params)
       end
 
-      # Returns the action definition
-      #
-      # @return [ActionDefinition, nil]
       def action_definition
         find_member_action || find_bulk_action || find_collection_action
       end
 
       private
 
-      def actions_config
-        @resource_class.actions_config
-      end
+      def actions_config = @resource_class.actions_config
 
       def find_member_action
         return nil unless actions_config
-
         actions_config.member_actions.find { |a| a.name == action_name }
       end
 
       def find_bulk_action
         return nil unless actions_config
-
         actions_config.bulk_actions.find { |a| a.name == action_name }
       end
 
       def find_collection_action
         return nil unless actions_config
-
         actions_config.collection_actions.find { |a| a.name == action_name }
       end
 
       def condition_met?(action, record)
-        if action.if_condition.present?
-          return evaluate_condition(action.if_condition, record)
-        end
-
-        if action.unless_condition.present?
-          return !evaluate_condition(action.unless_condition, record)
-        end
-
+        return evaluate_condition(action.if_condition, record) if action.if_condition.present?
+        return !evaluate_condition(action.unless_condition, record) if action.unless_condition.present?
         true
       end
 
       def evaluate_condition(condition_proc, record)
-        if condition_proc.arity.zero?
-          record.instance_exec(&condition_proc)
-        else
-          condition_proc.call(record)
-        end
+        condition_proc.arity.zero? ? record.instance_exec(&condition_proc) : condition_proc.call(record)
       end
 
       def execute_action(action, target, params)
-        # Try to find a method on the model first
-        if target.respond_to?(action.name)
-          execute_model_method(target, action)
-        elsif target.respond_to?("#{action.name}!")
-          execute_model_method(target, action, bang: true)
-        else
-          # Try to find an action handler class
-          handler_class = find_handler_class(action)
-          if handler_class
-            execute_handler(handler_class, target, params)
+        result =
+          if target.respond_to?(action.name)
+            execute_model_method(target, action)
+          elsif target.respond_to?("#{action.name}!")
+            execute_model_method(target, action, bang: true)
           else
-            failure_result("No handler found for action: #{action.name}")
+            handler_class = find_handler_class(action)
+            handler_class ? execute_handler(handler_class, target, params) : failure_result("No handler found for action: #{action.name}")
           end
-        end
+
+        notify_action_executed(action, target, params, result)
+        result
       rescue StandardError => e
-        failure_result("Error: #{e.message}")
+        result = failure_result("Error: #{e.message}")
+        notify_action_executed(action, target, params, result)
+        result
       end
 
       def execute_model_method(record, action, bang: false)
@@ -171,6 +111,11 @@ module Admin
       end
 
       def find_handler_class(action)
+        if defined?(AdminSuite) && AdminSuite.config.resolve_action_handler.present?
+          resolved = AdminSuite.config.resolve_action_handler.call(resource_class, action.name)
+          return resolved if resolved
+        end
+
         handler_name = "#{resource_class.resource_name.camelize}#{action.name.to_s.camelize}Action"
         "Admin::Actions::#{handler_name}".constantize
       rescue NameError
@@ -178,8 +123,7 @@ module Admin
       end
 
       def execute_handler(handler_class, target, params)
-        handler = handler_class.new(target, current_user, params)
-        handler.call
+        handler_class.new(target, actor, params).call
       end
 
       def success_result(message, redirect_url: nil)
@@ -188,6 +132,23 @@ module Admin
 
       def failure_result(message, errors: [])
         Result.new(success: false, message: message, redirect_url: nil, errors: errors)
+      end
+
+      def notify_action_executed(action, target, params, result)
+        return unless defined?(AdminSuite)
+        hook = AdminSuite.config.on_action_executed
+        return unless hook
+
+        hook.call(
+          actor: actor,
+          action_name: action.name,
+          resource_class: resource_class,
+          subject: target,
+          params: params,
+          result: result
+        )
+      rescue StandardError
+        nil
       end
     end
   end

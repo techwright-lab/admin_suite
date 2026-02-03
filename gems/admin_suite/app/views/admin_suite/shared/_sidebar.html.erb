@@ -1,0 +1,25 @@
+<div class="p-4">
+  <div class="mb-4">
+    <div class="text-lg font-bold text-slate-900 dark:text-white">Admin Suite</div>
+    <div class="text-xs text-slate-500 dark:text-slate-400">Mounted engine</div>
+  </div>
+
+  <% navigation_items.sort_by { |(_k, v)| (v[:order] || 100).to_i }.each do |portal_key, portal| %>
+    <div class="mb-4">
+      <div class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+        <%= portal[:label] || portal_key.to_s.humanize %>
+      </div>
+
+      <div class="mt-2 space-y-1">
+        <% portal[:sections].sort_by { |(_s, section)| section[:label].to_s }.each do |_section_key, section| %>
+          <div class="mt-3 text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <%= section[:label] %>
+          </div>
+          <% section[:items].sort_by { |it| it[:label].to_s }.each do |item| %>
+            <%= link_to item[:label], item[:path], class: "block px-2 py-1 rounded text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

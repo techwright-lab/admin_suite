@@ -161,10 +161,24 @@ module Admin
           @registered_resources ||= []
         end
 
+        # Clears the registry (useful for development reloads).
+        #
+        # @return [void]
+        def reset_registry!
+          @registered_resources = []
+        end
+
         # Called when a subclass is created
         def inherited(subclass)
           super
-          registered_resources << subclass unless subclass.name&.include?("Base")
+          return if subclass.name&.include?("Base")
+
+          existing_idx = registered_resources.index { |r| r.name == subclass.name }
+          if existing_idx
+            registered_resources[existing_idx] = subclass
+          else
+            registered_resources << subclass
+          end
         end
 
         # Returns resources for a specific portal
@@ -201,58 +215,32 @@ module Admin
           @per_page = 25
         end
 
-        # Defines searchable fields
-        #
-        # @param fields [Array<Symbol>] Field names to search
-        # @return [void]
         def searchable(*fields)
           @searchable_fields = fields
         end
 
-        # Configures default sort for the index view
-        #
-        # @param field [Symbol] Default sort field (optional, can also use sortable: true on columns)
-        # @param direction [Symbol] Sort direction (:asc or :desc), defaults to :desc
-        # @return [void]
         def sortable(*fields, default: nil, direction: :desc)
-          # For backwards compatibility, still accept field list
           @sortable_fields = fields if fields.any?
           @default_sort = default || fields.first
           @default_sort_direction = direction
         end
 
-        # Sets items per page
-        #
-        # @param count [Integer] Number of items per page
-        # @return [void]
         def paginate(count)
           @per_page = count
         end
 
-        # Configures columns
-        #
-        # @yield Block for column configuration
-        # @return [void]
         def columns(&block)
           builder = ColumnsBuilder.new
           builder.instance_eval(&block) if block_given?
           @columns_list = builder.columns
         end
 
-        # Configures filters
-        #
-        # @yield Block for filter configuration
-        # @return [void]
         def filters(&block)
           builder = FiltersBuilder.new
           builder.instance_eval(&block) if block_given?
           @filters_list = builder.filters
         end
 
-        # Configures stats
-        #
-        # @yield Block for stats configuration
-        # @return [void]
         def stats(&block)
           builder = StatsBuilder.new
           builder.instance_eval(&block) if block_given?
@@ -260,7 +248,6 @@ module Admin
         end
       end
 
-      # Column builder for index view
       class ColumnsBuilder
         attr_reader :columns
 
@@ -268,16 +255,6 @@ module Admin
           @columns = []
         end
 
-        # Adds a column
-        #
-        # @param name [Symbol] Column name
-        # @param content [Proc, nil] Optional proc for custom content
-        # @param options [Hash] Column options
-        # @option options [Symbol] :render Custom cell renderer
-        # @option options [String] :header Custom header text
-        # @option options [String] :class CSS classes
-        # @option options [Boolean] :sortable Whether column is sortable
-        # @return [void]
         def column(name, content = nil, **options)
           @columns << ColumnDefinition.new(
             name: name,
@@ -294,10 +271,8 @@ module Admin
         end
       end
 
-      # Column definition
       ColumnDefinition = Struct.new(:name, :content, :render, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
 
-      # Filter builder for index view
       class FiltersBuilder
         attr_reader :filters
 
@@ -305,32 +280,22 @@ module Admin
           @filters = []
         end
 
-        # Adds a filter
-        #
-        # @param name [Symbol] Filter name
-        # @param options [Hash] Filter options
-        # @option options [Symbol] :type Filter type (:text, :select, :toggle, :date, :date_range, :number)
-        # @option options [String] :label Display label
-        # @option options [String] :placeholder Placeholder text
-        # @option options [Array] :options Options for select filters
-        # @option options [Symbol] :field Database field to filter (defaults to name)
-        # @return [void]
         def filter(name, **options)
+          select_options = options.key?(:options) ? options[:options] : options[:collection]
           @filters << FilterDefinition.new(
             name: name,
             type: options[:type] || :text,
             label: options[:label] || name.to_s.humanize,
             placeholder: options[:placeholder],
-            options: options[:options],
-            field: options[:field] || name
+            options: select_options,
+            field: options[:field] || name,
+            apply: options[:apply]
           )
         end
       end
 
-      # Filter definition
-      FilterDefinition = Struct.new(:name, :type, :label, :placeholder, :options, :field, keyword_init: true)
+      FilterDefinition = Struct.new(:name, :type, :label, :placeholder, :options, :field, :apply, keyword_init: true)
 
-      # Stats builder for index view
       class StatsBuilder
         attr_reader :stats
 
@@ -338,13 +303,6 @@ module Admin
           @stats = []
         end
 
-        # Adds a stat
-        #
-        # @param name [Symbol] Stat name
-        # @param calculator [Proc] Proc to calculate the value
-        # @param options [Hash] Stat options
-        # @option options [Symbol] :color Color for the stat
-        # @return [void]
         def stat(name, calculator, **options)
           @stats << StatDefinition.new(
             name: name,
@@ -354,10 +312,8 @@ module Admin
         end
       end
 
-      # Stat definition
       StatDefinition = Struct.new(:name, :calculator, :color, keyword_init: true)
 
-      # Form configuration
       class FormConfig
         attr_reader :fields_list
 
@@ -365,24 +321,6 @@ module Admin
           @fields_list = []
         end
 
-        # Adds a field
-        #
-        # @param name [Symbol] Field name
-        # @param options [Hash] Field options
-        # @option options [Symbol] :type Field type (:text, :textarea, :select, :toggle, :searchable_select, :tags, :multi_select, :image, :attachment, :markdown, :json, etc.)
-        # @option options [Boolean] :required Whether field is required
-        # @option options [String] :label Display label
-        # @option options [String] :help Help text
-        # @option options [String] :placeholder Placeholder text
-        # @option options [Proc, Array, String] :collection Options for select fields or search URL
-        # @option options [String, Symbol, Boolean] :create_url URL for creating new options (or true for inline creation)
-        # @option options [String] :accept Accept attribute for file fields (e.g., "image/*")
-        # @option options [Integer] :rows Rows for textarea
-        # @option options [Boolean] :multiple Whether to allow multiple selections
-        # @option options [Boolean] :creatable Whether new options can be created inline
-        # @option options [Boolean] :preview Whether to show file preview
-        # @option options [Hash] :variants Image variant options for preview
-        # @return [void]
         def field(name, **options)
           @fields_list << FieldDefinition.new(
             name: name,
@@ -407,12 +345,6 @@ module Admin
           )
         end
 
-        # Groups fields in a section
-        #
-        # @param title [String] Section title
-        # @param options [Hash] Section options
-        # @yield Block for section fields
-        # @return [void]
         def section(title, **options, &block)
           @fields_list << SectionDefinition.new(
             title: title,
@@ -424,12 +356,6 @@ module Admin
           @fields_list << SectionEnd.new
         end
 
-        # Groups fields in a row (grid)
-        #
-        # @param options [Hash] Row options
-        # @option options [Integer] :cols Number of columns
-        # @yield Block for row fields
-        # @return [void]
         def row(**options, &block)
           @fields_list << RowDefinition.new(cols: options[:cols] || 2)
           instance_eval(&block) if block_given?
@@ -437,7 +363,6 @@ module Admin
         end
       end
 
-      # Field definition
       FieldDefinition = Struct.new(
         :name, :type, :required, :label, :help, :placeholder,
         :collection, :create_url, :accept, :rows, :readonly,
@@ -446,15 +371,12 @@ module Admin
         keyword_init: true
       )
 
-      # Section definition for grouping fields
       SectionDefinition = Struct.new(:title, :description, :collapsible, :collapsed, keyword_init: true)
       SectionEnd = Class.new
 
-      # Row definition for grid layout
       RowDefinition = Struct.new(:cols, keyword_init: true)
       RowEnd = Class.new
 
-      # Show page configuration
       class ShowConfig
         attr_reader :sidebar_sections, :main_sections
 
@@ -463,48 +385,22 @@ module Admin
           @main_sections = []
         end
 
-        # Legacy method for backward compatibility - adds to main by default
-        #
-        # @param name [Symbol] Section name
-        # @param options [Hash] Section options
-        # @return [void]
         def section(name, **options)
           @main_sections << build_section(name, options)
         end
 
-        # Configures sidebar sections (left column, typically for metadata)
-        #
-        # @yield Block for sidebar configuration
-        # @return [void]
         def sidebar(&block)
           @current_target = :sidebar
           instance_eval(&block) if block_given?
           @current_target = nil
         end
 
-        # Configures main content sections (right column, typically for content/associations)
-        #
-        # @yield Block for main content configuration
-        # @return [void]
         def main(&block)
           @current_target = :main
           instance_eval(&block) if block_given?
           @current_target = nil
         end
 
-        # Adds a panel to the current target (sidebar or main)
-        #
-        # @param name [Symbol] Panel name
-        # @param options [Hash] Panel options
-        # @option options [Array<Symbol>] :fields Fields to display
-        # @option options [Symbol] :association Association to display
-        # @option options [Integer] :limit Limit for associations
-        # @option options [Symbol] :render Custom renderer
-        # @option options [Symbol] :display Display type for associations (:list, :table, :cards)
-        # @option options [Array<Symbol>] :columns Columns for table display
-        # @option options [String] :link_to Path helper for linking to associated records
-        # @option options [Symbol] :resource Resource class for associated records
-        # @return [void]
         def panel(name, **options)
           section_def = build_section(name, options)
 
@@ -516,9 +412,6 @@ module Admin
           end
         end
 
-        # Returns all sections (for backward compatibility)
-        #
-        # @return [Array<ShowSectionDefinition>]
         def sections_list
           @main_sections
         end
@@ -537,22 +430,20 @@ module Admin
             columns: options[:columns] || [],
             link_to: options[:link_to],
             resource: options[:resource],
-          paginate: options[:paginate] || options[:pagination] || false,
-          per_page: options[:per_page],
+            paginate: options[:paginate] || options[:pagination] || false,
+            per_page: options[:per_page],
             collapsible: options[:collapsible] || false,
             collapsed: options[:collapsed] || false
           )
         end
       end
 
-      # Show section definition
       ShowSectionDefinition = Struct.new(
         :name, :fields, :association, :limit, :render, :title,
         :display, :columns, :link_to, :resource, :paginate, :per_page, :collapsible, :collapsed,
         keyword_init: true
       )
 
-      # Actions configuration
       class ActionsConfig
         attr_reader :member_actions, :collection_actions, :bulk_actions
 
@@ -562,17 +453,6 @@ module Admin
           @bulk_actions = []
         end
 
-        # Adds a member action (operates on single record)
-        #
-        # @param name [Symbol] Action name
-        # @param options [Hash] Action options
-        # @option options [Symbol] :method HTTP method (:post, :patch, :delete)
-        # @option options [String] :confirm Confirmation message
-        # @option options [Symbol] :type Action type (:button, :link, :modal)
-        # @option options [String] :label Display label
-        # @option options [String] :icon Icon name
-        # @option options [Symbol] :color Color scheme
-        # @return [void]
         def action(name, **options)
           @member_actions << ActionDefinition.new(
             name: name,
@@ -587,11 +467,6 @@ module Admin
           )
         end
 
-        # Adds a collection action (operates on collection)
-        #
-        # @param name [Symbol] Action name
-        # @param options [Hash] Action options (same as action)
-        # @return [void]
         def collection_action(name, **options)
           @collection_actions << ActionDefinition.new(
             name: name,
@@ -604,11 +479,6 @@ module Admin
           )
         end
 
-        # Adds a bulk action (operates on selected records)
-        #
-        # @param name [Symbol] Action name
-        # @param options [Hash] Action options (same as action)
-        # @return [void]
         def bulk_action(name, **options)
           @bulk_actions << ActionDefinition.new(
             name: name,
@@ -622,7 +492,6 @@ module Admin
         end
       end
 
-      # Action definition
       ActionDefinition = Struct.new(
         :name, :method, :confirm, :type, :label, :icon, :color,
         :if_condition, :unless_condition,

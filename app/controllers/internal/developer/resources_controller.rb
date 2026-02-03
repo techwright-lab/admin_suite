@@ -80,7 +80,7 @@ module Internal
           return
         end
 
-        executor = Admin::Base::ActionExecutor.new(resource_config, action_name, Current.user)
+        executor = Admin::Base::ActionExecutor.new(resource_config, action_name, admin_suite_actor)
         result = executor.execute_member(@resource, params.to_unsafe_h)
 
         if result.success?
@@ -141,7 +141,7 @@ module Internal
         else
           records = model.where(id: ids)
         end
-        executor = Admin::Base::ActionExecutor.new(resource_config, action_name, Current.user)
+        executor = Admin::Base::ActionExecutor.new(resource_config, action_name, admin_suite_actor)
         result = executor.execute_bulk(records, params.to_unsafe_h)
 
         if result.success?
@@ -226,72 +226,9 @@ module Internal
       #
       # @return [ActiveRecord::Relation]
       def filtered_collection
-        scope = base_collection
+        return base_collection unless resource_config&.index_config
 
-        # Apply search (minimum 3 characters required)
-        if params[:search].present? && params[:search].length >= 3 && resource_config&.index_config&.searchable_fields&.any?
-          search_conditions = resource_config.index_config.searchable_fields.map do |field|
-            "#{field} ILIKE :search"
-          end.join(" OR ")
-
-          scope = scope.where(search_conditions, search: "%#{params[:search]}%")
-        end
-
-        # Apply filters (skip reserved params: search, sort, direction)
-        resource_config&.index_config&.filters_list&.each do |filter|
-          next if %i[search sort direction].include?(filter.name)
-          next unless params[filter.name].present?
-
-          scope = apply_filter(scope, filter, params[filter.name])
-        end
-
-        # Apply sorting
-        sort_field = params[:sort] || resource_config&.index_config&.default_sort
-        sort_direction =
-          if params[:direction].present?
-            params[:direction] == "desc" ? :desc : :asc
-          elsif sort_field.present? && sort_field.to_sym == resource_config&.index_config&.default_sort
-            (resource_config&.index_config&.default_sort_direction || :desc).to_sym
-          else
-            :asc
-          end
-
-        if sort_field.present?
-          scope = scope.order(sort_field => sort_direction)
-        else
-          scope = scope.order(created_at: :desc)
-        end
-
-        scope
-      end
-
-      # Applies a single filter to the collection
-      #
-      # @param scope [ActiveRecord::Relation] Current scope
-      # @param filter [FilterDefinition] Filter definition
-      # @param value [String] Filter value
-      # @return [ActiveRecord::Relation]
-      def apply_filter(scope, filter, value)
-        field = filter.field
-
-        case filter.type
-        when :select, :toggle
-          scope.where(field => value)
-        when :date
-          scope.where("DATE(#{field}) = ?", value)
-        when :date_range
-          if value[:start].present? && value[:end].present?
-            scope.where(field => value[:start]..value[:end])
-          elsif value[:start].present?
-            scope.where("#{field} >= ?", value[:start])
-          elsif value[:end].present?
-            scope.where("#{field} <= ?", value[:end])
-          else
-            scope
-          end
-        else
-          scope.where("#{field} ILIKE ?", "%#{value}%")
-        end
+        Admin::Base::FilterBuilder.new(resource_config, params).apply(base_collection)
       end
 
       # Paginates the collection

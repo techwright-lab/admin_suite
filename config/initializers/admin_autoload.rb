@@ -23,5 +23,5 @@ Rails.autoloaders.main.push_dir(
 
 # Eager load the base resource class after Rails initializes
 Rails.application.config.after_initialize do
-  require Rails.root.join("app/admin/base/resource.rb").to_s
+  require "admin/base/resource"
 end

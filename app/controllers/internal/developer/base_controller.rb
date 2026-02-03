@@ -18,7 +18,7 @@ module Internal
       layout "developer"
 
       helper Internal::Developer::BaseHelper
-      helper_method :current_portal, :navigation_items, :resource_config, :current_developer
+      helper_method :current_portal, :navigation_items, :resource_config, :current_developer, :admin_suite_actor
 
       private
 
@@ -26,6 +26,11 @@ module Internal
       #
       # @return [void]
       def require_admin!
+        if defined?(AdminSuite) && AdminSuite.config.authenticate.present?
+          AdminSuite.config.authenticate.call(self)
+          return
+        end
+
         unless developer_authenticated?
           redirect_to internal_developer_login_path
         end
@@ -43,6 +48,21 @@ module Internal
       # @return [Developer, nil]
       def current_developer
         @current_developer ||= ::Developer.enabled.find_by(id: session[:developer_id])
+      end
+
+      # Returns the configured actor for admin suite actions/auditing/authorization.
+      #
+      # This must not assume `Current.user` because internal tools may use a separate
+      # authentication mechanism (e.g. developer SSO).
+      #
+      # @return [Object, nil]
+      def admin_suite_actor
+        return nil unless defined?(AdminSuite)
+
+        resolver = AdminSuite.config.current_actor
+        resolver&.call(self)
+      rescue StandardError
+        nil
       end
 
       # Returns the current portal (ops, ai, or assistant)
@@ -96,13 +116,19 @@ module Internal
         # Skip if already loaded
         return if Admin::Base::Resource.registered_resources.any?
 
-        # Load all resource definitions (require only loads once)
-        Dir[Rails.root.join("app/admin/resources/*.rb").to_s].each do |file|
+        globs =
+          if defined?(AdminSuite)
+            AdminSuite.config.resource_globs
+          else
+            [ Rails.root.join("app/admin/resources/*.rb").to_s ]
+          end
+
+        Array(globs).flat_map { |g| Dir[g] }.uniq.each do |file|
           require file
         end
       rescue NameError
         # Admin::Base::Resource not defined yet, load it first
-        require Rails.root.join("app/admin/base/resource.rb").to_s
+        require "admin/base/resource"
         retry
       end
 
@@ -110,12 +136,22 @@ module Internal
       #
       # @return [Hash]
       def build_navigation
-        navigation = {
-          ops: { label: "Ops Portal", icon: "settings", sections: {} },
-          email: { label: "Email Portal", icon: "inbox", sections: {} },
-          ai: { label: "AI Portal", icon: "cpu", sections: {} },
-          assistant: { label: "Assistant Portal", icon: "message-circle", sections: {} }
-        }
+        portals =
+          if defined?(AdminSuite)
+            AdminSuite.config.portals
+          else
+            {}
+          end
+
+        navigation = portals.each_with_object({}) do |(key, meta), h|
+          h[key.to_sym] = {
+            label: meta[:label] || key.to_s.humanize,
+            icon: meta[:icon],
+            color: meta[:color],
+            order: meta[:order] || 100,
+            sections: {}
+          }
+        end
 
         Admin::Base::Resource.registered_resources.each do |resource|
           next unless resource.portal_name && resource.section_name
@@ -123,10 +159,18 @@ module Internal
           portal = resource.portal_name
           section = resource.section_name
 
+          navigation[portal] ||= {
+            label: portal.to_s.humanize,
+            icon: nil,
+            color: nil,
+            order: 100,
+            sections: {}
+          }
+
           navigation[portal][:sections][section] ||= { label: section.to_s.humanize, items: [] }
           navigation[portal][:sections][section][:items] << {
             label: resource.human_name_plural,
-            path: url_for(controller: "/internal/developer/#{resource.resource_name_plural}", action: :index),
+            path: "/internal/developer/#{portal}/#{resource.resource_name_plural}",
             resource: resource
           }
         end

@@ -1,4 +1,6 @@
-<%# Developer Portal Sidebar - New Admin Framework %>
+<%# Developer Portal Sidebar - Admin Suite %>
+
+<% sorted_portals = navigation_items.sort_by { |(_key, meta)| (meta[:order] || 100).to_i } %>
 
 <aside class="flex flex-col w-72 bg-gradient-to-b from-indigo-900 via-indigo-800 to-purple-900 h-full">
   <!-- Header -->
@@ -11,7 +13,7 @@
       </div>
       <div>
         <span class="text-lg font-bold text-white">Developer</span>
-        <span class="block text-xs text-indigo-300">Admin Framework v2</span>
+        <span class="block text-xs text-indigo-300">Admin Suite</span>
       </div>
     <% end %>
   </div>
@@ -19,11 +21,11 @@
   <!-- Quick Links -->
   <div class="px-3 py-3 border-b border-indigo-700/50">
     <div class="flex gap-2">
-      <%= link_to internal_developer_root_path, 
+      <%= link_to internal_developer_root_path,
           class: "flex-1 px-3 py-2 text-xs font-medium text-indigo-200 bg-indigo-800/50 rounded-lg hover:bg-indigo-700/50 text-center transition-colors" do %>
         Dashboard
       <% end %>
-      <%= link_to internal_developer_docs_path, 
+      <%= link_to internal_developer_docs_path,
           class: "flex-1 px-3 py-2 text-xs font-medium text-indigo-200 bg-indigo-800/50 rounded-lg hover:bg-indigo-700/50 text-center transition-colors" do %>
         Docs
       <% end %>
@@ -32,173 +34,45 @@
 
   <!-- Portal Navigation -->
   <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-2">
-    <!-- Ops Portal -->
-    <div>
-      <% ops_active = request.path.start_with?("/internal/developer/ops") %>
-      <%= link_to internal_developer_ops_root_path, 
-          class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{ops_active ? 'bg-amber-500/20 text-white' : 'text-indigo-200 hover:bg-indigo-700/30 hover:text-white'}" do %>
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= ops_active ? 'bg-amber-500/30' : 'bg-indigo-800/50' %>">
-          <svg class="w-4 h-4 <%= ops_active ? 'text-amber-400' : 'text-indigo-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-        </div>
-        <span class="font-medium">Ops Portal</span>
-      <% end %>
-      
-      <% if ops_active %>
-        <div class="mt-1 ml-11 space-y-0.5 text-sm">
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">Content</div>
-          <%= link_to "Companies", internal_developer_ops_companies_path, class: "block px-3 py-1.5 rounded #{controller_name == 'companies' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Job Roles", internal_developer_ops_job_roles_path, class: "block px-3 py-1.5 rounded #{controller_name == 'job_roles' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Categories", internal_developer_ops_categories_path, class: "block px-3 py-1.5 rounded #{controller_name == 'categories' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Skill Tags", internal_developer_ops_skill_tags_path, class: "block px-3 py-1.5 rounded #{controller_name == 'skill_tags' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Job Listings", internal_developer_ops_job_listings_path, class: "block px-3 py-1.5 rounded #{controller_name == 'job_listings' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Blog Posts", internal_developer_ops_blog_posts_path, class: "block px-3 py-1.5 rounded #{controller_name == 'blog_posts' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Applications</div>
-          <%= link_to "Applications", internal_developer_ops_interview_applications_path, class: "block px-3 py-1.5 rounded #{controller_name == 'interview_applications' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Interview Rounds", internal_developer_ops_interview_rounds_path, class: "block px-3 py-1.5 rounded #{controller_name == 'interview_rounds' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Company Feedbacks", internal_developer_ops_company_feedbacks_path, class: "block px-3 py-1.5 rounded #{controller_name == 'company_feedbacks' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Users</div>
-          <%= link_to "Users", internal_developer_ops_users_path, class: "block px-3 py-1.5 rounded #{controller_name == 'users' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Connected Accounts", internal_developer_ops_connected_accounts_path, class: "block px-3 py-1.5 rounded #{controller_name == 'connected_accounts' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Support Tickets", internal_developer_ops_support_tickets_path, class: "block px-3 py-1.5 rounded #{controller_name == 'support_tickets' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Email</div>
-          <%= link_to "Email Senders", internal_developer_ops_email_senders_path, class: "block px-3 py-1.5 rounded #{controller_name == 'email_senders' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Scraping</div>
-          <%= link_to "Scraping Attempts", internal_developer_ops_scraping_attempts_path, class: "block px-3 py-1.5 rounded #{controller_name == 'scraping_attempts' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Scraping Events", internal_developer_ops_scraping_events_path, class: "block px-3 py-1.5 rounded #{controller_name == 'scraping_events' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "HTML Scraping Logs", internal_developer_ops_html_scraping_logs_path, class: "block px-3 py-1.5 rounded #{controller_name == 'html_scraping_logs' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">System</div>
-          <%= link_to "Settings", internal_developer_ops_settings_path, class: "block px-3 py-1.5 rounded #{controller_name == 'settings' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-        </div>
-      <% end %>
-    </div>
+    <% sorted_portals.each do |portal_key, portal| %>
+      <% prefix = "/internal/developer/#{portal_key}" %>
+      <% active = request.path.start_with?(prefix) %>
+      <% color = portal_color(portal_key) %>
 
-    <!-- Email Portal -->
-    <div>
-      <% email_active = request.path.start_with?("/internal/developer/email") %>
-      <%= link_to internal_developer_email_root_path,
-          class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{email_active ? 'bg-emerald-500/20 text-white' : 'text-indigo-200 hover:bg-indigo-700/30 hover:text-white'}" do %>
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= email_active ? 'bg-emerald-500/30' : 'bg-indigo-800/50' %>">
-          <svg class="w-4 h-4 <%= email_active ? 'text-emerald-400' : 'text-indigo-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6m-6 4h10M5 6a2 2 0 012-2h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6z"/>
-          </svg>
-        </div>
-        <span class="font-medium">Email Portal</span>
-      <% end %>
+      <div>
+        <%= link_to prefix,
+            class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{active ? "bg-#{color}-500/20 text-white" : "text-indigo-200 hover:bg-indigo-700/30 hover:text-white"}" do %>
+          <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= active ? "bg-#{color}-500/30" : "bg-indigo-800/50" %>">
+            <%= portal_icon(portal_key) %>
+          </div>
+          <span class="font-medium"><%= portal[:label] %></span>
+        <% end %>
 
-      <% if email_active %>
-        <div class="mt-1 ml-11 space-y-0.5 text-sm">
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">Inbox</div>
-          <%= link_to "Synced Emails", internal_developer_email_synced_emails_path, class: "block px-3 py-1.5 rounded #{controller_name == 'synced_emails' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Pipeline</div>
-          <%= link_to "Pipeline Runs", internal_developer_email_email_pipeline_runs_path, class: "block px-3 py-1.5 rounded #{controller_name == 'email_pipeline_runs' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Pipeline Events", internal_developer_email_email_pipeline_events_path, class: "block px-3 py-1.5 rounded #{controller_name == 'email_pipeline_events' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-        </div>
-      <% end %>
-    </div>
-
-    <!-- AI Portal -->
-    <div>
-      <% ai_active = request.path.start_with?("/internal/developer/ai") %>
-      <%= link_to internal_developer_ai_root_path, 
-          class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{ai_active ? 'bg-cyan-500/20 text-white' : 'text-indigo-200 hover:bg-indigo-700/30 hover:text-white'}" do %>
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= ai_active ? 'bg-cyan-500/30' : 'bg-indigo-800/50' %>">
-          <svg class="w-4 h-4 <%= ai_active ? 'text-cyan-400' : 'text-indigo-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
-          </svg>
-        </div>
-        <span class="font-medium">AI Portal</span>
-      <% end %>
-      
-      <% if ai_active %>
-        <div class="mt-1 ml-11 space-y-0.5 text-sm">
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">LLM</div>
-          <%= link_to "LLM Prompts", internal_developer_ai_llm_prompts_path, class: "block px-3 py-1.5 rounded #{controller_name == 'llm_prompts' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Provider Configs", internal_developer_ai_llm_provider_configs_path, class: "block px-3 py-1.5 rounded #{controller_name == 'llm_provider_configs' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Logs</div>
-          <%= link_to "LLM API Logs", internal_developer_ai_llm_api_logs_path, class: "block px-3 py-1.5 rounded #{controller_name == 'llm_api_logs' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-        </div>
-      <% end %>
-    </div>
-
-    <!-- Assistant Portal -->
-    <div>
-      <% assistant_active = request.path.start_with?("/internal/developer/assistant") %>
-      <%= link_to internal_developer_assistant_root_path, 
-          class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{assistant_active ? 'bg-violet-500/20 text-white' : 'text-indigo-200 hover:bg-indigo-700/30 hover:text-white'}" do %>
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= assistant_active ? 'bg-violet-500/30' : 'bg-indigo-800/50' %>">
-          <svg class="w-4 h-4 <%= assistant_active ? 'text-violet-400' : 'text-indigo-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-          </svg>
-        </div>
-        <span class="font-medium">Assistant Portal</span>
-      <% end %>
-      
-      <% if assistant_active %>
-        <div class="mt-1 ml-11 space-y-0.5 text-sm">
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">Chat</div>
-          <%= link_to "Threads", internal_developer_assistant_threads_path, class: "block px-3 py-1.5 rounded #{controller_name == 'threads' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Turns", internal_developer_assistant_turns_path, class: "block px-3 py-1.5 rounded #{controller_name == 'turns' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Events", internal_developer_assistant_events_path, class: "block px-3 py-1.5 rounded #{controller_name == 'events' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Tools</div>
-          <%= link_to "Tools", internal_developer_assistant_tools_path, class: "block px-3 py-1.5 rounded #{controller_name == 'tools' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Tool Executions", internal_developer_assistant_tool_executions_path, class: "block px-3 py-1.5 rounded #{controller_name == 'tool_executions' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Memory</div>
-          <%= link_to "Memory Proposals", internal_developer_assistant_memory_proposals_path, class: "block px-3 py-1.5 rounded #{controller_name == 'memory_proposals' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Thread Summaries", internal_developer_assistant_thread_summaries_path, class: "block px-3 py-1.5 rounded #{controller_name == 'thread_summaries' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "User Memories", internal_developer_assistant_user_memories_path, class: "block px-3 py-1.5 rounded #{controller_name == 'user_memories' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-        </div>
-      <% end %>
-    </div>
-
-    <!-- Payments Portal -->
-    <div>
-      <% payments_active = request.path.start_with?("/internal/developer/payments") %>
-      <%= link_to internal_developer_payments_root_path,
-          class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{payments_active ? 'bg-emerald-500/20 text-white' : 'text-indigo-200 hover:bg-indigo-700/30 hover:text-white'}" do %>
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= payments_active ? 'bg-emerald-500/30' : 'bg-indigo-800/50' %>">
-          <svg class="w-4 h-4 <%= payments_active ? 'text-emerald-400' : 'text-indigo-400' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-        <span class="font-medium">Payments Portal</span>
-      <% end %>
-
-      <% if payments_active %>
-        <div class="mt-1 ml-11 space-y-0.5 text-sm">
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">Catalog</div>
-          <%= link_to "Plans", internal_developer_payments_plans_path, class: "block px-3 py-1.5 rounded #{controller_name == 'plans' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Features", internal_developer_payments_features_path, class: "block px-3 py-1.5 rounded #{controller_name == 'features' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Entitlements", internal_developer_payments_plan_entitlements_path, class: "block px-3 py-1.5 rounded #{controller_name == 'plan_entitlements' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Providers</div>
-          <%= link_to "Mappings", internal_developer_payments_provider_mappings_path, class: "block px-3 py-1.5 rounded #{controller_name == 'provider_mappings' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-
-          <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-3 pb-1">Runtime</div>
-          <%= link_to "Subscriptions", internal_developer_payments_subscriptions_path, class: "block px-3 py-1.5 rounded #{controller_name == 'subscriptions' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-          <%= link_to "Webhook Events", internal_developer_payments_webhook_events_path, class: "block px-3 py-1.5 rounded #{controller_name == 'webhook_events' ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}" %>
-        </div>
-      <% end %>
-    </div>
+        <% if active %>
+          <div class="mt-1 ml-11 space-y-0.5 text-sm">
+            <% portal[:sections].sort_by { |(_k, s)| s[:label].to_s }.each do |_section_key, section| %>
+              <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">
+                <%= section[:label] %>
+              </div>
+              <% section[:items].sort_by { |it| it[:label].to_s }.each do |item| %>
+                <% item_active = request.path.start_with?(item[:path].to_s) %>
+                <%= link_to item[:label], item[:path],
+                    class: "block px-3 py-1.5 rounded #{item_active ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}",
+                    data: { turbo_frame: "_top" } %>
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
   </nav>
 
   <!-- Footer -->
   <div class="p-3 border-t border-indigo-700/50">
     <div class="px-3 py-2 text-xs text-indigo-400">
       <div class="flex items-center justify-between">
-        <span>Framework v2</span>
-        <span class="font-medium text-indigo-300">5 Portals</span>
+        <span>Admin Suite</span>
+        <span class="font-medium text-indigo-300"><%= sorted_portals.size %> Portals</span>
       </div>
     </div>
   </div>

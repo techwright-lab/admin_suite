@@ -25,7 +25,8 @@ module Internal
         # POST /internal/developer/ops/users/:id/revoke_admin
         # Revokes admin privileges from the user
         def revoke_admin
-          if resource == Current.user
+          actor = admin_suite_actor
+          if actor.is_a?(User) && resource == actor
             redirect_to resource_url(resource), alert: "You cannot revoke your own admin privileges."
           else
             resource.update!(is_admin: false)
@@ -35,13 +36,15 @@ module Internal
 
         # POST /internal/developer/ops/users/:id/grant_billing_admin_access
         def grant_billing_admin_access
-          Billing::AdminAccessService.new(user: resource, actor: Current.user).grant!
+          actor = admin_suite_actor
+          Billing::AdminAccessService.new(user: resource, actor: (actor.is_a?(User) ? actor : nil)).grant!
           redirect_to resource_url(resource), notice: "Granted Admin/Developer billing access."
         end
 
         # POST /internal/developer/ops/users/:id/revoke_billing_admin_access
         def revoke_billing_admin_access
-          Billing::AdminAccessService.new(user: resource, actor: Current.user).revoke!
+          actor = admin_suite_actor
+          Billing::AdminAccessService.new(user: resource, actor: (actor.is_a?(User) ? actor : nil)).revoke!
           redirect_to resource_url(resource), notice: "Revoked Admin/Developer billing access."
         end
 

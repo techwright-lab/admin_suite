@@ -7,8 +7,14 @@ module Internal
       class ToolExecutionsController < Internal::Developer::ResourcesController
         # POST /internal/developer/assistant/tool_executions/:id/approve
         def approve
+          actor = admin_suite_actor
+          unless actor.is_a?(User)
+            redirect_to resource_url(@resource), alert: "Approval requires an authenticated user actor."
+            return
+          end
+
           if @resource.requires_confirmation && @resource.approved_by_id.nil?
-            @resource.update!(approved_by: Current.user, approved_at: Time.current)
+            @resource.update!(approved_by: actor, approved_at: Time.current)
             redirect_to resource_url(@resource), notice: "Tool execution approved."
           else
             redirect_to resource_url(@resource), alert: "Cannot approve this tool execution."
@@ -37,9 +43,14 @@ module Internal
         # POST /internal/developer/assistant/tool_executions/bulk_approve
         def bulk_approve
           ids = params[:ids] || []
+          actor = admin_suite_actor
+          unless actor.is_a?(User)
+            redirect_to collection_url, alert: "Bulk approval requires an authenticated user actor."
+            return
+          end
           resource_class.where(id: ids, status: "proposed")
                         .where(requires_confirmation: true, approved_by_id: nil)
-                        .update_all(approved_by_id: Current.user.id, approved_at: Time.current)
+                        .update_all(approved_by_id: actor.id, approved_at: Time.current)
           redirect_to collection_url, notice: "Selected tool executions approved."
         end
 
@@ -69,4 +80,3 @@ module Internal
     end
   end
 end
-

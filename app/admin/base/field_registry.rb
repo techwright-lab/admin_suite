@@ -24,42 +24,42 @@ module Admin
         number: { partial: "admin/fields/number", input_type: :number_field },
         integer: { partial: "admin/fields/number", input_type: :number_field },
         decimal: { partial: "admin/fields/number", input_type: :number_field },
-        
+
         # Text areas
         textarea: { partial: "admin/fields/textarea", input_type: :text_area },
         text_area: { partial: "admin/fields/textarea", input_type: :text_area },
-        
+
         # Boolean
         boolean: { partial: "admin/fields/toggle", input_type: :check_box },
         toggle: { partial: "admin/fields/toggle", input_type: nil },
         checkbox: { partial: "admin/fields/checkbox", input_type: :check_box },
-        
+
         # Date/Time
         date: { partial: "admin/fields/date", input_type: :date_field },
         datetime: { partial: "admin/fields/datetime", input_type: :datetime_local_field },
         time: { partial: "admin/fields/time", input_type: :time_field },
         date_range: { partial: "admin/fields/date_range", input_type: nil },
-        
+
         # Select
         select: { partial: "admin/fields/select", input_type: :select },
         searchable_select: { partial: "admin/fields/searchable_select", input_type: nil },
         collection_select: { partial: "admin/fields/collection_select", input_type: :collection_select },
-        
+
         # Rich content
         rich_text: { partial: "admin/fields/rich_text", input_type: :rich_text_area },
         trix: { partial: "admin/fields/rich_text", input_type: :rich_text_area },
         markdown: { partial: "admin/fields/markdown", input_type: :text_area },
-        
+
         # File
         file: { partial: "admin/fields/file", input_type: :file_field },
         image: { partial: "admin/fields/file", input_type: :file_field },
-        
+
         # Special
         json: { partial: "admin/fields/json", input_type: :text_area },
         color: { partial: "admin/fields/color", input_type: :color_field },
         hidden: { partial: nil, input_type: :hidden_field },
         tag_picker: { partial: "admin/fields/tag_picker", input_type: nil },
-        
+
         # Read-only display
         readonly: { partial: "admin/fields/readonly", input_type: nil },
         badge: { partial: "admin/fields/badge", input_type: nil }
@@ -141,4 +141,3 @@ module Admin
     end
   end
 end
-

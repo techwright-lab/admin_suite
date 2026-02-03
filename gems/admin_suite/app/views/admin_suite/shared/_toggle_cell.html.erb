@@ -1,0 +1,6 @@
+<%# Minimal toggle cell for turbo_stream replacement %>
+<% value = !!record.public_send(field) rescue false %>
+<%= button_to(value ? "On" : "Off", (toggle_url || admin_suite.resource_toggle_path(portal: params[:portal], resource_name: params[:resource_name], id: record.to_param, field: field)),
+  method: :post,
+  form: { data: { turbo_stream: true } },
+  class: "px-2 py-1 rounded text-xs font-medium #{value ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}") %>

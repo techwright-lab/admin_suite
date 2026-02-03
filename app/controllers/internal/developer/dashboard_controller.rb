@@ -31,7 +31,7 @@ module Internal
         end
       rescue NameError
         # Admin::Base::Resource not defined yet, load it first
-        require Rails.root.join("app/admin/base/resource.rb").to_s
+        require "admin/base/resource"
         retry
       end
 
