@@ -3,43 +3,58 @@
   <head>
     <title><%= content_for(:title) || "Admin Suite" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Admin Suite">
+    <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" rescue nil %>
-    <%= javascript_importmap_tags rescue nil %>
+    <%= yield :head %>
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "rouge", "data-turbo-track": "reload" %>
+
+    <%# EasyMDE Markdown Editor %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css" data-turbo-track="reload">
+    <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js" data-turbo-track="reload"></script>
+
+    <%= javascript_importmap_tags %>
   </head>
 
   <body class="bg-slate-50 dark:bg-slate-900">
-    <div class="min-h-screen flex">
-      <div class="w-72 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+    <div class="flex h-screen overflow-hidden" data-controller="admin-suite--sidebar">
+      <!-- Sidebar -->
+      <div class="hidden lg:flex lg:flex-shrink-0">
         <%= render "admin_suite/shared/sidebar" %>
       </div>
-      <div class="flex-1">
-        <div class="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-slate-500 dark:text-slate-400">
-              <%= link_to "Admin Suite", admin_suite.root_path, class: "hover:underline" %>
-              <% if params[:portal].present? %>
-                <span class="mx-2">/</span>
-                <span class="text-slate-900 dark:text-white font-medium"><%= params[:portal].to_s.humanize %></span>
-              <% end %>
-              <% if params[:resource_name].present? %>
-                <span class="mx-2">/</span>
-                <span class="text-slate-900 dark:text-white font-medium"><%= params[:resource_name].to_s.humanize %></span>
-              <% end %>
-            </div>
-          </div>
-        </div>
 
-        <div class="px-6 py-6">
-          <% flash.each do |type, message| %>
-            <div class="mb-4 px-4 py-3 rounded-lg border <%= type.to_s == "alert" ? "bg-red-50 border-red-200 text-red-800" : "bg-emerald-50 border-emerald-200 text-emerald-800" %>">
-              <%= message %>
-            </div>
-          <% end %>
-          <%= yield %>
-        </div>
+      <!-- Mobile sidebar overlay -->
+      <div data-admin-suite--sidebar-target="overlay"
+           class="hidden fixed inset-0 z-40 bg-slate-600 bg-opacity-75 lg:hidden"
+           data-action="click->admin-suite--sidebar#close">
+      </div>
+
+      <!-- Mobile sidebar -->
+      <div data-admin-suite--sidebar-target="mobileSidebar"
+           class="hidden fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out lg:hidden">
+        <%= render "admin_suite/shared/sidebar" %>
+      </div>
+
+      <!-- Main content area -->
+      <div class="flex flex-col flex-1 overflow-hidden">
+        <!-- Top bar -->
+        <%= render "admin_suite/shared/topbar" %>
+
+        <!-- Main content -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+          <!-- Flash messages -->
+          <%= render "shared/flash" %>
+
+          <!-- Page content -->
+          <div class="py-6">
+            <%= yield %>
+          </div>
+        </main>
       </div>
     </div>
   </body>

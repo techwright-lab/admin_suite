@@ -1,41 +1,321 @@
-<% content_for :title, resource_config&.human_name_plural || resource_name.humanize %>
+<% content_for :title, "#{resource_config.human_name_plural} - Admin Suite" %>
 
-<div class="max-w-6xl">
-  <div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
-      <%= resource_config&.human_name_plural || resource_name.humanize %>
-    </h1>
-    <%= link_to "New", new_resource_path(portal: current_portal, resource_name: resource_name),
-      class: "px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium" %>
+<%
+  has_new_route = begin
+    url_for(action: :new)
+    true
+  rescue ActionController::UrlGenerationError
+    false
+  end
+
+  has_edit_route = ->(record) {
+    begin
+      url_for(action: :edit, id: record.id)
+      true
+    rescue ActionController::UrlGenerationError
+      false
+    end
+  }
+%>
+
+<div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+          <%= link_to "Dashboard", root_path, class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+          <span class="text-slate-900 dark:text-white"><%= resource_config.human_name_plural %></span>
+        </nav>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white"><%= resource_config.human_name_plural %></h1>
+      </div>
+      <% if has_new_route %>
+        <div class="flex items-center gap-3">
+          <%= link_to url_for(action: :new), class: "inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New <%= resource_config.human_name %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
 
-  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-      <thead class="bg-slate-50 dark:bg-slate-900/50">
-        <tr>
-          <% (resource_config&.index_config&.columns_list || []).each do |column| %>
-            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <%= column.header %>
-            </th>
-          <% end %>
-          <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-        <% @collection.each do |record| %>
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-            <% (resource_config&.index_config&.columns_list || []).each do |column| %>
-              <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">
-                <%= render_column_value(record, column) %>
-              </td>
-            <% end %>
-            <td class="px-4 py-3 text-right text-sm">
-              <%= link_to "View", resource_path(portal: current_portal, resource_name: resource_name, id: record.to_param),
-                class: "text-indigo-600 dark:text-indigo-400 hover:underline" %>
-            </td>
-          </tr>
+  <!-- Stats (refresh with Turbo when filters change) -->
+  <%= turbo_frame_tag "resource_stats" do %>
+    <% if @stats.present? %>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <% @stats.each do |stat| %>
+          <% color = stat[:color] || :slate %>
+          <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+            <div class="text-2xl font-bold text-<%= color %>-600 dark:text-<%= color %>-400"><%= stat[:value] %></div>
+            <div class="text-sm text-slate-500 dark:text-slate-400"><%= stat[:name] %></div>
+          </div>
         <% end %>
-      </tbody>
-    </table>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Filters Sidebar -->
+    <% if resource_config.index_config&.filters_list&.any? || resource_config.index_config&.searchable_fields&.any? %>
+      <div class="lg:w-64 flex-shrink-0">
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <h3 class="font-medium text-slate-900 dark:text-white mb-4">Filters</h3>
+          <%= form_with url: url_for(action: :index), method: :get,
+              data: {
+                turbo_frame: "resource_results",
+                controller: "admin-suite--live-filter",
+                action: "input->admin-suite--live-filter#submit change->admin-suite--live-filter#submit"
+              },
+              class: "space-y-4" do %>
+
+            <% if resource_config.index_config&.searchable_fields&.any? %>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Search</label>
+                <%= text_field_tag :search, params[:search],
+                    class: "form-input w-full",
+                    placeholder: "Type 3+ characters to search...",
+                    minlength: 3,
+                    data: {
+                      "admin-suite--live-filter-target": "input",
+                      action: "input->admin-suite--live-filter#debounceWithMinLength",
+                      "admin-suite--live-filter-min-length-value": 3
+                    } %>
+              </div>
+            <% end %>
+
+            <% resource_config.index_config&.filters_list&.each do |filter| %>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <%= filter.label %>
+                </label>
+                <% case filter.type %>
+                <% when :text %>
+                  <%= text_field_tag filter.name, params[filter.name],
+                      class: "form-input w-full",
+                      placeholder: filter.placeholder,
+                      data: { "admin-suite--live-filter-target": "input", action: "input->admin-suite--live-filter#debounce" } %>
+                <% when :select %>
+                  <% options = filter.options.is_a?(Proc) ? filter.options.call : filter.options %>
+                  <%= select_tag filter.name,
+                      options_for_select(options, params[filter.name]),
+                      class: "form-input w-full",
+                      data: { "admin-suite--live-filter-target": "input", action: "change->admin-suite--live-filter#submit" } %>
+                <% when :date %>
+                  <%= date_field_tag filter.name, params[filter.name],
+                      class: "form-input w-full",
+                      data: { "admin-suite--live-filter-target": "input", action: "change->admin-suite--live-filter#submit" } %>
+                <% when :number %>
+                  <%= number_field_tag filter.name, params[filter.name],
+                      class: "form-input w-full",
+                      placeholder: filter.placeholder,
+                      data: { "admin-suite--live-filter-target": "input", action: "input->admin-suite--live-filter#debounce" } %>
+                <% when :toggle %>
+                  <div class="flex items-center">
+                    <%= check_box_tag filter.name, "1", params[filter.name] == "1",
+                        class: "form-checkbox",
+                        data: { "admin-suite--live-filter-target": "input", action: "change->admin-suite--live-filter#submit" } %>
+                    <span class="ml-2 text-sm text-slate-600 dark:text-slate-400"><%= filter.label %></span>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+                Apply
+              </button>
+              <%= link_to "Clear", url_for(action: :index),
+                  class: "px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors",
+                  data: { turbo_frame: "resource_results" } %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Main Content -->
+    <div class="flex-1">
+      <%= turbo_frame_tag "resource_results", data: { turbo_action: "advance" } do %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <% if @collection.any? %>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+              <thead class="bg-slate-50 dark:bg-slate-900/50">
+                <tr>
+                  <%
+                    current_sort = params[:sort]&.to_sym || resource_config.index_config.default_sort
+                    default_direction = resource_config.index_config.default_sort_direction&.to_s || "desc"
+                    current_direction = params[:direction] || (current_sort == resource_config.index_config.default_sort ? default_direction : "asc")
+                  %>
+                  <% resource_config.index_config.columns_list.each do |column| %>
+                    <% is_sortable = column.sortable %>
+                    <% is_current_sort = current_sort == column.name %>
+                    <% next_direction = is_current_sort && current_direction == "asc" ? "desc" : "asc" %>
+
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      <% if is_sortable %>
+                        <%= link_to url_for(params.permit!.merge(sort: column.name, direction: next_direction)),
+                            class: "inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors group",
+                            data: { turbo_frame: "resource_results" } do %>
+                          <span class="<%= is_current_sort ? 'text-indigo-600 dark:text-indigo-400' : '' %>"><%= column.header %></span>
+                          <% if is_current_sort %>
+                            <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <% if current_direction == "asc" %>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                              <% else %>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                              <% end %>
+                            </svg>
+                          <% else %>
+                            <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                            </svg>
+                          <% end %>
+                        <% end %>
+                      <% else %>
+                        <%= column.header %>
+                      <% end %>
+                    </th>
+                  <% end %>
+                  <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                <% @collection.each do |record| %>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/30">
+                    <% resource_config.index_config.columns_list.each do |column| %>
+                      <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                        <%= render_column_value(record, column) %>
+                      </td>
+                    <% end %>
+                    <td class="px-4 py-3 text-right text-sm">
+                      <div class="flex items-center justify-end gap-2">
+                        <%= link_to url_for(action: :show, id: record.id),
+                            class: "text-indigo-600 dark:text-indigo-400 hover:underline",
+                            data: { turbo_frame: "_top" } do %>
+                          View
+                        <% end %>
+                        <% if has_edit_route.call(record) %>
+                          <%= link_to url_for(action: :edit, id: record.id),
+                              class: "text-slate-600 dark:text-slate-400 hover:underline",
+                              data: { turbo_frame: "_top" } do %>
+                            Edit
+                          <% end %>
+                        <% end %>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <% if @pagy.pages > 1 %>
+            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+              <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-500 dark:text-slate-400">
+                  Showing <span class="font-medium text-slate-700 dark:text-slate-300"><%= @pagy.from %></span> to
+                  <span class="font-medium text-slate-700 dark:text-slate-300"><%= @pagy.to %></span> of
+                  <span class="font-medium text-slate-700 dark:text-slate-300"><%= number_with_delimiter(@pagy.count) %></span> results
+                </div>
+
+                <nav class="flex items-center gap-1">
+                  <% if @pagy.prev %>
+                    <%= link_to url_for(params.permit!.merge(page: @pagy.prev)),
+                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors" do %>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                      </svg>
+                      Prev
+                    <% end %>
+                  <% else %>
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                      </svg>
+                      Prev
+                    </span>
+                  <% end %>
+
+                  <div class="hidden sm:flex items-center gap-1 mx-2">
+                    <% @pagy.series.each do |item| %>
+                      <% if item == :gap %>
+                        <span class="px-2 py-1 text-sm text-slate-400 dark:text-slate-500">…</span>
+                      <% elsif item.is_a?(Integer) %>
+                        <%= link_to item, url_for(params.permit!.merge(page: item)),
+                            class: "px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors" %>
+                      <% elsif item.is_a?(String) %>
+                        <span class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg">
+                          <%= item %>
+                        </span>
+                      <% end %>
+                    <% end %>
+                  </div>
+
+                  <span class="sm:hidden px-3 py-1.5 text-sm text-slate-500 dark:text-slate-400">
+                    Page <%= @pagy.page %> of <%= @pagy.pages %>
+                  </span>
+
+                  <% if @pagy.next %>
+                    <%= link_to url_for(params.permit!.merge(page: @pagy.next)),
+                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors" do %>
+                      Next
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    <% end %>
+                  <% else %>
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+                      Next
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    </span>
+                  <% end %>
+                </nav>
+              </div>
+            </div>
+          <% else %>
+            <div class="px-6 py-3 border-t border-slate-200 dark:border-slate-700">
+              <div class="text-sm text-slate-500 dark:text-slate-400">
+                Showing <span class="font-medium text-slate-700 dark:text-slate-300"><%= @pagy.count %></span> results
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="p-12 text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-900 mb-4">
+              <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-medium text-slate-900 dark:text-white">No <%= resource_config.human_name_plural.downcase %> found</h3>
+            <% if has_new_route %>
+              <p class="text-slate-500 dark:text-slate-400 mt-1">Get started by creating your first one.</p>
+              <%= link_to url_for(action: :new),
+                  class: "inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors",
+                  data: { turbo_frame: "_top" } do %>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                New <%= resource_config.human_name %>
+              <% end %>
+            <% else %>
+              <p class="text-slate-500 dark:text-slate-400 mt-1">No records have been created yet.</p>
+            <% end %>
+          </div>
+        <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>

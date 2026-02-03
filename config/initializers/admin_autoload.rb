@@ -24,4 +24,7 @@ Rails.autoloaders.main.push_dir(
 # Eager load the base resource class after Rails initializes
 Rails.application.config.after_initialize do
   require "admin/base/resource"
+  require "admin/base/filter_builder"
+  require "admin/base/action_executor"
+  require "admin/base/action_handler"
 end

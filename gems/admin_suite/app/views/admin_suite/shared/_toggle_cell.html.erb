@@ -1,6 +1,34 @@
-<%# Minimal toggle cell for turbo_stream replacement %>
-<% value = !!record.public_send(field) rescue false %>
-<%= button_to(value ? "On" : "Off", (toggle_url || admin_suite.resource_toggle_path(portal: params[:portal], resource_name: params[:resource_name], id: record.to_param, field: field)),
-  method: :post,
-  form: { data: { turbo_stream: true } },
-  class: "px-2 py-1 rounded text-xs font-medium #{value ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}") %>
+<%# Toggle switch for boolean fields on index pages %>
+<%#
+  Required locals:
+    - record: The record to toggle
+    - field: The boolean field name (e.g., :value, :enabled, :active)
+    - toggle_url: (optional) Custom URL for the toggle action
+%>
+<%
+  value = record.public_send(field)
+  toggle_url ||= begin
+    url_for(action: :toggle, id: record.id, field: field)
+  rescue ActionController::UrlGenerationError
+    resource_toggle_path(portal: params[:portal], resource_name: params[:resource_name], id: record.id, field: field)
+  rescue StandardError
+    nil
+  end
+%>
+
+<%= turbo_frame_tag dom_id(record, :toggle), class: "inline-block" do %>
+  <% if toggle_url %>
+    <%= button_to toggle_url,
+        method: :post,
+        form: { data: { turbo_frame: dom_id(record, :toggle) } },
+        class: "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 #{value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-600'}" do %>
+      <span class="sr-only">Toggle <%= field.to_s.humanize %></span>
+      <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out <%= value ? 'translate-x-5' : 'translate-x-0' %>"></span>
+    <% end %>
+  <% else %>
+    <%# Read-only toggle display when no toggle URL available %>
+    <span class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent <%= value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-600' %>">
+      <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 <%= value ? 'translate-x-5' : 'translate-x-0' %>"></span>
+    </span>
+  <% end %>
+<% end %>
