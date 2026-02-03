@@ -1,0 +1,41 @@
+<% content_for :title, resource_config&.human_name_plural || resource_name.humanize %>
+
+<div class="max-w-6xl">
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+      <%= resource_config&.human_name_plural || resource_name.humanize %>
+    </h1>
+    <%= link_to "New", new_resource_path(portal: current_portal, resource_name: resource_name),
+      class: "px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium" %>
+  </div>
+
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+      <thead class="bg-slate-50 dark:bg-slate-900/50">
+        <tr>
+          <% (resource_config&.index_config&.columns_list || []).each do |column| %>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <%= column.header %>
+            </th>
+          <% end %>
+          <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+        <% @collection.each do |record| %>
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/30">
+            <% (resource_config&.index_config&.columns_list || []).each do |column| %>
+              <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                <%= render_column_value(record, column) %>
+              </td>
+            <% end %>
+            <td class="px-4 py-3 text-right text-sm">
+              <%= link_to "View", resource_path(portal: current_portal, resource_name: resource_name, id: record.to_param),
+                class: "text-indigo-600 dark:text-indigo-400 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

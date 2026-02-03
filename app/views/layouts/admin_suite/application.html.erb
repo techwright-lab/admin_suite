@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Admin Suite" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" rescue nil %>
+    <%= javascript_importmap_tags rescue nil %>
+  </head>
+
+  <body class="bg-slate-50 dark:bg-slate-900">
+    <div class="min-h-screen flex">
+      <div class="w-72 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <%= render "admin_suite/shared/sidebar" %>
+      </div>
+      <div class="flex-1">
+        <div class="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-slate-500 dark:text-slate-400">
+              <%= link_to "Admin Suite", admin_suite.root_path, class: "hover:underline" %>
+              <% if params[:portal].present? %>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900 dark:text-white font-medium"><%= params[:portal].to_s.humanize %></span>
+              <% end %>
+              <% if params[:resource_name].present? %>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900 dark:text-white font-medium"><%= params[:resource_name].to_s.humanize %></span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-6">
+          <% flash.each do |type, message| %>
+            <div class="mb-4 px-4 py-3 rounded-lg border <%= type.to_s == "alert" ? "bg-red-50 border-red-200 text-red-800" : "bg-emerald-50 border-emerald-200 text-emerald-800" %>">
+              <%= message %>
+            </div>
+          <% end %>
+          <%= yield %>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
