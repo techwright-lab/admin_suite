@@ -8,7 +8,8 @@ module Assistant
 
     def show
       @thread = ChatThread.where(user: Current.user).find_by!(uuid: params[:uuid])
-      @messages = @thread.messages.order(:created_at)
+      # Tool messages are persisted for provider replay, but should not render as chat bubbles.
+      @messages = @thread.messages.where(role: %w[user assistant]).order(:created_at)
       @tool_executions = @thread.tool_executions.order(created_at: :desc)
       @tool_action_items = @tool_executions.select { |te| te.status.in?(%w[proposed queued running]) }
     end

@@ -12,6 +12,9 @@
 # Common patterns are extracted into routing concerns below.
 
 Rails.application.routes.draw do
+  # Turbo Streams / ActionCable (required for real-time UI updates)
+  mount ActionCable.server => "/cable"
+
   # =================================================================
   # Routing Concerns
   # =================================================================

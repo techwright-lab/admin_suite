@@ -1,0 +1,25 @@
+<%# locals: (application:, emails:, limit:, frame_id:, selected_email_id: nil) %>
+<div class="divide-y divide-gray-100 dark:divide-gray-700/50">
+  <% emails.first(limit).each do |email| %>
+    <%= render "signals/email_row", email: email, selected: selected_email_id == email.id, show_company: false %>
+  <% end %>
+</div>
+
+<% if emails.count > limit %>
+  <div class="px-4 py-2.5 text-center bg-gray-50/80 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700/50">
+    <% preserved_params = { relevance: params[:relevance], q: params[:q], status: params[:status], type: params[:type], company_id: params[:company_id] }.compact %>
+    <%= link_to "Load more",
+      application_emails_signals_path(
+        preserved_params.merge(
+          interview_application_id: application.id,
+          limit: limit + 5,
+          selected_email_id: selected_email_id
+        )
+      ),
+      class: "text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300",
+      data: { turbo_frame: frame_id, action: "pointerdown->inbox-mobile#prepareLoadMore" } %>
+    <span class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+      (<%= emails.count - limit %> more)
+    </span>
+  </div>
+<% end %>

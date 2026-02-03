@@ -1,5 +1,6 @@
-<%# locals: message %>
+<%# locals: (message:) %>
 <% is_user = message.role == "user" %>
+<% pending = (message.metadata || {})["pending_tool_followup"] == true || (message.metadata || {})[:pending_tool_followup] == true %>
 <div id="<%= dom_id(message) %>" data-role="<%= message.role %>" class="flex <%= is_user ? 'justify-end' : 'justify-start' %> group">
   <div class="<%= is_user ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800' %> rounded-2xl px-4 py-2.5 max-w-[80%] <%= is_user ? '' : 'text-gray-900 dark:text-gray-100' %>">
     <div class="text-sm leading-relaxed <%= is_user ? '' : 'chat-message-content' %>">
@@ -7,6 +8,14 @@
     </div>
     <div class="<%= is_user ? 'text-white/60' : 'text-gray-400 dark:text-gray-500' %> text-[10px] mt-1 flex items-center gap-2">
       <span><%= time_ago_in_words(message.created_at) %> ago</span>
+      <% if !is_user && pending %>
+        <span class="inline-flex items-center gap-1.5">
+          <svg class="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          In progress…
+        </span>
+      <% end %>
       <% unless is_user %>
         <button 
           type="button"

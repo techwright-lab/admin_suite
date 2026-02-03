@@ -130,7 +130,16 @@ module Assistant
             Ai::AssistantSystemPrompt.default_system_prompt
           tools = Assistant::Tools::ToolSchemaAdapter.new(allowed_tools).for_anthropic
 
-          messages = build_anthropic_history_messages
+          messages = Assistant::Providers::Anthropic::MessageBuilder.new(
+            thread: thread,
+            question: "",
+            system_prompt: system_prompt,
+            allowed_tools: allowed_tools,
+            media: []
+          ).build_history_messages(
+            exclude_tool_results_for_assistant_message_id: originating_assistant_message.id,
+            include_pending_assistant_message_id: originating_assistant_message.id
+          )
           created = []
 
           tool_result_blocks = tool_results.map do |tr|
@@ -155,10 +164,20 @@ module Assistant
               llm_prompt: Ai::AssistantSystemPrompt.active_prompt
             )
 
-            result = logger.record(prompt: { messages_count: messages.length, tool_results_count: tool_result_blocks.length }.to_json) do
+            # IMPORTANT: for Anthropic, once we send tool_result blocks to the API, we must also
+            # persist them into our in-memory `messages` history. Anthropic is stateless and enforces
+            # the adjacency rule for *every* prior tool_use block in history: tool_use must be
+            # immediately followed by a user message with tool_result.
+            #
+            # If we don't append tool_result messages into `messages`, then a subsequent iteration
+            # (where the model requests more tools) will include a prior tool_use assistant message
+            # without its immediately-following tool_result message, causing a 400.
+            call_messages = messages + [ { role: "user", content: tool_result_blocks } ]
+
+            result = logger.record(prompt: { messages_count: call_messages.length, tool_results_count: tool_result_blocks.length }.to_json) do
               provider.run(
                 nil,
-                messages: messages + [ { role: "user", content: tool_result_blocks } ],
+                messages: call_messages,
                 tools: tools,
                 system_message: system_prompt,
                 temperature: 0.2,
@@ -167,6 +186,9 @@ module Assistant
             end
 
             break if result[:error].present?
+
+            # Persist the tool_result user message into history (see comment above).
+            messages = call_messages
 
             # Add the full assistant blocks back to history so tool_result blocks have context.
             if result[:content_blocks].present?
@@ -196,22 +218,6 @@ module Assistant
           end
 
           { answer: "Sorry — I couldn’t finish the tool follow-up.", tool_executions: created }
-        end
-
-        def build_anthropic_history_messages
-          # Anthropic is stateless: send full conversational history each time.
-          # If an assistant message was originally created from Anthropic, prefer the stored content blocks.
-          thread.messages.chronological.map do |m|
-            next unless m.role.in?(%w[user assistant])
-            next if m.role == "assistant" && (m.metadata["pending_tool_followup"] == true || m.metadata[:pending_tool_followup] == true)
-            next if m.role == "assistant" && (m.metadata["followup_for_assistant_message_id"].present? || m.metadata[:followup_for_assistant_message_id].present?)
-
-            if m.role == "assistant" && m.metadata["provider"] == "anthropic" && m.metadata["provider_content_blocks"].is_a?(Array)
-              { role: "assistant", content: m.metadata["provider_content_blocks"] }
-            else
-              { role: m.role, content: m.content.to_s }
-            end
-          end.compact
         end
 
         def create_and_execute_followup_tools(tool_calls, provider_name:)

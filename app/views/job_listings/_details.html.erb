@@ -168,6 +168,9 @@
     <% job_markdown = job_listing.custom_sections&.dig("job_markdown") || job_listing.custom_sections&.dig("description_markdown") %>
     <% compensation_text = job_listing.custom_sections&.dig("compensation_text") %>
     <% interview_process = job_listing.custom_sections&.dig("interview_process") %>
+    <% markdown_text = job_markdown.to_s %>
+    <% markdown_has_compensation = markdown_text.match?(/^\s*##+\s+compensation\b/i) %>
+    <% markdown_has_interview_process = markdown_text.match?(/^\s*##+\s+(interview|hiring)\s+process\b/i) %>
 
     <% if job_markdown.present? %>
       <div>
@@ -178,7 +181,8 @@
       </div>
     <% end %>
 
-    <% if compensation_text.present? %>
+    <%# Avoid duplicating content already contained in job_markdown %>
+    <% if compensation_text.present? && !markdown_has_compensation %>
       <div>
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Compensation</h3>
         <div class="job-prose">
@@ -187,7 +191,8 @@
       </div>
     <% end %>
 
-    <% if interview_process.present? %>
+    <%# Avoid duplicating content already contained in job_markdown %>
+    <% if interview_process.present? && !markdown_has_interview_process %>
       <div>
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Interview Process</h3>
         <div class="job-prose">

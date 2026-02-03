@@ -104,6 +104,11 @@ end
 # Signals (Email Intelligence) & Opportunities
 # =================================================================
 resources :signals, only: [ :index, :show ] do
+  collection do
+    # Turbo Frame endpoint for "load more" within a single application group
+    get :application_emails
+  end
+
   member do
     patch :match_application
     patch :ignore

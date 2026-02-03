@@ -374,7 +374,6 @@ module LlmProviders
             }.compact
           end
         next unless h.is_a?(Hash)
-        content_blocks << h
 
         type = (h["type"] || h[:type]).to_s
         case type
@@ -386,24 +385,70 @@ module LlmProviders
           raw_input = h["input"] || h[:input] || {}
           parsed_input =
             if raw_input.is_a?(String)
-              JSON.parse(raw_input)
+              begin
+                JSON.parse(raw_input)
+              rescue JSON::ParserError
+                Rails.logger.warn("[AnthropicProvider] Failed to parse tool_use.input JSON; defaulting to {} input=#{raw_input.to_s[0, 200].inspect}")
+                {}
+              end
             else
               raw_input
             end
 
+          # Ensure stored content blocks match Anthropic's expected shape.
+          # Anthropic requires tool_use.input to be an object (dictionary). Some SDK versions
+          # surface it as a JSON string; normalize it here so future follow-ups can safely
+          # replay provider_content_blocks without 400s.
+          parsed_input = {} unless parsed_input.is_a?(Hash)
+          h["input"] = parsed_input if h.key?("input") || h.key?("input".to_sym)
+          h[:input] = parsed_input if h.key?(:input)
+
           tool_calls << {
             id: h["id"] || h[:id],
             tool_key: h["name"] || h[:name],
-            args: parsed_input.is_a?(Hash) ? parsed_input : {}
+            args: parsed_input
           }
         else
           # Best-effort: if this block contains a text payload, capture it.
           text = h["text"] || h[:text]
           text_parts << text.to_s if text.is_a?(String) && text.present?
         end
+
+        # Store a sanitized version for safe replay during follow-ups (no SDK internals like _json_buf).
+        content_blocks << sanitize_anthropic_content_block(h)
       end
 
       { content: text_parts.join, tool_calls: tool_calls, content_blocks: content_blocks }
+    end
+
+    # Anthropic is strict about content blocks: tool_use blocks cannot include extra keys.
+    # Keep only the allowed/documented fields so replays don't 400.
+    #
+    # @param h [Hash]
+    # @return [Hash]
+    def sanitize_anthropic_content_block(h)
+      type = (h["type"] || h[:type]).to_s
+
+      case type
+      when "tool_use"
+        input = h["input"] || h[:input]
+        input = {} unless input.is_a?(Hash)
+        {
+          "type" => "tool_use",
+          "id" => (h["id"] || h[:id]).to_s.presence,
+          "name" => (h["name"] || h[:name]).to_s.presence,
+          "input" => input
+        }.compact
+      when "text", "output_text"
+        { "type" => "text", "text" => (h["text"] || h[:text]).to_s }
+      else
+        text = h["text"] || h[:text]
+        out = { "type" => type.presence || "text" }
+        out["text"] = text.to_s if text.is_a?(String) && text.present?
+        out
+      end
+    rescue StandardError
+      { "type" => "text", "text" => "" }
     end
 
     def build_response(result, latency_ms)

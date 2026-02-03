@@ -1,4 +1,4 @@
-<%# locals: thread, tool_proposals, tool_executions %>
+<%# locals: (thread:, tool_proposals:, tool_executions:) %>
 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
   <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
     <div class="text-sm font-semibold text-gray-900 dark:text-white">Tool actions</div>
@@ -27,7 +27,27 @@
             </div>
           </div>
           <% if te.args.present? %>
-            <pre class="mt-2 text-xs bg-white/60 dark:bg-black/20 border border-amber-200/60 dark:border-amber-800/60 rounded-lg p-2 overflow-x-auto"><%= JSON.pretty_generate(te.args) %></pre>
+            <% args = te.args.is_a?(Hash) ? te.args : {} %>
+            <% format_value = lambda do |v| %>
+              <% case v %>
+              <% when nil %>
+                <% "" %>
+              <% when TrueClass, FalseClass, Integer, Float %>
+                <% v.to_s %>
+              <% when String %>
+                <% v.to_s %>
+              <% when Array %>
+                <% preview = v.first(6).map { |x| x.is_a?(Hash) ? "{…}" : x.to_s } %>
+                <% out = preview.join(", ") %>
+                <% out = "#{out} …" if v.length > 6 %>
+                <% out %>
+              <% when Hash %>
+                <% "{…}" %>
+              <% else %>
+                <% v.to_s %>
+              <% end %>
+            <% end %>
+            <pre class="mt-2 text-xs bg-white/60 dark:bg-black/20 border border-amber-200/60 dark:border-amber-800/60 rounded-lg p-2 overflow-x-auto"><%= args.map { |k, v| "#{k.to_s.humanize}: #{format_value.call(v)}" }.join("\n") %></pre>
           <% end %>
         </div>
       <% end %>

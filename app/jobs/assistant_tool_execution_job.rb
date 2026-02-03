@@ -22,6 +22,9 @@ class AssistantToolExecutionJob < ApplicationJob
 
     Assistant::Tools::Runner.new(user: user, tool_execution: tool_execution, approved_by: approved_by).call
 
+    # Persist canonical tool result message for reliable provider follow-ups (new turns going forward).
+    Assistant::Chat::ToolResultMessagePersister.new(tool_execution: tool_execution).call
+
     broadcast_tool_executions(thread)
 
     enqueue_followup_if_ready(tool_execution)

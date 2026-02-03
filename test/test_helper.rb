@@ -2,6 +2,7 @@ ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
 require_relative "test_helpers/session_test_helper"
+require_relative "test_helpers/assistant_tool_contract_assertions"
 
 module ActiveSupport
   class TestCase
@@ -11,6 +12,7 @@ module ActiveSupport
     # Use FactoryBot instead of fixtures
     include FactoryBot::Syntax::Methods
     include ActiveJob::TestHelper
+    include AssistantToolContractAssertions
 
     # Add more helper methods to be used by all tests here...
 

@@ -89,7 +89,17 @@ module Assistant
       # Extract context IDs from params
       context[:resume_id] = params[:resume_id].to_i if params[:resume_id].present?
       context[:job_listing_id] = params[:job_listing_id].to_i if params[:job_listing_id].present?
-      context[:interview_application_id] = params[:interview_application_id].to_i if params[:interview_application_id].present?
+      if params[:interview_application_id].present?
+        raw = params[:interview_application_id].to_s.strip
+        if raw.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i)
+          context[:interview_application_uuid] = raw
+        elsif raw.match?(/\A\d+\z/)
+          context[:interview_application_id] = raw.to_i
+        else
+          # FriendlyId slug is likely present; treat as UUID-ish identifier
+          context[:interview_application_uuid] = raw
+        end
+      end
       context[:opportunity_id] = params[:opportunity_id].to_i if params[:opportunity_id].present?
 
       # Explicit flags

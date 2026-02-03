@@ -10,6 +10,9 @@ import { Controller } from "@hotwired/stimulus"
  */
 export default class extends Controller {
   static targets = ["list", "detail", "modal"]
+  static values = {
+    selectedClasses: { type: Array, default: ["bg-primary-50", "dark:bg-primary-900/20"] }
+  }
   
   connect() {
     this.scrollPosition = 0
@@ -34,6 +37,10 @@ export default class extends Controller {
    * @param {Event} event - Click event
    */
   openEmail(event) {
+    // Always mark which row is currently being viewed (desktop + mobile).
+    // This is purely visual; the actual content loads via Turbo Frame.
+    this.markRowSelected(event.currentTarget)
+
     if (!this.isMobile) return
     
     // Save scroll position
@@ -47,6 +54,54 @@ export default class extends Controller {
       // Prevent body scroll
       document.body.style.overflow = "hidden"
     }
+  }
+
+  /**
+   * Marks the clicked row as the active (currently viewed) signal.
+   *
+   * @param {HTMLElement} clickedRow
+   */
+  markRowSelected(clickedRow) {
+    if (!clickedRow) return
+    if (!clickedRow.dataset || clickedRow.dataset.signalRow !== "true") return
+
+    const selected = this.selectedClassesValue
+    const rows = this.element.querySelectorAll('[data-signal-row="true"]')
+
+    rows.forEach((row) => {
+      row.classList.remove(...selected)
+      row.removeAttribute("aria-current")
+
+      const indicator = row.querySelector("[data-signal-row-indicator]")
+      indicator?.classList.add("hidden")
+    })
+
+    clickedRow.classList.add(...selected)
+    clickedRow.setAttribute("aria-current", "true")
+
+    const clickedIndicator = clickedRow.querySelector("[data-signal-row-indicator]")
+    clickedIndicator?.classList.remove("hidden")
+  }
+
+  /**
+   * Ensure "Load more" requests preserve current selection highlighting by
+   * injecting selected_email_id into the link before Turbo handles navigation.
+   *
+   * Attach this to pointerdown (or mousedown) on the link.
+   *
+   * @param {Event} event
+   */
+  prepareLoadMore(event) {
+    const selectedRow = this.element.querySelector('[data-signal-row="true"][aria-current="true"]')
+    const selectedEmailId = selectedRow?.dataset?.signalEmailId
+    if (!selectedEmailId) return
+
+    const link = event.currentTarget
+    if (!link?.href) return
+
+    const url = new URL(link.href, window.location.origin)
+    url.searchParams.set("selected_email_id", selectedEmailId)
+    link.href = url.toString()
   }
   
   /**

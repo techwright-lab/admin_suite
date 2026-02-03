@@ -11,13 +11,15 @@ module Assistant
       # @return [Array<Hash>] OpenAI Responses API tools payload
       def for_openai
         tools.map do |tool|
+          schema = normalize_openai_json_schema(tool.arg_schema.presence || { type: "object", properties: {} })
+          schema = sanitize_openai_top_level_schema(schema)
           {
             type: "function",
             # Responses API expects function tool definition fields at the top-level.
             # (Chat Completions uses {function: {...}}; Responses uses {name:, description:, parameters:}).
             name: tool.tool_key.to_s,
             description: tool.description.to_s,
-            parameters: normalize_openai_json_schema(tool.arg_schema.presence || { type: "object", properties: {} })
+            parameters: schema
           }
         end
       end
@@ -77,6 +79,38 @@ module Assistant
         if (items = normalized["items"] || normalized[:items]).is_a?(Hash)
           normalized["items"] = normalize_openai_json_schema(items)
           normalized[:items] = normalized["items"]
+        end
+
+        normalized
+      end
+
+      # OpenAI Responses API function parameters currently reject top-level schema combinators.
+      # Error example:
+      # "Invalid schema ... must have type 'object' and not have 'oneOf'/'anyOf'/'allOf'/'enum'/'not' at the top level."
+      #
+      # We keep our richer internal schemas (used for server-side validation), but when sending tool
+      # definitions to OpenAI we strip unsupported top-level keys. This prevents the entire request
+      # from failing while still allowing nested enums, etc.
+      #
+      # @param schema [Hash]
+      # @return [Hash]
+      def sanitize_openai_top_level_schema(schema)
+        return {} unless schema.is_a?(Hash)
+
+        normalized = schema.deep_dup
+        type = (normalized["type"] || normalized[:type]).to_s
+        normalized["type"] = type.presence || "object"
+        normalized[:type] = normalized["type"]
+
+        # OpenAI requires top-level to be an object schema.
+        unless normalized["type"] == "object"
+          normalized["type"] = "object"
+          normalized[:type] = "object"
+        end
+
+        %w[anyOf oneOf allOf not enum].each do |k|
+          normalized.delete(k)
+          normalized.delete(k.to_sym)
         end
 
         normalized

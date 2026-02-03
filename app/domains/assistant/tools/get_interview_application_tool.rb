@@ -6,9 +6,18 @@ module Assistant
     class GetInterviewApplicationTool < BaseTool
       def call(args:, tool_execution:)
         uuid = (args["application_uuid"] || args[:application_uuid]).to_s
-        return { success: false, error: "application_uuid is required" } if uuid.blank?
+        application_id = (args["application_id"] || args[:application_id]).to_i
 
-        app = user.interview_applications.includes(:company, :job_role, interview_rounds: :interview_feedback).find_by(uuid: uuid)
+        if uuid.blank? && application_id.zero?
+          return { success: false, error: "application_uuid or application_id is required" }
+        end
+
+        app =
+          if uuid.present?
+            user.interview_applications.includes(:company, :job_role, interview_rounds: :interview_feedback).find_by(uuid: uuid)
+          else
+            user.interview_applications.includes(:company, :job_role, interview_rounds: :interview_feedback).find_by(id: application_id)
+          end
         return { success: false, error: "Interview application not found" } if app.nil?
 
         rounds = app.interview_rounds.ordered.map { |r|

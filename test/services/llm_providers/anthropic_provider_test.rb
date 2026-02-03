@@ -4,6 +4,43 @@ require "test_helper"
 
 module LlmProviders
   class AnthropicProviderTest < ActiveSupport::TestCase
+    test "parse_message sanitizes tool_use blocks (no _json_buf, input is a hash)" do
+      provider = LlmProviders::AnthropicProvider.new
+
+      fake_message = Struct.new(:to_h).new(
+        {
+          "content" => [
+            { "type" => "text", "text" => "Hello" },
+            {
+              "type" => "tool_use",
+              "id" => "toolu_test",
+              "name" => "list_interview_applications",
+              "input" => "{\"status\":\"active\"}",
+              "_json_buf" => "SHOULD_NOT_LEAK"
+            }
+          ]
+        }
+      )
+
+      parsed = provider.send(:parse_message, fake_message)
+      blocks = parsed[:content_blocks]
+
+      tool_block = blocks.find { |b| b["type"] == "tool_use" }
+      assert tool_block.present?
+      assert_equal "toolu_test", tool_block["id"]
+      assert_equal "list_interview_applications", tool_block["name"]
+      assert tool_block["input"].is_a?(Hash)
+      assert_not tool_block.key?("_json_buf")
+    end
+  end
+end
+
+# frozen_string_literal: true
+
+require "test_helper"
+
+module LlmProviders
+  class AnthropicProviderTest < ActiveSupport::TestCase
     setup do
       @provider = AnthropicProvider.new
     end

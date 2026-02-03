@@ -323,9 +323,9 @@
             <% if @application.notes.present? %>
               <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Notes</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                  <%= @application.notes %>
-                </p>
+                <div class="text-sm text-gray-700 dark:text-gray-300">
+                  <%= content_tag(:div, MarkdownRenderer.render(@application.notes.to_s), class: "prose prose-sm dark:prose-invert max-w-none") %>
+                </div>
               </div>
             <% end %>
           </div>

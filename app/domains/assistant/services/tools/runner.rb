@@ -42,7 +42,9 @@ module Assistant
         )
 
         result = nil
-        Timeout.timeout((tool.timeout_ms.to_i / 1000.0).clamp(0.1, 60.0)) do
+        # Some tools (e.g. LLM-backed generators) can take longer than 60s.
+        # Keep an upper bound to avoid indefinite hangs, but allow tools to opt into longer timeouts.
+        Timeout.timeout((tool.timeout_ms.to_i / 1000.0).clamp(0.1, 300.0)) do
           result = execute_tool(tool, tool_execution.args)
         end
 

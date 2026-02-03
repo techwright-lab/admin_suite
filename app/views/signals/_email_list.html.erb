@@ -103,7 +103,8 @@
   <% if grouped_emails.any? %>
     <% grouped_emails.each do |application, emails| %>
       <% next unless application %>
-      <div class="email-group">
+      <% expanded_by_default = selected_email_id.present? ? emails.any? { |e| e.id == selected_email_id } : true %>
+      <div class="email-group" data-controller="expandable" data-expandable-expanded-value="<%= expanded_by_default %>">
         <!-- Application Header -->
         <div class="sticky top-0 z-10 px-4 py-3 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200/80 dark:border-gray-700/80">
           <div class="flex items-center gap-3">
@@ -137,6 +138,17 @@
                 <%= application.job_role.title %>
               </span>
             </div>
+
+            <%# Collapse/expand signals list for this application %>
+            <button type="button"
+                    class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    title="Collapse/expand signals"
+                    aria-label="Collapse/expand signals"
+                    data-action="click->expandable#toggle">
+              <svg class="w-4 h-4 transition-transform duration-200" data-expandable-target="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
             <%= link_to interview_application_path(application),
                 class: "p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
                 title: "View application" do %>
@@ -147,20 +159,31 @@
           </div>
         </div>
 
-        <!-- Signals in this application -->
-        <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
-          <% emails.first(5).each do |email| %>
-            <%= render "signals/email_row", email: email, selected: selected_email_id == email.id, show_company: false %>
+        <div data-expandable-target="content">
+          <%# Signals in this application (progressively loaded in batches of 5) %>
+          <%
+            base_limit = 5
+            selected_index = selected_email_id.present? ? emails.index { |e| e.id == selected_email_id } : nil
+            initial_limit =
+              if selected_index && selected_index >= base_limit
+                # Round up so the selected email is visible in a "batch of 5" world.
+                ((selected_index / base_limit) + 1) * base_limit
+              else
+                base_limit
+              end
+            initial_limit = [initial_limit, 50].min
+            frame_id = "signals_application_#{application.id}_emails"
+          %>
+
+          <%= turbo_frame_tag frame_id do %>
+            <%= render "signals/application_emails",
+              application: application,
+              emails: emails,
+              limit: initial_limit,
+              frame_id: frame_id,
+              selected_email_id: selected_email_id %>
           <% end %>
         </div>
-        
-        <% if emails.count > 5 %>
-          <div class="px-4 py-2.5 text-center bg-gray-50/80 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700/50">
-            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">
-              +<%= emails.count - 5 %> more email<%= emails.count - 5 > 1 ? 's' : '' %>
-            </span>
-          </div>
-        <% end %>
       </div>
     <% end %>
   <% end %>

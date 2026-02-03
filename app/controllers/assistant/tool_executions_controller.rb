@@ -11,6 +11,14 @@ module Assistant
       end
 
       tool_execution = consolidate_batch_tool_executions!(tool_execution)
+      invalid_errors = validate_tool_execution_args(tool_execution)
+      if invalid_errors.any?
+        mark_tool_execution_invalid!(tool_execution, invalid_errors)
+        switch_originating_message_to_placeholder!(tool_execution)
+        broadcast_tool_proposals(tool_execution.thread)
+        enqueue_followup_if_ready(tool_execution)
+        return redirect_back fallback_location: assistant_thread_path(tool_execution.thread), alert: "Couldn't run this action: #{invalid_errors.join(', ')}"
+      end
 
       enqueued = false
       tool_execution.with_lock do
@@ -56,6 +64,14 @@ module Assistant
       end
 
       tool_execution = consolidate_batch_tool_executions!(tool_execution)
+      invalid_errors = validate_tool_execution_args(tool_execution)
+      if invalid_errors.any?
+        mark_tool_execution_invalid!(tool_execution, invalid_errors)
+        switch_originating_message_to_placeholder!(tool_execution)
+        broadcast_tool_proposals(tool_execution.thread)
+        enqueue_followup_if_ready(tool_execution)
+        return redirect_back fallback_location: assistant_thread_path(tool_execution.thread), alert: "Couldn't run this action: #{invalid_errors.join(', ')}"
+      end
 
       enqueued = false
       tool_execution.with_lock do
@@ -211,6 +227,41 @@ module Assistant
         content: "Working on it — I’m fetching the latest info now.",
         metadata: msg.metadata.merge("pending_tool_followup" => true)
       )
+    end
+
+    def validate_tool_execution_args(tool_execution)
+      tool = ::Assistant::Tool.find_by(tool_key: tool_execution.tool_key)
+      return [] if tool.nil?
+
+      ::Assistant::Tools::ArgSchemaValidator.new(tool.arg_schema).validate(tool_execution.args)
+    end
+
+    def mark_tool_execution_invalid!(tool_execution, errors)
+      now = Time.current
+      tool_execution.update!(
+        status: "error",
+        finished_at: now,
+        error: errors.join(", "),
+        metadata: (tool_execution.metadata || {}).merge("error_type" => "schema_invalid")
+      )
+
+      # Persist tool result so provider histories can safely include tool_result for tool_use_id
+      ::Assistant::Chat::ToolResultMessagePersister.new(tool_execution: tool_execution).call
+    rescue StandardError
+      # best-effort
+    end
+
+    def enqueue_followup_if_ready(tool_execution)
+      thread = tool_execution.thread
+      assistant_message_id = tool_execution.assistant_message_id
+      return if assistant_message_id.blank?
+
+      pending = thread.tool_executions.where(assistant_message_id: assistant_message_id, status: %w[proposed queued running]).exists?
+      return if pending
+
+      AssistantToolFollowupJob.perform_later(assistant_message_id)
+    rescue StandardError
+      # best-effort
     end
 
     def broadcast_tool_proposals(thread)

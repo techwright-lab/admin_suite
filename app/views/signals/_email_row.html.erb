@@ -1,6 +1,5 @@
 <%# locals: (email:, selected: false, show_company: true) %>
 
-<% is_opportunity = email.recruiter_outreach? %>
 <%
   type_colors = {
     'recruiter_outreach' => { bg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-700 dark:text-indigo-300', border: 'border-indigo-400' },
@@ -14,16 +13,17 @@
 %>
 
 <%= link_to signal_path(email),
-    class: "group block relative px-4 py-3.5 transition-all duration-200 #{selected ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'} #{is_opportunity ? 'border-l-3 border-indigo-500' : ''}",
+    class: "group block relative px-4 py-3.5 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700/30 #{selected ? 'bg-primary-50 dark:bg-primary-900/20' : ''}",
     data: { 
       turbo_frame: "email_detail",
-      action: "click->inbox-mobile#openEmail"
-    } do %>
+      action: "click->inbox-mobile#openEmail",
+      signal_row: true,
+      signal_email_id: email.id
+    },
+    aria: { current: (selected ? "true" : nil) } do %>
   
   <%# Selection indicator %>
-  <% if selected %>
-    <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-500 rounded-r"></div>
-  <% end %>
+  <div data-signal-row-indicator class="absolute left-0 top-0 bottom-0 w-1 bg-primary-500 rounded-r <%= selected ? '' : 'hidden' %>"></div>
 
   <div class="flex items-start gap-3">
     <!-- Avatar with type indicator -->

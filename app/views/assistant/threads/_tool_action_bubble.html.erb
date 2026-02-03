@@ -1,4 +1,4 @@
-<%# locals: thread, tool_execution %>
+<%# locals: (thread:, tool_execution:) %>
 <%# Tool action displayed as a chat bubble for approval/execution %>
 <div id="<%= dom_id(tool_execution) %>" class="flex justify-start">
   <div class="max-w-[85%] bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-2xl px-4 py-3">
@@ -34,6 +34,25 @@
         
         <%# Action preview / details to help the user understand what they're approving %>
         <% args = tool_execution.args.is_a?(Hash) ? tool_execution.args : {} %>
+        <% format_value = lambda do |v| %>
+          <% case v %>
+          <% when nil %>
+            <% "" %>
+          <% when TrueClass, FalseClass, Integer, Float %>
+            <% v.to_s %>
+          <% when String %>
+            <% v.to_s %>
+          <% when Array %>
+            <% preview = v.first(6).map { |x| x.is_a?(Hash) ? "{…}" : x.to_s } %>
+            <% out = preview.join(", ") %>
+            <% out = "#{out} …" if v.length > 6 %>
+            <% out %>
+          <% when Hash %>
+            <% "{…}" %>
+          <% else %>
+            <% v.to_s %>
+          <% end %>
+        <% end %>
         <% details_lines = [] %>
         <% case tool_execution.tool_key.to_s %>
         <% when "add_target_company" %>
@@ -102,10 +121,24 @@
         <% when "list_target_job_roles" %>
           <% lim = (args["limit"] || args[:limit]).to_s.presence %>
           <% details_lines << "List your current target job roles#{lim.present? ? " (limit #{lim})" : ""}." %>
+        <% when "add_note_to_application" %>
+          <% application_uuid = (args["application_uuid"] || args[:application_uuid]).to_s %>
+          <% mode = (args["mode"] || args[:mode] || "append").to_s %>
+          <% note = (args["note"] || args[:note]).to_s %>
+          <% app = application_uuid.present? ? thread.user.interview_applications.find_by(uuid: application_uuid) : nil %>
+          <% label = app ? "#{app.job_role} at #{app.company}" : "application #{application_uuid.presence || "?"}" %>
+          <% details_lines << "Add note (#{mode}) to #{label}." %>
+          <% if note.present? %>
+            <% details_lines << "" %>
+            <% details_lines << "Note preview:" %>
+            <% details_lines << note.to_s.truncate(700) %>
+          <% end %>
         <% else %>
           <% if args.present? %>
-            <% details_lines << "Args:" %>
-            <% details_lines << JSON.pretty_generate(args).to_s.truncate(600) %>
+            <% details_lines << "Details:" %>
+            <% args.each do |k, v| %>
+              <% details_lines << "- #{k.to_s.humanize}: #{format_value.call(v)}" %>
+            <% end %>
           <% end %>
         <% end %>
 

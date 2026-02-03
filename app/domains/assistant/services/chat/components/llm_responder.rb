@@ -133,7 +133,13 @@ module Assistant
             sections << "\nPipeline: #{pipeline[:interview_applications_count]} applications"
             if pipeline[:recent_interview_applications].present?
               recent = pipeline[:recent_interview_applications].first(3).map do |app|
-                "#{app[:job_role]} at #{app[:company]} (#{app[:status]})"
+                base = "#{app[:job_role]} at #{app[:company]} (#{app[:status]})"
+                # Include identifiers so the model can reliably call tools.
+                # Many tools accept application_uuid/application_id, and without these the model may hallucinate.
+                ids = []
+                ids << "id=#{app[:id]}" if app[:id].present?
+                ids << "uuid=#{app[:uuid]}" if app[:uuid].present?
+                ids.any? ? "#{base} [#{ids.join(' ')}]" : base
               end
               sections << "Recent: #{recent.join('; ')}"
             end
@@ -152,6 +158,14 @@ module Assistant
           provider = provider_for(provider_name)
           return { status: "skipped", error: nil } unless provider&.available?
 
+          router = Assistant::Providers::ProviderRouter.new(
+            thread: thread,
+            question: question,
+            system_prompt: system_prompt,
+            allowed_tools: allowed_tools,
+            media: media
+          )
+
           logger = Ai::ApiLoggerService.new(
             operation_type: :assistant_chat,
             loggable: user,
@@ -160,9 +174,9 @@ module Assistant
             llm_prompt: Ai::AssistantSystemPrompt.active_prompt
           )
 
-          request_for_log = build_request_for_log(provider_name: provider.provider_name, system_prompt: system_prompt)
+          request_for_log = router.request_payload_for_log(provider: provider)
           result = logger.record(prompt: request_for_log, content_size: request_for_log.bytesize) do
-            call_provider(provider: provider, provider_name: provider.provider_name, system_prompt: system_prompt)
+            router.call(provider: provider)
           end
 
           if result[:error].present?
@@ -298,112 +312,6 @@ module Assistant
           }
         end
 
-        def call_provider(provider:, provider_name:, system_prompt:)
-          case provider_name.to_s.downcase
-          when "openai"
-            openai_call(provider: provider, system_prompt: system_prompt)
-          when "anthropic"
-            anthropic_call(provider: provider, system_prompt: system_prompt)
-          else
-            legacy_prompt = PromptBuilder.new(
-              context: context,
-              question: question,
-              allowed_tools: allowed_tools,
-              conversation_history: build_conversation_history_for_legacy_prompt
-            ).build
-            provider.run(legacy_prompt, system_message: system_prompt, temperature: 0.2, max_tokens: 1200)
-          end
-        end
-
-        def openai_call(provider:, system_prompt:)
-          tools = Assistant::Tools::ToolSchemaAdapter.new(allowed_tools).for_openai
-          previous_response_id = last_openai_response_id
-
-          messages =
-            if previous_response_id.present?
-              [ { role: "user", content: question } ]
-            else
-              # No provider-native conversation state available; send a full message list.
-              openai_messages = build_provider_messages(max_messages: 20)
-              [ { role: "system", content: system_prompt } ] + openai_messages
-            end
-
-          options = {
-            messages: messages,
-            tools: tools,
-            previous_response_id: previous_response_id,
-            temperature: 0.2,
-            max_tokens: 1200
-          }
-
-          # Include media attachments if present
-          options[:media] = media if media.present?
-
-          provider.run(nil, options)
-        end
-
-        def anthropic_call(provider:, system_prompt:)
-          tools = Assistant::Tools::ToolSchemaAdapter.new(allowed_tools).for_anthropic
-          messages = build_provider_messages(max_messages: 20)
-
-          options = {
-            messages: messages,
-            tools: tools,
-            system_message: system_prompt,
-            temperature: 0.2,
-            max_tokens: 1200
-          }
-
-          # Include media attachments if present
-          options[:media] = media if media.present?
-
-          provider.run(nil, options)
-        end
-
-        def build_provider_messages(max_messages:)
-          # Provider-native conversational history for chat APIs.
-          # Includes the current user message if it is already persisted to the thread.
-          if thread.nil?
-            return [ { role: "user", content: question } ]
-          end
-
-          msgs = thread.messages.chronological.to_a.last(max_messages)
-
-          msgs
-            .select { |m| m.role.in?(%w[user assistant]) }
-            .reject { |m| m.role == "assistant" && (m.metadata["pending_tool_followup"] == true || m.metadata[:pending_tool_followup] == true) }
-            .reject { |m| m.role == "assistant" && (m.metadata["followup_for_assistant_message_id"].present? || m.metadata[:followup_for_assistant_message_id].present?) }
-            .map { |m| { role: m.role, content: m.content.to_s } }
-        end
-
-        def last_openai_response_id
-          return nil if thread.nil?
-
-          turns = thread.turns.order(created_at: :desc).where(provider_name: "openai").limit(25)
-          eligible = turns.find do |t|
-            state = t.provider_state || {}
-            awaiting = state["awaiting_tool_outputs"]
-            awaiting = state[:awaiting_tool_outputs] if awaiting.nil?
-            awaiting != true
-          end
-
-          state = eligible&.provider_state || {}
-          state["response_id"] || state[:response_id]
-        end
-
-        def build_conversation_history_for_legacy_prompt
-          return [] if thread.nil?
-
-          messages = thread.messages.chronological.to_a
-          if messages.last&.role == "user" && messages.last&.content&.strip == question.strip
-            messages = messages[0..-2]
-          end
-
-          messages.map do |msg|
-            { role: msg.role, content: msg.content }
-          end
-        end
-
         def normalize_tool_call(tc, provider:)
           h = tc.is_a?(Hash) ? tc : {}
           tool_key = h[:tool_key] || h["tool_key"] || h[:name] || h["name"]
@@ -431,13 +339,13 @@ module Assistant
         end
 
         def build_request_for_log(provider_name:, system_prompt:)
-          payload = {
+          # Used only for synthetic fallback logging paths. ProviderRouter is used for real provider attempts.
+          {
             provider: provider_name,
             system: system_prompt.to_s,
-            messages: build_provider_messages(max_messages: 20),
+            question: question.to_s,
             tools_count: allowed_tools.size
-          }
-          payload.to_json
+          }.to_json
         end
 
         def provider_for(provider_name)

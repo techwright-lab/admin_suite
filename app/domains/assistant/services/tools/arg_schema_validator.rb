@@ -19,6 +19,14 @@ module Assistant
         args = args.is_a?(Hash) ? args : {}
         return [] if schema.blank?
 
+        # Support top-level anyOf/oneOf (minimal): valid if any sub-schema validates.
+        branches = Array(schema["anyOf"] || schema[:anyOf] || schema["oneOf"] || schema[:oneOf])
+        if branches.any?
+          branch_errors = branches.map { |sub| self.class.new(sub).validate(args) }
+          return [] if branch_errors.any?(&:empty?)
+          # Fall through and report errors from the first branch + base schema requirements/types.
+        end
+
         errors = []
         errors.concat(validate_required(args))
         errors.concat(validate_types(args))
