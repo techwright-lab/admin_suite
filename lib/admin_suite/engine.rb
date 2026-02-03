@@ -4,6 +4,13 @@ module AdminSuite
   class Engine < ::Rails::Engine
     isolate_namespace AdminSuite
 
+    initializer "admin_suite.importmap", before: "importmap" do |app|
+      # Make engine-provided JS available to host apps using importmap-rails.
+      if app.config.respond_to?(:importmap) && app.config.importmap.respond_to?(:paths)
+        app.config.importmap.paths << root.join("config/importmap.rb")
+      end
+    end
+
     initializer "admin_suite.configuration" do
       # Provide sensible defaults for host apps.
       AdminSuite.configure do |config|

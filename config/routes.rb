@@ -3,6 +3,9 @@
 AdminSuite::Engine.routes.draw do
   root to: "dashboard#index"
 
+  # Portal dashboards (e.g. /ops, /email). Accept optional trailing slash.
+  get ":portal(/)", to: "portals#show", as: :portal
+
   # Generic resource routes (dynamic)
   scope ":portal/:resource_name" do
     get "/", to: "resources#index", as: :resources
