@@ -8,3 +8,4 @@
 !/test/dummy/log/.keep
 /test/dummy/tmp/
 /test/dummy/storage/
+admin_suite-*.gem
