@@ -2,16 +2,16 @@
 
 <% sorted_portals = navigation_items.sort_by { |(_key, meta)| (meta[:order] || 100).to_i } %>
 
-<aside class="flex flex-col w-72 bg-gradient-to-b <%= theme_sidebar_gradient_class %> h-full">
+<aside class="admin-suite-sidebar flex flex-col w-72 bg-gradient-to-b <%= theme_sidebar_gradient_class %> h-full">
   <!-- Header -->
   <div class="flex items-center justify-between h-16 px-4 border-b border-<%= theme_primary %>-700/50">
     <%= link_to root_path, class: "flex items-center gap-3" do %>
       <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-<%= theme_primary %>-500/30 border border-<%= theme_primary %>-400/30">
-        <%= admin_suite_icon("code", class: "w-5 h-5 text-#{theme_primary}-300") %>
+        <%= admin_suite_icon("code", class: "w-5 h-5 text-white") %>
       </div>
       <div>
         <span class="text-lg font-bold text-white">Developer</span>
-        <span class="block text-xs text-<%= theme_primary %>-300">Admin Suite</span>
+        <span class="block text-xs text-white/80">Admin Suite</span>
       </div>
     <% end %>
   </div>
@@ -20,20 +20,20 @@
   <div class="px-3 py-3 border-b border-<%= theme_primary %>-700/50">
     <div class="flex gap-2">
       <%= link_to root_path,
-          class: "flex-1 px-3 py-2 text-xs font-medium text-#{theme_primary}-200 bg-#{theme_primary}-800/50 rounded-lg hover:bg-#{theme_primary}-700/50 text-center transition-colors" do %>
+          class: "flex-1 px-3 py-2 text-xs font-medium text-white bg-white/10 rounded-lg hover:bg-white/20 text-center transition-colors" do %>
         Dashboard
       <% end %>
       <% docs = AdminSuite.config.docs_url %>
       <% docs_url = docs.respond_to?(:call) ? docs.call(self) : docs %>
       <% if docs_url.present? %>
         <%= link_to docs_url,
-            class: "flex-1 px-3 py-2 text-xs font-medium text-#{theme_primary}-200 bg-#{theme_primary}-800/50 rounded-lg hover:bg-#{theme_primary}-700/50 text-center transition-colors",
+            class: "flex-1 px-3 py-2 text-xs font-medium text-white bg-white/10 rounded-lg hover:bg-white/20 text-center transition-colors",
             target: "_blank",
             rel: "noopener noreferrer" do %>
           Docs
         <% end %>
       <% else %>
-        <span class="flex-1 px-3 py-2 text-xs font-medium text-<%= theme_primary %>-300/60 bg-<%= theme_primary %>-800/30 rounded-lg text-center">Docs</span>
+        <span class="flex-1 px-3 py-2 text-xs font-medium text-white/60 bg-white/5 rounded-lg text-center">Docs</span>
       <% end %>
     </div>
   </div>
@@ -48,8 +48,8 @@
 
       <div>
         <%= link_to (portal_home || root_path),
-            class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{active ? "bg-#{color}-500/20 text-white" : "text-#{theme_primary}-200 hover:bg-#{theme_primary}-700/30 hover:text-white"}" do %>
-          <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= active ? "bg-#{color}-500/30" : "bg-#{theme_primary}-800/50" %>">
+            class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{active ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/15 hover:text-white"}" do %>
+          <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= active ? "bg-#{color}-500/30" : "bg-white/10" %>">
             <%= portal_icon(portal_key, class: "w-4 h-4 text-#{color}-200") %>
           </div>
           <span class="font-medium"><%= portal[:label] %></span>
@@ -58,16 +58,16 @@
         <% if active %>
           <div class="mt-1 ml-11 space-y-0.5 text-sm">
             <% portal[:sections].sort_by { |(_k, s)| s[:label].to_s }.each do |_section_key, section| %>
-              <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">
+              <div class="text-xs font-medium text-white/70 uppercase tracking-wider px-3 pt-2 pb-1">
                 <%= section[:label] %>
               </div>
               <% section[:items].sort_by { |it| [ (it[:order] || 100).to_i, it[:label].to_s ] }.each do |item| %>
                 <% item_active = request.path.start_with?(item[:path].to_s) %>
                 <%= link_to item[:path],
-                    class: "flex items-center gap-2 px-3 py-1.5 rounded #{item_active ? "text-white bg-#{theme_primary}-700/50" : "text-#{theme_primary}-300 hover:text-white"}",
+                    class: "flex items-center gap-2 px-3 py-1.5 rounded #{item_active ? "text-white bg-white/20" : "text-white/85 hover:bg-white/15 hover:text-white"}",
                     data: { turbo_frame: "_top" } do %>
                   <% if item[:icon].present? %>
-                    <%= admin_suite_icon(item[:icon], class: "w-3.5 h-3.5 text-#{theme_primary}-200/80") %>
+                    <%= admin_suite_icon(item[:icon], class: "w-3.5 h-3.5 text-white/85") %>
                   <% end %>
                   <span class="truncate"><%= item[:label] %></span>
                 <% end %>
@@ -81,10 +81,10 @@
 
   <!-- Footer -->
   <div class="p-3 border-t border-<%= theme_primary %>-700/50">
-    <div class="px-3 py-2 text-xs text-<%= theme_primary %>-400">
+    <div class="px-3 py-2 text-xs text-white/70">
       <div class="flex items-center justify-between">
         <span>Admin Suite</span>
-        <span class="font-medium text-<%= theme_primary %>-300"><%= sorted_portals.size %> Portals</span>
+        <span class="font-medium text-white/85"><%= sorted_portals.size %> Portals</span>
       </div>
     </div>
   </div>

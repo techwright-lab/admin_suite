@@ -11,7 +11,30 @@
 
     <%= yield :head %>
 
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%# AdminSuite ships a baseline stylesheet so it can run without host Tailwind. %>
+    <%= stylesheet_link_tag "admin_suite", "data-turbo-track": "reload" %>
+
+    <%# Include host app CSS if present (Tailwind builds typically output `tailwind.css` and/or `application.css`). %>
+    <% host_styles_ok = false %>
+    <% preferred = AdminSuite.config.respond_to?(:host_stylesheet) ? AdminSuite.config.host_stylesheet : nil %>
+    <% candidates = Array(preferred.presence || [ :tailwind, :application, :app ]) %>
+    <% candidates.each do |name| %>
+      <% begin %>
+        <%# Propshaft does not expose Sprockets' `load_path`, so we keep this permissive:
+            include the candidate and rely on the dev server/asset pipeline to serve it. %>
+        <%= stylesheet_link_tag name, "data-turbo-track": "reload" %>
+        <% host_styles_ok = true %>
+        <% break %>
+      <% rescue StandardError %>
+      <% end %>
+    <% end %>
+
+    <%# Fallback: Tailwind CDN so utility classes still work if the host doesn't build Tailwind (or doesn't expose assets). %>
+    <% tailwind_cdn = AdminSuite.config.respond_to?(:tailwind_cdn) ? AdminSuite.config.tailwind_cdn : true %>
+    <% if tailwind_cdn && !host_styles_ok %>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.17/dist/tailwind.min.css" data-turbo-track="reload">
+    <% end %>
+
     <%= stylesheet_link_tag "rouge", "data-turbo-track": "reload" %>
 
     <%# EasyMDE Markdown Editor %>
@@ -21,7 +44,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-slate-50 dark:bg-slate-900">
+  <body class="bg-slate-50">
     <div class="flex h-screen overflow-hidden" data-controller="admin-suite--sidebar">
       <!-- Sidebar -->
       <div class="hidden lg:flex lg:flex-shrink-0">
@@ -46,7 +69,7 @@
         <%= render "admin_suite/shared/topbar" %>
 
         <!-- Main content -->
-        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+        <main class="flex-1 overflow-y-auto bg-slate-50">
           <!-- Flash messages -->
           <% flash_partial = AdminSuite.config.partials[:flash].presence || "admin_suite/shared/flash" %>
           <%= render flash_partial %>

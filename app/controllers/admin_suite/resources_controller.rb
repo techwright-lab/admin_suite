@@ -145,6 +145,22 @@ module AdminSuite
 
     def set_resource
       @resource = resource_class.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      # Support "friendly" params (e.g. slugged records) without requiring host apps
+      # to change their model primary keys.
+      id = params[:id].to_s
+      columns = resource_class.column_names
+
+      @resource =
+        if columns.include?("slug")
+          resource_class.find_by!(slug: id)
+        elsif columns.include?("uuid")
+          resource_class.find_by!(uuid: id)
+        elsif columns.include?("token")
+          resource_class.find_by!(token: id)
+        else
+          raise
+        end
     end
 
     def resource

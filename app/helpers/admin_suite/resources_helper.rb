@@ -2,35 +2,14 @@
 
 module AdminSuite
   module ResourcesHelper
-    # Renders a column value from a record.
+    # Intentionally empty.
     #
-    # @param record [ActiveRecord::Base]
-    # @param column [Admin::Base::Resource::ColumnDefinition]
-    # @return [String]
-    def render_column_value(record, column)
-      if column.content.is_a?(Proc)
-        column.content.call(record)
-      else
-        record.public_send(column.name) rescue "—"
-      end
-    end
-
-    # Formats a value for display on show pages.
+    # `AdminSuite::ApplicationController` installs `AdminSuite::BaseHelper` for all
+    # engine views. That helper provides rich rendering for:
+    # - index column types (e.g. `:toggle`, `:label`)
+    # - show formatters (markdown/json/code/attachments)
     #
-    # @param record [ActiveRecord::Base]
-    # @param field_name [Symbol, String]
-    # @return [String]
-    def format_show_value(record, field_name)
-      value = record.public_send(field_name) rescue nil
-
-      case value
-      when nil then "—"
-      when true then "Yes"
-      when false then "No"
-      when Time, DateTime then value.strftime("%b %d, %Y %H:%M")
-      when Date then value.strftime("%b %d, %Y")
-      else value.to_s
-      end
-    end
+    # Defining `render_column_value` / `format_show_value` here would override
+    # those implementations and silently break functionality.
   end
 end

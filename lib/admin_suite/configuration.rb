@@ -14,6 +14,8 @@ module AdminSuite
       :docs_url,
       :partials,
       :theme,
+      :host_stylesheet,
+      :tailwind_cdn,
       :on_action_executed,
       :resolve_action_handler
 
@@ -29,6 +31,8 @@ module AdminSuite
       @docs_url = nil
       @partials = {}
       @theme = { primary: :indigo, secondary: :purple }
+      @host_stylesheet = nil
+      @tailwind_cdn = true
       @on_action_executed = nil
       @resolve_action_handler = nil
     end

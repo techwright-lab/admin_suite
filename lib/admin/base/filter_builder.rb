@@ -53,6 +53,10 @@ module Admin
       end
 
       def apply_filter(scope, filter)
+        # Some "filters" in the UI are really just controls (e.g. sort dropdown).
+        # They are handled elsewhere (`apply_sort`) and must not be turned into SQL.
+        return scope if %i[sort sort_direction direction page search].include?(filter.name.to_sym)
+
         value = params[filter.name]
         return scope if value.blank?
 
