@@ -6,6 +6,8 @@ rescue LoadError
   # Host app may choose a different icon provider via `AdminSuite.config.icon_renderer`.
 end
 
+require "pagy"
+
 require "admin_suite/version"
 require "admin_suite/configuration"
 require "admin_suite/markdown_renderer"

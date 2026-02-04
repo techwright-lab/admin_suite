@@ -69,9 +69,11 @@ AdminSuite::UI::ShowFormatterRegistry.register_class(Date) do |value, _view, _re
   value.strftime("%B %d, %Y")
 end
 
-AdminSuite::UI::ShowFormatterRegistry.register_class(ActiveRecord::Base) do |value, view, _record, _field|
-  link_text = value.respond_to?(:name) ? value.name : "#{value.class.name} ##{value.id}"
-  view.content_tag(:span, link_text, class: "text-indigo-600 dark:text-indigo-400")
+if defined?(ActiveRecord::Base)
+  AdminSuite::UI::ShowFormatterRegistry.register_class(ActiveRecord::Base) do |value, view, _record, _field|
+    link_text = value.respond_to?(:name) ? value.name : "#{value.class.name} ##{value.id}"
+    view.content_tag(:span, link_text, class: "text-indigo-600 dark:text-indigo-400")
+  end
 end
 
 AdminSuite::UI::ShowFormatterRegistry.register_class(Hash) do |value, view, _record, _field|

@@ -79,6 +79,9 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
 
+  # Code coverage reporting (opt-in via COVERAGE=1)
+  gem "simplecov", require: false
+
   # HTTP request stubbing and recording
   gem "vcr"
   gem "webmock"

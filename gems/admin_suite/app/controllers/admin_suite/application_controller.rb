@@ -39,6 +39,7 @@ module AdminSuite
     #
     # @return [void]
     def ensure_resources_loaded!
+      require "admin/base/resource" unless defined?(Admin::Base::Resource)
       return unless Rails.env.development?
       return if Admin::Base::Resource.registered_resources.any?
 

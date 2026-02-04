@@ -6,10 +6,32 @@ module AdminSuite
   class Engine < ::Rails::Engine
     isolate_namespace AdminSuite
 
-    # Ensure engine `lib/` participates in Zeitwerk autoloading in development,
-    # especially when new files are added during a running session.
-    config.autoload_paths << root.join("lib").to_s
-    config.eager_load_paths << root.join("lib").to_s
+    initializer "admin_suite.inflections" do
+      # Engine namespace uses `UI` (all-caps). Without this, Zeitwerk expects `Ui`.
+      ActiveSupport::Inflector.inflections(:en) do |inflect|
+        inflect.acronym "UI"
+      end
+    end
+
+    initializer "admin_suite.host_dsl_ignore" do
+      # Host apps sometimes store AdminSuite DSL files under `app/admin_suite/**`.
+      # Those are not constant definitions, so we must prevent Zeitwerk from
+      # expecting constants like `Portals::Ai` during eager load.
+      host_dsl_dir = Rails.root.join("app/admin_suite")
+      next unless host_dsl_dir.exist?
+
+      Rails.autoloaders.each do |loader|
+        loader.ignore(host_dsl_dir)
+      end
+    end
+
+    initializer "admin_suite.admin_dsl" do
+      # Ensure core DSL types are loaded in all environments (including test).
+      require "admin/base/resource"
+      require "admin/base/filter_builder"
+      require "admin/base/action_executor"
+      require "admin/base/action_handler"
+    end
 
     initializer "admin_suite.watchable_dirs" do |app|
       next unless Rails.env.development?
@@ -36,8 +58,21 @@ module AdminSuite
     initializer "admin_suite.configuration" do
       # Provide sensible defaults for host apps.
       AdminSuite.configure do |config|
-        config.resource_globs = [ Rails.root.join("app/admin/resources/*.rb").to_s ] if config.resource_globs.blank?
-        config.portal_globs = [ Rails.root.join("app/admin/portals/*.rb").to_s ] if config.portal_globs.blank?
+        if config.resource_globs.blank?
+          config.resource_globs = [
+            Rails.root.join("config/admin_suite/resources/*.rb").to_s,
+            Rails.root.join("app/admin/resources/*.rb").to_s
+          ]
+        end
+
+        if config.portal_globs.blank?
+          config.portal_globs = [
+            Rails.root.join("config/admin_suite/portals/*.rb").to_s,
+            Rails.root.join("app/admin/portals/*.rb").to_s,
+            Rails.root.join("app/admin_suite/portals/*.rb").to_s
+          ]
+        end
+
         config.portals = {
           ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
           email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },

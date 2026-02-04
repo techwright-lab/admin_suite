@@ -1,4 +1,17 @@
 ENV["RAILS_ENV"] ||= "test"
+
+# Optional coverage reporting:
+#   COVERAGE=1 bundle exec rails test
+COVERAGE_ENABLED = ENV.key?("COVERAGE") && !ENV["COVERAGE"].to_s.empty?
+if COVERAGE_ENABLED
+  require "simplecov"
+  SimpleCov.start "rails" do
+    enable_coverage :branch
+    add_filter "/test/"
+    add_filter "/vendor/"
+  end
+end
+
 require_relative "../config/environment"
 require "rails/test_help"
 require_relative "test_helpers/session_test_helper"
@@ -7,7 +20,7 @@ require_relative "test_helpers/assistant_tool_contract_assertions"
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers
-    parallelize(workers: :number_of_processors)
+    parallelize(workers: :number_of_processors) unless COVERAGE_ENABLED
 
     # Use FactoryBot instead of fixtures
     include FactoryBot::Syntax::Methods
