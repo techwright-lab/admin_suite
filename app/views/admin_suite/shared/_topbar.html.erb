@@ -25,7 +25,7 @@
     <div class="flex items-center gap-3">
       <!-- Environment Badge -->
       <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium <%= theme_badge_primary_class %>">
-        <span class="w-1.5 h-1.5 rounded-full bg-<%= theme_primary %>-500 mr-1.5 animate-pulse"></span>
+        <span class="admin-suite-env-dot w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse"></span>
         <%= Rails.env.to_s.humanize %>
       </span>
 
@@ -38,7 +38,7 @@
           </p>
           <p class="text-xs text-slate-500">Actor</p>
         </div>
-        <div class="flex items-center justify-center w-9 h-9 rounded-full bg-<%= theme_primary %>-100 text-<%= theme_primary %>-700 font-semibold text-sm">
+        <div class="admin-suite-avatar flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm">
           <%= (admin_suite_actor&.respond_to?(:name) && admin_suite_actor.name.present?) ? admin_suite_actor.name.first.upcase : "A" %>
         </div>
       </div>

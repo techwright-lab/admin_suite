@@ -3,30 +3,30 @@
 <div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
   <!-- Header -->
   <div class="mb-8">
-    <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+    <nav class="flex items-center gap-2 text-sm text-slate-500 mb-2">
       <%= link_to "Admin Suite", root_path, class: theme_link_hover_text_class %>
       <%= admin_suite_icon("chevron-right", class: "w-4 h-4") %>
-      <span class="text-slate-900 dark:text-white"><%= @portal[:label] %></span>
+      <span class="text-slate-900"><%= @portal[:label] %></span>
     </nav>
 
     <div class="flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <% color = portal_color(@portal_key) %>
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-<%= color %>-100 dark:bg-<%= color %>-900/30">
-          <%= portal_icon(@portal_key, class: "w-5 h-5 text-#{color}-600 dark:text-#{color}-300") %>
+        <div class="admin-suite-portal-accent admin-suite-portal-accent--<%= color %> admin-suite-portal-chip flex items-center justify-center w-10 h-10 rounded-xl">
+          <%= portal_icon(@portal_key, class: "admin-suite-portal-icon w-5 h-5") %>
         </div>
         <div>
-          <h1 class="text-2xl font-bold text-slate-900 dark:text-white"><%= @portal[:label] %></h1>
+          <h1 class="text-2xl font-bold text-slate-900"><%= @portal[:label] %></h1>
           <% if @portal[:description].present? %>
-            <p class="text-sm text-slate-500 dark:text-slate-400"><%= @portal[:description] %></p>
+            <p class="text-sm text-slate-500"><%= @portal[:description] %></p>
           <% end %>
-          <p class="text-sm text-slate-500 dark:text-slate-400">
+          <p class="text-sm text-slate-500">
             <%= @sections.sum { |(_k, s)| s[:items].size } %> resources across <%= @sections.size %> sections
           </p>
         </div>
       </div>
 
-      <%= link_to "All portals", root_path, class: "px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" %>
+      <%= link_to "All portals", root_path, class: "px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors" %>
     </div>
   </div>
 
@@ -37,34 +37,34 @@
     <!-- Sections (fallback) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <% @sections.each do |_section_key, section| %>
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
-            <h2 class="font-semibold text-slate-900 dark:text-white"><%= section[:label] %></h2>
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h2 class="font-semibold text-slate-900"><%= section[:label] %></h2>
             <span class="text-xs font-semibold px-2 py-0.5 rounded-full <%= theme_badge_primary_class %>">
               <%= section[:items].size %>
             </span>
           </div>
 
           <% if section[:items].any? %>
-            <div class="divide-y divide-slate-100 dark:divide-slate-700">
+            <div class="divide-y divide-slate-100">
               <% section[:items].each do |item| %>
-                <%= link_to item[:path], class: "block px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors group", data: { turbo_frame: "_top" } do %>
+                <%= link_to item[:path], class: "block px-6 py-4 hover:bg-slate-50 transition-colors group", data: { turbo_frame: "_top" } do %>
                   <div class="flex items-center justify-between gap-3">
                     <div class="min-w-0">
-                    <div class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-<%= theme_primary %>-600 dark:group-hover:text-<%= theme_primary %>-400 truncate">
+                    <div class="admin-suite-theme-text-hover text-sm font-medium text-slate-900 truncate">
                         <%= item[:label] %>
                       </div>
-                      <div class="text-xs text-slate-500 dark:text-slate-400">
+                      <div class="text-xs text-slate-500">
                         <%= item[:resource]&.model_class&.name || "Resource" %>
                       </div>
                     </div>
-                    <%= admin_suite_icon("chevron-right", class: "w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 flex-shrink-0") %>
+                    <%= admin_suite_icon("chevron-right", class: "w-5 h-5 text-slate-300 flex-shrink-0") %>
                   </div>
                 <% end %>
               <% end %>
             </div>
           <% else %>
-            <div class="p-10 text-center text-sm text-slate-500 dark:text-slate-400">
+            <div class="p-10 text-center text-sm text-slate-500">
               No resources in this section yet.
             </div>
           <% end %>

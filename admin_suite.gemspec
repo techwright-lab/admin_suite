@@ -26,4 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rails", ">= 8.0"
   spec.add_dependency "pagy", ">= 6.0"
   spec.add_dependency "lucide-rails"
+  # Provides the `tailwindcss` executable so the engine can build its own CSS
+  # during asset precompile (no host Tailwind setup required).
+  spec.add_dependency "tailwindcss-ruby"
 end
