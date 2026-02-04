@@ -48,7 +48,8 @@
         <!-- Main content -->
         <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
           <!-- Flash messages -->
-          <%= render "shared/flash" %>
+          <% flash_partial = AdminSuite.config.partials[:flash].presence || "admin_suite/shared/flash" %>
+          <%= render flash_partial %>
 
           <!-- Page content -->
           <div class="py-6">

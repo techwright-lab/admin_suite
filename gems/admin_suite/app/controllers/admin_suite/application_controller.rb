@@ -51,16 +51,45 @@ module AdminSuite
       retry
     end
 
+    # Loads portal definition files in development (safe to call per-request).
+    #
+    # @return [void]
+    def ensure_portals_loaded!
+      globs = Array(AdminSuite.config.portal_globs).flat_map { |g| Dir[g] }.uniq
+      return if globs.empty?
+
+      if Rails.env.development?
+        # Re-evaluate definitions on each request in development.
+        AdminSuite::PortalRegistry.reset!
+        globs.each { |file| load file }
+      else
+        # In non-dev, load once (typically at boot / first request).
+        return if AdminSuite::PortalRegistry.all.any?
+        globs.each { |file| require file }
+      end
+    rescue NameError
+      require "admin_suite"
+      retry
+    end
+
     # Builds the navigation structure from registered resources.
     #
     # @return [Hash]
     def navigation_items
       ensure_resources_loaded!
+      ensure_portals_loaded!
 
       portals = AdminSuite.config.portals
       navigation = portals.each_with_object({}) do |(key, meta), h|
         meta = meta.respond_to?(:symbolize_keys) ? meta.symbolize_keys : {}
         h[key.to_sym] = meta.merge(sections: {})
+      end
+
+      # Merge any DSL-defined portal metadata into navigation.
+      AdminSuite::PortalRegistry.all.each do |key, definition|
+        navigation[key.to_sym] ||= { label: key.to_s.humanize, order: 100, sections: {} }
+        navigation[key.to_sym].merge!(definition.to_nav_meta)
+        navigation[key.to_sym][:sections] ||= {}
       end
 
       Admin::Base::Resource.registered_resources.each do |resource|

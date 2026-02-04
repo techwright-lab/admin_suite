@@ -21,13 +21,13 @@
     <%= button_to toggle_url,
         method: :post,
         form: { data: { turbo_frame: dom_id(record, :toggle) } },
-        class: "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 #{value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-600'}" do %>
+        class: "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-#{theme_primary}-500 focus:ring-offset-2 #{value ? "bg-#{theme_primary}-600" : 'bg-slate-200 dark:bg-slate-600'}" do %>
       <span class="sr-only">Toggle <%= field.to_s.humanize %></span>
       <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out <%= value ? 'translate-x-5' : 'translate-x-0' %>"></span>
     <% end %>
   <% else %>
     <%# Read-only toggle display when no toggle URL available %>
-    <span class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent <%= value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-600' %>">
+    <span class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent <%= value ? "bg-#{theme_primary}-600" : 'bg-slate-200 dark:bg-slate-600' %>">
       <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 <%= value ? 'translate-x-5' : 'translate-x-0' %>"></span>
     </span>
   <% end %>
