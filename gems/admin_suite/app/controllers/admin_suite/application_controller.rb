@@ -59,7 +59,8 @@ module AdminSuite
 
       portals = AdminSuite.config.portals
       navigation = portals.each_with_object({}) do |(key, meta), h|
-        h[key.to_sym] = meta.symbolize_keys.merge(sections: {})
+        meta = meta.respond_to?(:symbolize_keys) ? meta.symbolize_keys : {}
+        h[key.to_sym] = meta.merge(sections: {})
       end
 
       Admin::Base::Resource.registered_resources.each do |resource|
@@ -70,10 +71,14 @@ module AdminSuite
 
         navigation[portal] ||= { label: portal.to_s.humanize, order: 100, sections: {} }
         navigation[portal][:sections][section] ||= { label: section.to_s.humanize, items: [] }
+
+        label = resource.nav_label.presence || resource.human_name_plural
         navigation[portal][:sections][section][:items] << {
-          label: resource.human_name_plural,
+          label: label,
           path: resources_path(portal: portal, resource_name: resource.resource_name_plural),
-          resource: resource
+          resource: resource,
+          icon: resource.nav_icon,
+          order: resource.nav_order
         }
       end
 

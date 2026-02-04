@@ -5,9 +5,7 @@
   <div class="mb-8">
     <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
       <%= link_to "Admin Suite", root_path, class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-      </svg>
+      <%= admin_suite_icon("chevron-right", class: "w-4 h-4") %>
       <span class="text-slate-900 dark:text-white"><%= @portal[:label] %></span>
     </nav>
 
@@ -15,7 +13,7 @@
       <div class="flex items-center gap-3">
         <% color = portal_color(@portal_key) %>
         <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-<%= color %>-100 dark:bg-<%= color %>-900/30">
-          <%= portal_icon(@portal_key) %>
+          <%= portal_icon(@portal_key, class: "w-5 h-5 text-#{color}-600 dark:text-#{color}-300") %>
         </div>
         <div>
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white"><%= @portal[:label] %></h1>
@@ -53,9 +51,7 @@
                       <%= item[:resource]&.model_class&.name || "Resource" %>
                     </div>
                   </div>
-                  <svg class="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                  </svg>
+                  <%= admin_suite_icon("chevron-right", class: "w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 flex-shrink-0") %>
                 </div>
               <% end %>
             <% end %>
