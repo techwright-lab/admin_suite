@@ -12,6 +12,7 @@ module AdminSuite
       :custom_renderers,
       :icon_renderer,
       :docs_url,
+      :docs_path,
       :partials,
       :theme,
       :host_stylesheet,
@@ -29,6 +30,7 @@ module AdminSuite
       @custom_renderers = {}
       @icon_renderer = nil
       @docs_url = nil
+      @docs_path = Rails.root.join("docs")
       @partials = {}
       @theme = { primary: :indigo, secondary: :purple }
       @host_stylesheet = nil

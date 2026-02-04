@@ -6,6 +6,11 @@ module AdminSuite
   class Engine < ::Rails::Engine
     isolate_namespace AdminSuite
 
+    # Ensure engine `lib/` participates in Zeitwerk autoloading in development,
+    # especially when new files are added during a running session.
+    config.autoload_paths << root.join("lib").to_s
+    config.eager_load_paths << root.join("lib").to_s
+
     initializer "admin_suite.watchable_dirs" do |app|
       next unless Rails.env.development?
 

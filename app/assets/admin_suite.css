@@ -54,6 +54,116 @@ body.admin-suite a {
    to underlines explicitly. */
 body.admin-suite a:hover { text-decoration: none; }
 
+/* Docs viewer (engine-owned, no Tailwind typography plugin required) */
+.admin-suite-doc-content {
+  color: var(--admin-suite-fg);
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.admin-suite-doc-content h1,
+.admin-suite-doc-content h2,
+.admin-suite-doc-content h3,
+.admin-suite-doc-content h4 {
+  color: var(--admin-suite-fg);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.admin-suite-doc-content h2 {
+  font-size: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--admin-suite-border);
+}
+
+.admin-suite-doc-content h3 { font-size: 1.05rem; }
+.admin-suite-doc-content h4 { font-size: 1rem; }
+
+.admin-suite-doc-content p { margin: 0.75rem 0; color: color-mix(in srgb, var(--admin-suite-fg) 80%, #0000); }
+
+.admin-suite-doc-content a {
+  color: var(--admin-suite-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.admin-suite-doc-content a:hover { text-decoration: underline; }
+
+.admin-suite-doc-content ul,
+.admin-suite-doc-content ol { margin: 0.75rem 0 0.75rem 1.25rem; }
+.admin-suite-doc-content li { margin: 0.25rem 0; }
+
+.admin-suite-doc-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+  background: #f1f5f9; /* slate-100 */
+}
+
+.admin-suite-doc-content pre {
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+.admin-suite-doc-content pre.highlight {
+  background: #1e293b; /* slate-800 */
+  padding: 1rem;
+}
+
+.admin-suite-doc-content pre code {
+  background: transparent;
+  padding: 0;
+  color: #e2e8f0; /* slate-200 */
+}
+
+.admin-suite-doc-content .code-block {
+  position: relative;
+}
+
+.admin-suite-doc-content .code-lang {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(226, 232, 240, 0.8);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.admin-suite-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.admin-suite-doc-table th,
+.admin-suite-doc-table td {
+  border: 1px solid var(--admin-suite-border);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-suite-doc-table th {
+  background: #f8fafc; /* slate-50 */
+  font-weight: 700;
+}
+
+.admin-suite-doc-content blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--admin-suite-primary);
+  background: color-mix(in srgb, var(--admin-suite-primary) 8%, #fff);
+  border-radius: 0 0.75rem 0.75rem 0;
+}
+
 /* Semantic theme classes (used throughout engine views) */
 .admin-suite-link {
   color: var(--admin-suite-primary);

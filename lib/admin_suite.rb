@@ -8,6 +8,7 @@ end
 
 require "admin_suite/version"
 require "admin_suite/configuration"
+require "admin_suite/markdown_renderer"
 require "admin_suite/theme_palette"
 require "admin_suite/portal_registry"
 require "admin_suite/portal_definition"
