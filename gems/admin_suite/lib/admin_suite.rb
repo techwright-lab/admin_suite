@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+begin
+  require "lucide-rails"
+rescue LoadError
+  # Host app may choose a different icon provider via `AdminSuite.config.icon_renderer`.
+end
+
 require "admin_suite/version"
 require "admin_suite/configuration"
 require "admin_suite/portal_registry"

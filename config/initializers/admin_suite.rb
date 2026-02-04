@@ -27,6 +27,14 @@ AdminSuite.configure do |config|
     Rails.root.join("app/admin/resources/*.rb").to_s
   ]
 
+  # Portal dashboard DSL globs.
+  #
+  # Note: this app already uses `app/admin/portals` for the legacy portal system,
+  # so AdminSuite dashboards live under `app/admin_suite/portals`.
+  config.portal_globs = [
+    Rails.root.join("app/admin_suite/portals/*.rb").to_s
+  ]
+
   config.portals = {
     ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
     email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },

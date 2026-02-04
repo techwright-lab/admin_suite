@@ -33,35 +33,36 @@ module AdminSuite
         @row = row
       end
 
-      def panel(type, title = nil, **options, &block)
+      def panel(type, title = nil, span: nil, **options, &block)
+        options[:span] = span if span
         options[:block] = block if block_given?
         @row.panels << PanelDefinition.new(type: type.to_sym, title: title, options: options)
       end
 
-      def stat_panel(title, value = nil, **options, &block)
+      def stat_panel(title, value = nil, span: nil, **options, &block)
         value_proc = value.is_a?(Proc) ? value : (block_given? ? block : nil)
-        panel(:stat, title, **options.merge(value: value_proc || value))
+        panel(:stat, title, span: span, **options.merge(value: value_proc || value))
       end
 
-      def health_panel(title, status: nil, metrics: nil, **options, &block)
-        panel(:health, title, **options.merge(status: status, metrics: metrics, block: block))
+      def health_panel(title, status: nil, metrics: nil, span: nil, **options, &block)
+        panel(:health, title, span: span, **options.merge(status: status, metrics: metrics, block: block))
       end
 
-      def chart_panel(title, data: nil, **options, &block)
+      def chart_panel(title, data: nil, span: nil, **options, &block)
         data_proc = data.is_a?(Proc) ? data : (block_given? ? block : nil)
-        panel(:chart, title, **options.merge(data: data_proc || data))
+        panel(:chart, title, span: span, **options.merge(data: data_proc || data))
       end
 
-      def cards_panel(title, resources: nil, **options, &block)
-        panel(:cards, title, **options.merge(resources: resources, block: block))
+      def cards_panel(title, resources: nil, span: nil, **options, &block)
+        panel(:cards, title, span: span, **options.merge(resources: resources, block: block))
       end
 
-      def recent_panel(title, scope: nil, link: nil, **options, &block)
-        panel(:recent, title, **options.merge(scope: scope, link: link, block: block))
+      def recent_panel(title, scope: nil, link: nil, span: nil, **options, &block)
+        panel(:recent, title, span: span, **options.merge(scope: scope, link: link, block: block))
       end
 
-      def table_panel(title, rows: nil, columns: nil, **options, &block)
-        panel(:table, title, **options.merge(rows: rows, columns: columns, block: block))
+      def table_panel(title, rows: nil, columns: nil, span: nil, **options, &block)
+        panel(:table, title, span: span, **options.merge(rows: rows, columns: columns, block: block))
       end
     end
   end

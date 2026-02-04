@@ -10,7 +10,7 @@ module AdminSuite
 
       content_tag(:div, class: "space-y-6") do
         rows.each do |row|
-          concat(content_tag(:div, class: "grid grid-cols-1 lg:grid-cols-3 gap-6") do
+          concat(content_tag(:div, class: "grid grid-cols-1 lg:grid-cols-12 gap-6") do
             Array(row.panels).each do |panel|
               concat(render_panel(panel))
             end
@@ -28,7 +28,13 @@ module AdminSuite
       type = panel.type.to_sym
       override = AdminSuite.config.partials[:"panel_#{type}"] rescue nil
       partial = override.presence || "admin_suite/panels/#{type}"
-      render partial:, locals: { panel: panel }
+      span = (panel.options[:span] || 12).to_i
+      span = 12 if span < 1
+      span = 12 if span > 12
+
+      content_tag(:div, class: "lg:col-span-#{span}") do
+        render partial:, locals: { panel: panel }
+      end
     end
 
     # Evaluates a panel option, calling Procs if needed.

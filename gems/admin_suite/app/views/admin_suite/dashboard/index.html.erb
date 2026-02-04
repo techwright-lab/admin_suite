@@ -1,38 +1,21 @@
-<% content_for :title, "Admin Suite" %>
+<% content_for :title, "Developer Portal" %>
 
-<div class="max-w-5xl">
-  <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Admin Suite</h1>
+<div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Developer Portal</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+      Admin framework for managing all application resources across three specialized portals.
+    </p>
+  </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <% navigation_items.sort_by { |(_k, v)| (v[:order] || 100).to_i }.each do |portal_key, portal| %>
-      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-        <div class="flex items-center justify-between mb-3 gap-3">
-          <%= link_to portal_path(portal: portal_key), class: "flex items-center gap-2 min-w-0 font-semibold text-slate-900 dark:text-white #{theme_link_hover_text_class}" do %>
-            <% color = portal_color(portal_key) %>
-            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-<%= color %>-100 dark:bg-<%= color %>-900/30 flex-shrink-0">
-              <%= portal_icon(portal_key, class: "w-4 h-4 text-#{color}-600 dark:text-#{color}-300") %>
-            </span>
-            <span class="truncate"><%= portal[:label] || portal_key.to_s.humanize %></span>
-          <% end %>
-          <div class="text-xs text-slate-500 dark:text-slate-400"><%= portal[:sections].values.sum { |s| s[:items].size } %> resources</div>
-        </div>
-
-        <% portal[:sections].sort_by { |(_s, s)| s[:label].to_s }.each do |_section_key, section| %>
-          <div class="mt-3 text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            <%= section[:label] %>
-          </div>
-          <div class="mt-1 space-y-1">
-            <% section[:items].sort_by { |it| [ (it[:order] || 100).to_i, it[:label].to_s ] }.each do |item| %>
-              <%= link_to item[:path], class: "flex items-center gap-2 text-sm #{theme_link_class}" do %>
-                <% if item[:icon].present? %>
-                  <%= admin_suite_icon(item[:icon], class: "w-3.5 h-3.5 text-#{theme_primary}-400/80") %>
-                <% end %>
-                <%= item[:label] %>
-              <% end %>
-            <% end %>
-          </div>
-        <% end %>
+  <% @dashboard_sections.each do |section| %>
+    <% if section[:title].present? %>
+      <div class="mt-8 mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+        <%= admin_suite_icon("activity", class: "w-4 h-4 text-slate-400") %>
+        <span><%= section[:title] %></span>
       </div>
     <% end %>
-  </div>
+
+    <%= render_dashboard_rows(section[:rows]) %>
+  <% end %>
 </div>
