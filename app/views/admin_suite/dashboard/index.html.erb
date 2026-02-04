@@ -7,7 +7,7 @@
     <% navigation_items.sort_by { |(_k, v)| (v[:order] || 100).to_i }.each do |portal_key, portal| %>
       <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
         <div class="flex items-center justify-between mb-3 gap-3">
-          <%= link_to portal_path(portal: portal_key), class: "flex items-center gap-2 min-w-0 font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400" do %>
+          <%= link_to portal_path(portal: portal_key), class: "flex items-center gap-2 min-w-0 font-semibold text-slate-900 dark:text-white #{theme_link_hover_text_class}" do %>
             <% color = portal_color(portal_key) %>
             <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-<%= color %>-100 dark:bg-<%= color %>-900/30 flex-shrink-0">
               <%= portal_icon(portal_key, class: "w-4 h-4 text-#{color}-600 dark:text-#{color}-300") %>
@@ -23,9 +23,9 @@
           </div>
           <div class="mt-1 space-y-1">
             <% section[:items].sort_by { |it| [ (it[:order] || 100).to_i, it[:label].to_s ] }.each do |item| %>
-              <%= link_to item[:path], class: "flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:underline" do %>
+              <%= link_to item[:path], class: "flex items-center gap-2 text-sm #{theme_link_class}" do %>
                 <% if item[:icon].present? %>
-                  <%= admin_suite_icon(item[:icon], class: "w-3.5 h-3.5 text-indigo-400/80") %>
+                  <%= admin_suite_icon(item[:icon], class: "w-3.5 h-3.5 text-#{theme_primary}-400/80") %>
                 <% end %>
                 <%= item[:label] %>
               <% end %>

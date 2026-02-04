@@ -27,14 +27,10 @@
   <!-- Header -->
   <div class="mb-6">
     <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
-      <%= link_to "Dashboard", root_path, class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-      </svg>
-      <%= link_to resource_config.human_name_plural, url_for(action: :index), class: "hover:text-indigo-600 dark:hover:text-indigo-400" %>
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-      </svg>
+      <%= link_to "Dashboard", root_path, class: theme_link_hover_text_class %>
+      <%= admin_suite_icon("chevron-right", class: "w-4 h-4") %>
+      <%= link_to resource_config.human_name_plural, url_for(action: :index), class: theme_link_hover_text_class %>
+      <%= admin_suite_icon("chevron-right", class: "w-4 h-4") %>
       <span class="text-slate-900 dark:text-white">
         <%= resource.respond_to?(:name) ? resource.name.to_s.truncate(30) : "##{resource.id}" %>
       </span>
@@ -110,7 +106,7 @@
             end
         %>
         <% if show_action && action_url %>
-          <% button_class = "inline-flex items-center gap-2 px-4 py-2 #{action_def.color == :danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'} text-sm font-medium rounded-lg transition-colors" %>
+          <% button_class = "inline-flex items-center gap-2 px-4 py-2 #{action_def.color == :danger ? 'bg-red-600 hover:bg-red-700 text-white' : "bg-#{theme_primary}-600 hover:bg-#{theme_primary}-700 text-white"} text-sm font-medium rounded-lg transition-colors" %>
 
           <% if action_def.type == :modal || action_def.type == :link %>
             <%= link_to action_url, class: button_class, data: { turbo_frame: "_top" } do %>

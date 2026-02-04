@@ -15,6 +15,7 @@ module AdminSuite
       # Provide sensible defaults for host apps.
       AdminSuite.configure do |config|
         config.resource_globs = [ Rails.root.join("app/admin/resources/*.rb").to_s ] if config.resource_globs.blank?
+        config.portal_globs = [ Rails.root.join("app/admin/portals/*.rb").to_s ] if config.portal_globs.blank?
         config.portals = {
           ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
           email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },

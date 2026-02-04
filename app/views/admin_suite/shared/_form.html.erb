@@ -53,7 +53,7 @@
 
   <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
     <%= link_to "Cancel", resource.new_record? ? url_for(action: :index) : url_for(action: :show, id: resource.to_param), class: "px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" %>
-    <%= f.button class: "px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors", data: { disable_with: "Saving..." } do %>
+    <%= f.button class: theme_btn_primary_small_class, data: { disable_with: "Saving..." } do %>
       <%= resource.new_record? ? "Create #{resource_config.human_name}" : "Save Changes" %>
     <% end %>
   </div>

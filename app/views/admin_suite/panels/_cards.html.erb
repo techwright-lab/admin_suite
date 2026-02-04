@@ -1,0 +1,30 @@
+<% resources = Array(panel_eval(panel.options[:resources])) %>
+
+<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden lg:col-span-1">
+  <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+    <h3 class="font-semibold text-slate-900 dark:text-white"><%= panel.title %></h3>
+  </div>
+
+  <% if resources.any? %>
+    <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <% resources.each do |res_key| %>
+        <% res_name = res_key.to_s %>
+        <% label = res_name.humanize %>
+        <% path = resources_path(portal: @portal_key, resource_name: res_name.to_s) rescue nil %>
+        <%= link_to(path || "#", class: "block rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:border-#{theme_primary}-300 dark:hover:border-#{theme_primary}-700 hover:shadow-sm transition-all group") do %>
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-<%= theme_primary %>-600 dark:group-hover:text-<%= theme_primary %>-400 truncate">
+                <%= label %>
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Resource</div>
+            </div>
+            <%= admin_suite_icon("chevron-right", class: "w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-#{theme_primary}-500 flex-shrink-0") %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="p-4 text-sm text-slate-500 dark:text-slate-400">No cards configured.</div>
+  <% end %>
+</div>

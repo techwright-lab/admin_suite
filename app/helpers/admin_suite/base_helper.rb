@@ -8,7 +8,13 @@ module AdminSuite
   module BaseHelper
     include Pagy::Frontend
     include AdminSuite::IconHelper
+    include AdminSuite::PanelsHelper
+    include AdminSuite::ThemeHelper
     include ::Internal::Developer::CustomRenderersHelper if defined?(::Internal::Developer::CustomRenderersHelper)
+
+    # Prefer registry-driven implementations (with legacy fallbacks via `super`).
+    prepend AdminSuite::UI::ShowValueFormatter
+    prepend AdminSuite::UI::FormFieldRenderer
 
     # Returns the color scheme for a portal
     #
@@ -929,9 +935,15 @@ module AdminSuite
       checked = !!resource.public_send(field.name)
       param_key = resource.class.model_name.param_key
 
-      content_tag(:div, class: "inline-flex items-center gap-3", data: { controller: "admin-suite--toggle-switch" }) do
+      content_tag(:div,
+        class: "inline-flex items-center gap-3",
+        data: {
+          controller: "admin-suite--toggle-switch",
+          "admin-suite--toggle-switch-active-class-value": "bg-#{theme_primary}-600",
+          "admin-suite--toggle-switch-inactive-classes-value": "bg-slate-200 dark:bg-slate-700"
+        }) do
         concat(content_tag(:button, type: "button",
-          class: "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 #{checked ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}",
+          class: "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-#{theme_primary}-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 #{checked ? "bg-#{theme_primary}-600" : 'bg-slate-200 dark:bg-slate-700'}",
           role: "switch",
           "aria-checked" => checked.to_s,
           data: { action: "click->admin-suite--toggle-switch#toggle", "admin-suite--toggle-switch-target": "button" },
