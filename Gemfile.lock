@@ -135,6 +135,8 @@ GEM
     nio4r (2.7.5)
     nokogiri (1.19.0-aarch64-linux-gnu)
       racc (~> 1.4)
+    nokogiri (1.19.0-arm64-darwin)
+      racc (~> 1.4)
     pagy (9.4.0)
     pp (0.6.3)
       prettyprint
@@ -204,6 +206,7 @@ GEM
     simplecov_json_formatter (0.1.4)
     stringio (3.2.0)
     tailwindcss-ruby (4.1.16-aarch64-linux-gnu)
+    tailwindcss-ruby (4.1.16-arm64-darwin)
     thor (1.5.0)
     timeout (0.6.0)
     tsort (0.2.0)
@@ -219,6 +222,7 @@ GEM
 
 PLATFORMS
   aarch64-linux-gnu
+  arm64-darwin-24
 
 DEPENDENCIES
   admin_suite!
