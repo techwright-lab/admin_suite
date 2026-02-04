@@ -12,6 +12,7 @@ module AdminSuite
       @icon = nil
       @color = nil
       @order = nil
+      @description = nil
       @dashboard = nil
     end
 
@@ -35,6 +36,11 @@ module AdminSuite
       @order
     end
 
+    def description(value = nil)
+      @description = value if value.present?
+      @description
+    end
+
     def dashboard(&block)
       @dashboard ||= UI::DashboardDefinition.new
       UI::DashboardDSL.new(@dashboard).instance_eval(&block) if block_given?
@@ -50,7 +56,8 @@ module AdminSuite
         label: @label,
         icon: @icon,
         color: @color,
-        order: @order
+        order: @order,
+        description: @description
       }.compact
     end
   end

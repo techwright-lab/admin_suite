@@ -3,10 +3,10 @@
 <% items = items.limit(panel.options[:limit]) if items.respond_to?(:limit) && panel.options[:limit].present? %>
 <% items = Array(items) %>
 <% empty_message = panel.options[:empty_message] || "No recent items" %>
-<% view_all_path = panel.options[:view_all_path] %>
+<% view_all_path = panel_eval(panel.options[:view_all_path]) %>
 <% link_proc = panel.options[:link] %>
 
-<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden lg:col-span-1">
+<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
   <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
     <h3 class="font-semibold text-slate-900 dark:text-white"><%= panel.title %></h3>
     <% if view_all_path.present? %>

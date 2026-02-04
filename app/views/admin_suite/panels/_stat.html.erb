@@ -3,6 +3,7 @@
 <% subtitle = panel.options[:subtitle] %>
 <% trend = panel.options[:trend] %>
 <% trend_direction = (panel.options[:trend_direction] || :neutral).to_sym %>
+<% variant = (panel.options[:variant] || :default).to_sym %>
 
 <% color_classes = case color
   when :green
@@ -37,20 +38,27 @@
       label: "text-slate-500 dark:text-slate-400" }
 end %>
 
-<div class="<%= color_classes[:bg] %> rounded-xl p-5 <%= color_classes[:border] %>">
-  <div class="flex items-center justify-between">
-    <div class="text-3xl font-bold <%= color_classes[:text] %>"><%= value %></div>
-    <% if trend.present? %>
-      <% trend_class = case trend_direction
-        when :up then "text-green-500"
-        when :down then "text-red-500"
-        else "text-slate-400"
-      end %>
-      <span class="text-sm font-medium <%= trend_class %>"><%= trend %></span>
+<% if variant == :mini %>
+  <div class="<%= color_classes[:bg] %> rounded-xl p-4 <%= color_classes[:border] %>">
+    <div class="text-2xl font-bold <%= color_classes[:text] %>"><%= value %></div>
+    <div class="text-sm <%= color_classes[:label] %>"><%= panel.title %></div>
+  </div>
+<% else %>
+  <div class="<%= color_classes[:bg] %> rounded-xl p-5 <%= color_classes[:border] %>">
+    <div class="flex items-center justify-between">
+      <div class="text-3xl font-bold <%= color_classes[:text] %>"><%= value %></div>
+      <% if trend.present? %>
+        <% trend_class = case trend_direction
+          when :up then "text-green-500"
+          when :down then "text-red-500"
+          else "text-slate-400"
+        end %>
+        <span class="text-sm font-medium <%= trend_class %>"><%= trend %></span>
+      <% end %>
+    </div>
+    <div class="text-sm <%= color_classes[:label] %> mt-1"><%= panel.title %></div>
+    <% if subtitle.present? %>
+      <div class="text-xs <%= color_classes[:label] %> mt-1 opacity-75"><%= subtitle %></div>
     <% end %>
   </div>
-  <div class="text-sm <%= color_classes[:label] %> mt-1"><%= panel.title %></div>
-  <% if subtitle.present? %>
-    <div class="text-xs <%= color_classes[:label] %> mt-1 opacity-75"><%= subtitle %></div>
-  <% end %>
-</div>
+<% end %>

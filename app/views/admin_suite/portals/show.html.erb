@@ -17,6 +17,9 @@
         </div>
         <div>
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white"><%= @portal[:label] %></h1>
+          <% if @portal[:description].present? %>
+            <p class="text-sm text-slate-500 dark:text-slate-400"><%= @portal[:description] %></p>
+          <% end %>
           <p class="text-sm text-slate-500 dark:text-slate-400">
             <%= @sections.sum { |(_k, s)| s[:items].size } %> resources across <%= @sections.size %> sections
           </p>

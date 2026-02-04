@@ -4,7 +4,7 @@ module AdminSuite
   module IconHelper
     # Renders an icon for AdminSuite using the configured renderer.
     #
-    # Default behavior uses lucide-rails (lucide_icon) if available.
+    # Default behavior uses lucide-rails (LucideRails::IconProvider) if available.
     # Back-compat: if `name` looks like raw SVG markup, it is returned as HTML safe.
     #
     # @param name [String, Symbol] icon name (e.g. "settings") OR raw svg string
@@ -21,9 +21,37 @@ module AdminSuite
       renderer = AdminSuite.config.icon_renderer
       return renderer.call(raw, self, **opts) if renderer.respond_to?(:call)
 
-      if respond_to?(:lucide_icon)
+      # lucide-rails provides stripped SVG paths via IconProvider; we wrap them.
+      if defined?(::LucideRails::IconProvider)
         default_class = "w-4 h-4"
-        return lucide_icon(raw, **opts.merge(class: [ default_class, opts[:class] ].compact.join(" ")))
+        css_class = [ default_class, opts[:class] ].compact.join(" ")
+        stroke_width = opts.fetch(:stroke_width, 2)
+        title = opts[:title]
+
+        begin
+          inner = ::LucideRails::IconProvider.icon(raw)
+        rescue ArgumentError
+          inner = nil
+        end
+
+        if inner.present?
+          return content_tag(
+            :svg,
+            (title.present? ? content_tag(:title, title) + inner.html_safe : inner.html_safe),
+            class: css_class,
+            xmlns: "http://www.w3.org/2000/svg",
+            width: "24",
+            height: "24",
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            "stroke-width" => stroke_width,
+            "stroke-linecap" => "round",
+            "stroke-linejoin" => "round",
+            "aria-hidden" => "true",
+            focusable: "false"
+          )
+        end
       end
 
       # Safety fallback if lucide-rails isn't available in the host app for any reason.
