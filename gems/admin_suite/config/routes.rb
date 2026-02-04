@@ -3,6 +3,10 @@
 AdminSuite::Engine.routes.draw do
   root to: "dashboard#index"
 
+  # Docs viewer (host filesystem-backed). Must be defined before `:portal` route.
+  get "docs(/)", to: "docs#index", as: :docs
+  get "docs/*path", to: "docs#show", as: :doc
+
   # Portal dashboards (e.g. /ops, /email). Accept optional trailing slash.
   get ":portal(/)", to: "portals#show", as: :portal
 

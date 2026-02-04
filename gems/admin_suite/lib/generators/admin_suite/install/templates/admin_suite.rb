@@ -45,6 +45,10 @@ AdminSuite.configure do |config|
   # config.docs_url = "https://..."
   config.docs_url = nil
 
+  # Docs viewer source folder (host app filesystem).
+  # Defaults to Rails.root/docs.
+  config.docs_path = Rails.root.join("docs")
+
   # Partial overrides.
   # config.partials[:flash] = "my/shared/flash"
   # config.partials[:panel_stat] = "my/admin/panels/stat"

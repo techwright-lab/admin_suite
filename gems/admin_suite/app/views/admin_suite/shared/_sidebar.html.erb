@@ -33,7 +33,10 @@
           Docs
         <% end %>
       <% else %>
-        <span class="flex-1 px-3 py-2 text-xs font-medium text-white/60 bg-white/5 rounded-lg text-center">Docs</span>
+        <%= link_to docs_path,
+            class: "flex-1 px-3 py-2 text-xs font-medium text-white bg-white/10 rounded-lg hover:bg-white/20 text-center transition-colors" do %>
+          Docs
+        <% end %>
       <% end %>
     </div>
   </div>

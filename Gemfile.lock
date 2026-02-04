@@ -5,6 +5,8 @@ PATH
       lucide-rails
       pagy (>= 6.0)
       rails (>= 8.0)
+      redcarpet
+      rouge
       tailwindcss-ruby
 
 GEM
