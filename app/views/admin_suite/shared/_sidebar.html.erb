@@ -7,9 +7,7 @@
   <div class="flex items-center justify-between h-16 px-4 border-b border-indigo-700/50">
     <%= link_to root_path, class: "flex items-center gap-3" do %>
       <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-500/30 border border-indigo-400/30">
-        <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-        </svg>
+        <%= admin_suite_icon("code", class: "w-5 h-5 text-indigo-300") %>
       </div>
       <div>
         <span class="text-lg font-bold text-white">Developer</span>
@@ -25,16 +23,17 @@
           class: "flex-1 px-3 py-2 text-xs font-medium text-indigo-200 bg-indigo-800/50 rounded-lg hover:bg-indigo-700/50 text-center transition-colors" do %>
         Dashboard
       <% end %>
-      <% docs_path = (main_app.internal_developer_docs_path rescue nil) %>
-      <% if docs_path.present? %>
-        <%= link_to docs_path,
-            class: "flex-1 px-3 py-2 text-xs font-medium text-indigo-200 bg-indigo-800/50 rounded-lg hover:bg-indigo-700/50 text-center transition-colors" do %>
+      <% docs = AdminSuite.config.docs_url %>
+      <% docs_url = docs.respond_to?(:call) ? docs.call(self) : docs %>
+      <% if docs_url.present? %>
+        <%= link_to docs_url,
+            class: "flex-1 px-3 py-2 text-xs font-medium text-indigo-200 bg-indigo-800/50 rounded-lg hover:bg-indigo-700/50 text-center transition-colors",
+            target: "_blank",
+            rel: "noopener noreferrer" do %>
           Docs
         <% end %>
       <% else %>
-        <span class="flex-1 px-3 py-2 text-xs font-medium text-indigo-300/60 bg-indigo-800/30 rounded-lg text-center">
-          Docs
-        </span>
+        <span class="flex-1 px-3 py-2 text-xs font-medium text-indigo-300/60 bg-indigo-800/30 rounded-lg text-center">Docs</span>
       <% end %>
     </div>
   </div>
@@ -51,7 +50,7 @@
         <%= link_to (portal_home || root_path),
             class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{active ? "bg-#{color}-500/20 text-white" : "text-indigo-200 hover:bg-indigo-700/30 hover:text-white"}" do %>
           <div class="flex items-center justify-center w-8 h-8 rounded-lg <%= active ? "bg-#{color}-500/30" : "bg-indigo-800/50" %>">
-            <%= portal_icon(portal_key) %>
+            <%= portal_icon(portal_key, class: "w-4 h-4 text-#{color}-200") %>
           </div>
           <span class="font-medium"><%= portal[:label] %></span>
         <% end %>
@@ -62,11 +61,16 @@
               <div class="text-xs font-medium text-indigo-400/70 uppercase tracking-wider px-3 pt-2 pb-1">
                 <%= section[:label] %>
               </div>
-              <% section[:items].sort_by { |it| it[:label].to_s }.each do |item| %>
+              <% section[:items].sort_by { |it| [ (it[:order] || 100).to_i, it[:label].to_s ] }.each do |item| %>
                 <% item_active = request.path.start_with?(item[:path].to_s) %>
-                <%= link_to item[:label], item[:path],
-                    class: "block px-3 py-1.5 rounded #{item_active ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}",
-                    data: { turbo_frame: "_top" } %>
+                <%= link_to item[:path],
+                    class: "flex items-center gap-2 px-3 py-1.5 rounded #{item_active ? 'text-white bg-indigo-700/50' : 'text-indigo-300 hover:text-white'}",
+                    data: { turbo_frame: "_top" } do %>
+                  <% if item[:icon].present? %>
+                    <%= admin_suite_icon(item[:icon], class: "w-3.5 h-3.5 text-indigo-200/80") %>
+                  <% end %>
+                  <span class="truncate"><%= item[:label] %></span>
+                <% end %>
               <% end %>
             <% end %>
           </div>

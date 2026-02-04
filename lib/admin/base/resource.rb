@@ -41,7 +41,7 @@ module Admin
     class Resource
       class << self
         # Model configuration
-        attr_reader :model_class, :portal_name, :section_name
+        attr_reader :model_class, :portal_name, :section_name, :nav_label, :nav_icon, :nav_order
 
         # Index configuration
         attr_reader :index_config
@@ -80,6 +80,45 @@ module Admin
         # @return [void]
         def section(name)
           @section_name = name
+        end
+
+        # Navigation metadata for this resource.
+        #
+        # @param label [String, nil] override label used in nav
+        # @param icon [String, Symbol, nil] lucide icon name (or raw svg string)
+        # @param order [Integer, nil] sort order within section
+        # @return [void]
+        def nav(label: nil, icon: nil, order: nil)
+          @nav_label = label if label.present?
+          @nav_icon = icon if icon.present?
+          @nav_order = order unless order.nil?
+        end
+
+        # Convenience setter/getter for nav icon.
+        #
+        # @param name [String, Symbol, nil]
+        # @return [String, Symbol, nil]
+        def icon(name = nil)
+          @nav_icon = name if name.present?
+          @nav_icon
+        end
+
+        # Convenience setter/getter for nav label.
+        #
+        # @param name [String, nil]
+        # @return [String, nil]
+        def label(name = nil)
+          @nav_label = name if name.present?
+          @nav_label
+        end
+
+        # Convenience setter/getter for nav order.
+        #
+        # @param value [Integer, nil]
+        # @return [Integer, nil]
+        def order(value = nil)
+          @nav_order = value unless value.nil?
+          @nav_order
         end
 
         # Configures the index view
