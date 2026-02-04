@@ -33,7 +33,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css" data-turbo-track="reload">
     <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js" data-turbo-track="reload"></script>
 
-    <%= javascript_importmap_tags %>
+    <% if respond_to?(:javascript_importmap_tags) %>
+      <%= javascript_importmap_tags %>
+    <% end %>
   </head>
 
   <body class="admin-suite bg-slate-50">

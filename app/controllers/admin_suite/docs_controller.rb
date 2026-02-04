@@ -2,6 +2,8 @@
 
 module AdminSuite
   class DocsController < ApplicationController
+    DocNotFound = Class.new(StandardError)
+
     before_action :set_docs_root
 
     # GET /docs
@@ -21,6 +23,12 @@ module AdminSuite
     # GET /docs/*path
     def show
       relative_path = params[:path].to_s
+      if params[:format].present? && !relative_path.end_with?(".#{params[:format]}")
+        relative_path = "#{relative_path}.#{params[:format]}"
+      end
+
+      # Even when the doc path ends with `.md`, we always render HTML.
+      request.format = :html
       file_path = resolve_doc_path!(relative_path)
 
       @files = grouped_markdown_files
@@ -33,8 +41,8 @@ module AdminSuite
       @toc = rendered[:toc]
       @reading_time = rendered[:reading_time_minutes]
 
-      render :index
-    rescue ActiveRecord::RecordNotFound
+      render :index, formats: [ :html ]
+    rescue DocNotFound
       redirect_to docs_path, alert: "Doc not found."
     end
 
@@ -53,7 +61,7 @@ module AdminSuite
       @content_html = rendered[:html]
       @toc = rendered[:toc]
       @reading_time = rendered[:reading_time_minutes]
-    rescue ActiveRecord::RecordNotFound
+    rescue DocNotFound
       @title = nil
       @content_html = nil
       @toc = []
@@ -123,19 +131,19 @@ module AdminSuite
     end
 
     def resolve_doc_path!(relative_path)
-      raise ActiveRecord::RecordNotFound if relative_path.blank?
-      raise ActiveRecord::RecordNotFound if relative_path.include?("..")
+      raise DocNotFound if relative_path.blank?
+      raise DocNotFound if relative_path.include?("..")
 
       base = docs_root_realpath
       candidate = base.join(relative_path)
-      raise ActiveRecord::RecordNotFound unless candidate.extname == ".md"
+      raise DocNotFound unless candidate.extname == ".md"
 
       real = candidate.realpath
-      raise ActiveRecord::RecordNotFound unless real.to_s.start_with?(base.to_s + File::SEPARATOR)
+      raise DocNotFound unless real.to_s.start_with?(base.to_s + File::SEPARATOR)
 
       real.to_s
     rescue Errno::ENOENT, Errno::EACCES
-      raise ActiveRecord::RecordNotFound
+      raise DocNotFound
     end
 
     def docs_root_realpath

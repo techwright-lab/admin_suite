@@ -16,12 +16,14 @@ AdminSuite.configure do |config|
 
   # Resource definition file globs (host app can override).
   config.resource_globs = [
+    Rails.root.join("config/admin_suite/resources/*.rb").to_s,
     Rails.root.join("app/admin/resources/*.rb").to_s
   ]
 
   # Portal dashboard DSL globs (host app can override).
   # Files typically call `AdminSuite.portal :ops do ... end`
   config.portal_globs = [
+    Rails.root.join("config/admin_suite/portals/*.rb").to_s,
     Rails.root.join("app/admin/portals/*.rb").to_s
   ]
 
