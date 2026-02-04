@@ -10,6 +10,43 @@ module AdminSuite
       def format_show_value(record, field_name)
         value = record.public_send(field_name) rescue nil
 
+        if (field_def = admin_suite_field_definition(field_name))
+          case field_def.type
+          when :markdown
+            rendered =
+              if defined?(::MarkdownRenderer)
+                ::MarkdownRenderer.render(value.to_s)
+              else
+                simple_format(value.to_s)
+              end
+            return content_tag(:div, rendered, class: "prose dark:prose-invert max-w-none")
+          when :json
+            begin
+              parsed =
+                if value.is_a?(Hash) || value.is_a?(Array)
+                  value
+                elsif value.present?
+                  JSON.parse(value.to_s)
+                end
+              return render_json_block(parsed) if parsed
+            rescue JSON::ParserError
+              # fall through
+            end
+          when :label
+            return render_label_badge(value, color: field_def.label_color, size: field_def.label_size, record: record)
+          end
+        end
+
+        # If the field isn't in the form config, fall back to index column config
+        # so show pages can still render labels consistently.
+        if respond_to?(:resource_config, true) && (rc = resource_config) && rc.index_config&.columns_list
+          col = rc.index_config.columns_list.find { |c| c.name.to_sym == field_name.to_sym }
+          if col&.type == :label
+            label_value = col.content.is_a?(Proc) ? col.content.call(record) : value
+            return render_label_badge(label_value, color: col.label_color, size: col.label_size, record: record)
+          end
+        end
+
         if value.is_a?(ActiveStorage::Attached::One)
           return render_attachment_preview(value)
         elsif value.is_a?(ActiveStorage::Attached::Many)

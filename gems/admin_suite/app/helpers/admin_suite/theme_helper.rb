@@ -17,15 +17,19 @@ module AdminSuite
     end
 
     def theme_link_class
-      "text-#{theme_primary}-600 dark:text-#{theme_primary}-400 hover:underline"
+      # Keep links readable and consistent with the old developer portal:
+      # no underline; use a subtle hover background instead.
+      "inline-flex items-center px-2 py-1 rounded-md text-#{theme_primary}-700 hover:text-#{theme_primary}-800 hover:bg-#{theme_primary}-50 transition-colors"
     end
 
     def theme_link_hover_text_class
-      "hover:text-#{theme_primary}-600 dark:hover:text-#{theme_primary}-400"
+      "hover:text-#{theme_primary}-700 transition-colors"
     end
 
     def theme_btn_primary_class
-      "inline-flex items-center gap-2 px-4 py-2 bg-#{theme_primary}-600 hover:bg-#{theme_primary}-700 text-white text-sm font-medium rounded-lg transition-colors"
+      # Include a stable engine-owned class so buttons remain readable even if the
+      # host app doesn't ship Tailwind (or Tailwind utilities are missing).
+      "admin-suite-btn-primary inline-flex items-center gap-2 px-4 py-2 bg-#{theme_primary}-600 hover:bg-#{theme_primary}-700 text-white text-sm font-medium rounded-lg transition-colors"
     end
 
     def theme_btn_primary_small_class
@@ -33,7 +37,7 @@ module AdminSuite
     end
 
     def theme_badge_primary_class
-      "bg-#{theme_primary}-100 dark:bg-#{theme_primary}-900/30 text-#{theme_primary}-700 dark:text-#{theme_primary}-300"
+      "bg-#{theme_primary}-100 text-#{theme_primary}-700"
     end
 
     def theme_focus_ring_class

@@ -97,12 +97,20 @@ AdminSuite.portal :assistant do
     row do
       cards_panel "Assistant Management",
         span: 12,
-        resources: [
+        resources: begin
+          items = [
           { resource_name: "assistant_tools", label: "Tools", description: "Manage tool definitions", icon: "wrench", count: -> { ::Assistant::Tool.count } },
           { resource_name: "assistant_threads", label: "Threads", description: "Monitor ongoing conversations", icon: "message-square", count: -> { ::Assistant::ChatThread.count } },
-          { resource_name: "assistant_turns", label: "Turns", description: "Conversation turns", icon: "repeat", count: -> { ::Assistant::Turn.count } },
-          { resource_name: "assistant_events", label: "Events", description: "System events", icon: "clock", count: -> { ::Assistant::Event.count } }
-        ]
+          { resource_name: "assistant_turns", label: "Turns", description: "Conversation turns", icon: "repeat", count: -> { ::Assistant::Turn.count } }
+          ]
+
+          # `Assistant::Event` is optional; some deployments don't ship it.
+          if defined?(::Assistant::Event)
+            items << { resource_name: "assistant_events", label: "Events", description: "System events", icon: "clock", count: -> { ::Assistant::Event.count } }
+          end
+
+          items
+        end
     end
   end
 end

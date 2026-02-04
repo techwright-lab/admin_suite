@@ -11,6 +11,41 @@ module AdminSuite
     include AdminSuite::PanelsHelper
     include AdminSuite::ThemeHelper
     include ::Internal::Developer::CustomRenderersHelper if defined?(::Internal::Developer::CustomRenderersHelper)
+    # ActiveStorage route helpers live on the host app (main_app), not the isolated engine.
+    def admin_suite_rails_blob_path(...)
+      if respond_to?(:main_app) && main_app.respond_to?(:rails_blob_path)
+        main_app.rails_blob_path(...)
+      else
+        rails_blob_path(...)
+      end
+    end
+
+    def admin_suite_rails_blob_representation_path(...)
+      if respond_to?(:main_app) && main_app.respond_to?(:rails_blob_representation_path)
+        main_app.rails_blob_representation_path(...)
+      else
+        rails_blob_representation_path(...)
+      end
+    end
+
+    # Lookup the DSL field definition for a given attribute (if present).
+    #
+    # Used to render show values with type awareness (e.g. markdown/json/label).
+    def admin_suite_field_definition(field_name)
+      return nil unless respond_to?(:resource_config, true)
+
+      rc = resource_config
+      return nil unless rc
+
+      rc.form_config&.fields_list.to_a.find do |f|
+        f.respond_to?(:name) &&
+          f.respond_to?(:type) &&
+          f.name.to_sym == field_name.to_sym
+      end
+    rescue StandardError
+      nil
+    end
+
 
     # Prefer registry-driven implementations (with legacy fallbacks via `super`).
     prepend AdminSuite::UI::ShowValueFormatter
@@ -153,9 +188,17 @@ module AdminSuite
       blob = attachment.blob
 
       if blob.image?
+        variant = attachment.variant(resize_to_limit: [ 600, 400 ])
+        variant_url =
+          begin
+            admin_suite_rails_blob_representation_path(variant.processed, only_path: true)
+          rescue StandardError
+            admin_suite_rails_blob_path(blob, disposition: :inline)
+          end
+
         content_tag(:div, class: "space-y-2") do
           concat(content_tag(:div, class: "inline-block rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700") do
-            image_tag(attachment.variant(resize_to_limit: [ 600, 400 ]),
+            image_tag(variant_url,
               class: "max-w-full h-auto max-h-64 object-contain",
               alt: blob.filename.to_s)
           end)
@@ -164,7 +207,7 @@ module AdminSuite
             concat(content_tag(:span, "•"))
             concat(content_tag(:span, number_to_human_size(blob.byte_size)))
             concat(content_tag(:span, "•"))
-            concat(link_to("View full size", rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
+            concat(link_to("View full size", admin_suite_rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
           end)
         end
       else
@@ -176,7 +219,7 @@ module AdminSuite
             concat(content_tag(:p, blob.filename.to_s, class: "font-medium text-slate-700 dark:text-slate-300 truncate"))
             concat(content_tag(:p, number_to_human_size(blob.byte_size), class: "text-sm text-slate-500 dark:text-slate-400"))
           end)
-          concat(link_to("Download", rails_blob_path(blob, disposition: :attachment),
+          concat(link_to("Download", admin_suite_rails_blob_path(blob, disposition: :attachment),
             class: "flex-shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"))
         end
       end
@@ -550,15 +593,24 @@ module AdminSuite
     def render_sidebar_attachment(attachment)
       return content_tag(:div, class: "text-center py-4") { content_tag(:span, "No image", class: "text-slate-400 text-sm") } unless attachment.respond_to?(:attached?) && attachment.attached?
 
-      blob = attachment.is_a?(ActiveStorage::Attached::Many) ? attachment.first.blob : attachment.blob
+      single = attachment.is_a?(ActiveStorage::Attached::Many) ? attachment.first : attachment
+      blob = single.blob
       if blob.image?
+        variant = single.variant(resize_to_limit: [ 400, 300 ])
+        variant_url =
+          begin
+            admin_suite_rails_blob_representation_path(variant.processed, only_path: true)
+          rescue StandardError
+            admin_suite_rails_blob_path(blob, disposition: :inline)
+          end
+
         content_tag(:div, class: "space-y-2") do
           concat(content_tag(:div, class: "rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700") do
-            image_tag(attachment.variant(resize_to_limit: [ 400, 300 ]), class: "w-full h-auto object-cover", alt: blob.filename.to_s)
+            image_tag(variant_url, class: "w-full h-auto object-cover", alt: blob.filename.to_s)
           end)
           concat(content_tag(:div, class: "flex items-center justify-between text-xs text-slate-500 dark:text-slate-400") do
             concat(content_tag(:span, number_to_human_size(blob.byte_size)))
-            concat(link_to("View full", rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
+            concat(link_to("View full", admin_suite_rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
           end)
         end
       else
@@ -798,7 +850,6 @@ module AdminSuite
     def detect_table_columns(item)
       return [ :id, :name, :created_at ] unless item
       priority = [ :name, :title, :status ]
-      skip = [ :id, :created_at, :updated_at, :password_digest, :encrypted_password ]
       attrs = item.attributes.keys.map(&:to_sym)
       selected = priority.select { |c| attrs.include?(c) }
       selected << :created_at if selected.size < 5 && attrs.include?(:created_at)
@@ -874,9 +925,28 @@ module AdminSuite
     end
 
     def label_badge_colors(color)
-      "bg-#{color.to_s.downcase}-100 dark:bg-#{color.to_s.downcase}-900/30 text-#{color.to_s.downcase}-700 dark:text-#{color.to_s.downcase}-400"
-    rescue StandardError
-      "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+      case color.to_s.downcase
+      when "green"
+        "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+      when "amber", "yellow", "orange"
+        "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+      when "blue"
+        "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+      when "red"
+        "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+      when "indigo"
+        "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+      when "purple"
+        "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+      when "violet"
+        "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400"
+      when "emerald"
+        "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+      when "cyan"
+        "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400"
+      else
+        "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+      end
     end
 
     # ---- form fields ----
@@ -1067,7 +1137,15 @@ module AdminSuite
       attachment = resource.respond_to?(field.name) ? resource.public_send(field.name) : nil
       has_attachment = attachment.respond_to?(:attached?) && attachment.attached?
       is_image = field.type == :image || (field.accept.present? && field.accept.include?("image"))
-      existing_url = has_attachment && is_image ? url_for(attachment.variant(resize_to_limit: [ 300, 300 ])) : nil
+      existing_url =
+        if has_attachment && is_image
+          variant = attachment.variant(resize_to_limit: [ 300, 300 ])
+          begin
+            admin_suite_rails_blob_representation_path(variant.processed, only_path: true)
+          rescue StandardError
+            admin_suite_rails_blob_path(attachment.blob, disposition: :inline)
+          end
+        end
 
       content_tag(:div,
         data: {
@@ -1109,12 +1187,12 @@ module AdminSuite
     end
 
     def render_code_editor(f, field, _resource)
-      content_tag(:div, class: "relative", data: { controller: "code-editor" }) do
+      content_tag(:div, class: "relative", data: { controller: "admin-suite--code-editor" }) do
         f.text_area(field.name,
           class: "w-full font-mono text-sm bg-slate-900 text-slate-100 p-4 rounded-lg border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500",
           rows: field.rows || 12,
           placeholder: field.placeholder,
-          data: { code_editor_target: "textarea" })
+          data: { "admin-suite--code-editor-target": "textarea" })
       end
     end
   end

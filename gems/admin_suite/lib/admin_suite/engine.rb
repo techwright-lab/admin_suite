@@ -4,6 +4,21 @@ module AdminSuite
   class Engine < ::Rails::Engine
     isolate_namespace AdminSuite
 
+    initializer "admin_suite.watchable_dirs" do |app|
+      next unless Rails.env.development?
+
+      # Make local-engine edits reload without a full server restart.
+      app.config.watchable_dirs[root.join("app").to_s] = %w[rb erb js css]
+      app.config.watchable_dirs[root.join("lib").to_s] = %w[rb]
+      app.config.watchable_dirs[root.join("config").to_s] = %w[rb]
+    end
+
+    initializer "admin_suite.assets", before: "propshaft" do |app|
+      # Make engine JS/CSS available to the host asset pipeline (Propshaft/Sprockets).
+      app.config.assets.paths << root.join("app/javascript")
+      app.config.assets.paths << root.join("app/assets")
+    end
+
     initializer "admin_suite.importmap", before: "importmap" do |app|
       # Make engine-provided JS available to host apps using importmap-rails.
       if app.config.respond_to?(:importmap) && app.config.importmap.respond_to?(:paths)

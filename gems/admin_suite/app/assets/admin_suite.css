@@ -1,0 +1,222 @@
+/*
+ * AdminSuite baseline styles.
+ *
+ * This is intentionally small: it provides usable defaults for core UI elements
+ * even when the host app does not ship Tailwind.
+ *
+ * Host apps can still include their own stylesheet (e.g. Tailwind) via
+ * `AdminSuite.config.host_stylesheet`.
+ */
+
+:root {
+  --admin-suite-bg: #f8fafc; /* slate-50 */
+  --admin-suite-fg: #0f172a; /* slate-900 */
+  --admin-suite-muted: #475569; /* slate-600 */
+  --admin-suite-border: #e2e8f0; /* slate-200 */
+  --admin-suite-card: #ffffff;
+  --admin-suite-primary: #4f46e5; /* indigo-600 */
+  --admin-suite-danger: #ef4444; /* red-500 */
+}
+
+/* Light-mode only for now.
+   The host app can implement dark mode later via Tailwind and explicit `.dark` toggling. */
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--admin-suite-bg);
+  color: var(--admin-suite-fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  line-height: 1.5;
+}
+
+a {
+  color: var(--admin-suite-primary);
+  text-decoration: none;
+}
+/* Avoid global underline-on-hover: the engine uses Tailwind utilities for hover
+   states (nav items, button-like links). Prose/markdown renderers should opt-in
+   to underlines explicitly. */
+a:hover { text-decoration: none; }
+
+/* Sidebar readability (engine-owned, light-mode only)
+   Ensures nav text is readable even without Tailwind utilities. */
+.admin-suite-sidebar,
+.admin-suite-sidebar a {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.admin-suite-sidebar a:hover {
+  color: #ffffff;
+}
+
+.admin-suite-sidebar .admin-suite-sidebar-muted {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.form-group { margin-bottom: 1rem; }
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-suite-muted);
+  margin-bottom: 0.25rem;
+}
+
+.form-input,
+.form-input-file,
+select.form-input,
+textarea.form-input {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--admin-suite-border);
+  border-radius: 0.5rem;
+  background: var(--admin-suite-card);
+  color: var(--admin-suite-fg);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-input-file:focus {
+  outline: none;
+  border-color: var(--admin-suite-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-suite-primary) 25%, transparent);
+}
+
+.form-checkbox {
+  width: 1rem;
+  height: 1rem;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  border-bottom: 1px solid var(--admin-suite-border);
+  padding: 0.6rem 0.75rem;
+  vertical-align: top;
+}
+
+th {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  color: var(--admin-suite-muted);
+  text-align: left;
+}
+
+button {
+  font-family: inherit;
+}
+
+button[type="submit"],
+.btn-primary {
+  background: var(--admin-suite-primary);
+  color: white;
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button[type="submit"]:hover,
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+/* Primary buttons rendered as links (e.g. "New ...") */
+.admin-suite-btn-primary {
+  background: var(--admin-suite-primary);
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+.admin-suite-btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+/* Toggle switch fallback (engine-owned)
+   -----------------------------------
+   Some host builds (or Tailwind v4 scanning) may not emit translate utilities.
+   Provide minimal styles so index-page toggles render correctly regardless.
+*/
+.admin-suite-toggle-track {
+  position: relative;
+  display: inline-flex;
+  height: 1.5rem; /* h-6 */
+  width: 2.75rem; /* w-11 */
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  transition: background-color 0.2s ease-in-out;
+  background: #e2e8f0; /* slate-200 (off) */
+  vertical-align: middle;
+}
+
+.admin-suite-toggle-wrap {
+  vertical-align: middle;
+}
+
+.admin-suite-toggle-wrap form.button_to {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Rails `button_to` uses a submit button; our baseline styles all submit buttons.
+   Override those defaults for toggle switches so off/on colors can differ. */
+button.admin-suite-toggle-track {
+  padding: 0;
+  line-height: 1;
+  font-weight: 400;
+  background: #e2e8f0; /* slate-200 (off) */
+  color: inherit;
+  border-radius: 9999px;
+  vertical-align: middle;
+}
+
+.admin-suite-toggle-track:hover {
+  filter: none;
+}
+
+.admin-suite-toggle-thumb {
+  pointer-events: none;
+  display: inline-block;
+  height: 1.25rem; /* h-5 */
+  width: 1.25rem; /* w-5 */
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease-in-out;
+  transform: translateX(0);
+}
+
+.admin-suite-toggle-track.is-on .admin-suite-toggle-thumb {
+  transform: translateX(1.25rem); /* translate-x-5 */
+}
+
+.admin-suite-toggle-track.is-on {
+  background: var(--admin-suite-primary);
+}
+
+button.admin-suite-toggle-track.is-on {
+  background: var(--admin-suite-primary);
+}
+
+.admin-suite-toggle-track:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-suite-primary) 30%, transparent);
+}
+
+.btn-danger {
+  background: var(--admin-suite-danger);
+  color: white;
+}
+

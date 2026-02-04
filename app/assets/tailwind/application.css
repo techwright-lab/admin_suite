@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* Tailwind v4 content sources
+   ---------------------------
+   AdminSuite is currently developed as a local engine under `gems/admin_suite`.
+   Tailwind's automatic source scanning does not reliably pick up engine templates,
+   so we explicitly include them here to avoid missing utilities (hover states,
+   text colors, table styles, etc.) after rebuild/restart.
+*/
+@source "../../../gems/admin_suite/app/views/**/*.erb";
+@source "../../../gems/admin_suite/app/helpers/**/*.rb";
+@source "../../../gems/admin_suite/app/javascript/**/*.js";
+@source "../../../gems/admin_suite/lib/**/*.rb";
+
 @theme {
   /* Gleania Brand Colors - Teal/Blue Palette */
   --color-primary-50: #f0fdfa;
