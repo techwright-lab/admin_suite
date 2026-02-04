@@ -1,0 +1,22 @@
+/* AdminSuite dark mode
+   -------------------
+   The host app may use `.dark` on <html> for its own UI.
+   To avoid unintentionally darkening the AdminSuite engine, we scope the Tailwind
+   `dark:` variant to `.admin-suite-dark` instead.
+   (AdminSuite currently does not enable `.admin-suite-dark`, so the engine renders
+   consistently in light mode.)
+*/
+@custom-variant dark (&&:where(.admin-suite-dark, .admin-suite-dark *));
+
+@import "tailwindcss";
+
+/* Engine-build mode (Tailwind v4)
+   ------------------------------
+   We explicitly list engine sources so the compiled CSS includes utilities used
+   by AdminSuite views/components, independent of the host app.
+*/
+@source "../../views/**/*.erb";
+@source "../../helpers/**/*.rb";
+@source "../../javascript/**/*.js";
+@source "../../../lib/**/*.rb";
+

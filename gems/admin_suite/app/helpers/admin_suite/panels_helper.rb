@@ -32,7 +32,9 @@ module AdminSuite
       span = 12 if span < 1
       span = 12 if span > 12
 
-      content_tag(:div, class: "lg:col-span-#{span}") do
+      # Avoid dynamic Tailwind class generation (e.g. `lg:col-span-#{span}`),
+      # which would otherwise require a safelist.
+      content_tag(:div, style: "grid-column: span #{span} / span #{span};") do
         render partial:, locals: { panel: panel }
       end
     end

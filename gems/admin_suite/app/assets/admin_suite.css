@@ -8,14 +8,27 @@
  * `AdminSuite.config.host_stylesheet`.
  */
 
-:root {
+body.admin-suite {
   --admin-suite-bg: #f8fafc; /* slate-50 */
   --admin-suite-fg: #0f172a; /* slate-900 */
   --admin-suite-muted: #475569; /* slate-600 */
   --admin-suite-border: #e2e8f0; /* slate-200 */
   --admin-suite-card: #ffffff;
   --admin-suite-primary: #4f46e5; /* indigo-600 */
+  --admin-suite-primary-hover: #4338ca; /* indigo-700 */
   --admin-suite-danger: #ef4444; /* red-500 */
+
+  /* Sidebar gradient (dark) */
+  --admin-suite-sidebar-from: #312e81;
+  --admin-suite-sidebar-via: #3730a3;
+  --admin-suite-sidebar-to: #581c87;
+
+  /* Common portal accent colors (fixed palette) */
+  --admin-suite-color-amber: #f59e0b;
+  --admin-suite-color-emerald: #10b981;
+  --admin-suite-color-cyan: #06b6d4;
+  --admin-suite-color-violet: #8b5cf6;
+  --admin-suite-color-slate: #64748b;
 }
 
 /* Light-mode only for now.
@@ -25,34 +38,120 @@ html, body {
   height: 100%;
 }
 
-body {
+body.admin-suite {
   background: var(--admin-suite-bg);
   color: var(--admin-suite-fg);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   line-height: 1.5;
 }
 
-a {
+body.admin-suite a {
   color: var(--admin-suite-primary);
   text-decoration: none;
 }
 /* Avoid global underline-on-hover: the engine uses Tailwind utilities for hover
    states (nav items, button-like links). Prose/markdown renderers should opt-in
    to underlines explicitly. */
-a:hover { text-decoration: none; }
+body.admin-suite a:hover { text-decoration: none; }
+
+/* Semantic theme classes (used throughout engine views) */
+.admin-suite-link {
+  color: var(--admin-suite-primary);
+  text-decoration: none;
+}
+
+.admin-suite-link-hover:hover {
+  color: var(--admin-suite-primary-hover);
+}
+
+.admin-suite-badge-primary {
+  background: color-mix(in srgb, var(--admin-suite-primary) 14%, #ffffff);
+  color: color-mix(in srgb, var(--admin-suite-primary) 80%, #000000);
+}
+
+.admin-suite-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-suite-primary) 30%, transparent);
+}
+
+/* Portal / accent color helpers (semantic; no Tailwind palette dependency) */
+.admin-suite-portal-accent {
+  --portal-color: var(--admin-suite-color-slate);
+}
+.admin-suite-portal-accent--amber { --portal-color: var(--admin-suite-color-amber); }
+.admin-suite-portal-accent--emerald { --portal-color: var(--admin-suite-color-emerald); }
+.admin-suite-portal-accent--cyan { --portal-color: var(--admin-suite-color-cyan); }
+.admin-suite-portal-accent--violet { --portal-color: var(--admin-suite-color-violet); }
+.admin-suite-portal-accent--slate { --portal-color: var(--admin-suite-color-slate); }
+
+.admin-suite-portal-chip {
+  background: color-mix(in srgb, var(--portal-color) 22%, transparent);
+}
+
+.admin-suite-portal-icon {
+  color: color-mix(in srgb, var(--portal-color) 45%, white);
+}
+
+.admin-suite-portal-card {
+  background: color-mix(in srgb, var(--portal-color) 10%, white);
+  border: 1px solid var(--admin-suite-border);
+}
+
+.admin-suite-portal-card:hover {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.admin-suite-portal-link {
+  color: color-mix(in srgb, var(--portal-color) 75%, #000);
+}
+
+.admin-suite-portal-link:hover {
+  color: color-mix(in srgb, var(--portal-color) 90%, #000);
+}
+
+/* Generic themed card hover accents */
+.admin-suite-theme-border-hover:hover {
+  border-color: color-mix(in srgb, var(--admin-suite-primary) 35%, var(--admin-suite-border));
+}
+
+.admin-suite-theme-text-hover:hover {
+  color: var(--admin-suite-primary);
+}
+
+.admin-suite-env-dot {
+  background: var(--admin-suite-primary);
+}
+
+.admin-suite-avatar {
+  background: color-mix(in srgb, var(--admin-suite-primary) 18%, #fff);
+  color: color-mix(in srgb, var(--admin-suite-primary) 80%, #000);
+}
+
+.admin-suite-flash--info {
+  background: color-mix(in srgb, var(--admin-suite-primary) 10%, #fff);
+  border-color: color-mix(in srgb, var(--admin-suite-primary) 30%, var(--admin-suite-border));
+  color: color-mix(in srgb, var(--admin-suite-primary) 70%, #000);
+}
 
 /* Sidebar readability (engine-owned, light-mode only)
-   Ensures nav text is readable even without Tailwind utilities. */
-.admin-suite-sidebar,
-.admin-suite-sidebar a {
+   Ensures nav text is readable even without Tailwind utilities.
+   Note: `body.admin-suite a { color: var(--admin-suite-primary) }` is more specific
+   than `.admin-suite-sidebar a`, so we scope these rules under `body.admin-suite`
+   to guarantee the sidebar stays readable. */
+.admin-suite-sidebar {
+  background: linear-gradient(to bottom, var(--admin-suite-sidebar-from), var(--admin-suite-sidebar-via), var(--admin-suite-sidebar-to));
+}
+
+body.admin-suite .admin-suite-sidebar,
+body.admin-suite .admin-suite-sidebar a {
   color: rgba(255, 255, 255, 0.95);
 }
 
-.admin-suite-sidebar a:hover {
+body.admin-suite .admin-suite-sidebar a:hover {
   color: #ffffff;
 }
 
-.admin-suite-sidebar .admin-suite-sidebar-muted {
+body.admin-suite .admin-suite-sidebar .admin-suite-sidebar-muted {
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -132,13 +231,26 @@ button[type="submit"]:hover,
 
 /* Primary buttons rendered as links (e.g. "New ...") */
 .admin-suite-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
   background: var(--admin-suite-primary);
   color: #fff !important;
   text-decoration: none !important;
+  border-radius: 0.5rem;
+  border: 0;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .admin-suite-btn-primary:hover {
-  filter: brightness(0.95);
+  background: var(--admin-suite-primary-hover);
+}
+
+.admin-suite-btn-primary--sm {
+  padding: 0.5rem 0.75rem;
 }
 
 /* Toggle switch fallback (engine-owned)

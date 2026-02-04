@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+
 module AdminSuite
   class Engine < ::Rails::Engine
     isolate_namespace AdminSuite
@@ -38,6 +40,22 @@ module AdminSuite
           assistant: { label: "Assistant Portal", icon: "message-circle", color: :violet, order: 40 }
         } if config.portals.blank?
       end
+    end
+
+    initializer "admin_suite.tailwind_build" do
+      next unless Rails.env.development?
+
+      # In development, ensure the engine stylesheet exists so the UI is usable
+      # without requiring host-specific Tailwind setup.
+      output = Rails.root.join("app/assets/builds/admin_suite_tailwind.css")
+      next if output.exist?
+
+      input = root.join("app/assets/tailwind/admin_suite.css")
+      FileUtils.mkdir_p(output.dirname)
+
+      system("tailwindcss", "-i", input.to_s, "-o", output.to_s)
+    rescue StandardError
+      # Best effort only; missing stylesheet will show up immediately in the UI.
     end
   end
 end

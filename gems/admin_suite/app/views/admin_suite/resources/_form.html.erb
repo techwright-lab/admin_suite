@@ -24,9 +24,9 @@
 
   <div class="pt-4 flex items-center gap-2">
     <%= f.button (resource.new_record? ? "Create" : "Save"),
-      class: "px-4 py-2 rounded-lg bg-#{theme_primary}-600 hover:bg-#{theme_primary}-700 text-white text-sm font-medium",
+      class: "admin-suite-btn-primary text-sm font-medium rounded-lg",
       data: { disable_with: "Saving..." } %>
     <%= link_to "Cancel", resource.new_record? ? resources_path(portal: current_portal, resource_name: resource_name) : resource_path(portal: current_portal, resource_name: resource_name, id: resource.to_param),
-      class: "px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" %>
+      class: "px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100" %>
   </div>
 <% end %>

@@ -27,6 +27,11 @@ AdminSuite.configure do |config|
     Rails.root.join("app/admin/resources/*.rb").to_s
   ]
 
+  config.theme = {
+    primary: :emerald,
+    secondary: :cyan
+  }
+
   # Portal dashboard DSL globs.
   #
   # Note: this app already uses `app/admin/portals` for the legacy portal system,

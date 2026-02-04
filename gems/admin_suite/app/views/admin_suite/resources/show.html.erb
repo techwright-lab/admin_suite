@@ -106,7 +106,7 @@
             end
         %>
         <% if show_action && action_url %>
-          <% button_class = "inline-flex items-center gap-2 px-4 py-2 #{action_def.color == :danger ? 'bg-red-600 hover:bg-red-700 text-white' : "bg-#{theme_primary}-600 hover:bg-#{theme_primary}-700 text-white"} text-sm font-medium rounded-lg transition-colors" %>
+          <% button_class = action_def.color == :danger ? "inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" : "admin-suite-btn-primary text-sm font-medium rounded-lg" %>
 
           <% if action_def.type == :modal || action_def.type == :link %>
             <%= link_to action_url, class: button_class, data: { turbo_frame: "_top" } do %>

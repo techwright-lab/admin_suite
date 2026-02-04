@@ -1009,20 +1009,20 @@ module AdminSuite
         class: "inline-flex items-center gap-3",
         data: {
           controller: "admin-suite--toggle-switch",
-          "admin-suite--toggle-switch-active-class-value": "bg-#{theme_primary}-600",
-          "admin-suite--toggle-switch-inactive-classes-value": "bg-slate-200 dark:bg-slate-700"
+          "admin-suite--toggle-switch-active-class-value": "is-on",
+          "admin-suite--toggle-switch-inactive-classes-value": ""
         }) do
         concat(content_tag(:button, type: "button",
-          class: "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-#{theme_primary}-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 #{checked ? "bg-#{theme_primary}-600" : 'bg-slate-200 dark:bg-slate-700'}",
+          class: "admin-suite-toggle-track #{checked ? "is-on" : ""}",
           role: "switch",
           "aria-checked" => checked.to_s,
           data: { action: "click->admin-suite--toggle-switch#toggle", "admin-suite--toggle-switch-target": "button" },
           disabled: field.readonly) do
-            content_tag(:span, "", class: "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out #{checked ? 'translate-x-5' : 'translate-x-0'}", data: { "admin-suite--toggle-switch-target": "thumb" })
+            content_tag(:span, "", class: "admin-suite-toggle-thumb", data: { "admin-suite--toggle-switch-target": "thumb" })
           end)
 
         concat(hidden_field_tag("#{param_key}[#{field.name}]", checked ? "1" : "0", id: "#{param_key}_#{field.name}", data: { "admin-suite--toggle-switch-target": "input" }))
-        concat(content_tag(:span, checked ? "Enabled" : "Disabled", class: "text-sm font-medium text-slate-700 dark:text-slate-300", data: { "admin-suite--toggle-switch-target": "label" }))
+        concat(content_tag(:span, checked ? "Enabled" : "Disabled", class: "text-sm font-medium text-slate-700", data: { "admin-suite--toggle-switch-target": "label" }))
       end
     end
 
