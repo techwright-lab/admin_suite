@@ -2,12 +2,12 @@ PATH
   remote: gems/admin_suite
   specs:
     admin_suite (0.1.0)
-      lucide-rails
-      pagy (>= 6.0)
-      rails (>= 8.0)
-      redcarpet
-      rouge
-      tailwindcss-ruby
+      lucide-rails (~> 0.7)
+      pagy (>= 6.0, < 11.0)
+      rails (>= 8.0, < 9.0)
+      redcarpet (~> 3.6)
+      rouge (~> 4.7)
+      tailwindcss-ruby (~> 4.1)
 
 GEM
   remote: https://rubygems.org/

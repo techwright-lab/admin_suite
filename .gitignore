@@ -45,3 +45,5 @@
 /config/credentials/*.yml
 !/config/credentials/*.yml.enc
 !/config/credentials.example.yml
+
+/gems/*
