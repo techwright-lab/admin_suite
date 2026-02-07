@@ -35,7 +35,7 @@ module AdminSuite
       nil
     end
 
-    # Loads resource definition files in development when needed.
+    # Loads resource definition files when needed (runs in all environments).
     #
     # @return [void]
     def ensure_resources_loaded!
