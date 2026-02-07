@@ -12,8 +12,6 @@ module AdminSuite
       FileUtils.rm_rf(@temp_dir) if @temp_dir && File.exist?(@temp_dir)
     end
 
-    private
-
     # Helper method to create a loader that tracks ignored directories
     def create_tracked_loader
       loader = Zeitwerk::Loader.new
@@ -35,8 +33,7 @@ module AdminSuite
         portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
         contains_admin_suite_portals =
           portal_files.any? do |file|
-            content = File.binread(file)
-            content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+            content = File.binread(file).encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
             content.include?("AdminSuite.portal")
           rescue StandardError
             false
