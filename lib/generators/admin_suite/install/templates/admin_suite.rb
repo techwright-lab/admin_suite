@@ -24,6 +24,11 @@ AdminSuite.configure do |config|
   # Files typically call `AdminSuite.portal :ops do ... end`
   config.portal_globs = [
     Rails.root.join("config/admin_suite/portals/*.rb").to_s,
+    # Prefer `app/admin_suite/portals` for DSL files so Zeitwerk never expects
+    # application constants (e.g. `Admin::Portals::OpsPortal` for
+    # `app/admin/portals/ops_portal.rb`) during eager load.
+    Rails.root.join("app/admin_suite/portals/*.rb").to_s,
+    # Legacy/fallback: still support portals defined under app/admin/portals.
     Rails.root.join("app/admin/portals/*.rb").to_s
   ]
 

@@ -34,7 +34,10 @@ module AdminSuite
 
     # Defines (or updates) a portal using a Ruby DSL.
     #
-    # Host apps typically place these in `app/admin/portals/*.rb`.
+    # Host apps typically place these in:
+    # - `config/admin_suite/portals/*.rb` (recommended; not a Zeitwerk autoload path)
+    # - `app/admin_suite/portals/*.rb` (supported; AdminSuite ignores for Zeitwerk)
+    # - `app/admin/portals/*.rb` (supported; AdminSuite will ignore for Zeitwerk if files contain `AdminSuite.portal`)
     #
     # @param key [Symbol, String]
     # @yield Portal definition DSL

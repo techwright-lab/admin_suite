@@ -2,7 +2,7 @@
 
 module AdminSuite
   module Version
-    VERSION = "0.1.2"
+    VERSION = "0.2.0"
   end
 
   # Backward-compatible constant.
