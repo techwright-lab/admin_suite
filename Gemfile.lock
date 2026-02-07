@@ -223,6 +223,7 @@ GEM
 PLATFORMS
   aarch64-linux-gnu
   arm64-darwin-24
+  x86_64-linux
 
 DEPENDENCIES
   admin_suite!
