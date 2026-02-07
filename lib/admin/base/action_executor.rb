@@ -178,7 +178,7 @@ module Admin
         return if self.class.handlers_loaded
 
         files = Array(AdminSuite.config.action_globs).flat_map { |g| Dir[g] }.uniq
-        
+
         # Set the flag even if no files found - we've done the glob and shouldn't repeat it
         if files.empty?
           self.class.handlers_loaded = true
@@ -191,10 +191,10 @@ module Admin
           else
             files.each { |file| require file }
           end
-          
+
           # Only set the flag after successful loading
           self.class.handlers_loaded = true
-        rescue StandardError
+        rescue StandardError, ScriptError
           # Best-effort only; caller will surface "No handler found..." on failure.
           # Don't set handlers_loaded on error so loading can be retried.
           nil

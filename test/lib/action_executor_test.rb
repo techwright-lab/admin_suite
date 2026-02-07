@@ -9,7 +9,7 @@ module Admin
       setup do
         @temp_dir = Dir.mktmpdir("admin_suite_test")
         @original_config = AdminSuite.config.action_globs.dup
-        
+
         # Reset the handlers_loaded flag before each test
         ActionExecutor.handlers_loaded = false
       end
@@ -17,7 +17,7 @@ module Admin
       teardown do
         FileUtils.rm_rf(@temp_dir) if @temp_dir && File.exist?(@temp_dir)
         AdminSuite.config.action_globs = @original_config
-        
+
         # Reset the flag after each test
         ActionExecutor.handlers_loaded = false
       end
@@ -42,18 +42,18 @@ module Admin
         )
 
         # Configure AdminSuite to look in our temp directory
-        AdminSuite.config.action_globs = [File.join(actions_dir, "*.rb")]
+        AdminSuite.config.action_globs = [ File.join(actions_dir, "*.rb") ]
 
         # Create an executor instance and call the loading method
         resource_class = Struct.new(:resource_name).new("test")
         executor = ActionExecutor.new(resource_class, :test, nil)
-        
+
         # Ensure flag starts as false
         ActionExecutor.handlers_loaded = false
-        
+
         # Call the private method
         executor.send(:load_action_handlers_for_admin_suite!)
-        
+
         # Verify the flag is now true
         assert ActionExecutor.handlers_loaded, "Expected handlers_loaded to be true after loading"
       end
@@ -66,7 +66,7 @@ module Admin
         File.write(action_file, "# Test action")
 
         # Configure AdminSuite to look in our temp directory
-        AdminSuite.config.action_globs = [File.join(actions_dir, "*.rb")]
+        AdminSuite.config.action_globs = [ File.join(actions_dir, "*.rb") ]
 
         # Create an executor instance
         resource_class = Struct.new(:resource_name).new("test")
@@ -98,12 +98,12 @@ module Admin
       test "load_action_handlers_for_admin_suite returns early when AdminSuite is not defined" do
         # Temporarily undefine AdminSuite to test early return
         admin_suite_defined = defined?(AdminSuite)
-        
+
         skip "Cannot test AdminSuite undefined condition when AdminSuite is required" if admin_suite_defined
 
         resource_class = Struct.new(:resource_name).new("test")
         executor = ActionExecutor.new(resource_class, :test, nil)
-        
+
         # This should return early without error
         assert_nil executor.send(:load_action_handlers_for_admin_suite!)
       end
@@ -114,7 +114,7 @@ module Admin
 
         resource_class = Struct.new(:resource_name).new("test")
         executor = ActionExecutor.new(resource_class, :test, nil)
-        
+
         ActionExecutor.handlers_loaded = false
 
         # This should not raise an error
@@ -128,11 +128,11 @@ module Admin
 
       test "load_action_handlers_for_admin_suite handles errors gracefully" do
         # Configure a glob pattern that will cause an error
-        AdminSuite.config.action_globs = ["/nonexistent/path/*.rb"]
+        AdminSuite.config.action_globs = [ "/nonexistent/path/*.rb" ]
 
         resource_class = Struct.new(:resource_name).new("test")
         executor = ActionExecutor.new(resource_class, :test, nil)
-        
+
         ActionExecutor.handlers_loaded = false
 
         # This should not raise an error even if globbing fails
@@ -151,11 +151,11 @@ module Admin
         )
 
         # Configure AdminSuite to look in our temp directory
-        AdminSuite.config.action_globs = [File.join(actions_dir, "*.rb")]
+        AdminSuite.config.action_globs = [ File.join(actions_dir, "*.rb") ]
 
         resource_class = Struct.new(:resource_name).new("test")
         executor = ActionExecutor.new(resource_class, :test, nil)
-        
+
         ActionExecutor.handlers_loaded = false
 
         # This should not raise an error even when file has syntax error
@@ -164,7 +164,7 @@ module Admin
         end
 
         # Flag should remain false when loading fails, allowing retry
-        assert_not ActionExecutor.handlers_loaded, 
+        assert_not ActionExecutor.handlers_loaded,
                    "Expected handlers_loaded to remain false when file loading fails"
       end
     end
