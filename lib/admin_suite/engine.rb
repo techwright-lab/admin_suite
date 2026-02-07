@@ -13,46 +13,65 @@ module AdminSuite
       end
     end
 
-    initializer "admin_suite.host_dsl_ignore" do
-      # Host apps often keep AdminSuite definition files under `app/admin/**`.
+    initializer "admin_suite.host_dsl_ignore", before: :setup_main_autoloader do |app|
+      # Host apps may store AdminSuite DSL files under `app/admin_suite/**` and
+      # `app/admin/portals/**`.
       #
-      # Rails treats `app/*` as Zeitwerk roots, so `app/admin` becomes its own root.
-      # That means Zeitwerk expects constants like `Resources::UserResource` from:
-      #   app/admin/resources/user_resource.rb
-      # but most apps define:
-      #   Admin::Resources::UserResource
-      #
-      # To avoid production eager-load `Zeitwerk::NameError`s, we ignore these
-      # directories for Zeitwerk and load definition files ourselves (via globs).
-      host_ignore_dirs = [
-        Rails.root.join("app/admin_suite"),
-        Rails.root.join("app/admin/resources"),
-        Rails.root.join("app/admin/actions"),
-        Rails.root.join("app/admin/base")
-      ]
+      # These are side-effect DSL files (they do not define constants), so Zeitwerk
+      # must ignore them to avoid eager-load `Zeitwerk::NameError`s in production.
 
-      # `app/admin/portals` may contain DSL-only portal dashboards (no constants).
-      # Ignore it only if it appears to contain AdminSuite portal DSL definitions.
-      host_admin_portals_dir = Rails.root.join("app/admin/portals")
-      if host_admin_portals_dir.exist?
-        portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
-        contains_admin_suite_portals =
-          portal_files.any? do |file|
-            content = File.binread(file)
-            content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            portal_dsl_pattern = /(::)?AdminSuite\s*\.\s*portal\b/
-            portal_dsl_pattern.match?(content)
-          rescue StandardError
-            false
-          end
+      admin_suite_app_dir = Rails.root.join("app/admin_suite")
+      admin_dir = Rails.root.join("app/admin")
+      admin_portals_dir = Rails.root.join("app/admin/portals")
 
-        host_ignore_dirs << host_admin_portals_dir if contains_admin_suite_portals
+      # If the host uses `Admin::*` constants inside `app/admin/**`, Rails' default
+      # autoload root (`app/admin`) would expect top-level constants like
+      # `Resources::UserResource`. We fix that by mapping `app/admin` to `Admin`.
+      # This avoids requiring host apps to add their own Zeitwerk initializer.
+      if admin_dir.exist? && self.class.host_admin_namespace_files?(admin_dir)
+        admin_dir_s = admin_dir.to_s
+        app.config.autoload_paths.delete(admin_dir_s)
+        app.config.eager_load_paths.delete(admin_dir_s)
+
+        # Ensure `Admin` exists so Zeitwerk can use it as a namespace.
+        module ::Admin; end
+
+        Rails.autoloaders.main.push_dir(admin_dir, namespace: ::Admin)
       end
 
       Rails.autoloaders.each do |loader|
-        host_ignore_dirs.each do |dir|
-          loader.ignore(dir) if dir.exist?
-        end
+        loader.ignore(admin_suite_app_dir) if admin_suite_app_dir.exist?
+
+        next unless admin_portals_dir.exist?
+
+        loader.ignore(admin_portals_dir) if self.class.contains_admin_suite_portal_dsl?(admin_portals_dir)
+      end
+    end
+
+    def self.host_admin_namespace_files?(admin_dir)
+      # True if any file under app/admin appears to define `Admin::*` constants.
+      Dir[admin_dir.join("**/*.rb").to_s].any? do |file|
+        next false if file.include?("/portals/")
+
+        content = File.binread(file)
+        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+
+        content.match?(/\b(module|class)\s+Admin\b/) ||
+          content.match?(/\b(module|class)\s+Admin::/)
+      rescue StandardError
+        false
+      end
+    end
+
+    def self.contains_admin_suite_portal_dsl?(admin_portals_dir)
+      portal_files = Dir[admin_portals_dir.join("**/*.rb").to_s]
+      portal_files.any? do |file|
+        content = File.binread(file)
+        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+        portal_dsl_pattern = /(::)?AdminSuite\s*\.\s*portal\b/
+        portal_dsl_pattern.match?(content)
+      rescue StandardError
+        false
       end
     end
 
