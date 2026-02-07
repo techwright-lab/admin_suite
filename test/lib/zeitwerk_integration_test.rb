@@ -12,26 +12,22 @@ module AdminSuite
       FileUtils.rm_rf(@temp_dir) if @temp_dir && File.exist?(@temp_dir)
     end
 
-    test "ignores app/admin/portals when it contains AdminSuite portal DSL" do
-      # Create app/admin/portals directory with portal DSL file
-      portals_dir = File.join(@temp_dir, "app", "admin", "portals")
-      FileUtils.mkdir_p(portals_dir)
-      File.write(
-        File.join(portals_dir, "ops_portal.rb"),
-        "AdminSuite.portal :ops do\n  # portal config\nend"
-      )
+    private
 
-      # Create a test loader
+    # Helper method to create a loader that tracks ignored directories
+    def create_tracked_loader
       loader = Zeitwerk::Loader.new
       ignored_dirs = []
 
-      # Stub the loader's ignore method to track what gets ignored
       loader.define_singleton_method(:ignore) do |path|
         ignored_dirs << path.to_s
       end
 
-      # Simulate the initializer logic with our temp directory as root
-      app_root = Pathname.new(@temp_dir)
+      [loader, ignored_dirs]
+    end
+
+    # Helper method that simulates the Zeitwerk integration logic from engine.rb
+    def simulate_zeitwerk_integration(app_root, loader)
       host_dsl_dirs = [app_root.join("app/admin_suite")]
       host_admin_portals_dir = app_root.join("app/admin/portals")
 
@@ -52,9 +48,23 @@ module AdminSuite
       host_dsl_dirs.each do |dir|
         loader.ignore(dir) if dir.exist?
       end
+    end
+
+    test "ignores app/admin/portals when it contains AdminSuite portal DSL" do
+      # Create app/admin/portals directory with portal DSL file
+      portals_dir = File.join(@temp_dir, "app", "admin", "portals")
+      FileUtils.mkdir_p(portals_dir)
+      File.write(
+        File.join(portals_dir, "ops_portal.rb"),
+        "AdminSuite.portal :ops do\n  # portal config\nend"
+      )
+
+      # Create loader and simulate initializer logic
+      app_root = Pathname.new(@temp_dir)
+      loader, ignored_dirs = create_tracked_loader
+      simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin/portals was ignored
-      # Convert to string for comparison since the ignore method receives Pathname
       expected_path = app_root.join("app/admin/portals").to_s
       assert_includes ignored_dirs, expected_path,
                       "Expected app/admin/portals to be ignored when it contains AdminSuite portal DSL"
@@ -69,40 +79,12 @@ module AdminSuite
         "module Admin\n  module Portals\n    class AdminUser\n    end\n  end\nend"
       )
 
-      # Create a test loader
-      loader = Zeitwerk::Loader.new
-      ignored_dirs = []
-
-      # Stub the loader's ignore method to track what gets ignored
-      loader.define_singleton_method(:ignore) do |path|
-        ignored_dirs << path.to_s
-      end
-
-      # Simulate the initializer logic with our temp directory as root
+      # Create loader and simulate initializer logic
       app_root = Pathname.new(@temp_dir)
-      host_dsl_dirs = [app_root.join("app/admin_suite")]
-      host_admin_portals_dir = app_root.join("app/admin/portals")
-
-      if host_admin_portals_dir.exist?
-        portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
-        contains_admin_suite_portals =
-          portal_files.any? do |file|
-            content = File.binread(file)
-            content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            content.include?("AdminSuite.portal")
-          rescue StandardError
-            false
-          end
-
-        host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
-      end
-
-      host_dsl_dirs.each do |dir|
-        loader.ignore(dir) if dir.exist?
-      end
+      loader, ignored_dirs = create_tracked_loader
+      simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin/portals was NOT ignored
-      # Convert to string for comparison
       unexpected_path = app_root.join("app/admin/portals").to_s
       assert_not_includes ignored_dirs, unexpected_path,
                           "Expected app/admin/portals to NOT be ignored when it contains only real constants"
@@ -117,40 +99,12 @@ module AdminSuite
         "# Some DSL configuration"
       )
 
-      # Create a test loader
-      loader = Zeitwerk::Loader.new
-      ignored_dirs = []
-
-      # Stub the loader's ignore method to track what gets ignored
-      loader.define_singleton_method(:ignore) do |path|
-        ignored_dirs << path.to_s
-      end
-
-      # Simulate the initializer logic with our temp directory as root
+      # Create loader and simulate initializer logic
       app_root = Pathname.new(@temp_dir)
-      host_dsl_dirs = [app_root.join("app/admin_suite")]
-      host_admin_portals_dir = app_root.join("app/admin/portals")
-
-      if host_admin_portals_dir.exist?
-        portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
-        contains_admin_suite_portals =
-          portal_files.any? do |file|
-            content = File.binread(file)
-            content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            content.include?("AdminSuite.portal")
-          rescue StandardError
-            false
-          end
-
-        host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
-      end
-
-      host_dsl_dirs.each do |dir|
-        loader.ignore(dir) if dir.exist?
-      end
+      loader, ignored_dirs = create_tracked_loader
+      simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin_suite was ignored
-      # Convert to string for comparison
       expected_path = app_root.join("app/admin_suite").to_s
       assert_includes ignored_dirs, expected_path,
                       "Expected app/admin_suite to always be ignored"
@@ -173,40 +127,12 @@ module AdminSuite
         "AdminSuite.portal :ops do\n  # portal config\nend"
       )
 
-      # Create a test loader
-      loader = Zeitwerk::Loader.new
-      ignored_dirs = []
-
-      # Stub the loader's ignore method to track what gets ignored
-      loader.define_singleton_method(:ignore) do |path|
-        ignored_dirs << path.to_s
-      end
-
-      # Simulate the initializer logic with our temp directory as root
+      # Create loader and simulate initializer logic
       app_root = Pathname.new(@temp_dir)
-      host_dsl_dirs = [app_root.join("app/admin_suite")]
-      host_admin_portals_dir = app_root.join("app/admin/portals")
-
-      if host_admin_portals_dir.exist?
-        portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
-        contains_admin_suite_portals =
-          portal_files.any? do |file|
-            content = File.binread(file)
-            content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            content.include?("AdminSuite.portal")
-          rescue StandardError
-            false
-          end
-
-        host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
-      end
-
-      host_dsl_dirs.each do |dir|
-        loader.ignore(dir) if dir.exist?
-      end
+      loader, ignored_dirs = create_tracked_loader
+      simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin/portals was ignored due to presence of portal DSL
-      # Convert to string for comparison
       expected_path = app_root.join("app/admin/portals").to_s
       assert_includes ignored_dirs, expected_path,
                       "Expected app/admin/portals to be ignored when any file contains portal DSL"
@@ -219,14 +145,9 @@ module AdminSuite
       test_file = File.join(portals_dir, "test.rb")
       File.write(test_file, "AdminSuite.portal :ops do; end")
 
-      # Create a test loader
-      loader = Zeitwerk::Loader.new
-      ignored_dirs = []
-
-      # Stub the loader's ignore method to track what gets ignored
-      loader.define_singleton_method(:ignore) do |path|
-        ignored_dirs << path.to_s
-      end
+      # Create loader
+      app_root = Pathname.new(@temp_dir)
+      loader, ignored_dirs = create_tracked_loader
 
       # Stub File.binread to raise an error
       original_binread = File.method(:binread)
@@ -239,31 +160,10 @@ module AdminSuite
       end
 
       begin
-        # Simulate the initializer logic with our temp directory as root
-        app_root = Pathname.new(@temp_dir)
-        host_dsl_dirs = [app_root.join("app/admin_suite")]
-        host_admin_portals_dir = app_root.join("app/admin/portals")
-
-        if host_admin_portals_dir.exist?
-          portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
-          contains_admin_suite_portals =
-            portal_files.any? do |file|
-              content = File.binread(file)
-              content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-              content.include?("AdminSuite.portal")
-            rescue StandardError
-              false
-            end
-
-          host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
-        end
-
-        host_dsl_dirs.each do |dir|
-          loader.ignore(dir) if dir.exist?
-        end
+        # Simulate the initializer logic
+        simulate_zeitwerk_integration(app_root, loader)
 
         # Verify that app/admin/portals was NOT ignored due to read error
-        # Convert to string for comparison
         unexpected_path = app_root.join("app/admin/portals").to_s
         assert_not_includes ignored_dirs, unexpected_path,
                             "Expected app/admin/portals to NOT be ignored when file read fails"
