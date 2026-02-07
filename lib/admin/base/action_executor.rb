@@ -117,6 +117,17 @@ module Admin
         end
 
         handler_name = "#{resource_class.resource_name.camelize}#{action.name.to_s.camelize}Action"
+        handler_constant = "Admin::Actions::#{handler_name}"
+        handler_constant.constantize
+      rescue NameError
+        # In many host apps, action handlers live under `app/admin/actions/**`.
+        # Rails treats `app/admin` as a Zeitwerk root, which means Zeitwerk expects
+        # top-level constants (e.g. `Actions::Foo`) unless the host configures
+        # a namespace mapping. AdminSuite avoids requiring host Zeitwerk setup by
+        # loading handler files via `AdminSuite.config.action_globs` when needed.
+        load_action_handlers_for_admin_suite!
+
+        handler_name = "#{resource_class.resource_name.camelize}#{action.name.to_s.camelize}Action"
         "Admin::Actions::#{handler_name}".constantize
       rescue NameError
         nil
@@ -148,6 +159,22 @@ module Admin
           result: result
         )
       rescue StandardError
+        nil
+      end
+
+      def load_action_handlers_for_admin_suite!
+        return unless defined?(AdminSuite)
+
+        files = Array(AdminSuite.config.action_globs).flat_map { |g| Dir[g] }.uniq
+        return if files.empty?
+
+        if Rails.env.development?
+          files.each { |file| load file }
+        else
+          files.each { |file| require file }
+        end
+      rescue StandardError
+        # Best-effort only; caller will surface "No handler found..." on failure.
         nil
       end
     end

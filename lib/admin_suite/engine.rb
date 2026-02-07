@@ -14,20 +14,25 @@ module AdminSuite
     end
 
     initializer "admin_suite.host_dsl_ignore" do
-      # Host apps sometimes store AdminSuite DSL files under `app/admin_suite/**`
-      # and/or `app/admin/portals/**`.
+      # Host apps often keep AdminSuite definition files under `app/admin/**`.
       #
-      # These are *side-effect* DSL files (e.g. `AdminSuite.portal :ops do ... end`),
-      # not constant definitions. If a host app adds those dirs to Zeitwerk (common
-      # when autoloading `app/admin` as `Admin::*`), eager loading will crash with:
-      #   expected file ... to define constant ...
+      # Rails treats `app/*` as Zeitwerk roots, so `app/admin` becomes its own root.
+      # That means Zeitwerk expects constants like `Resources::UserResource` from:
+      #   app/admin/resources/user_resource.rb
+      # but most apps define:
+      #   Admin::Resources::UserResource
       #
-      # So we proactively ignore these directories for all Zeitwerk loaders.
-      host_dsl_dirs = [ Rails.root.join("app/admin_suite") ]
+      # To avoid production eager-load `Zeitwerk::NameError`s, we ignore these
+      # directories for Zeitwerk and load definition files ourselves (via globs).
+      host_ignore_dirs = [
+        Rails.root.join("app/admin_suite"),
+        Rails.root.join("app/admin/resources"),
+        Rails.root.join("app/admin/actions"),
+        Rails.root.join("app/admin/base")
+      ]
 
-      # `app/admin/portals` is a more common location in host apps and could also
-      # contain real constants. Only ignore it if it appears to contain AdminSuite
-      # portal DSL definitions.
+      # `app/admin/portals` may contain DSL-only portal dashboards (no constants).
+      # Ignore it only if it appears to contain AdminSuite portal DSL definitions.
       host_admin_portals_dir = Rails.root.join("app/admin/portals")
       if host_admin_portals_dir.exist?
         portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
@@ -41,11 +46,11 @@ module AdminSuite
             false
           end
 
-        host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
+        host_ignore_dirs << host_admin_portals_dir if contains_admin_suite_portals
       end
 
       Rails.autoloaders.each do |loader|
-        host_dsl_dirs.each do |dir|
+        host_ignore_dirs.each do |dir|
           loader.ignore(dir) if dir.exist?
         end
       end
@@ -88,6 +93,13 @@ module AdminSuite
           config.resource_globs = [
             Rails.root.join("config/admin_suite/resources/*.rb").to_s,
             Rails.root.join("app/admin/resources/*.rb").to_s
+          ]
+        end
+
+        if config.action_globs.blank?
+          config.action_globs = [
+            Rails.root.join("config/admin_suite/actions/*.rb").to_s,
+            Rails.root.join("app/admin/actions/*.rb").to_s
           ]
         end
 

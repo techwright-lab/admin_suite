@@ -32,16 +32,18 @@ These are the defaults in `AdminSuite::Configuration` / `AdminSuite::Engine`:
 - `resource_globs`: defaults to:
   - `Rails.root/config/admin_suite/resources/*.rb`
   - `Rails.root/app/admin/resources/*.rb`
+- `action_globs`: defaults to:
+  - `Rails.root/config/admin_suite/actions/*.rb`
+  - `Rails.root/app/admin/actions/*.rb`
 - `portal_globs`: defaults to:
   - `Rails.root/config/admin_suite/portals/*.rb`
   - `Rails.root/app/admin/portals/*.rb`
   - `Rails.root/app/admin_suite/portals/*.rb`
 
-Note: portal files are DSL side-effects (they don't define constants). If your host app
-autoloads `app/admin` as `Admin::*` with Zeitwerk, AdminSuite will ignore
-`app/admin/portals` for Zeitwerk to prevent eager-load `Zeitwerk::NameError`s.
-We recommend placing portal DSL files under `config/admin_suite/portals` or
-`app/admin_suite/portals` when possible.
+Note: portal files are DSL side-effects (they don't define constants). AdminSuite
+ignores `app/admin/portals` for Zeitwerk when it detects portal DSL usage, to prevent
+eager-load `Zeitwerk::NameError`s. We recommend placing portal DSL files under
+`config/admin_suite/portals` or `app/admin_suite/portals` when possible.
 - `portals`: default portal metadata for `:ops`, `:email`, `:ai`, `:assistant`
 - `custom_renderers`: `{}`
 - `icon_renderer`: `nil` (uses lucide-rails by default when available)
