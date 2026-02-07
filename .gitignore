@@ -45,6 +45,8 @@
 /config/credentials/*.yml
 !/config/credentials/*.yml.enc
 !/config/credentials.example.yml
+/config/credentials/google/*.json
+/config/credentials/**/*.json
 
 /gems
 /gems/*
