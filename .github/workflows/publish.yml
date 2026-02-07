@@ -35,7 +35,7 @@ jobs:
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           
           # Check if this version has been published
-          if gem list -r admin_suite | grep -q "admin_suite ($CURRENT_VERSION)"; then
+          if gem search -r admin_suite --exact --version "$CURRENT_VERSION" | grep -q "admin_suite"; then
             echo "version_exists=true" >> $GITHUB_OUTPUT
             echo "Version $CURRENT_VERSION already exists on RubyGems"
           else
@@ -59,6 +59,7 @@ jobs:
           EOF
           chmod 0600 ~/.gem/credentials
           gem push admin_suite-${{ steps.version_check.outputs.current_version }}.gem
+          rm -f ~/.gem/credentials
       
       - name: Create Git tag
         if: steps.version_check.outputs.version_exists == 'false'

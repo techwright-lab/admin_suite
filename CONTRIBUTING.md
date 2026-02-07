@@ -38,6 +38,12 @@ See `docs/releasing.md` for information on how releases are managed.
 
 Releases are automated via GitHub Actions when changes are merged to `main` with a version bump.
 
+### Required Secrets for Maintainers
+
+The repository requires the following secrets to be configured:
+- **`RUBYGEMS_API_KEY`**: Required for automated gem publishing to RubyGems
+- **`CODECOV_TOKEN`**: Optional, for uploading code coverage reports to Codecov
+
 ## Questions?
 
 Feel free to open an issue for questions or discussion.
