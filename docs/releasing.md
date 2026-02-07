@@ -16,10 +16,10 @@ The gem is automatically published to RubyGems when changes are merged to `main`
 
 3. **Create a PR and get it merged**
    - The CI workflow will run tests automatically on the PR
-   - Once merged to `main`, the publish workflow will:
+   - Once merged to `main`, after CI passes, the publish workflow will:
      - Check if the version already exists on RubyGems
      - Build and publish the gem (if it's a new version)
-     - Create a Git tag for the release
+     - Create a Git tag for the release (if it doesn't already exist)
 
 ### Requirements
 
@@ -60,5 +60,6 @@ gem push "admin_suite-X.Y.Z.gem"
 
 - RubyGems commonly requires MFA/OTP for pushes (this gem is configured with `rubygems_mfa_required`)
 - The automated workflow uses a GitHub Actions bot to push tags
+- The publish workflow only runs after the CI workflow completes successfully
 - You can manually trigger the publish workflow from the GitHub Actions tab if needed
 
