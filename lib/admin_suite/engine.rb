@@ -24,11 +24,14 @@ module AdminSuite
       #
       # To avoid production eager-load `Zeitwerk::NameError`s, we ignore these
       # directories for Zeitwerk and load definition files ourselves (via globs).
+      #
+      # However, we do NOT ignore `app/admin/base` because host apps typically use
+      # it for real constant definitions (e.g., shared base classes) that follow
+      # Zeitwerk conventions, and Zeitwerk can autoload them properly.
       host_ignore_dirs = [
         Rails.root.join("app/admin_suite"),
         Rails.root.join("app/admin/resources"),
-        Rails.root.join("app/admin/actions"),
-        Rails.root.join("app/admin/base")
+        Rails.root.join("app/admin/actions")
       ]
 
       # `app/admin/portals` may contain DSL-only portal dashboards (no constants).
