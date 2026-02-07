@@ -147,19 +147,18 @@ module AdminSuite
       app_root = Pathname.new(@temp_dir)
       loader, ignored_dirs = create_tracked_loader
 
-      # Capture original binread method before stubbing
-      original_binread = File.method(:binread)
-
-      # Stub File.binread to raise an error using Minitest's stub method
-      stub_binread = lambda do |path|
+      # Temporarily override File.binread to simulate read errors
+      original_binread = File.singleton_class.instance_method(:binread)
+      
+      File.singleton_class.define_method(:binread) do |path|
         if path == test_file
           raise StandardError, "Simulated read error"
         else
-          original_binread.call(path)
+          original_binread.bind(File).call(path)
         end
       end
 
-      File.stub(:binread, stub_binread) do
+      begin
         # Simulate the initializer logic
         simulate_zeitwerk_integration(app_root, loader)
 
@@ -167,6 +166,9 @@ module AdminSuite
         unexpected_path = app_root.join("app/admin/portals").to_s
         assert_not_includes ignored_dirs, unexpected_path,
                             "Expected app/admin/portals to NOT be ignored when file read fails"
+      ensure
+        # Restore original method
+        File.singleton_class.define_method(:binread, original_binread)
       end
     end
   end

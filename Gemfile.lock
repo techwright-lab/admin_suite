@@ -227,8 +227,8 @@ PLATFORMS
   aarch64-linux-gnu
   arm64-darwin-24
   arm64-darwin-25
-  x86_64-linux-gnu
   x86_64-linux
+  x86_64-linux-gnu
 
 DEPENDENCIES
   admin_suite!
