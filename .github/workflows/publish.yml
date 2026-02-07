@@ -1,13 +1,17 @@
 name: Publish Gem
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: write
     
@@ -27,7 +31,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
       
-      - name: Check if version changed
+      - name: Check if version exists on RubyGems
         id: version_check
         run: |
           # Get current version from the gemspec
@@ -52,17 +56,28 @@ jobs:
         env:
           GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
         run: |
+          # Setup credentials file and ensure cleanup on exit
           mkdir -p ~/.gem
+          trap 'rm -f ~/.gem/credentials' EXIT
+          
           cat << EOF > ~/.gem/credentials
           ---
           :rubygems_api_key: ${GEM_HOST_API_KEY}
           EOF
           chmod 0600 ~/.gem/credentials
+          
           gem push admin_suite-${{ steps.version_check.outputs.current_version }}.gem
-          rm -f ~/.gem/credentials
       
       - name: Create Git tag
         if: steps.version_check.outputs.version_exists == 'false'
         run: |
-          git tag -a "v${{ steps.version_check.outputs.current_version }}" -m "Release v${{ steps.version_check.outputs.current_version }}"
-          git push origin "v${{ steps.version_check.outputs.current_version }}"
+          TAG="v${{ steps.version_check.outputs.current_version }}"
+          
+          # Check if tag already exists
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping tag creation"
+          else
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+            echo "Created and pushed tag $TAG"
+          fi
