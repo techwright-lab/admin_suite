@@ -4,27 +4,27 @@
 #
 # The app/admin directory contains:
 # - base/      -> Admin::Base::*
-# - portals/   -> Admin::Portals::*
+# - portals/   -> AdminSuite portal DSL files (not constants)
 # - resources/ -> Admin::Resources::*
 #
 # We configure Zeitwerk to treat app/admin as mapping to the Admin:: namespace
 
 # Define the Admin module before configuring Zeitwerk
-module Admin
-  module Base; end
-  module Resources; end
-  module Portals; end
-end
+# module Admin
+#   module Base; end
+#   module Resources; end
+#   module Portals; end
+# end
 
-Rails.autoloaders.main.push_dir(
-  Rails.root.join("app/admin"),
-  namespace: Admin
-)
+# Rails.autoloaders.main.push_dir(
+#   Rails.root.join("app/admin"),
+#   namespace: Admin
+# )
 
-# Eager load the base resource class after Rails initializes
-Rails.application.config.after_initialize do
-  require "admin/base/resource"
-  require "admin/base/filter_builder"
-  require "admin/base/action_executor"
-  require "admin/base/action_handler"
-end
+# # Eager load the base resource class after Rails initializes
+# Rails.application.config.after_initialize do
+#   require "admin/base/resource"
+#   require "admin/base/filter_builder"
+#   require "admin/base/action_executor"
+#   require "admin/base/action_handler"
+# end

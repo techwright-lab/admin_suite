@@ -191,7 +191,7 @@ gem "friendly_id"
 gem "pagy", "~> 9.0"
 
 # Internal admin suite engine (local path during extraction)
-gem "admin_suite", "~> 0.1.2"
+gem "admin_suite", "~> 0.2.0"
 
 # Blog: tags, markdown, SEO meta, newsletter
 gem "acts-as-taggable-on"

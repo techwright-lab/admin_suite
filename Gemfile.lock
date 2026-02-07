@@ -83,7 +83,7 @@ GEM
       zeitwerk (>= 2.4, < 3.0)
     addressable (2.8.8)
       public_suffix (>= 2.0.2, < 8.0)
-    admin_suite (0.1.2)
+    admin_suite (0.2.0)
       lucide-rails (~> 0.7)
       pagy (>= 6.0, < 11.0)
       rails (>= 8.0, < 9.0)
@@ -872,7 +872,7 @@ PLATFORMS
 DEPENDENCIES
   aasm
   acts-as-taggable-on
-  admin_suite (~> 0.1.2)
+  admin_suite (~> 0.2.0)
   after_commit_everywhere (~> 1.0)
   anthropic
   awesome_print

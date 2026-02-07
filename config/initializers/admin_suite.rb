@@ -47,8 +47,7 @@ AdminSuite.configure do |config|
 
   # Portal dashboard DSL globs.
   #
-  # Note: this app already uses `app/admin/portals` for the legacy portal system,
-  # so AdminSuite dashboards live under `app/admin_suite/portals`.
+  # These files define AdminSuite portal dashboards via `AdminSuite.portal`.
   config.portal_globs = [
     Rails.root.join("app/admin/portals/*.rb").to_s
   ]
