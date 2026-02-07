@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = [ "TechWright Labs" ]
   spec.email = [ "engineering@techwright.io" ]
 
-  spec.summary = "Reusable admin suite engine for Gleania products."
+  spec.summary = "Reusable admin suite engine"
   spec.description = "A Rails engine providing a declarative resource DSL and a Hotwire/Tailwind admin UI."
   # TODO: set to the new GitHub repo URL before publishing.
   spec.homepage = "https://github.com/techwright-lab/admin_suite"
@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
       "docs/**/*",
       "lib/**/*",
       "test/**/*",
+      "config/**/*",
       "CHANGELOG.md",
       "Gemfile",
       "Rakefile",
