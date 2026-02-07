@@ -14,14 +14,37 @@ module AdminSuite
     end
 
     initializer "admin_suite.host_dsl_ignore" do
-      # Host apps sometimes store AdminSuite DSL files under `app/admin_suite/**`.
-      # Those are not constant definitions, so we must prevent Zeitwerk from
-      # expecting constants like `Portals::Ai` during eager load.
-      host_dsl_dir = Rails.root.join("app/admin_suite")
-      next unless host_dsl_dir.exist?
+      # Host apps sometimes store AdminSuite DSL files under `app/admin_suite/**`
+      # and/or `app/admin/portals/**`.
+      #
+      # These are *side-effect* DSL files (e.g. `AdminSuite.portal :ops do ... end`),
+      # not constant definitions. If a host app adds those dirs to Zeitwerk (common
+      # when autoloading `app/admin` as `Admin::*`), eager loading will crash with:
+      #   expected file ... to define constant ...
+      #
+      # So we proactively ignore these directories for all Zeitwerk loaders.
+      host_dsl_dirs = [Rails.root.join("app/admin_suite")]
+
+      # `app/admin/portals` is a more common location in host apps and could also
+      # contain real constants. Only ignore it if it appears to contain AdminSuite
+      # portal DSL definitions.
+      host_admin_portals_dir = Rails.root.join("app/admin/portals")
+      if host_admin_portals_dir.exist?
+        portal_files = Dir[host_admin_portals_dir.join("*.rb").to_s]
+        contains_admin_suite_portals =
+          portal_files.any? do |file|
+            File.read(file).include?("AdminSuite.portal")
+          rescue StandardError
+            false
+          end
+
+        host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
+      end
 
       Rails.autoloaders.each do |loader|
-        loader.ignore(host_dsl_dir)
+        host_dsl_dirs.each do |dir|
+          loader.ignore(dir) if dir.exist?
+        end
       end
     end
 
