@@ -158,8 +158,8 @@ module Admin
 
         ActionExecutor.handlers_loaded = false
 
-        # This should not raise an error even when file has syntax error
-        assert_nothing_raised do
+        # In test, we fail fast so syntax errors in handler files are discoverable.
+        assert_raises(SyntaxError) do
           executor.send(:load_action_handlers_for_admin_suite!)
         end
 

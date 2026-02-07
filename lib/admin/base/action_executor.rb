@@ -185,20 +185,39 @@ module Admin
           return
         end
 
-        begin
-          if Rails.env.development?
-            files.each { |file| load file }
-          else
-            files.each { |file| require file }
-          end
+        files.each do |file|
+          begin
+            if Rails.env.development?
+              load file
+            else
+              require file
+            end
+          rescue StandardError, ScriptError => e
+            log_action_handler_load_error(file, e)
 
-          # Only set the flag after successful loading
-          self.class.handlers_loaded = true
-        rescue StandardError, ScriptError
-          # Best-effort only; caller will surface "No handler found..." on failure.
-          # Don't set handlers_loaded on error so loading can be retried.
-          nil
+            # Fail fast in dev/test so broken handler files are immediately discoverable.
+            raise if Rails.env.development? || Rails.env.test?
+          end
         end
+
+        # We attempted to load the configured handlers. Avoid repeating expensive globs
+        # and file loads for the rest of the process lifetime.
+        self.class.handlers_loaded = true
+      end
+
+      def log_action_handler_load_error(file, error)
+        message = "[AdminSuite] Failed to load action handler file #{file}: #{error.class}: #{error.message}"
+
+        if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
+          Rails.logger.error(message)
+
+          backtrace = Array(error.backtrace).take(20).join("\n")
+          Rails.logger.error(backtrace) unless backtrace.empty?
+        else
+          warn(message)
+        end
+      rescue StandardError
+        nil
       end
     end
   end
