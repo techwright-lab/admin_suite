@@ -18,18 +18,7 @@ module Internal
       #
       # Shows the developer login page with TechWright SSO button
       def new
-        redirect_to internal_developer_root_path if developer_authenticated?
-      end
-
-      # GET /internal
-      #
-      # Redirects to developer portal if signed in, otherwise to login
-      def redirect_root
-        if developer_authenticated?
-          redirect_to internal_developer_root_path
-        else
-          redirect_to internal_developer_login_path
-        end
+        redirect_to main_app.internal_developer_path if developer_authenticated?
       end
 
       # GET /auth/failure (for TechWright)
@@ -65,7 +54,7 @@ module Internal
         developer.record_login!(ip_address: request.remote_ip)
         session[:developer_id] = developer.id
 
-        redirect_to internal_developer_root_path,
+        redirect_to main_app.internal_developer_path,
           notice: "Welcome, #{developer.name || developer.email}!"
       end
 

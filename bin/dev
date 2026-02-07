@@ -5,6 +5,12 @@ if ! gem list foreman -i --silent; then
   gem install foreman
 fi
 
+# Use Gemfile.dev for local engine development when present.
+# This must be exported before Rails boots (config/boot.rb sets BUNDLE_GEMFILE otherwise).
+if [ -z "${BUNDLE_GEMFILE:-}" ] && [ -f "Gemfile.dev" ]; then
+  export BUNDLE_GEMFILE="Gemfile.dev"
+fi
+
 # Default to port 3000 if not specified
 export PORT="${PORT:-3000}"
 

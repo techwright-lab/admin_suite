@@ -6,21 +6,34 @@
 # framework is extracted into a gem/engine. Keeping it in-app first makes the
 # extraction a mechanical move.
 AdminSuite.configure do |config|
-  # Auth is enforced by the host app controllers today (e.g. Internal::Developer::BaseController).
-  # When running inside an engine, the engine controllers will call this hook.
-  config.authenticate = nil
+  # TechWright SSO: require developer session for all AdminSuite (engine) access.
+  config.authenticate = lambda do |controller|
+    authenticated =
+      if controller.respond_to?(:developer_authenticated?, true)
+        controller.send(:developer_authenticated?)
+      else
+        false
+      end
 
-  # Actor for auditing/actions/authorization.
-  #
-  # For now we prefer the authenticated User (when present) and fall back to
-  # the developer SSO identity for internal tools.
+    next if authenticated
+
+    controller.redirect_to controller.main_app.internal_developer_login_path
+  end
+
+  # Actor for auditing/actions/authorization (developer when using AdminSuite).
   config.current_actor = lambda do |controller|
     Current.user.presence ||
-      (controller.respond_to?(:current_developer) ? controller.current_developer : nil)
+      (controller.respond_to?(:current_developer, true) ? controller.send(:current_developer) : nil)
   end
 
   # Optional authorization hook. Host apps can wire Pundit/CanCan/ActionPolicy here.
   config.authorize = nil
+
+  # Sign-out link in the top bar (TechWright developer logout).
+  # Set when the gem supports it (e.g. local gems/admin_suite with logout_path).
+  if config.respond_to?(:logout_path=)
+    config.logout_path = ->(view) { view.main_app.internal_developer_logout_path }
+  end
 
   # Resource definition file globs (host app can override).
   config.resource_globs = [
@@ -37,7 +50,7 @@ AdminSuite.configure do |config|
   # Note: this app already uses `app/admin/portals` for the legacy portal system,
   # so AdminSuite dashboards live under `app/admin_suite/portals`.
   config.portal_globs = [
-    Rails.root.join("app/admin_suite/portals/*.rb").to_s
+    Rails.root.join("app/admin/portals/*.rb").to_s
   ]
 
   config.portals = {

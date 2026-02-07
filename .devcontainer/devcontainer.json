@@ -33,5 +33,7 @@
 
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "bin/setup --skip-server"
+  "postCreateCommand": "bin/setup --skip-server && (test -d gems/admin_suite && bundle config local.admin_suite ./gems/admin_suite || true)",
+
+  "postStartCommand": "bundle config local.admin_suite ./gems/admin_suite || true"
 }

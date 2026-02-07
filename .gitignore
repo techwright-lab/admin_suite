@@ -46,4 +46,8 @@
 !/config/credentials/*.yml.enc
 !/config/credentials.example.yml
 
+/gems
 /gems/*
+
+Gemfile.dev
+Gemfile.dev.lock

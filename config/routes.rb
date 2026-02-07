@@ -55,8 +55,8 @@ Rails.application.routes.draw do
   # Require developer authentication via TechWright SSO
   # =================================================================
 
-  # Redirect /internal to developer portal or login
-  get "/internal", to: "internal/developer/sessions#redirect_root"
+  # Redirect /internal to developer login
+  get "/internal", to: redirect("/internal/developer/login")
 
   namespace :internal do
     # Mission Control Jobs - protected by developer authentication
@@ -71,13 +71,11 @@ Rails.application.routes.draw do
     mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
   end
 
-  # AdminSuite engine (gem extraction validation)
-  mount AdminSuite::Engine, at: "/internal/admin_suite"
-
   # =================================================================
   # Draw Routes from Separate Files
   # =================================================================
-  draw :developer  # Admin framework at /internal/developer
+  draw :developer  # Login, logout, OAuth callback
+  mount AdminSuite::Engine, at: "/internal/developer", as: "internal_developer"
   draw :public
   draw :auth
   draw :webhooks
