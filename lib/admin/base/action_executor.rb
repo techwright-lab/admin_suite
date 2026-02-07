@@ -174,6 +174,7 @@ module Admin
 
         # Track whether we've already loaded handlers to avoid expensive repeated globs.
         # In development, this flag is reset by the Rails reloader (see engine.rb).
+        # In production/test, it persists for the process lifetime.
         return if self.class.handlers_loaded
 
         files = Array(AdminSuite.config.action_globs).flat_map { |g| Dir[g] }.uniq

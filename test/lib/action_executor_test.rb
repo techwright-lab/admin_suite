@@ -140,6 +140,33 @@ module Admin
           executor.send(:load_action_handlers_for_admin_suite!)
         end
       end
+
+      test "load_action_handlers_for_admin_suite does not set flag when file loading fails" do
+        # Create a temporary action handler file with invalid Ruby
+        actions_dir = File.join(@temp_dir, "actions")
+        FileUtils.mkdir_p(actions_dir)
+        File.write(
+          File.join(actions_dir, "bad_action.rb"),
+          "this is not valid ruby syntax @#$%"
+        )
+
+        # Configure AdminSuite to look in our temp directory
+        AdminSuite.config.action_globs = [File.join(actions_dir, "*.rb")]
+
+        resource_class = Struct.new(:resource_name).new("test")
+        executor = ActionExecutor.new(resource_class, :test, nil)
+        
+        ActionExecutor.handlers_loaded = false
+
+        # This should not raise an error even when file has syntax error
+        assert_nothing_raised do
+          executor.send(:load_action_handlers_for_admin_suite!)
+        end
+
+        # Flag should remain false when loading fails, allowing retry
+        assert_not ActionExecutor.handlers_loaded, 
+                   "Expected handlers_loaded to remain false when file loading fails"
+      end
     end
   end
 end
