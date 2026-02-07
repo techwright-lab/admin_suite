@@ -33,7 +33,9 @@ module AdminSuite
         portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
         contains_admin_suite_portals =
           portal_files.any? do |file|
-            File.read(file).include?("AdminSuite.portal")
+            content = File.binread(file)
+            content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+            content.include?("AdminSuite.portal")
           rescue StandardError
             false
           end
