@@ -42,14 +42,16 @@ These are the defaults in `AdminSuite::Configuration` / `AdminSuite::Engine`:
 
 Note: AdminSuite definition files (resources, actions, portals) often don't follow 
 Zeitwerk's path-to-constant naming conventions. To prevent eager-load `Zeitwerk::NameError`s 
-in production, the engine ignores these directories for Zeitwerk and loads them via globs instead:
-- `app/admin/resources`
-- `app/admin/actions`
-- `app/admin/base`
-- `app/admin/portals` (when portal DSL usage is detected)
+in production, the engine only configures Zeitwerk to ignore these directories and load them via globs instead:
 - `app/admin_suite`
+- `app/admin/portals` (when portal DSL usage is detected)
 
-We recommend placing definition files under `config/admin_suite/*` or `app/admin_suite/*` 
+Other `app/admin/*` directories (such as `app/admin/resources`, `app/admin/actions`, and `app/admin/base`) are
+not ignored by default and may be treated as normal Zeitwerk autoload paths if they are added to the loader
+(for example, via `loader.push_dir("app/admin")` in the host app). Do not rely on these directories being
+ignored for autoloading; instead, keep files there Zeitwerk-compatible.
+
+We recommend placing non-Zeitwerk-compatible definition files under `config/admin_suite/*` or `app/admin_suite/*` 
 for clearer separation from standard Rails autoloading.
 - `portals`: default portal metadata for `:ops`, `:email`, `:ai`, `:assistant`
 - `custom_renderers`: `{}`
