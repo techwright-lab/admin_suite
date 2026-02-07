@@ -8,6 +8,7 @@ Thank you for your interest in contributing to AdminSuite!
 2. Clone your fork locally
 3. Install dependencies: `bundle install`
 4. Run the test suite: `bundle exec rake test`
+5. (Optional) Run tests with coverage: `COVERAGE=true bundle exec rake test`
 
 ## Development
 
@@ -28,6 +29,7 @@ See `docs/development.md` for detailed information on:
 
 All pull requests must pass the following checks before merging:
 - **Tests**: Automated test suite runs on Ruby 3.2 and 3.3
+- **Coverage**: Code coverage is automatically generated and uploaded to Codecov
 - **Code Review**: At least one maintainer approval required
 
 The CI workflow runs automatically on every pull request.
@@ -42,7 +44,7 @@ Releases are automated via GitHub Actions when changes are merged to `main` with
 
 The repository requires the following secrets to be configured:
 - **`RUBYGEMS_API_KEY`**: Required for automated gem publishing to RubyGems
-- **`CODECOV_TOKEN`**: Optional, for uploading code coverage reports to Codecov
+- **`CODECOV_TOKEN`**: Required for uploading code coverage reports to Codecov
 
 ## Questions?
 

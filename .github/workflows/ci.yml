@@ -26,4 +26,16 @@ jobs:
           bundler-cache: true
       
       - name: Run tests
+        env:
+          COVERAGE: true
         run: bundle exec rake test
+      
+      - name: Upload coverage reports
+        if: matrix.ruby-version == '3.3'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/.resultset.json
+          flags: unittests
+          name: codecov-umbrella
+        continue-on-error: true
