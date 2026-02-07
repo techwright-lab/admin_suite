@@ -64,6 +64,17 @@ module AdminSuite
       require "admin/base/action_handler"
     end
 
+    initializer "admin_suite.reloader" do |app|
+      # Reset the handlers_loaded flag in development so handlers are reloaded
+      # when code changes. This ensures the expensive glob operation happens at
+      # most once per request (or code reload) rather than on every NameError.
+      if Rails.env.development?
+        app.reloader.to_prepare do
+          Admin::Base::ActionExecutor.handlers_loaded = false
+        end
+      end
+    end
+
     initializer "admin_suite.watchable_dirs" do |app|
       next unless Rails.env.development?
 
