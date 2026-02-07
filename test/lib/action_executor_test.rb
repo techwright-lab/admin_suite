@@ -75,12 +75,12 @@ module Admin
         # Set the flag to true to simulate already loaded
         ActionExecutor.handlers_loaded = true
 
-        # Mock Dir.glob to verify it's not called
+        # Mock Dir[] to verify it's not called
         glob_called = false
-        Dir.singleton_class.define_method(:original_glob) { |*args| Dir.glob(*args) }
+        original_bracket = Dir.method(:[])
         Dir.define_singleton_method(:[]) do |pattern|
-          glob_called = true if pattern == File.join(actions_dir, "*.rb")
-          Dir.original_glob(pattern)
+          glob_called = true
+          original_bracket.call(pattern)
         end
 
         begin
@@ -88,11 +88,10 @@ module Admin
           executor.send(:load_action_handlers_for_admin_suite!)
 
           # Verify glob was not called because handlers were already loaded
-          assert_not glob_called, "Expected glob to not be called when handlers_loaded is true"
+          assert_not glob_called, "Expected Dir[] to not be called when handlers_loaded is true"
         ensure
           # Restore Dir.[] method
-          Dir.singleton_class.remove_method(:[])
-          Dir.singleton_class.remove_method(:original_glob)
+          Dir.define_singleton_method(:[], original_bracket)
         end
       end
 
@@ -123,8 +122,8 @@ module Admin
           executor.send(:load_action_handlers_for_admin_suite!)
         end
 
-        # Flag should not be set when no files are loaded
-        assert_not ActionExecutor.handlers_loaded, "Expected handlers_loaded to remain false when no files exist"
+        # Flag should be set even when no files exist to avoid repeated expensive globs
+        assert ActionExecutor.handlers_loaded, "Expected handlers_loaded to be true even when no files exist"
       end
 
       test "load_action_handlers_for_admin_suite handles errors gracefully" do
