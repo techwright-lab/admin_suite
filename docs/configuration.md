@@ -40,10 +40,17 @@ These are the defaults in `AdminSuite::Configuration` / `AdminSuite::Engine`:
   - `Rails.root/app/admin/portals/*.rb`
   - `Rails.root/app/admin_suite/portals/*.rb`
 
-Note: portal files are DSL side-effects (they don't define constants). AdminSuite
-ignores `app/admin/portals` for Zeitwerk when it detects portal DSL usage, to prevent
-eager-load `Zeitwerk::NameError`s. We recommend placing portal DSL files under
-`config/admin_suite/portals` or `app/admin_suite/portals` when possible.
+Note: AdminSuite definition files (resources, actions, portals) often don't follow 
+Zeitwerk's path-to-constant naming conventions. To prevent eager-load `Zeitwerk::NameError`s 
+in production, the engine ignores these directories for Zeitwerk and loads them via globs instead:
+- `app/admin/resources`
+- `app/admin/actions`
+- `app/admin/base`
+- `app/admin/portals` (when portal DSL usage is detected)
+- `app/admin_suite`
+
+We recommend placing definition files under `config/admin_suite/*` or `app/admin_suite/*` 
+for clearer separation from standard Rails autoloading.
 - `portals`: default portal metadata for `:ops`, `:email`, `:ai`, `:assistant`
 - `custom_renderers`: `{}`
 - `icon_renderer`: `nil` (uses lucide-rails by default when available)
@@ -94,6 +101,20 @@ Example:
 ```ruby
 config.resource_globs = [
   Rails.root.join("app/admin/resources/**/*.rb").to_s
+]
+```
+
+### `action_globs`
+
+Where AdminSuite should load action handler files from (files that define custom action handlers, typically subclasses of `Admin::Base::ActionHandler`).
+
+- **Type**: `Array<String>`
+
+Example:
+
+```ruby
+config.action_globs = [
+  Rails.root.join("app/admin/actions/**/*.rb").to_s
 ]
 ```
 
