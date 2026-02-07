@@ -20,6 +20,14 @@ AdminSuite.configure do |config|
     Rails.root.join("app/admin/resources/*.rb").to_s
   ]
 
+  # Action handler file globs (host app can override).
+  #
+  # Files typically define `Admin::Actions::<Resource><Action>Action` handlers.
+  config.action_globs = [
+    Rails.root.join("config/admin_suite/actions/*.rb").to_s,
+    Rails.root.join("app/admin/actions/*.rb").to_s
+  ]
+
   # Portal dashboard DSL globs (host app can override).
   # Files typically call `AdminSuite.portal :ops do ... end`
   config.portal_globs = [

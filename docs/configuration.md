@@ -32,16 +32,27 @@ These are the defaults in `AdminSuite::Configuration` / `AdminSuite::Engine`:
 - `resource_globs`: defaults to:
   - `Rails.root/config/admin_suite/resources/*.rb`
   - `Rails.root/app/admin/resources/*.rb`
+- `action_globs`: defaults to:
+  - `Rails.root/config/admin_suite/actions/*.rb`
+  - `Rails.root/app/admin/actions/*.rb`
 - `portal_globs`: defaults to:
   - `Rails.root/config/admin_suite/portals/*.rb`
   - `Rails.root/app/admin/portals/*.rb`
   - `Rails.root/app/admin_suite/portals/*.rb`
 
-Note: portal files are DSL side-effects (they don't define constants). If your host app
-autoloads `app/admin` as `Admin::*` with Zeitwerk, AdminSuite will ignore
-`app/admin/portals` for Zeitwerk to prevent eager-load `Zeitwerk::NameError`s.
-We recommend placing portal DSL files under `config/admin_suite/portals` or
-`app/admin_suite/portals` when possible.
+Note: AdminSuite definition files (resources, actions, portals) often don't follow 
+Zeitwerk's path-to-constant naming conventions. To prevent eager-load `Zeitwerk::NameError`s 
+in production, the engine only configures Zeitwerk to ignore these directories and load them via globs instead:
+- `app/admin_suite`
+- `app/admin/portals` (when portal DSL usage is detected)
+
+Other `app/admin/*` directories (such as `app/admin/resources`, `app/admin/actions`, and `app/admin/base`) are
+not ignored by default and may be treated as normal Zeitwerk autoload paths if they are added to the loader
+(for example, via `loader.push_dir("app/admin")` in the host app). Do not rely on these directories being
+ignored for autoloading; instead, keep files there Zeitwerk-compatible.
+
+We recommend placing non-Zeitwerk-compatible definition files under `config/admin_suite/*` or `app/admin_suite/*` 
+for clearer separation from standard Rails autoloading.
 - `portals`: default portal metadata for `:ops`, `:email`, `:ai`, `:assistant`
 - `custom_renderers`: `{}`
 - `icon_renderer`: `nil` (uses lucide-rails by default when available)
@@ -92,6 +103,20 @@ Example:
 ```ruby
 config.resource_globs = [
   Rails.root.join("app/admin/resources/**/*.rb").to_s
+]
+```
+
+### `action_globs`
+
+Where AdminSuite should load action handler files from (files that define custom action handlers, typically subclasses of `Admin::Base::ActionHandler`).
+
+- **Type**: `Array<String>`
+
+Example:
+
+```ruby
+config.action_globs = [
+  Rails.root.join("app/admin/actions/**/*.rb").to_s
 ]
 ```
 

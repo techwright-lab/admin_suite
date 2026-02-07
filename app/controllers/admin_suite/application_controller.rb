@@ -35,12 +35,11 @@ module AdminSuite
       nil
     end
 
-    # Loads resource definition files in development when needed.
+    # Loads resource definition files when needed (runs in all environments).
     #
     # @return [void]
     def ensure_resources_loaded!
       require "admin/base/resource" unless defined?(Admin::Base::Resource)
-      return unless Rails.env.development?
       return if Admin::Base::Resource.registered_resources.any?
 
       Array(AdminSuite.config.resource_globs).flat_map { |g| Dir[g] }.uniq.each do |file|

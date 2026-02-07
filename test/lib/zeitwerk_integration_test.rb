@@ -17,34 +17,55 @@ module AdminSuite
     def create_tracked_loader
       loader = Zeitwerk::Loader.new
       ignored_dirs = []
+      pushed_dirs = []
 
       loader.define_singleton_method(:ignore) do |path|
         ignored_dirs << path.to_s
       end
 
-      [loader, ignored_dirs]
+      loader.define_singleton_method(:push_dir) do |path, namespace:|
+        pushed_dirs << { path: path.to_s, namespace: namespace }
+      end
+
+      [loader, ignored_dirs, pushed_dirs]
     end
 
     # Helper method that simulates the Zeitwerk integration logic from engine.rb
     def simulate_zeitwerk_integration(app_root, loader)
-      host_dsl_dirs = [app_root.join("app/admin_suite")]
-      host_admin_portals_dir = app_root.join("app/admin/portals")
+      admin_suite_app_dir = app_root.join("app/admin_suite")
+      admin_dir = app_root.join("app/admin")
+      admin_portals_dir = app_root.join("app/admin/portals")
 
-      if host_admin_portals_dir.exist?
-        portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
-        contains_admin_suite_portals =
-          portal_files.any? do |file|
+      # Map app/admin -> Admin namespace if files define Admin::* constants.
+      if admin_dir.exist?
+        rb_files = Dir[admin_dir.join("**/*.rb").to_s]
+        rb_files.reject! { |f| f.include?("/portals/") }
+
+        host_uses_admin_namespace =
+          rb_files.any? do |file|
             content = File.binread(file).encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            content.include?("AdminSuite.portal")
+            content.match?(/\b(module|class)\s+Admin\b/) || content.match?(/\b(module|class)\s+Admin::/)
           rescue StandardError
             false
           end
 
-        host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
+        loader.push_dir(admin_dir, namespace: Admin) if host_uses_admin_namespace
       end
 
-      host_dsl_dirs.each do |dir|
-        loader.ignore(dir) if dir.exist?
+      loader.ignore(admin_suite_app_dir) if admin_suite_app_dir.exist?
+
+      # Ignore portal DSL files (side-effect DSL, not constants).
+      if admin_portals_dir.exist?
+        portal_files = Dir[admin_portals_dir.join("**/*.rb").to_s]
+        contains_admin_suite_portals =
+          portal_files.any? do |file|
+            content = File.binread(file).encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+            content.match?(/(::)?AdminSuite\s*\.\s*portal\b/)
+          rescue StandardError
+            false
+          end
+
+        loader.ignore(admin_portals_dir) if contains_admin_suite_portals
       end
     end
 
@@ -59,7 +80,7 @@ module AdminSuite
 
       # Create loader and simulate initializer logic
       app_root = Pathname.new(@temp_dir)
-      loader, ignored_dirs = create_tracked_loader
+      loader, ignored_dirs, _pushed_dirs = create_tracked_loader
       simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin/portals was ignored
@@ -79,7 +100,7 @@ module AdminSuite
 
       # Create loader and simulate initializer logic
       app_root = Pathname.new(@temp_dir)
-      loader, ignored_dirs = create_tracked_loader
+      loader, ignored_dirs, _pushed_dirs = create_tracked_loader
       simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin/portals was NOT ignored
@@ -99,7 +120,7 @@ module AdminSuite
 
       # Create loader and simulate initializer logic
       app_root = Pathname.new(@temp_dir)
-      loader, ignored_dirs = create_tracked_loader
+      loader, ignored_dirs, _pushed_dirs = create_tracked_loader
       simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin_suite was ignored
@@ -127,7 +148,7 @@ module AdminSuite
 
       # Create loader and simulate initializer logic
       app_root = Pathname.new(@temp_dir)
-      loader, ignored_dirs = create_tracked_loader
+      loader, ignored_dirs, _pushed_dirs = create_tracked_loader
       simulate_zeitwerk_integration(app_root, loader)
 
       # Verify that app/admin/portals was ignored due to presence of portal DSL
@@ -145,7 +166,7 @@ module AdminSuite
 
       # Create loader
       app_root = Pathname.new(@temp_dir)
-      loader, ignored_dirs = create_tracked_loader
+      loader, ignored_dirs, _pushed_dirs = create_tracked_loader
 
       # Temporarily override File.binread to simulate read errors
       original_binread = File.singleton_class.instance_method(:binread)
@@ -170,6 +191,38 @@ module AdminSuite
         # Restore original method
         File.singleton_class.define_method(:binread, original_binread)
       end
+    end
+
+    test "maps app/admin to Admin namespace when files define Admin constants" do
+      resources_dir = File.join(@temp_dir, "app", "admin", "resources")
+      FileUtils.mkdir_p(resources_dir)
+      File.write(
+        File.join(resources_dir, "user_resource.rb"),
+        "module Admin\n  module Resources\n    class UserResource; end\n  end\nend\n"
+      )
+
+      app_root = Pathname.new(@temp_dir)
+      loader, _ignored_dirs, pushed_dirs = create_tracked_loader
+      simulate_zeitwerk_integration(app_root, loader)
+
+      assert pushed_dirs.any? { |h| h[:path] == app_root.join("app/admin").to_s && h[:namespace] == Admin },
+             "Expected app/admin to be pushed with namespace Admin when files define Admin::* constants"
+    end
+
+    test "does not map app/admin when it contains only top-level constants" do
+      resources_dir = File.join(@temp_dir, "app", "admin", "resources")
+      FileUtils.mkdir_p(resources_dir)
+      File.write(
+        File.join(resources_dir, "user_resource.rb"),
+        "module Resources\n  class UserResource; end\nend\n"
+      )
+
+      app_root = Pathname.new(@temp_dir)
+      loader, _ignored_dirs, pushed_dirs = create_tracked_loader
+      simulate_zeitwerk_integration(app_root, loader)
+
+      assert pushed_dirs.none? { |h| h[:path] == app_root.join("app/admin").to_s },
+             "Expected app/admin to NOT be pushed when files contain only top-level constants"
     end
   end
 end

@@ -12,6 +12,13 @@ module Admin
         def failure? = !success
       end
 
+      # Track whether action handlers have been loaded to avoid repeated expensive globs
+      @handlers_loaded = false
+
+      class << self
+        attr_accessor :handlers_loaded
+      end
+
       def initialize(resource_class, action_name, actor)
         @resource_class = resource_class
         @action_name = action_name
@@ -117,6 +124,17 @@ module Admin
         end
 
         handler_name = "#{resource_class.resource_name.camelize}#{action.name.to_s.camelize}Action"
+        handler_constant = "Admin::Actions::#{handler_name}"
+        handler_constant.constantize
+      rescue NameError
+        # In many host apps, action handlers live under `app/admin/actions/**`.
+        # Rails treats `app/admin` as a Zeitwerk root, which means Zeitwerk expects
+        # top-level constants (e.g. `Actions::Foo`) unless the host configures
+        # a namespace mapping. AdminSuite avoids requiring host Zeitwerk setup by
+        # loading handler files via `AdminSuite.config.action_globs` when needed.
+        load_action_handlers_for_admin_suite!
+
+        handler_name = "#{resource_class.resource_name.camelize}#{action.name.to_s.camelize}Action"
         "Admin::Actions::#{handler_name}".constantize
       rescue NameError
         nil
@@ -147,6 +165,57 @@ module Admin
           params: params,
           result: result
         )
+      rescue StandardError
+        nil
+      end
+
+      def load_action_handlers_for_admin_suite!
+        return unless defined?(AdminSuite)
+
+        # Track whether we've already loaded handlers to avoid expensive repeated globs.
+        # In development, this flag is reset by the Rails reloader (see engine.rb).
+        # In production/test, it persists for the process lifetime.
+        return if self.class.handlers_loaded
+
+        files = Array(AdminSuite.config.action_globs).flat_map { |g| Dir[g] }.uniq
+
+        # Set the flag even if no files found - we've done the glob and shouldn't repeat it
+        if files.empty?
+          self.class.handlers_loaded = true
+          return
+        end
+
+        files.each do |file|
+          begin
+            if Rails.env.development?
+              load file
+            else
+              require file
+            end
+          rescue StandardError, ScriptError => e
+            log_action_handler_load_error(file, e)
+
+            # Fail fast in dev/test so broken handler files are immediately discoverable.
+            raise if Rails.env.development? || Rails.env.test?
+          end
+        end
+
+        # We attempted to load the configured handlers. Avoid repeating expensive globs
+        # and file loads for the rest of the process lifetime.
+        self.class.handlers_loaded = true
+      end
+
+      def log_action_handler_load_error(file, error)
+        message = "[AdminSuite] Failed to load action handler file #{file}: #{error.class}: #{error.message}"
+
+        if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
+          Rails.logger.error(message)
+
+          backtrace = Array(error.backtrace).take(20).join("\n")
+          Rails.logger.error(backtrace) unless backtrace.empty?
+        else
+          warn(message)
+        end
       rescue StandardError
         nil
       end

@@ -7,6 +7,7 @@ module AdminSuite
       :current_actor,
       :authorize,
       :resource_globs,
+      :action_globs,
       :portal_globs,
       :portals,
       :custom_renderers,
@@ -25,6 +26,7 @@ module AdminSuite
       @current_actor = nil
       @authorize = nil
       @resource_globs = []
+      @action_globs = []
       @portal_globs = []
       @portals = {}
       @custom_renderers = {}

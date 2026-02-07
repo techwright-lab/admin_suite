@@ -13,41 +13,65 @@ module AdminSuite
       end
     end
 
-    initializer "admin_suite.host_dsl_ignore" do
-      # Host apps sometimes store AdminSuite DSL files under `app/admin_suite/**`
-      # and/or `app/admin/portals/**`.
+    initializer "admin_suite.host_dsl_ignore", before: :setup_main_autoloader do |app|
+      # Host apps may store AdminSuite DSL files under `app/admin_suite/**` and
+      # `app/admin/portals/**`.
       #
-      # These are *side-effect* DSL files (e.g. `AdminSuite.portal :ops do ... end`),
-      # not constant definitions. If a host app adds those dirs to Zeitwerk (common
-      # when autoloading `app/admin` as `Admin::*`), eager loading will crash with:
-      #   expected file ... to define constant ...
-      #
-      # So we proactively ignore these directories for all Zeitwerk loaders.
-      host_dsl_dirs = [ Rails.root.join("app/admin_suite") ]
+      # These are side-effect DSL files (they do not define constants), so Zeitwerk
+      # must ignore them to avoid eager-load `Zeitwerk::NameError`s in production.
 
-      # `app/admin/portals` is a more common location in host apps and could also
-      # contain real constants. Only ignore it if it appears to contain AdminSuite
-      # portal DSL definitions.
-      host_admin_portals_dir = Rails.root.join("app/admin/portals")
-      if host_admin_portals_dir.exist?
-        portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
-        contains_admin_suite_portals =
-          portal_files.any? do |file|
-            content = File.binread(file)
-            content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            portal_dsl_pattern = /(::)?AdminSuite\s*\.\s*portal\b/
-            portal_dsl_pattern.match?(content)
-          rescue StandardError
-            false
-          end
+      admin_suite_app_dir = Rails.root.join("app/admin_suite")
+      admin_dir = Rails.root.join("app/admin")
+      admin_portals_dir = Rails.root.join("app/admin/portals")
 
-        host_dsl_dirs << host_admin_portals_dir if contains_admin_suite_portals
+      # If the host uses `Admin::*` constants inside `app/admin/**`, Rails' default
+      # autoload root (`app/admin`) would expect top-level constants like
+      # `Resources::UserResource`. We fix that by mapping `app/admin` to `Admin`.
+      # This avoids requiring host apps to add their own Zeitwerk initializer.
+      if admin_dir.exist? && self.class.host_admin_namespace_files?(admin_dir)
+        admin_dir_s = admin_dir.to_s
+        app.config.autoload_paths.delete(admin_dir_s)
+        app.config.eager_load_paths.delete(admin_dir_s)
+
+        # Ensure `Admin` exists so Zeitwerk can use it as a namespace.
+        module ::Admin; end
+
+        Rails.autoloaders.main.push_dir(admin_dir, namespace: ::Admin)
       end
 
       Rails.autoloaders.each do |loader|
-        host_dsl_dirs.each do |dir|
-          loader.ignore(dir) if dir.exist?
-        end
+        loader.ignore(admin_suite_app_dir) if admin_suite_app_dir.exist?
+
+        next unless admin_portals_dir.exist?
+
+        loader.ignore(admin_portals_dir) if self.class.contains_admin_suite_portal_dsl?(admin_portals_dir)
+      end
+    end
+
+    def self.host_admin_namespace_files?(admin_dir)
+      # True if any file under app/admin appears to define `Admin::*` constants.
+      Dir[admin_dir.join("**/*.rb").to_s].any? do |file|
+        next false if file.include?("/portals/")
+
+        content = File.binread(file)
+        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+
+        content.match?(/\b(module|class)\s+Admin\b/) ||
+          content.match?(/\b(module|class)\s+Admin::/)
+      rescue StandardError
+        false
+      end
+    end
+
+    def self.contains_admin_suite_portal_dsl?(admin_portals_dir)
+      portal_files = Dir[admin_portals_dir.join("**/*.rb").to_s]
+      portal_files.any? do |file|
+        content = File.binread(file)
+        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+        portal_dsl_pattern = /(::)?AdminSuite\s*\.\s*portal\b/
+        portal_dsl_pattern.match?(content)
+      rescue StandardError
+        false
       end
     end
 
@@ -57,6 +81,17 @@ module AdminSuite
       require "admin/base/filter_builder"
       require "admin/base/action_executor"
       require "admin/base/action_handler"
+    end
+
+    initializer "admin_suite.reloader" do |app|
+      # Reset the handlers_loaded flag in development so handlers are reloaded
+      # when code changes. This ensures the expensive glob operation happens at
+      # most once per request (or code reload) rather than on every NameError.
+      if Rails.env.development?
+        app.reloader.to_prepare do
+          Admin::Base::ActionExecutor.handlers_loaded = false
+        end
+      end
     end
 
     initializer "admin_suite.watchable_dirs" do |app|
@@ -88,6 +123,13 @@ module AdminSuite
           config.resource_globs = [
             Rails.root.join("config/admin_suite/resources/*.rb").to_s,
             Rails.root.join("app/admin/resources/*.rb").to_s
+          ]
+        end
+
+        if config.action_globs.blank?
+          config.action_globs = [
+            Rails.root.join("config/admin_suite/actions/*.rb").to_s,
+            Rails.root.join("app/admin/actions/*.rb").to_s
           ]
         end
 
