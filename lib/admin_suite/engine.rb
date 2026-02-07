@@ -23,7 +23,7 @@ module AdminSuite
       #   expected file ... to define constant ...
       #
       # So we proactively ignore these directories for all Zeitwerk loaders.
-      host_dsl_dirs = [Rails.root.join("app/admin_suite")]
+      host_dsl_dirs = [ Rails.root.join("app/admin_suite") ]
 
       # `app/admin/portals` is a more common location in host apps and could also
       # contain real constants. Only ignore it if it appears to contain AdminSuite
