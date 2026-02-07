@@ -44,7 +44,7 @@ Releases are automated via GitHub Actions when changes are merged to `main` with
 
 The repository requires the following secrets to be configured:
 - **`RUBYGEMS_API_KEY`**: Required for automated gem publishing to RubyGems
-- **`CODECOV_TOKEN`**: Required for uploading code coverage reports to Codecov
+- **`CODECOV_TOKEN`**: Optional, for uploading code coverage reports to Codecov (workflow continues without it)
 
 ## Questions?
 
