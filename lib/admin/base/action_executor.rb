@@ -12,6 +12,13 @@ module Admin
         def failure? = !success
       end
 
+      # Track whether action handlers have been loaded to avoid repeated expensive globs
+      @handlers_loaded = false
+
+      class << self
+        attr_accessor :handlers_loaded
+      end
+
       def initialize(resource_class, action_name, actor)
         @resource_class = resource_class
         @action_name = action_name
@@ -165,17 +172,33 @@ module Admin
       def load_action_handlers_for_admin_suite!
         return unless defined?(AdminSuite)
 
-        files = Array(AdminSuite.config.action_globs).flat_map { |g| Dir[g] }.uniq
-        return if files.empty?
+        # Track whether we've already loaded handlers to avoid expensive repeated globs.
+        # In development, this flag is reset by the Rails reloader (see engine.rb).
+        # In production/test, it persists for the process lifetime.
+        return if self.class.handlers_loaded
 
-        if Rails.env.development?
-          files.each { |file| load file }
-        else
-          files.each { |file| require file }
+        files = Array(AdminSuite.config.action_globs).flat_map { |g| Dir[g] }.uniq
+        
+        # Set the flag even if no files found - we've done the glob and shouldn't repeat it
+        if files.empty?
+          self.class.handlers_loaded = true
+          return
         end
-      rescue StandardError
-        # Best-effort only; caller will surface "No handler found..." on failure.
-        nil
+
+        begin
+          if Rails.env.development?
+            files.each { |file| load file }
+          else
+            files.each { |file| require file }
+          end
+          
+          # Only set the flag after successful loading
+          self.class.handlers_loaded = true
+        rescue StandardError
+          # Best-effort only; caller will surface "No handler found..." on failure.
+          # Don't set handlers_loaded on error so loading can be retried.
+          nil
+        end
       end
     end
   end
