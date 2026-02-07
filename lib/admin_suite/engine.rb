@@ -30,7 +30,7 @@ module AdminSuite
       # portal DSL definitions.
       host_admin_portals_dir = Rails.root.join("app/admin/portals")
       if host_admin_portals_dir.exist?
-        portal_files = Dir[host_admin_portals_dir.join("*.rb").to_s]
+        portal_files = Dir[host_admin_portals_dir.join("**/*.rb").to_s]
         contains_admin_suite_portals =
           portal_files.any? do |file|
             File.read(file).include?("AdminSuite.portal")
