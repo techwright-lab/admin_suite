@@ -35,7 +35,8 @@ module AdminSuite
           portal_files.any? do |file|
             content = File.binread(file)
             content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            content.include?("AdminSuite.portal")
+            portal_dsl_pattern = /(::)?AdminSuite\s*\.\s*portal\b/
+            portal_dsl_pattern.match?(content)
           rescue StandardError
             false
           end
