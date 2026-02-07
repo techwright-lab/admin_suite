@@ -26,7 +26,9 @@ AdminSuite.configure do |config|
     Rails.root.join("config/admin_suite/portals/*.rb").to_s,
     # Prefer `app/admin_suite/portals` for DSL files so Zeitwerk never expects
     # constants like `Admin::Portals::Ops` during eager load.
-    Rails.root.join("app/admin_suite/portals/*.rb").to_s
+    Rails.root.join("app/admin_suite/portals/*.rb").to_s,
+    # Legacy/fallback: still support portals defined under app/admin/portals.
+    Rails.root.join("app/admin/portals/*.rb").to_s
   ]
 
   # Portal metadata (host app can override).
