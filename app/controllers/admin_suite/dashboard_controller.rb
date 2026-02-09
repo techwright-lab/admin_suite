@@ -43,8 +43,9 @@ module AdminSuite
     end
 
     def resolve_root_dashboard_rows(items)
-      configured_rows = AdminSuite.root_dashboard_definition&.rows
-      return configured_rows if configured_rows.present?
+      definition = AdminSuite.root_dashboard_definition
+      configured_rows = definition&.rows
+      return configured_rows unless configured_rows.nil?
 
       build_default_root_dashboard_rows(items)
     end
