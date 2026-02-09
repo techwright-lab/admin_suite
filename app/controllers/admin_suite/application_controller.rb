@@ -80,17 +80,21 @@ module AdminSuite
     #
     # @return [void]
     def ensure_root_dashboard_loaded!
-      globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
-
       if Rails.env.development?
+        globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
         # Re-evaluate dashboard layout on each request in development.
         # Always reset, even when no files match, so removed dashboards are cleared.
         AdminSuite.reset_root_dashboard!
         globs.each { |file| load file }
       else
-        return if globs.empty?
         # In non-dev, load once.
         return if AdminSuite.config.root_dashboard_loaded
+        globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
+        if globs.empty?
+          # Avoid hitting the filesystem on every request when no dashboard files exist.
+          AdminSuite.config.root_dashboard_loaded = true
+          return
+        end
         globs.each { |file| require file }
         AdminSuite.config.root_dashboard_loaded = true
       end
