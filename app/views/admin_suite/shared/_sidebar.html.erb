@@ -2,8 +2,7 @@
 
 <% sorted_portals = navigation_items.sort_by { |(_key, meta)| (meta[:order] || 100).to_i } %>
 
-<aside class="admin-suite-sidebar flex flex-col w-72 h-full"
-       style="background: linear-gradient(to bottom, var(--admin-suite-sidebar-from, #312e81), var(--admin-suite-sidebar-via, #3730a3), var(--admin-suite-sidebar-to, #581c87));">
+<aside class="admin-suite-sidebar flex flex-col w-72 h-full">
   <!-- Header -->
   <div class="flex items-center justify-between h-16 px-4 border-b border-white/10">
     <%= link_to root_path, class: "flex items-center gap-3" do %>

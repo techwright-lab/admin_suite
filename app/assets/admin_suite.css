@@ -341,6 +341,11 @@ body.admin-suite .admin-suite-desktop-sidebar {
   flex-shrink: 0;
 }
 
+/* Prevent flex children from overflowing (required for nested tables). */
+body.admin-suite .admin-suite-main {
+  min-width: 0;
+}
+
 @media (min-width: 1024px) {
   body.admin-suite .admin-suite-desktop-sidebar {
     display: flex;

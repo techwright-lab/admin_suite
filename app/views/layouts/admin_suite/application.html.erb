@@ -41,7 +41,7 @@
   <body class="admin-suite bg-slate-50">
     <div class="flex h-screen overflow-hidden" data-controller="admin-suite--sidebar">
       <!-- Sidebar -->
-      <div class="admin-suite-desktop-sidebar lg:flex lg:flex-shrink-0" style="flex-shrink: 0;">
+      <div class="admin-suite-desktop-sidebar lg:flex lg:flex-shrink-0">
         <%= render "admin_suite/shared/sidebar" %>
       </div>
 
@@ -58,7 +58,7 @@
       </div>
 
       <!-- Main content area -->
-      <div class="flex flex-col flex-1 overflow-hidden" style="min-width: 0;">
+      <div class="admin-suite-main flex flex-col flex-1 overflow-hidden">
         <!-- Top bar -->
         <%= render "admin_suite/shared/topbar" %>
 
