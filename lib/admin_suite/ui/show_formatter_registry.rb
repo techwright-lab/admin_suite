@@ -40,7 +40,7 @@ end
 AdminSuite::UI::ShowFormatterRegistry.register_class(TrueClass) do |_value, view, _record, _field|
   view.content_tag(:span, class: "inline-flex items-center gap-1") do
     view.concat(view.admin_suite_icon("check-circle-2", class: "w-4 h-4 text-green-500"))
-    view.concat(view.content_tag(:span, "Yes", class: "text-green-600 dark:text-green-400 font-medium"))
+    view.concat(view.content_tag(:span, "Yes", class: "text-green-600 font-medium"))
   end
 end
 
@@ -54,14 +54,14 @@ end
 AdminSuite::UI::ShowFormatterRegistry.register_class(Time) do |value, view, _record, _field|
   view.content_tag(:span, class: "inline-flex items-center gap-2") do
     view.concat(view.content_tag(:span, value.strftime("%B %d, %Y at %H:%M"), class: "font-medium"))
-    view.concat(view.content_tag(:span, "(#{view.time_ago_in_words(value)} ago)", class: "text-slate-500 dark:text-slate-400 text-xs"))
+    view.concat(view.content_tag(:span, "(#{view.time_ago_in_words(value)} ago)", class: "text-slate-500 text-xs"))
   end
 end
 
 AdminSuite::UI::ShowFormatterRegistry.register_class(DateTime) do |value, view, _record, _field|
   view.content_tag(:span, class: "inline-flex items-center gap-2") do
     view.concat(view.content_tag(:span, value.strftime("%B %d, %Y at %H:%M"), class: "font-medium"))
-    view.concat(view.content_tag(:span, "(#{view.time_ago_in_words(value)} ago)", class: "text-slate-500 dark:text-slate-400 text-xs"))
+    view.concat(view.content_tag(:span, "(#{view.time_ago_in_words(value)} ago)", class: "text-slate-500 text-xs"))
   end
 end
 
@@ -72,7 +72,7 @@ end
 if defined?(ActiveRecord::Base)
   AdminSuite::UI::ShowFormatterRegistry.register_class(ActiveRecord::Base) do |value, view, _record, _field|
     link_text = value.respond_to?(:name) ? value.name : "#{value.class.name} ##{value.id}"
-    view.content_tag(:span, link_text, class: "text-indigo-600 dark:text-indigo-400")
+    view.content_tag(:span, link_text, class: "text-indigo-600")
   end
 end
 
@@ -88,7 +88,7 @@ AdminSuite::UI::ShowFormatterRegistry.register_class(Array) do |value, view, _re
   else
     view.content_tag(:div, class: "flex flex-wrap gap-1") do
       value.each do |item|
-        view.concat(view.content_tag(:span, item.to_s, class: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"))
+        view.concat(view.content_tag(:span, item.to_s, class: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"))
       end
     end
   end

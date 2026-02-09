@@ -18,9 +18,9 @@
 
 <div data-controller="admin-suite--json-editor">
   <% if field.help.present? %>
-    <p class="text-sm text-slate-500 dark:text-slate-400 mb-2"><%= field.help %></p>
+    <p class="text-sm text-slate-500 mb-2"><%= field.help %></p>
   <% else %>
-    <p class="text-sm text-slate-500 dark:text-slate-400 mb-2">Enter valid JSON. Use the Format button to pretty-print.</p>
+    <p class="text-sm text-slate-500 mb-2">Enter valid JSON. Use the Format button to pretty-print.</p>
   <% end %>
 
   <div class="relative">
@@ -38,7 +38,7 @@
       <button
         type="button"
         data-action="click->admin-suite--json-editor#format"
-        class="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+        class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
       >
         Format JSON
       </button>
@@ -47,6 +47,6 @@
 
   <div
     data-admin-suite--json-editor-target="error"
-    class="hidden mt-2 text-sm text-red-600 dark:text-red-400"
+    class="hidden mt-2 text-sm text-red-600"
   ></div>
 </div>

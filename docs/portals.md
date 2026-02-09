@@ -96,3 +96,45 @@ Example:
 - `/internal/admin/ops`
 - `/internal/admin/ai`
 
+## Root dashboard (`AdminSuite.root_dashboard`)
+
+The engine root (`/`, relative to the mount path) renders a default dashboard (portal cards + basic stats).
+
+To customize it, create a dashboard definition file (loaded from `AdminSuite.config.dashboard_globs`, which defaults to paths like `config/admin_suite/dashboard.rb` and `app/admin_suite/dashboard.rb`):
+
+```ruby
+# config/admin_suite/dashboard.rb
+AdminSuite.configure do |config|
+  config.root_dashboard_title = "Developer Portal"
+  config.root_dashboard_description = "Internal tools for managing application resources."
+end
+
+AdminSuite.root_dashboard do
+  row do
+    cards_panel "Portals",
+      span: 12,
+      variant: :portals,
+      resources: ->(view) do
+        view.navigation_items
+          .sort_by { |(_k, meta)| (meta[:order] || 100).to_i }
+          .map do |portal_key, portal|
+            {
+              key: portal_key,
+              label: portal[:label] || portal_key.to_s.humanize,
+              description: portal[:description],
+              color: view.portal_color(portal_key),
+              icon: portal[:icon],
+              path: view.portal_path(portal: portal_key),
+              count: (portal[:sections] || {}).values.sum { |s| Array(s[:items]).size }
+            }
+          end
+      end
+  end
+
+  row do
+    stat_panel "Portals", ->(view) { view.navigation_items.keys.count }, span: 6, variant: :mini, color: :slate
+    stat_panel "Resources", -> { Admin::Base::Resource.registered_resources.count }, span: 6, variant: :mini, color: :slate
+  end
+end
+```
+

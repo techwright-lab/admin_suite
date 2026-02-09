@@ -56,12 +56,12 @@
     <% end %>
   <% end %>
 
-  <div class="flex flex-col lg:flex-row gap-6">
+  <div class="admin-suite-two-col flex flex-col md:flex-row gap-6">
     <!-- Filters Sidebar -->
     <% if resource_config.index_config&.filters_list&.any? || resource_config.index_config&.searchable_fields&.any? %>
-      <div class="lg:w-64 flex-shrink-0">
+      <div class="admin-suite-two-col__sidebar admin-suite-two-col__sidebar--filters md:w-64 flex-shrink-0">
         <div class="bg-white rounded-xl border border-slate-200 p-4">
-          <h3 class="font-medium text-slate-900 dark:text-white mb-4">Filters</h3>
+          <h3 class="font-medium text-slate-900 mb-4">Filters</h3>
           <%= form_with url: url_for(action: :index), method: :get,
               data: {
                 turbo_frame: "resource_results",
@@ -136,7 +136,7 @@
     <% end %>
 
     <!-- Main Content -->
-    <div class="flex-1">
+    <div class="flex-1 min-w-0">
       <%= turbo_frame_tag "resource_results", data: { turbo_action: "advance" } do %>
         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <% if @collection.any? %>
@@ -216,25 +216,25 @@
 
           <!-- Pagination -->
           <% if @pagy.pages > 1 %>
-            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+            <div class="px-6 py-4 border-t border-slate-200">
               <div class="flex items-center justify-between">
-                <div class="text-sm text-slate-500 dark:text-slate-400">
-                  Showing <span class="font-medium text-slate-700 dark:text-slate-300"><%= @pagy.from %></span> to
-                  <span class="font-medium text-slate-700 dark:text-slate-300"><%= @pagy.to %></span> of
-                  <span class="font-medium text-slate-700 dark:text-slate-300"><%= number_with_delimiter(@pagy.count) %></span> results
+                <div class="text-sm text-slate-500">
+                  Showing <span class="font-medium text-slate-700"><%= @pagy.from %></span> to
+                  <span class="font-medium text-slate-700"><%= @pagy.to %></span> of
+                  <span class="font-medium text-slate-700"><%= number_with_delimiter(@pagy.count) %></span> results
                 </div>
 
                 <nav class="flex items-center gap-1">
                   <% if @pagy.prev %>
                     <%= link_to url_for(params.permit!.merge(page: @pagy.prev)),
-                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors" do %>
+                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors" do %>
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                       </svg>
                       Prev
                     <% end %>
                   <% else %>
-                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                       </svg>
@@ -245,10 +245,10 @@
                   <div class="hidden sm:flex items-center gap-1 mx-2">
                     <% @pagy.series.each do |item| %>
                       <% if item == :gap %>
-                        <span class="px-2 py-1 text-sm text-slate-400 dark:text-slate-500">…</span>
+                        <span class="px-2 py-1 text-sm text-slate-400">…</span>
                       <% elsif item.is_a?(Integer) %>
                         <%= link_to item, url_for(params.permit!.merge(page: item)),
-                            class: "px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors" %>
+                            class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors" %>
                       <% elsif item.is_a?(String) %>
                         <span class="px-3 py-1.5 text-sm font-medium text-white rounded-lg" style="background: var(--admin-suite-primary); border: 1px solid var(--admin-suite-primary);">
                           <%= item %>
@@ -257,20 +257,20 @@
                     <% end %>
                   </div>
 
-                  <span class="sm:hidden px-3 py-1.5 text-sm text-slate-500 dark:text-slate-400">
+                  <span class="sm:hidden px-3 py-1.5 text-sm text-slate-500">
                     Page <%= @pagy.page %> of <%= @pagy.pages %>
                   </span>
 
                   <% if @pagy.next %>
                     <%= link_to url_for(params.permit!.merge(page: @pagy.next)),
-                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors" do %>
+                        class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors" do %>
                       Next
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                       </svg>
                     <% end %>
                   <% else %>
-                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed">
                       Next
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -281,22 +281,22 @@
               </div>
             </div>
           <% else %>
-            <div class="px-6 py-3 border-t border-slate-200 dark:border-slate-700">
-              <div class="text-sm text-slate-500 dark:text-slate-400">
-                Showing <span class="font-medium text-slate-700 dark:text-slate-300"><%= @pagy.count %></span> results
+            <div class="px-6 py-3 border-t border-slate-200">
+              <div class="text-sm text-slate-500">
+                Showing <span class="font-medium text-slate-700"><%= @pagy.count %></span> results
               </div>
             </div>
           <% end %>
         <% else %>
           <div class="p-12 text-center">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-900 mb-4">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-4">
               <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
               </svg>
             </div>
-            <h3 class="text-lg font-medium text-slate-900 dark:text-white">No <%= resource_config.human_name_plural.downcase %> found</h3>
+            <h3 class="text-lg font-medium text-slate-900">No <%= resource_config.human_name_plural.downcase %> found</h3>
             <% if has_new_route %>
-              <p class="text-slate-500 dark:text-slate-400 mt-1">Get started by creating your first one.</p>
+              <p class="text-slate-500 mt-1">Get started by creating your first one.</p>
               <%= link_to url_for(action: :new),
                   class: theme_btn_primary_class + " mt-4",
                   data: { turbo_frame: "_top" } do %>
@@ -304,7 +304,7 @@
                 New <%= resource_config.human_name %>
               <% end %>
             <% else %>
-              <p class="text-slate-500 dark:text-slate-400 mt-1">No records have been created yet.</p>
+              <p class="text-slate-500 mt-1">No records have been created yet.</p>
             <% end %>
           </div>
         <% end %>

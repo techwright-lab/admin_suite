@@ -75,11 +75,11 @@ AdminSuite::UI::FieldRendererRegistry.register(:attachment) do |view, f, field, 
 end
 
 AdminSuite::UI::FieldRendererRegistry.register(:trix) do |_view, f, field, resource, _field_class|
-  f.rich_text_area(field.name, class: "prose dark:prose-invert max-w-none")
+  f.rich_text_area(field.name, class: "prose max-w-none")
 end
 
 AdminSuite::UI::FieldRendererRegistry.register(:rich_text) do |_view, f, field, resource, _field_class|
-  f.rich_text_area(field.name, class: "prose dark:prose-invert max-w-none")
+  f.rich_text_area(field.name, class: "prose max-w-none")
 end
 
 AdminSuite::UI::FieldRendererRegistry.register(:markdown) do |_view, f, field, resource, field_class|

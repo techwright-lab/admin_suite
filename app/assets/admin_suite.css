@@ -9,6 +9,7 @@
  */
 
 body.admin-suite {
+  color-scheme: light;
   --admin-suite-bg: #f8fafc; /* slate-50 */
   --admin-suite-fg: #0f172a; /* slate-900 */
   --admin-suite-muted: #475569; /* slate-600 */
@@ -263,6 +264,128 @@ body.admin-suite .admin-suite-sidebar a:hover {
 
 body.admin-suite .admin-suite-sidebar .admin-suite-sidebar-muted {
   color: rgba(255, 255, 255, 0.75);
+}
+
+/* Responsive layout fallbacks (engine-owned)
+   ----------------------------------------
+   Tailwind v4 emits media queries like `@media (width >= 64rem)`, which can fail
+   in some embedded/older browsers. For critical layout, we provide classic
+   `min-width` media queries so the UI remains usable everywhere. */
+
+/* Dashboard row grid (>= 1024px)
+   Used by `render_dashboard_rows` to honor panel `span`. */
+body.admin-suite .admin-suite-dashboard-row {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem; /* ~ gap-6 */
+}
+
+@media (min-width: 1024px) {
+  body.admin-suite .admin-suite-dashboard-row {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+}
+
+/* Cards panel grids (portals/resources) */
+body.admin-suite .admin-suite-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+body.admin-suite .admin-suite-cards-grid--portals {
+  gap: 1rem; /* ~ gap-4 */
+}
+
+body.admin-suite .admin-suite-cards-grid--resources {
+  gap: 0.75rem; /* ~ gap-3 */
+}
+
+@media (min-width: 640px) {
+  body.admin-suite .admin-suite-cards-grid--resources {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* sm:grid-cols-2 */
+  }
+}
+
+@media (min-width: 768px) {
+  body.admin-suite .admin-suite-cards-grid--portals {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* md:grid-cols-2 */
+  }
+}
+
+@media (min-width: 1024px) {
+  body.admin-suite .admin-suite-cards-grid--portals {
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* lg:grid-cols-4 */
+  }
+
+  body.admin-suite .admin-suite-cards-grid--resources {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* lg:grid-cols-3 */
+  }
+}
+
+/* Portal fallback sections grid (>= 1024px) */
+body.admin-suite .admin-suite-portal-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem; /* ~ gap-6 */
+}
+
+@media (min-width: 1024px) {
+  body.admin-suite .admin-suite-portal-sections-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Desktop sidebar visibility (>= 1024px) */
+body.admin-suite .admin-suite-desktop-sidebar {
+  display: none;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+  body.admin-suite .admin-suite-desktop-sidebar {
+    display: flex;
+  }
+
+  /* Ensure the mobile menu button/overlay never show on desktop */
+  body.admin-suite .admin-suite-mobile-menu-button {
+    display: none;
+  }
+
+  body.admin-suite .admin-suite-mobile-overlay,
+  body.admin-suite .admin-suite-mobile-sidebar {
+    display: none !important;
+  }
+}
+
+/* Two-column resource layouts */
+body.admin-suite .admin-suite-two-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* ~ gap-6 */
+}
+
+@media (min-width: 768px) {
+  body.admin-suite .admin-suite-two-col {
+    flex-direction: row;
+  }
+
+  body.admin-suite .admin-suite-two-col__sidebar {
+    flex: 0 0 auto;
+  }
+
+  body.admin-suite .admin-suite-two-col__sidebar--filters {
+    width: 16rem; /* ~ w-64 */
+  }
+
+  body.admin-suite .admin-suite-two-col__sidebar--details {
+    width: 20rem; /* ~ w-80 */
+  }
+}
+
+/* Ensure the engine sidebar has a stable width even without Tailwind. */
+body.admin-suite .admin-suite-sidebar {
+  width: 18rem; /* ~ w-72 */
+  height: 100%;
 }
 
 .form-group { margin-bottom: 1rem; }

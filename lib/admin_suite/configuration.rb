@@ -9,6 +9,7 @@ module AdminSuite
       :resource_globs,
       :action_globs,
       :portal_globs,
+      :dashboard_globs,
       :portals,
       :custom_renderers,
       :icon_renderer,
@@ -18,6 +19,10 @@ module AdminSuite
       :theme,
       :host_stylesheet,
       :tailwind_cdn,
+      :root_dashboard_title,
+      :root_dashboard_description,
+      :root_dashboard_definition,
+      :root_dashboard_loaded,
       :on_action_executed,
       :resolve_action_handler
 
@@ -28,6 +33,7 @@ module AdminSuite
       @resource_globs = []
       @action_globs = []
       @portal_globs = []
+      @dashboard_globs = []
       @portals = {}
       @custom_renderers = {}
       @icon_renderer = nil
@@ -37,6 +43,10 @@ module AdminSuite
       @theme = { primary: :indigo, secondary: :purple }
       @host_stylesheet = nil
       @tailwind_cdn = true
+      @root_dashboard_title = nil
+      @root_dashboard_description = nil
+      @root_dashboard_definition = nil
+      @root_dashboard_loaded = false
       @on_action_executed = nil
       @resolve_action_handler = nil
     end

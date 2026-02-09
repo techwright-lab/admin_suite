@@ -35,7 +35,7 @@
     <%= render_dashboard_rows(@dashboard_rows) %>
   <% else %>
     <!-- Sections (fallback) -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="admin-suite-portal-sections-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
       <% @sections.each do |_section_key, section| %>
         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">

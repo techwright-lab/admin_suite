@@ -105,7 +105,7 @@ export default class extends Controller {
   renderDropdown() {
     if (!this.filteredOptions.length) {
       this.dropdownTarget.innerHTML = `
-        <div class="px-3 py-2 text-sm text-slate-400 dark:text-slate-500">No results found</div>
+        <div class="px-3 py-2 text-sm text-slate-400">No results found</div>
       `
       return
     }
@@ -114,7 +114,7 @@ export default class extends Controller {
       .map(
         (opt, index) => `
       <button type="button"
-              class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${index === this.selectedIndex ? "bg-slate-100 dark:bg-slate-700" : ""} ${opt.isNew ? "text-indigo-600 dark:text-indigo-400 font-medium" : "text-slate-700 dark:text-slate-200"}"
+              class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100 ${index === this.selectedIndex ? "bg-slate-100" : ""} ${opt.isNew ? "text-indigo-600 font-medium" : "text-slate-700"}"
               data-action="click->admin-suite--searchable-select#select"
               data-value="${opt.value}"
               data-label="${opt.label}">

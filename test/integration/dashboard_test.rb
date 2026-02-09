@@ -7,7 +7,7 @@ module AdminSuite
     test "GET /internal/admin_suite renders dashboard" do
       get "/internal/admin_suite"
       assert_response :success
-      assert_includes response.body, "Developer Portal"
+      assert_includes response.body, "Admin Suite"
     end
   end
 end

@@ -7,35 +7,35 @@
 
 <% color_classes = case color
   when :green
-    { bg: "bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20",
-      border: "border border-green-200 dark:border-green-800/50",
-      text: "text-green-700 dark:text-green-400",
-      label: "text-green-600 dark:text-green-500" }
+    { bg: "bg-gradient-to-br from-green-50 to-green-100",
+      border: "border border-green-200",
+      text: "text-green-700",
+      label: "text-green-600" }
   when :red
-    { bg: "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20",
-      border: "border border-red-200 dark:border-red-800/50",
-      text: "text-red-700 dark:text-red-400",
-      label: "text-red-600 dark:text-red-500" }
+    { bg: "bg-gradient-to-br from-red-50 to-red-100",
+      border: "border border-red-200",
+      text: "text-red-700",
+      label: "text-red-600" }
   when :amber
-    { bg: "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20",
-      border: "border border-amber-200 dark:border-amber-800/50",
-      text: "text-amber-700 dark:text-amber-400",
-      label: "text-amber-600 dark:text-amber-500" }
+    { bg: "bg-gradient-to-br from-amber-50 to-amber-100",
+      border: "border border-amber-200",
+      text: "text-amber-700",
+      label: "text-amber-600" }
   when :cyan
-    { bg: "bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20",
-      border: "border border-cyan-200 dark:border-cyan-800/50",
-      text: "text-cyan-700 dark:text-cyan-400",
-      label: "text-cyan-600 dark:text-cyan-500" }
+    { bg: "bg-gradient-to-br from-cyan-50 to-cyan-100",
+      border: "border border-cyan-200",
+      text: "text-cyan-700",
+      label: "text-cyan-600" }
   when :violet
-    { bg: "bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20",
-      border: "border border-violet-200 dark:border-violet-800/50",
-      text: "text-violet-700 dark:text-violet-400",
-      label: "text-violet-600 dark:text-violet-500" }
+    { bg: "bg-gradient-to-br from-violet-50 to-violet-100",
+      border: "border border-violet-200",
+      text: "text-violet-700",
+      label: "text-violet-600" }
   else
-    { bg: "bg-white dark:bg-slate-800",
-      border: "border border-slate-200 dark:border-slate-700",
-      text: "text-slate-900 dark:text-white",
-      label: "text-slate-500 dark:text-slate-400" }
+    { bg: "bg-white",
+      border: "border border-slate-200",
+      text: "text-slate-900",
+      label: "text-slate-500" }
 end %>
 
 <% if variant == :mini %>

@@ -52,19 +52,19 @@ export default class extends Controller {
   onDragOver(event) {
     event.preventDefault()
     event.stopPropagation()
-    this.dropZoneElement.classList.add("border-amber-500", "bg-amber-50", "dark:bg-amber-900/10")
+    this.dropZoneElement.classList.add("border-amber-500", "bg-amber-50")
   }
 
   onDragLeave(event) {
     event.preventDefault()
     event.stopPropagation()
-    this.dropZoneElement.classList.remove("border-amber-500", "bg-amber-50", "dark:bg-amber-900/10")
+    this.dropZoneElement.classList.remove("border-amber-500", "bg-amber-50")
   }
 
   onDrop(event) {
     event.preventDefault()
     event.stopPropagation()
-    this.dropZoneElement.classList.remove("border-amber-500", "bg-amber-50", "dark:bg-amber-900/10")
+    this.dropZoneElement.classList.remove("border-amber-500", "bg-amber-50")
 
     const files = event.dataTransfer.files
     if (files.length > 0) {
@@ -141,8 +141,8 @@ export default class extends Controller {
         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
-        <span class="font-medium text-slate-900 dark:text-white">${fileName}</span>
-        <span class="text-slate-500 dark:text-slate-400">(${fileSize})</span>
+        <span class="font-medium text-slate-900">${fileName}</span>
+        <span class="text-slate-500">(${fileSize})</span>
       </div>
     `
   }
@@ -173,7 +173,7 @@ export default class extends Controller {
     if (!this.hasFilenameTarget) return
 
     this.filenameTarget.innerHTML = `
-      <div class="flex items-center gap-2 text-red-600 dark:text-red-400">
+      <div class="flex items-center gap-2 text-red-600">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
@@ -191,10 +191,10 @@ export default class extends Controller {
 
     this.progressTarget.classList.remove("hidden")
     this.progressTarget.innerHTML = `
-      <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+      <div class="w-full bg-slate-200 rounded-full h-2">
         <div class="bg-amber-500 h-2 rounded-full transition-all duration-300" style="width: ${percent}%"></div>
       </div>
-      <span class="text-xs text-slate-500 dark:text-slate-400">${percent}%</span>
+      <span class="text-xs text-slate-500">${percent}%</span>
     `
   }
 
@@ -211,7 +211,7 @@ export default class extends Controller {
 
     if (this.hasFilenameTarget) {
       this.filenameTarget.innerHTML = `
-        <span class="text-slate-500 dark:text-slate-400">No file selected</span>
+        <span class="text-slate-500">No file selected</span>
       `
     }
 

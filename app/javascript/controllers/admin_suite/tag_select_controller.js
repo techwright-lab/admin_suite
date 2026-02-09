@@ -118,7 +118,7 @@ export default class extends Controller {
 
     const tagEl = document.createElement("span")
     tagEl.className =
-      "inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded text-sm"
+      "inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm"
     tagEl.innerHTML = `
       ${this.escapeHtml(value)}
       <input type="hidden" name="${this.getFieldName()}" value="${this.escapeHtml(value)}">

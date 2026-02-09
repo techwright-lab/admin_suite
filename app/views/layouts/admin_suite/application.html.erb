@@ -41,24 +41,24 @@
   <body class="admin-suite bg-slate-50">
     <div class="flex h-screen overflow-hidden" data-controller="admin-suite--sidebar">
       <!-- Sidebar -->
-      <div class="hidden lg:flex lg:flex-shrink-0">
+      <div class="admin-suite-desktop-sidebar lg:flex lg:flex-shrink-0" style="flex-shrink: 0;">
         <%= render "admin_suite/shared/sidebar" %>
       </div>
 
       <!-- Mobile sidebar overlay -->
       <div data-admin-suite--sidebar-target="overlay"
-           class="hidden fixed inset-0 z-40 bg-slate-600 bg-opacity-75 lg:hidden"
+           class="admin-suite-mobile-overlay hidden fixed inset-0 z-40 bg-slate-600 bg-opacity-75 lg:hidden"
            data-action="click->admin-suite--sidebar#close">
       </div>
 
       <!-- Mobile sidebar -->
       <div data-admin-suite--sidebar-target="mobileSidebar"
-           class="hidden fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out lg:hidden">
+           class="admin-suite-mobile-sidebar hidden fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out lg:hidden">
         <%= render "admin_suite/shared/sidebar" %>
       </div>
 
       <!-- Main content area -->
-      <div class="flex flex-col flex-1 overflow-hidden">
+      <div class="flex flex-col flex-1 overflow-hidden" style="min-width: 0;">
         <!-- Top bar -->
         <%= render "admin_suite/shared/topbar" %>
 

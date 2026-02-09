@@ -72,6 +72,32 @@ module AdminSuite
       retry
     end
 
+    # Loads the root dashboard definition files (safe to call per-request).
+    #
+    # Host apps typically define this in:
+    # - `config/admin_suite/dashboard.rb`
+    # - `app/admin_suite/dashboard.rb`
+    #
+    # @return [void]
+    def ensure_root_dashboard_loaded!
+      globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
+      return if globs.empty?
+
+      if Rails.env.development?
+        # Re-evaluate dashboard layout on each request in development.
+        AdminSuite.reset_root_dashboard!
+        globs.each { |file| load file }
+      else
+        # In non-dev, load once.
+        return if AdminSuite.config.root_dashboard_loaded
+        globs.each { |file| require file }
+        AdminSuite.config.root_dashboard_loaded = true
+      end
+    rescue NameError
+      require "admin_suite"
+      retry
+    end
+
     # Builds the navigation structure from registered resources.
     #
     # @return [Hash]
