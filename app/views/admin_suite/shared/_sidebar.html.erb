@@ -44,13 +44,13 @@
   <!-- Portal Navigation -->
   <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-2">
     <% sorted_portals.each do |portal_key, portal| %>
-      <% portal_home = portal_path(portal: portal_key) %>
-      <% portal_prefix = File.join(request.script_name.to_s, portal_key.to_s) %>
-      <% active = request.path.start_with?(portal_prefix) %>
+      <% portal_home = portal_path(portal: portal_key).to_s %>
+      <% portal_prefix = portal_home.sub(%r{/*\z}, "") %>
+      <% active = portal_prefix.present? && (request.path == portal_prefix || request.path.start_with?("#{portal_prefix}/")) %>
       <% color = portal_color(portal_key) %>
 
       <div>
-        <%= link_to (portal_home || root_path),
+        <%= link_to (portal_prefix.presence || root_path),
             class: "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors #{active ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/10 hover:text-white"}" do %>
           <div class="admin-suite-portal-accent admin-suite-portal-accent--<%= color %> admin-suite-portal-chip flex items-center justify-center w-8 h-8 rounded-lg <%= active ? "" : "bg-white/10" %>">
             <%= portal_icon(portal_key, class: "admin-suite-portal-icon w-4 h-4") %>

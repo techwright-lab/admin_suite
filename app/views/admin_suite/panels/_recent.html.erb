@@ -6,16 +6,16 @@
 <% view_all_path = panel_eval(panel.options[:view_all_path]) %>
 <% link_proc = panel.options[:link] %>
 
-<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-  <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-    <h3 class="font-semibold text-slate-900 dark:text-white"><%= panel.title %></h3>
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+    <h3 class="font-semibold text-slate-900"><%= panel.title %></h3>
     <% if view_all_path.present? %>
       <%= link_to "View all →", view_all_path, class: "text-sm #{theme_link_class}" %>
     <% end %>
   </div>
 
   <% if items.any? %>
-    <ul class="divide-y divide-slate-100 dark:divide-slate-700">
+    <ul class="divide-y divide-slate-100">
       <% items.each do |item| %>
         <% path =
           if link_proc.respond_to?(:call)
@@ -24,25 +24,25 @@
             auto_admin_suite_path_for(item)
           end
         %>
-        <li class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+        <li class="px-4 py-3 hover:bg-slate-50 transition-colors">
           <% title = item_display_title(item) rescue item.to_s %>
           <% subtitle = (item.respond_to?(:created_at) && item.created_at) ? "#{time_ago_in_words(item.created_at)} ago" : nil %>
           <% if path.present? %>
             <%= link_to path, class: "flex items-center justify-between gap-3" do %>
               <div class="min-w-0">
-                <div class="text-sm font-medium text-slate-900 dark:text-white truncate"><%= title.to_s.truncate(48) %></div>
+                <div class="text-sm font-medium text-slate-900 truncate"><%= title.to_s.truncate(48) %></div>
                 <% if subtitle.present? %>
-                  <div class="text-xs text-slate-500 dark:text-slate-400"><%= subtitle %></div>
+                  <div class="text-xs text-slate-500"><%= subtitle %></div>
                 <% end %>
               </div>
-              <%= admin_suite_icon("chevron-right", class: "w-4 h-4 text-slate-300 dark:text-slate-600 flex-shrink-0") %>
+              <%= admin_suite_icon("chevron-right", class: "w-4 h-4 text-slate-300 flex-shrink-0") %>
             <% end %>
           <% else %>
             <div class="flex items-center justify-between gap-3">
               <div class="min-w-0">
-                <div class="text-sm font-medium text-slate-900 dark:text-white truncate"><%= title.to_s.truncate(48) %></div>
+                <div class="text-sm font-medium text-slate-900 truncate"><%= title.to_s.truncate(48) %></div>
                 <% if subtitle.present? %>
-                  <div class="text-xs text-slate-500 dark:text-slate-400"><%= subtitle %></div>
+                  <div class="text-xs text-slate-500"><%= subtitle %></div>
                 <% end %>
               </div>
             </div>
@@ -51,6 +51,6 @@
       <% end %>
     </ul>
   <% else %>
-    <div class="p-4 text-center text-sm text-slate-500 dark:text-slate-400"><%= empty_message %></div>
+    <div class="p-4 text-center text-sm text-slate-500"><%= empty_message %></div>
   <% end %>
 </div>

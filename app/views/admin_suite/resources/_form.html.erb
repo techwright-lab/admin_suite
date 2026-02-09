@@ -17,7 +17,7 @@
   <% columns = resource.class.column_names.reject { |c| %w[id created_at updated_at].include?(c) } %>
   <% columns.each do |column| %>
     <div>
-      <%= f.label column, class: "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" %>
+      <%= f.label column, class: "block text-sm font-medium text-slate-700 mb-1" %>
       <%= f.text_field column, class: "form-input w-full" %>
     </div>
   <% end %>

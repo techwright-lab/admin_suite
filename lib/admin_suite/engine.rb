@@ -141,6 +141,15 @@ module AdminSuite
           ]
         end
 
+        if config.dashboard_globs.blank?
+          config.dashboard_globs = [
+            Rails.root.join("config/admin_suite/dashboard.rb").to_s,
+            Rails.root.join("config/admin_suite/dashboard/*.rb").to_s,
+            Rails.root.join("app/admin_suite/dashboard.rb").to_s,
+            Rails.root.join("app/admin_suite/dashboard/*.rb").to_s
+          ]
+        end
+
         config.portals = {
           ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
           email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },

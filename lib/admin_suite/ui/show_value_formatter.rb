@@ -19,7 +19,7 @@ module AdminSuite
               else
                 simple_format(value.to_s)
               end
-            return content_tag(:div, rendered, class: "prose dark:prose-invert max-w-none")
+            return content_tag(:div, rendered, class: "prose max-w-none")
           when :json
             begin
               parsed =

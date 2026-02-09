@@ -1,14 +1,14 @@
 <% resources = Array(panel_eval(panel.options[:resources])) %>
 <% variant = (panel.options[:variant] || :default).to_sym %>
 
-<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-  <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-    <h3 class="font-semibold text-slate-900 dark:text-white"><%= panel.title %></h3>
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+    <h3 class="font-semibold text-slate-900"><%= panel.title %></h3>
   </div>
 
   <% if resources.any? %>
     <% if variant == :portals %>
-      <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="admin-suite-cards-grid admin-suite-cards-grid--portals p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <% resources.each do |portal_item| %>
           <%
             key = portal_item[:key] || portal_item["key"]
@@ -52,7 +52,7 @@
         <% end %>
       </div>
     <% else %>
-      <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="admin-suite-cards-grid admin-suite-cards-grid--resources p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       <% resources.each do |resource_item| %>
         <%
           if resource_item.is_a?(Hash)
@@ -102,6 +102,6 @@
       </div>
     <% end %>
   <% else %>
-    <div class="p-4 text-sm text-slate-500 dark:text-slate-400">No cards configured.</div>
+    <div class="p-4 text-sm text-slate-500">No cards configured.</div>
   <% end %>
 </div>

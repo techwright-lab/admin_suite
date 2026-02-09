@@ -39,6 +39,11 @@ These are the defaults in `AdminSuite::Configuration` / `AdminSuite::Engine`:
   - `Rails.root/config/admin_suite/portals/*.rb`
   - `Rails.root/app/admin/portals/*.rb`
   - `Rails.root/app/admin_suite/portals/*.rb`
+- `dashboard_globs`: defaults to:
+  - `Rails.root/config/admin_suite/dashboard.rb`
+  - `Rails.root/config/admin_suite/dashboard/*.rb`
+  - `Rails.root/app/admin_suite/dashboard.rb`
+  - `Rails.root/app/admin_suite/dashboard/*.rb`
 
 Note: AdminSuite definition files (resources, actions, portals) often don't follow 
 Zeitwerk's path-to-constant naming conventions. To prevent eager-load `Zeitwerk::NameError`s 
@@ -125,6 +130,26 @@ config.action_globs = [
 Where AdminSuite should load portal definition files from (files typically call `AdminSuite.portal(:key) { ... }`).
 
 - **Type**: `Array<String>`
+
+### `dashboard_globs`
+
+Where AdminSuite should load the root dashboard definition file(s) from (files typically call `AdminSuite.root_dashboard { ... }`).
+
+- **Type**: `Array<String>`
+
+### `root_dashboard_title`
+
+Optional title shown on the root dashboard.
+
+- **Type**: `String`, `Proc`, or `nil`
+- **Proc signature**: `->(controller) { "Admin Suite" }`
+
+### `root_dashboard_description`
+
+Optional description shown on the root dashboard.
+
+- **Type**: `String`, `Proc`, or `nil`
+- **Proc signature**: `->(controller) { "..." }`
 
 ### `portals`
 

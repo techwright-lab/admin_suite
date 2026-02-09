@@ -17,12 +17,12 @@ export default class extends Controller {
     try {
       JSON.parse(value)
       this.clearError()
-      this.inputTarget.classList.remove("border-red-500", "dark:border-red-500")
-      this.inputTarget.classList.add("border-slate-300", "dark:border-slate-600")
+      this.inputTarget.classList.remove("border-red-500")
+      this.inputTarget.classList.add("border-slate-300")
     } catch (e) {
       this.showError(e.message)
-      this.inputTarget.classList.remove("border-slate-300", "dark:border-slate-600")
-      this.inputTarget.classList.add("border-red-500", "dark:border-red-500")
+      this.inputTarget.classList.remove("border-slate-300")
+      this.inputTarget.classList.add("border-red-500")
     }
   }
 
@@ -38,12 +38,12 @@ export default class extends Controller {
       const formatted = JSON.stringify(parsed, null, 2)
       this.inputTarget.value = formatted
       this.clearError()
-      this.inputTarget.classList.remove("border-red-500", "dark:border-red-500")
-      this.inputTarget.classList.add("border-slate-300", "dark:border-slate-600")
+      this.inputTarget.classList.remove("border-red-500")
+      this.inputTarget.classList.add("border-slate-300")
     } catch (e) {
       this.showError(e.message)
-      this.inputTarget.classList.remove("border-slate-300", "dark:border-slate-600")
-      this.inputTarget.classList.add("border-red-500", "dark:border-red-500")
+      this.inputTarget.classList.remove("border-slate-300")
+      this.inputTarget.classList.add("border-red-500")
     }
   }
 

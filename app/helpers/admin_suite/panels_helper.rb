@@ -10,7 +10,7 @@ module AdminSuite
 
       content_tag(:div, class: "space-y-6") do
         rows.each do |row|
-          concat(content_tag(:div, class: "grid grid-cols-1 lg:grid-cols-12 gap-6") do
+          concat(content_tag(:div, class: "admin-suite-dashboard-row grid grid-cols-1 lg:grid-cols-12 gap-6") do
             Array(row.panels).each do |panel|
               concat(render_panel(panel))
             end

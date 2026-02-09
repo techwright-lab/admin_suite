@@ -20,7 +20,7 @@ export default class extends Controller {
   }
 
   get inactiveClasses() {
-    return this.hasInactiveClassesValue ? this.inactiveClassesValue : "bg-slate-200 dark:bg-slate-700"
+    return this.hasInactiveClassesValue ? this.inactiveClassesValue : "bg-slate-200"
   }
 
   toggle(event) {

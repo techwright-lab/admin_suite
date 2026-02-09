@@ -130,7 +130,7 @@ module AdminSuite
         content_tag(:span, class: "inline-flex items-center gap-1") do
           svg = '<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'.html_safe
           concat(svg)
-          concat(content_tag(:span, "Yes", class: "text-green-600 dark:text-green-400 font-medium"))
+          concat(content_tag(:span, "Yes", class: "text-green-600 font-medium"))
         end
       when false
         content_tag(:span, class: "inline-flex items-center gap-1") do
@@ -141,13 +141,13 @@ module AdminSuite
       when Time, DateTime
         content_tag(:span, class: "inline-flex items-center gap-2") do
           concat(content_tag(:span, value.strftime("%B %d, %Y at %H:%M"), class: "font-medium"))
-          concat(content_tag(:span, "(#{time_ago_in_words(value)} ago)", class: "text-slate-500 dark:text-slate-400 text-xs"))
+          concat(content_tag(:span, "(#{time_ago_in_words(value)} ago)", class: "text-slate-500 text-xs"))
         end
       when Date
         value.strftime("%B %d, %Y")
       when ActiveRecord::Base
         link_text = value.respond_to?(:name) ? value.name : "#{value.class.name} ##{value.id}"
-        content_tag(:span, link_text, class: "text-indigo-600 dark:text-indigo-400")
+        content_tag(:span, link_text, class: "text-indigo-600")
       when Hash
         render_json_block(value)
       when Array
@@ -158,7 +158,7 @@ module AdminSuite
         else
           content_tag(:div, class: "flex flex-wrap gap-1") do
             value.each do |item|
-              concat(content_tag(:span, item.to_s, class: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"))
+              concat(content_tag(:span, item.to_s, class: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"))
             end
           end
         end
@@ -197,27 +197,27 @@ module AdminSuite
           end
 
         content_tag(:div, class: "space-y-2") do
-          concat(content_tag(:div, class: "inline-block rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700") do
+          concat(content_tag(:div, class: "inline-block rounded-lg overflow-hidden border border-slate-200") do
             image_tag(variant_url,
               class: "max-w-full h-auto max-h-64 object-contain",
               alt: blob.filename.to_s)
           end)
-          concat(content_tag(:div, class: "flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400") do
-            concat(content_tag(:span, blob.filename.to_s, class: "font-medium text-slate-700 dark:text-slate-300"))
+          concat(content_tag(:div, class: "flex items-center gap-3 text-sm text-slate-500") do
+            concat(content_tag(:span, blob.filename.to_s, class: "font-medium text-slate-700"))
             concat(content_tag(:span, "•"))
             concat(content_tag(:span, number_to_human_size(blob.byte_size)))
             concat(content_tag(:span, "•"))
-            concat(link_to("View full size", admin_suite_rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
+            concat(link_to("View full size", admin_suite_rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 hover:underline"))
           end)
         end
       else
-        content_tag(:div, class: "flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700") do
-          concat(content_tag(:div, class: "flex-shrink-0 w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center") do
+        content_tag(:div, class: "flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200") do
+          concat(content_tag(:div, class: "flex-shrink-0 w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center") do
             '<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'.html_safe
           end)
           concat(content_tag(:div, class: "flex-1 min-w-0") do
-            concat(content_tag(:p, blob.filename.to_s, class: "font-medium text-slate-700 dark:text-slate-300 truncate"))
-            concat(content_tag(:p, number_to_human_size(blob.byte_size), class: "text-sm text-slate-500 dark:text-slate-400"))
+            concat(content_tag(:p, blob.filename.to_s, class: "font-medium text-slate-700 truncate"))
+            concat(content_tag(:p, number_to_human_size(blob.byte_size), class: "text-sm text-slate-500"))
           end)
           concat(link_to("Download", admin_suite_rails_blob_path(blob, disposition: :attachment),
             class: "flex-shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"))
@@ -240,11 +240,11 @@ module AdminSuite
 
       content_tag(:div, class: "relative group") do
         concat(content_tag(:div, class: "absolute top-2 right-2 flex items-center gap-2") do
-          concat(content_tag(:span, "JSON", class: "text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider"))
+          concat(content_tag(:span, "JSON", class: "text-xs font-medium text-slate-400 uppercase tracking-wider"))
           concat(content_tag(:button,
             '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'.html_safe,
             type: "button",
-            class: "p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity",
+            class: "p-1 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity",
             data: { controller: "admin-suite--clipboard", action: "click->admin-suite--clipboard#copy", "admin-suite--clipboard-text-value": json_str },
             title: "Copy to clipboard"))
         end)
@@ -260,11 +260,11 @@ module AdminSuite
     def render_text_block(text, language = nil)
       content_tag(:div, class: "relative group") do
         concat(content_tag(:div, class: "absolute top-2 right-2 flex items-center gap-2") do
-          concat(content_tag(:span, language.to_s.upcase, class: "text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider")) if language
+          concat(content_tag(:span, language.to_s.upcase, class: "text-xs font-medium text-slate-400 uppercase tracking-wider")) if language
           concat(content_tag(:button,
             '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'.html_safe,
             type: "button",
-            class: "p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity",
+            class: "p-1 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity",
             data: { controller: "admin-suite--clipboard", action: "click->admin-suite--clipboard#copy", "admin-suite--clipboard-text-value": text },
             title: "Copy to clipboard"))
         end)
@@ -335,11 +335,11 @@ module AdminSuite
 
       content_tag(:div, class: "relative group") do
         concat(content_tag(:div, class: "absolute top-2 right-2 flex items-center gap-2") do
-          concat(content_tag(:span, "TEMPLATE", class: "text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider"))
+          concat(content_tag(:span, "TEMPLATE", class: "text-xs font-medium text-slate-400 uppercase tracking-wider"))
           concat(content_tag(:button,
             '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'.html_safe,
             type: "button",
-            class: "p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity",
+            class: "p-1 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity",
             data: { controller: "admin-suite--clipboard", action: "click->admin-suite--clipboard#copy", "admin-suite--clipboard-text-value": template },
             title: "Copy to clipboard"))
         end)
@@ -395,11 +395,11 @@ module AdminSuite
           end
 
           role_class = case role.to_s
-          when "user" then "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-          when "assistant" then "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
-          when "tool" then "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-          when "system" then "bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600"
-          else "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+          when "user" then "bg-blue-50 border-blue-200"
+          when "assistant" then "bg-emerald-50 border-emerald-200"
+          when "tool" then "bg-amber-50 border-amber-200"
+          when "system" then "bg-slate-50 border-slate-200"
+          else "bg-slate-50 border-slate-200"
           end
 
           role_icon = case role.to_s
@@ -417,7 +417,7 @@ module AdminSuite
             concat(content_tag(:div, class: "flex items-center justify-between mb-3") do
               concat(content_tag(:div, class: "flex items-center gap-2") do
                 concat(role_icon)
-                concat(content_tag(:span, role.to_s.capitalize, class: "text-sm font-medium text-slate-700 dark:text-slate-200"))
+                concat(content_tag(:span, role.to_s.capitalize, class: "text-sm font-medium text-slate-700"))
               end)
               concat(content_tag(:div, class: "flex items-center gap-2 text-xs text-slate-400") do
                 concat(content_tag(:span, created_at.strftime("%H:%M:%S"))) if created_at.respond_to?(:strftime)
@@ -431,10 +431,10 @@ module AdminSuite
                 parsed = JSON.parse(content_str)
                 concat(render_json_block(parsed))
               rescue JSON::ParserError
-                concat(content_tag(:div, simple_format(h(content_str)), class: "prose dark:prose-invert prose-sm max-w-none"))
+                concat(content_tag(:div, simple_format(h(content_str)), class: "prose prose-sm max-w-none"))
               end
             else
-              concat(content_tag(:div, simple_format(h(content_str)), class: "prose dark:prose-invert prose-sm max-w-none"))
+              concat(content_tag(:div, simple_format(h(content_str)), class: "prose prose-sm max-w-none"))
             end
           end)
         end
@@ -448,7 +448,7 @@ module AdminSuite
 
       content_tag(:div, class: "space-y-6") do
         concat(content_tag(:div) do
-          concat(content_tag(:h4, "Arguments", class: "text-sm font-medium text-slate-500 dark:text-slate-400 mb-2"))
+          concat(content_tag(:h4, "Arguments", class: "text-sm font-medium text-slate-500 mb-2"))
           if args.present? && args != {}
             concat(render_json_block(args))
           else
@@ -457,17 +457,17 @@ module AdminSuite
         end)
 
         if result.present? && result != {}
-          concat(content_tag(:div, class: "pt-4 border-t border-slate-200 dark:border-slate-700") do
-            concat(content_tag(:h4, "Result", class: "text-sm font-medium text-slate-500 dark:text-slate-400 mb-2"))
+          concat(content_tag(:div, class: "pt-4 border-t border-slate-200") do
+            concat(content_tag(:h4, "Result", class: "text-sm font-medium text-slate-500 mb-2"))
             concat(render_json_block(result))
           end)
         end
 
         if error.present?
-          concat(content_tag(:div, class: "pt-4 border-t border-slate-200 dark:border-slate-700") do
-            concat(content_tag(:h4, "Error", class: "text-sm font-medium text-red-500 dark:text-red-400 mb-2"))
-            concat(content_tag(:div, class: "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4") do
-              content_tag(:pre, h(error.to_s), class: "text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap font-mono")
+          concat(content_tag(:div, class: "pt-4 border-t border-slate-200") do
+            concat(content_tag(:h4, "Error", class: "text-sm font-medium text-red-500 mb-2"))
+            concat(content_tag(:div, class: "bg-red-50 border border-red-200 rounded-lg p-4") do
+              content_tag(:pre, h(error.to_s), class: "text-sm text-red-700 whitespace-pre-wrap font-mono")
             end)
           end)
         end
@@ -480,22 +480,22 @@ module AdminSuite
 
       content_tag(:div, class: "space-y-4") do
         if user_msg
-          concat(content_tag(:div, class: "rounded-lg border p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800") do
+          concat(content_tag(:div, class: "rounded-lg border p-4 bg-blue-50 border-blue-200") do
             concat(content_tag(:div, class: "flex items-center gap-2 mb-2") do
               concat('<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'.html_safe)
-              concat(content_tag(:span, "User", class: "text-sm font-medium text-slate-700 dark:text-slate-200"))
+              concat(content_tag(:span, "User", class: "text-sm font-medium text-slate-700"))
             end)
-            concat(content_tag(:div, simple_format(h(user_msg.respond_to?(:content) ? user_msg.content.to_s : user_msg.to_s)), class: "prose dark:prose-invert prose-sm max-w-none"))
+            concat(content_tag(:div, simple_format(h(user_msg.respond_to?(:content) ? user_msg.content.to_s : user_msg.to_s)), class: "prose prose-sm max-w-none"))
           end)
         end
 
         if asst_msg
-          concat(content_tag(:div, class: "rounded-lg border p-4 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800") do
+          concat(content_tag(:div, class: "rounded-lg border p-4 bg-emerald-50 border-emerald-200") do
             concat(content_tag(:div, class: "flex items-center gap-2 mb-2") do
               concat('<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>'.html_safe)
-              concat(content_tag(:span, "Assistant", class: "text-sm font-medium text-slate-700 dark:text-slate-200"))
+              concat(content_tag(:span, "Assistant", class: "text-sm font-medium text-slate-700"))
             end)
-            concat(content_tag(:div, simple_format(h(asst_msg.respond_to?(:content) ? asst_msg.content.to_s : asst_msg.to_s)), class: "prose dark:prose-invert prose-sm max-w-none"))
+            concat(content_tag(:div, simple_format(h(asst_msg.respond_to?(:content) ? asst_msg.content.to_s : asst_msg.to_s)), class: "prose prose-sm max-w-none"))
           end)
         end
 
@@ -536,19 +536,19 @@ module AdminSuite
     def render_show_section(resource, section, position = :main)
       is_association = section.association.present? && !resource.public_send(section.association).is_a?(ActiveRecord::Base) rescue false
 
-      content_tag(:div, class: "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden") do
+      content_tag(:div, class: "bg-white rounded-xl border border-slate-200 overflow-hidden") do
         header_padding = position == :sidebar ? "px-4 py-2.5" : "px-6 py-3"
         header_text_size = position == :sidebar ? "text-sm" : ""
-        header_border = is_association ? "" : "border-b border-slate-200 dark:border-slate-700"
+        header_border = is_association ? "" : "border-b border-slate-200"
 
-        concat(content_tag(:div, class: "#{header_padding} #{header_border} bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between") do
-          concat(content_tag(:h3, section.title, class: "font-medium text-slate-900 dark:text-white #{header_text_size}"))
+        concat(content_tag(:div, class: "#{header_padding} #{header_border} bg-slate-50 flex items-center justify-between") do
+          concat(content_tag(:h3, section.title, class: "font-medium text-slate-900 #{header_text_size}"))
 
           if section.association.present?
             assoc = resource.public_send(section.association) rescue nil
             if assoc && !assoc.is_a?(ActiveRecord::Base)
               count = assoc.count rescue 0
-              color_class = count > 0 ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400" : "bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300"
+              color_class = count > 0 ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-600"
               concat(content_tag(:span, number_with_delimiter(count), class: "text-xs font-semibold px-2 py-0.5 rounded-full #{color_class}"))
             end
           end
@@ -582,8 +582,8 @@ module AdminSuite
             concat(render_sidebar_attachment(value))
           else
             concat(content_tag(:div, class: "flex justify-between items-start gap-2") do
-              concat(content_tag(:span, field_name.to_s.humanize, class: "text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider flex-shrink-0"))
-              concat(content_tag(:span, class: "text-sm text-slate-900 dark:text-white text-right") { format_show_value(resource, field_name) })
+              concat(content_tag(:span, field_name.to_s.humanize, class: "text-xs font-medium text-slate-500 uppercase tracking-wider flex-shrink-0"))
+              concat(content_tag(:span, class: "text-sm text-slate-900 text-right") { format_show_value(resource, field_name) })
             end)
           end
         end
@@ -605,21 +605,21 @@ module AdminSuite
           end
 
         content_tag(:div, class: "space-y-2") do
-          concat(content_tag(:div, class: "rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700") do
+          concat(content_tag(:div, class: "rounded-lg overflow-hidden border border-slate-200") do
             image_tag(variant_url, class: "w-full h-auto object-cover", alt: blob.filename.to_s)
           end)
-          concat(content_tag(:div, class: "flex items-center justify-between text-xs text-slate-500 dark:text-slate-400") do
+          concat(content_tag(:div, class: "flex items-center justify-between text-xs text-slate-500") do
             concat(content_tag(:span, number_to_human_size(blob.byte_size)))
-            concat(link_to("View full", admin_suite_rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 dark:text-indigo-400 hover:underline"))
+            concat(link_to("View full", admin_suite_rails_blob_path(blob, disposition: :inline), target: "_blank", class: "text-indigo-600 hover:underline"))
           end)
         end
       else
-        content_tag(:div, class: "flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg") do
-          concat(content_tag(:div, class: "flex-shrink-0 w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded flex items-center justify-center") do
+        content_tag(:div, class: "flex items-center gap-2 p-2 bg-slate-50 rounded-lg") do
+          concat(content_tag(:div, class: "flex-shrink-0 w-8 h-8 bg-slate-200 rounded flex items-center justify-center") do
             '<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'.html_safe
           end)
           concat(content_tag(:div, class: "flex-1 min-w-0") do
-            concat(content_tag(:p, blob.filename.to_s.truncate(20), class: "text-xs font-medium text-slate-700 dark:text-slate-300 truncate"))
+            concat(content_tag(:p, blob.filename.to_s.truncate(20), class: "text-xs font-medium text-slate-700 truncate"))
             concat(content_tag(:p, number_to_human_size(blob.byte_size), class: "text-xs text-slate-500"))
           end)
         end
@@ -630,8 +630,8 @@ module AdminSuite
       content_tag(:dl, class: "space-y-6") do
         fields.each do |field_name|
           concat(content_tag(:div) do
-            concat(content_tag(:dt, field_name.to_s.humanize, class: "text-sm font-medium text-slate-500 dark:text-slate-400 mb-2"))
-            concat(content_tag(:dd, class: "text-sm text-slate-900 dark:text-white") { format_show_value(resource, field_name) })
+            concat(content_tag(:dt, field_name.to_s.humanize, class: "text-sm font-medium text-slate-500 mb-2"))
+            concat(content_tag(:dd, class: "text-sm text-slate-900") { format_show_value(resource, field_name) })
           end)
         end
       end
@@ -679,7 +679,7 @@ module AdminSuite
     def association_page_param(section) = "#{section.association}_page"
 
     def render_association_pagination(pagy)
-      content_tag(:div, class: "-mx-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 px-6 py-3") do
+      content_tag(:div, class: "-mx-6 border-t border-slate-200 bg-slate-50/50 px-6 py-3") do
         content_tag(:nav, class: "flex items-center justify-between", "aria-label" => "Pagination") do
           concat(pagy_prev_link(pagy))
           concat(pagy_page_links(pagy))
@@ -691,20 +691,20 @@ module AdminSuite
     def pagy_prev_link(pagy)
       if pagy.prev
         link_to("Prev", pagy_url_for(pagy, pagy.prev),
-          class: "px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors")
+          class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors")
       else
         content_tag(:span, "Prev",
-          class: "px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed")
+          class: "px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed")
       end
     end
 
     def pagy_next_link(pagy)
       if pagy.next
         link_to("Next", pagy_url_for(pagy, pagy.next),
-          class: "px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors")
+          class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors")
       else
         content_tag(:span, "Next",
-          class: "px-3 py-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed")
+          class: "px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed")
       end
     end
 
@@ -718,11 +718,11 @@ module AdminSuite
       case item
       when Integer
         link_to(item, pagy_url_for(pagy, item),
-          class: "px-2.5 py-1 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors")
+          class: "px-2.5 py-1 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors")
       when String
         content_tag(:span, item, class: "px-2.5 py-1 text-sm font-semibold text-white bg-indigo-600 border border-indigo-600 rounded")
       when :gap
-        content_tag(:span, "…", class: "px-2 text-sm text-slate-400 dark:text-slate-500")
+        content_tag(:span, "…", class: "px-2 text-sm text-slate-400")
       else
         ""
       end
@@ -735,31 +735,31 @@ module AdminSuite
         concat(content_tag(:div, class: "flex items-center justify-between gap-3") do
           concat(content_tag(:div, class: "min-w-0 flex-1") do
             title = item_display_title(item)
-            title_class = link_path ? "font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400" : "font-medium text-slate-900 dark:text-white"
+            title_class = link_path ? "font-medium text-slate-900 group-hover:text-indigo-600" : "font-medium text-slate-900"
             concat(content_tag(:div, title, class: title_class))
 
             subtitle = []
             subtitle << item.status.to_s.humanize if item.respond_to?(:status) && item.status.present?
             subtitle << item.email_address if item.respond_to?(:email_address) && item.email_address.present?
             subtitle << item.tool_key if item.respond_to?(:tool_key) && item.tool_key.present?
-            concat(content_tag(:div, subtitle.first, class: "text-sm text-slate-500 dark:text-slate-400 mt-0.5")) if subtitle.any?
+            concat(content_tag(:div, subtitle.first, class: "text-sm text-slate-500 mt-0.5")) if subtitle.any?
           end)
 
           if link_path
-            concat('<svg class="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'.html_safe)
+            concat('<svg class="w-5 h-5 text-slate-300 group-hover:text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'.html_safe)
           end
         end)
       end
 
-      link_path ? link_to(card_content, link_path, class: "flex items-center -m-4 p-4 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors group") : content_tag(:div, card_content, class: "flex items-center")
+      link_path ? link_to(card_content, link_path, class: "flex items-center -m-4 p-4 rounded-lg hover:bg-indigo-50 transition-colors group") : content_tag(:div, card_content, class: "flex items-center")
     end
 
     def render_association_list(items, section)
-      content_tag(:div, class: "divide-y divide-slate-200 dark:divide-slate-700 -mx-6 -mt-2 -mb-6") do
+      content_tag(:div, class: "divide-y divide-slate-200 -mx-6 -mt-2 -mb-6") do
         items.each do |item|
           link_path = build_association_link(item, section)
           wrapper = if link_path
-            ->(content) { link_to(link_path, class: "block px-6 py-4 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors group") { content } }
+            ->(content) { link_to(link_path, class: "block px-6 py-4 hover:bg-indigo-50/50 transition-colors group") { content } }
           else
             ->(content) { content_tag(:div, content, class: "px-6 py-4") }
           end
@@ -769,7 +769,7 @@ module AdminSuite
               concat(content_tag(:div, class: "min-w-0 flex-1") do
                 concat(content_tag(:div, class: "flex items-center gap-2") do
                   title = item_display_title(item)
-                  title_class = link_path ? "text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400" : "text-slate-900 dark:text-white"
+                  title_class = link_path ? "text-slate-900 group-hover:text-indigo-600" : "text-slate-900"
                   concat(content_tag(:span, title.truncate(60), class: "font-medium #{title_class} truncate"))
                   concat(render_status_badge(item.status, size: :sm)) if item.respond_to?(:status) && item.status.present?
                 end)
@@ -778,7 +778,7 @@ module AdminSuite
               concat(content_tag(:div, class: "flex items-center gap-3 flex-shrink-0 text-xs text-slate-400") do
                 concat(content_tag(:span, time_ago_in_words(item.created_at) + " ago")) if item.respond_to?(:created_at) && item.created_at
                 if link_path
-                  concat('<svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'.html_safe)
+                  concat('<svg class="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'.html_safe)
                 end
               end)
             end)
@@ -792,28 +792,28 @@ module AdminSuite
       columns = section.columns.presence || detect_table_columns(items.first)
 
       content_tag(:div, class: "overflow-x-auto -mx-6 -mt-1") do
-        content_tag(:table, class: "min-w-full divide-y divide-slate-200 dark:divide-slate-700") do
-          concat(content_tag(:thead, class: "bg-slate-50/50 dark:bg-slate-900/30") do
+        content_tag(:table, class: "min-w-full divide-y divide-slate-200") do
+          concat(content_tag(:thead, class: "bg-slate-50/50") do
             content_tag(:tr) do
               Array.wrap(columns).each do |col|
                 header = col.to_s.gsub(/_id$/, "").humanize
-                concat(content_tag(:th, header, class: "px-4 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider first:pl-6"))
+                concat(content_tag(:th, header, class: "px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider first:pl-6"))
               end
               concat(content_tag(:th, "", class: "px-4 py-2.5 w-16"))
             end
           end)
 
-          concat(content_tag(:tbody, class: "divide-y divide-slate-200 dark:divide-slate-700") do
+          concat(content_tag(:tbody, class: "divide-y divide-slate-200") do
             items.each do |item|
               link_path = build_association_link(item, section)
-              concat(content_tag(:tr, class: link_path ? "hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 cursor-pointer group" : "") do
+              concat(content_tag(:tr, class: link_path ? "hover:bg-indigo-50/50 cursor-pointer group" : "") do
                 Array.wrap(columns).each_with_index do |col, idx|
                   value = item.public_send(col) rescue nil
                   text = format_table_cell(value)
                   concat(content_tag(:td, text, class: (idx == 0 ? "px-4 py-3 text-sm first:pl-6" : "px-4 py-3 text-sm")))
                 end
                 concat(content_tag(:td, class: "px-4 py-3 text-right pr-6") do
-                  link_path ? link_to("View", link_path, class: "inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium") : ""
+                  link_path ? link_to("View", link_path, class: "inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium") : ""
                 end)
               end)
             end
@@ -826,19 +826,19 @@ module AdminSuite
       content_tag(:div, class: "grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1") do
         items.each do |item|
           link_path = build_association_link(item, section)
-          card_class = "border border-slate-200 dark:border-slate-700 rounded-lg p-4 transition-all"
-          card_class += link_path ? " hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md group cursor-pointer" : " hover:bg-slate-50 dark:hover:bg-slate-900/30"
+          card_class = "border border-slate-200 rounded-lg p-4 transition-all"
+          card_class += link_path ? " hover:border-indigo-300 hover:shadow-md group cursor-pointer" : " hover:bg-slate-50"
 
           card_content = capture do
             concat(content_tag(:div, class: "flex items-start justify-between gap-2 mb-2") do
               title = item_display_title(item)
-              title_class = link_path ? "font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400" : "font-medium text-slate-900 dark:text-white"
+              title_class = link_path ? "font-medium text-slate-900 group-hover:text-indigo-600" : "font-medium text-slate-900"
               concat(content_tag(:span, title.truncate(35), class: title_class))
               concat(render_status_badge(item.status, size: :sm)) if item.respond_to?(:status) && item.status.present?
             end)
-            concat(content_tag(:div, class: "flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700/50") do
+            concat(content_tag(:div, class: "flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100") do
               concat(content_tag(:span, time_ago_in_words(item.created_at) + " ago")) if item.respond_to?(:created_at) && item.created_at
-              concat('<svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'.html_safe) if link_path
+              concat('<svg class="w-4 h-4 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'.html_safe) if link_path
             end)
           end
 
@@ -894,15 +894,15 @@ module AdminSuite
       status_str = status.to_s.downcase
       colors = case status_str
       when "active", "open", "success", "approved", "completed", "enabled"
-        "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+        "bg-green-100 text-green-700"
       when "pending", "proposed", "queued", "waiting"
-        "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+        "bg-amber-100 text-amber-700"
       when "running", "processing", "in_progress"
-        "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+        "bg-blue-100 text-blue-700"
       when "error", "failed", "rejected", "cancelled"
-        "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+        "bg-red-100 text-red-700"
       else
-        "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+        "bg-slate-100 text-slate-600"
       end
 
       padding = size == :sm ? "px-1.5 py-0.5 text-xs" : "px-2 py-1 text-xs"
@@ -927,25 +927,25 @@ module AdminSuite
     def label_badge_colors(color)
       case color.to_s.downcase
       when "green"
-        "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+        "bg-green-100 text-green-700"
       when "amber", "yellow", "orange"
-        "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+        "bg-amber-100 text-amber-700"
       when "blue"
-        "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+        "bg-blue-100 text-blue-700"
       when "red"
-        "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+        "bg-red-100 text-red-700"
       when "indigo"
-        "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+        "bg-indigo-100 text-indigo-700"
       when "purple"
-        "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+        "bg-purple-100 text-purple-700"
       when "violet"
-        "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400"
+        "bg-violet-100 text-violet-700"
       when "emerald"
-        "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+        "bg-emerald-100 text-emerald-700"
       when "cyan"
-        "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400"
+        "bg-cyan-100 text-cyan-700"
       else
-        "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+        "bg-slate-100 text-slate-600"
       end
     end
 
@@ -979,7 +979,7 @@ module AdminSuite
           when :searchable_select then render_searchable_select(f, field, resource)
           when :multi_select, :tags then render_multi_select(f, field, resource)
           when :image, :attachment then render_file_upload(f, field, resource)
-          when :trix, :rich_text then f.rich_text_area(field.name, class: "prose dark:prose-invert max-w-none")
+          when :trix, :rich_text then f.rich_text_area(field.name, class: "prose max-w-none")
           when :markdown
             f.text_area(field.name, class: "#{field_class} font-mono", rows: field.rows || 12, data: { controller: "admin-suite--markdown-editor" }, placeholder: field.placeholder)
           when :file then f.file_field(field.name, class: "form-input-file", accept: field.accept)
@@ -995,8 +995,8 @@ module AdminSuite
 
           concat(field_html)
 
-          concat(content_tag(:p, field.help, class: "mt-1 text-sm text-slate-500 dark:text-slate-400")) if field.help.present?
-          concat(content_tag(:p, resource.errors[field.name].first, class: "mt-1 text-sm text-red-600 dark:text-red-400")) if resource.errors[field.name].any?
+          concat(content_tag(:p, field.help, class: "mt-1 text-sm text-slate-500")) if field.help.present?
+          concat(content_tag(:p, resource.errors[field.name].first, class: "mt-1 text-sm text-red-600")) if resource.errors[field.name].any?
         end)
       end
     end
@@ -1062,7 +1062,7 @@ module AdminSuite
             action: "input->admin-suite--searchable-select#search focus->admin-suite--searchable-select#open keydown->admin-suite--searchable-select#keydown"
           }))
         concat(content_tag(:div, "",
-          class: "absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto",
+          class: "absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto",
           data: { "admin-suite--searchable-select-target": "dropdown" }))
       end
     end
@@ -1100,11 +1100,11 @@ module AdminSuite
         concat(hidden_field_tag(full_field_name, "", id: nil, data: { "admin-suite--tag-select-target": "placeholder" }))
 
         concat(content_tag(:div,
-          class: "flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg",
+          class: "flex flex-wrap gap-2 min-h-[2.5rem] p-2 bg-white border border-slate-200 rounded-lg",
           data: { "admin-suite--tag-select-target": "tags" }) do
             current_values.each do |val|
               concat(content_tag(:span,
-                class: "inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded text-sm") do
+                class: "inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm") do
                   concat(val.to_s)
                   concat(hidden_field_tag(full_field_name, val, id: nil))
                   concat(button_tag("×", type: "button", class: "text-indigo-500 hover:text-indigo-700 font-bold", data: { action: "admin-suite--tag-select#remove" }))
@@ -1119,13 +1119,13 @@ module AdminSuite
 
         if options.any?
           concat(content_tag(:div,
-            class: "hidden border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 shadow-lg max-h-48 overflow-y-auto",
+            class: "hidden border border-slate-200 rounded-lg bg-white shadow-lg max-h-48 overflow-y-auto",
             data: { "admin-suite--tag-select-target": "dropdown" }) do
               options.each do |opt|
                 label, value = opt.is_a?(Array) ? [ opt[0], opt[1] ] : [ opt, opt ]
                 concat(content_tag(:button, label,
                   type: "button",
-                  class: "block w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700",
+                  class: "block w-full text-left px-3 py-2 text-sm hover:bg-slate-100",
                   data: { action: "admin-suite--tag-select#select", value: value }))
               end
             end)
@@ -1157,18 +1157,18 @@ module AdminSuite
         class: "space-y-3") do
         if has_attachment && is_image
           concat(content_tag(:div, class: "relative inline-block") do
-            concat(image_tag(existing_url, class: "max-w-[200px] max-h-[150px] rounded-lg border border-slate-200 dark:border-slate-700 object-cover", data: { "admin-suite--file-upload-target": "imagePreview" }))
+            concat(image_tag(existing_url, class: "max-w-[200px] max-h-[150px] rounded-lg border border-slate-200 object-cover", data: { "admin-suite--file-upload-target": "imagePreview" }))
             concat(button_tag("×", type: "button",
               class: "absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm",
               data: { "admin-suite--file-upload-target": "removeButton", action: "admin-suite--file-upload#remove" }))
           end)
         else
-          concat(image_tag("", class: "hidden max-w-[200px] max-h-[150px] rounded-lg border border-slate-200 dark:border-slate-700 object-cover", data: { "admin-suite--file-upload-target": "imagePreview" }))
+          concat(image_tag("", class: "hidden max-w-[200px] max-h-[150px] rounded-lg border border-slate-200 object-cover", data: { "admin-suite--file-upload-target": "imagePreview" }))
           concat(content_tag(:div, "", class: "hidden", data: { "admin-suite--file-upload-target": "filename" }))
         end
 
         concat(content_tag(:div,
-          class: "relative border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors",
+          class: "relative border-2 border-dashed border-slate-300 rounded-lg hover:border-indigo-400 transition-colors",
           data: { "admin-suite--file-upload-target": "dropzone" }) do
             concat(f.file_field(field.name,
               class: "sr-only",
@@ -1177,9 +1177,9 @@ module AdminSuite
               data: { "admin-suite--file-upload-target": "input", action: "change->admin-suite--file-upload#preview" }))
 
             concat(content_tag(:label, for: "#{field.name}_input",
-              class: "flex flex-col items-center justify-center w-full py-6 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-lg transition-colors") do
+              class: "flex flex-col items-center justify-center w-full py-6 cursor-pointer hover:bg-slate-50 rounded-lg transition-colors") do
                 concat('<svg class="w-8 h-8 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'.html_safe)
-                concat(content_tag(:span, "Click to upload or drag and drop", class: "text-sm text-slate-500 dark:text-slate-400"))
+                concat(content_tag(:span, "Click to upload or drag and drop", class: "text-sm text-slate-500"))
                 concat(content_tag(:span, "PNG, JPG, WebP up to 10MB", class: "text-xs text-slate-400 mt-1")) if is_image
               end)
           end)

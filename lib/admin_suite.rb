@@ -53,5 +53,36 @@ module AdminSuite
     def portal_definitions
       PortalRegistry.all
     end
+
+    # Defines (or updates) the root dashboard shown at the engine root (`/`).
+    #
+    # This uses the same dashboard DSL as portal dashboards.
+    #
+    # Host apps typically place these in:
+    # - `config/admin_suite/dashboard.rb` (recommended; not a Zeitwerk autoload path)
+    # - `app/admin_suite/dashboard.rb` (supported; AdminSuite ignores for Zeitwerk)
+    #
+    # @yield Dashboard definition DSL
+    # @return [AdminSuite::UI::DashboardDefinition]
+    def root_dashboard(&block)
+      config.root_dashboard_definition ||= UI::DashboardDefinition.new
+      UI::DashboardDSL.new(config.root_dashboard_definition).instance_eval(&block) if block_given?
+      config.root_dashboard_definition
+    end
+
+    # @return [AdminSuite::UI::DashboardDefinition, nil]
+    def root_dashboard_definition
+      config.root_dashboard_definition
+    end
+
+    # Clears the root dashboard definition (useful for development reloads).
+    #
+    # @return [void]
+    def reset_root_dashboard!
+      config.root_dashboard_definition = nil
+      config.root_dashboard_loaded = false
+    rescue StandardError
+      # best-effort
+    end
   end
 end

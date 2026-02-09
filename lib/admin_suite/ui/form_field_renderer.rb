@@ -38,8 +38,8 @@ module AdminSuite
 
             concat(field_html)
 
-            concat(content_tag(:p, field.help, class: "mt-1 text-sm text-slate-500 dark:text-slate-400")) if field.help.present?
-            concat(content_tag(:p, resource.errors[field.name].first, class: "mt-1 text-sm text-red-600 dark:text-red-400")) if resource.errors[field.name].any?
+            concat(content_tag(:p, field.help, class: "mt-1 text-sm text-slate-500")) if field.help.present?
+            concat(content_tag(:p, resource.errors[field.name].first, class: "mt-1 text-sm text-red-600")) if resource.errors[field.name].any?
           end)
         end
       end
