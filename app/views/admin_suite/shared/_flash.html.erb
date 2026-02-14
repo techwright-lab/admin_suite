@@ -1,5 +1,5 @@
 <% if flash.any? %>
-  <div class="fixed top-4 right-4 z-50 space-y-2 max-w-md">
+  <div class="fixed top-20 right-4 z-50 space-y-2 max-w-md" data-controller="admin-suite--flash">
     <% flash.each do |type, message| %>
       <% type = type.to_sym %>
       <% classes = case type
@@ -13,7 +13,10 @@
           "admin-suite-flash--info"
       end %>
 
-      <div class="flex items-start gap-3 px-5 py-4 rounded-lg shadow-lg border <%= classes %>">
+      <div
+        data-admin-suite--flash-target="notification"
+        class="flex items-start gap-3 px-5 py-4 rounded-lg shadow-lg border <%= classes %>"
+      >
         <div class="flex-shrink-0 mt-0.5">
           <% icon_name = case type
             when :notice then "check-circle-2"
@@ -23,7 +26,17 @@
           end %>
           <%= admin_suite_icon(icon_name, class: "w-5 h-5") %>
         </div>
+
         <p class="flex-1 text-sm font-medium leading-snug"><%= message %></p>
+
+        <button
+          type="button"
+          class="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
+          data-action="admin-suite--flash#dismiss"
+          aria-label="Dismiss notification"
+        >
+          <%= admin_suite_icon("x", class: "w-4 h-4") %>
+        </button>
       </div>
     <% end %>
   </div>

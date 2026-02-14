@@ -6,6 +6,9 @@ module AdminSuite
     attr_accessor :authenticate,
       :current_actor,
       :authorize,
+      :logout_path,
+      :logout_method,
+      :logout_label,
       :resource_globs,
       :action_globs,
       :portal_globs,
@@ -30,6 +33,9 @@ module AdminSuite
       @authenticate = nil
       @current_actor = nil
       @authorize = nil
+      @logout_path = nil
+      @logout_method = :delete
+      @logout_label = "Log out"
       @resource_globs = []
       @action_globs = []
       @portal_globs = []

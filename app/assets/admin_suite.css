@@ -508,6 +508,7 @@ button[type="submit"]:hover,
   transition: background-color 0.2s ease-in-out;
   background: #e2e8f0; /* slate-200 (off) */
   vertical-align: middle;
+  overflow: hidden;
 }
 
 .admin-suite-toggle-wrap {

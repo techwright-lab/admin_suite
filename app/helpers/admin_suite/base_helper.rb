@@ -28,6 +28,45 @@ module AdminSuite
       end
     end
 
+    # Logout path/method/label in the topbar are host-configurable.
+    def admin_suite_logout_path
+      value = AdminSuite.config.respond_to?(:logout_path) ? AdminSuite.config.logout_path : nil
+      resolve_admin_suite_view_config(value).presence
+    end
+
+    def admin_suite_logout_method
+      value = AdminSuite.config.respond_to?(:logout_method) ? AdminSuite.config.logout_method : :delete
+      resolved = resolve_admin_suite_view_config(value)
+      resolved = resolved.to_sym if resolved.respond_to?(:to_sym)
+      resolved.presence || :delete
+    rescue StandardError
+      :delete
+    end
+
+    def admin_suite_logout_label
+      value = AdminSuite.config.respond_to?(:logout_label) ? AdminSuite.config.logout_label : nil
+      resolved = resolve_admin_suite_view_config(value)
+      resolved.to_s.presence || "Log out"
+    end
+
+    def resolve_admin_suite_view_config(value)
+      return nil if value.nil?
+
+      if value.respond_to?(:call)
+        return value.call if value.arity.zero?
+        return value.call(self)
+      end
+
+      if value.is_a?(Symbol)
+        return nil unless respond_to?(value, true)
+        return public_send(value)
+      end
+
+      value
+    rescue StandardError
+      nil
+    end
+
     # Lookup the DSL field definition for a given attribute (if present).
     #
     # Used to render show values with type awareness (e.g. markdown/json/label).
@@ -1062,7 +1101,7 @@ module AdminSuite
             action: "input->admin-suite--searchable-select#search focus->admin-suite--searchable-select#open keydown->admin-suite--searchable-select#keydown"
           }))
         concat(content_tag(:div, "",
-          class: "absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto",
+          class: "absolute z-40 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto",
           data: { "admin-suite--searchable-select-target": "dropdown" }))
       end
     end

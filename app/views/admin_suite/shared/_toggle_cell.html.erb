@@ -7,6 +7,7 @@
 %>
 <%
   value = record.public_send(field)
+  frame_id = dom_id(record, "#{field}_toggle")
   toggle_url ||= begin
     url_for(action: :toggle, id: record.id, field: field)
   rescue ActionController::UrlGenerationError
@@ -16,11 +17,12 @@
   end
 %>
 
-<%= turbo_frame_tag dom_id(record, :toggle), class: "admin-suite-toggle-wrap inline-flex align-middle" do %>
+<%= turbo_frame_tag frame_id, class: "admin-suite-toggle-wrap inline-flex align-middle" do %>
   <% if toggle_url %>
     <%= button_to toggle_url,
         method: :post,
-        form: { data: { turbo_frame: dom_id(record, :toggle) }, class: "m-0 inline-flex align-middle items-center" },
+        params: { field: field },
+        form: { data: { turbo_frame: frame_id }, class: "m-0 inline-flex align-middle items-center" },
         class: "admin-suite-toggle-track #{value ? 'is-on' : ''}" do %>
       <span class="sr-only">Toggle <%= field.to_s.humanize %></span>
       <span class="admin-suite-toggle-thumb"></span>
