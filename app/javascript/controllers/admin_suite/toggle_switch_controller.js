@@ -11,7 +11,8 @@ export default class extends Controller {
   }
 
   connect() {
-    this.checked = this.inputTarget?.value === "1" || this.inputTarget?.value === "true"
+    const inputValue = this.hasInputTarget ? this.inputTarget.value : "0"
+    this.checked = inputValue === "1" || inputValue === "true"
     this.updateVisual()
   }
 
@@ -31,25 +32,25 @@ export default class extends Controller {
   }
 
   updateVisual() {
+    const inactiveTokens = this.classTokens(this.inactiveClasses)
+
     if (this.hasButtonTarget) {
       if (this.checked) {
-        this.buttonTarget.classList.remove(...this.inactiveClasses.split(" "))
-        this.buttonTarget.classList.add(this.activeClass)
+        if (inactiveTokens.length > 0) {
+          this.buttonTarget.classList.remove(...inactiveTokens)
+        }
+        if (this.activeClass) {
+          this.buttonTarget.classList.add(this.activeClass)
+        }
       } else {
-        this.buttonTarget.classList.remove(this.activeClass)
-        this.buttonTarget.classList.add(...this.inactiveClasses.split(" "))
+        if (this.activeClass) {
+          this.buttonTarget.classList.remove(this.activeClass)
+        }
+        if (inactiveTokens.length > 0) {
+          this.buttonTarget.classList.add(...inactiveTokens)
+        }
       }
       this.buttonTarget.setAttribute("aria-checked", this.checked.toString())
-    }
-
-    if (this.hasThumbTarget) {
-      if (this.checked) {
-        this.thumbTarget.classList.remove("translate-x-0")
-        this.thumbTarget.classList.add("translate-x-5")
-      } else {
-        this.thumbTarget.classList.remove("translate-x-5")
-        this.thumbTarget.classList.add("translate-x-0")
-      }
     }
 
     if (this.hasLabelTarget) {
@@ -61,6 +62,14 @@ export default class extends Controller {
     if (this.hasInputTarget) {
       this.inputTarget.value = this.checked ? "1" : "0"
     }
+  }
+
+  classTokens(value) {
+    return value
+      .toString()
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0)
   }
 }
 

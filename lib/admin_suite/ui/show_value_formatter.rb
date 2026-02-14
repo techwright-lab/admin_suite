@@ -12,6 +12,8 @@ module AdminSuite
 
         if (field_def = admin_suite_field_definition(field_name))
           case field_def.type
+          when :toggle
+            return render_show_toggle(record, field_def.name)
           when :markdown
             rendered =
               if defined?(::MarkdownRenderer)
@@ -40,8 +42,13 @@ module AdminSuite
         # If the field isn't in the form config, fall back to index column config
         # so show pages can still render labels consistently.
         if respond_to?(:resource_config, true) && (rc = resource_config) && rc.index_config&.columns_list
-          col = rc.index_config.columns_list.find { |c| c.name.to_sym == field_name.to_sym }
-          if col&.type == :label
+          col = rc.index_config.columns_list.find do |c|
+            c.name.to_sym == field_name.to_sym || c.toggle_field&.to_sym == field_name.to_sym
+          end
+          if col&.type == :toggle
+            toggle_field = (col.toggle_field || col.name).to_sym
+            return render_show_toggle(record, toggle_field)
+          elsif col&.type == :label
             label_value = col.content.is_a?(Proc) ? col.content.call(record) : value
             return render_label_badge(label_value, color: col.label_color, size: col.label_size, record: record)
           end
@@ -64,6 +71,27 @@ module AdminSuite
         return formatted unless formatted.nil?
 
         super
+      end
+
+      private
+
+      def render_show_toggle(record, field)
+        toggle_url =
+          begin
+            resource_toggle_path(
+              portal: current_portal,
+              resource_name: resource_name,
+              id: record.to_param,
+              field: field
+            )
+          rescue StandardError
+            nil
+          end
+
+        render(
+          partial: "admin_suite/shared/toggle_cell",
+          locals: { record: record, field: field, toggle_url: toggle_url }
+        )
       end
     end
   end

@@ -14,6 +14,11 @@ AdminSuite.configure do |config|
   # config.authorize = ->(actor, action:, subject:, resource:, controller:) { true }
   config.authorize = nil
 
+  # Optional sign-out action in the topbar.
+  # config.logout_path = ->(view) { view.main_app.logout_path }
+  # config.logout_method = :delete
+  # config.logout_label = "Log out"
+
   # Resource definition file globs (host app can override).
   config.resource_globs = [
     Rails.root.join("config/admin_suite/resources/*.rb").to_s,

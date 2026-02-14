@@ -29,6 +29,9 @@ These are the defaults in `AdminSuite::Configuration` / `AdminSuite::Engine`:
 - `authenticate`: `nil`
 - `current_actor`: `nil`
 - `authorize`: `nil`
+- `logout_path`: `nil`
+- `logout_method`: `:delete`
+- `logout_label`: `"Log out"`
 - `resource_globs`: defaults to:
   - `Rails.root/config/admin_suite/resources/*.rb`
   - `Rails.root/app/admin/resources/*.rb`
@@ -96,6 +99,33 @@ Optional authorization hook (you can wire Pundit/CanCan/ActionPolicy/etc).
 - **Signature**: `->(actor, action:, subject:, resource:, controller:) { true/false }`
 
 Note: this hook is available, but your app must call it from resource definitions / custom actions as needed (AdminSuite will not guess your authorization policy).
+
+### `logout_path`
+
+Optional sign-out action shown in the top bar.
+
+- **Type**: `Proc`, `String`, `Symbol`, or `nil`
+- **Proc signature**: `->(view_context) { ... }`
+
+Example:
+
+```ruby
+config.logout_path = ->(view) { view.main_app.internal_developer_logout_path }
+```
+
+### `logout_method`
+
+HTTP method for the topbar sign-out button.
+
+- **Type**: `Symbol` or `String`
+- **Default**: `:delete`
+
+### `logout_label`
+
+Button label for the topbar sign-out action.
+
+- **Type**: `String` (or `Proc` for dynamic label)
+- **Default**: `"Log out"`
 
 ### `resource_globs`
 

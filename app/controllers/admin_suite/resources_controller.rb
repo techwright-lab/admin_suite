@@ -96,6 +96,7 @@ module AdminSuite
     # POST /:portal/:resource_name/:id/toggle
     def toggle
       field = params[:field].presence&.to_sym
+      field ||= toggleable_fields.first if toggleable_fields.one?
       unless field
         head :unprocessable_entity
         return
@@ -112,7 +113,7 @@ module AdminSuite
       respond_to do |format|
         format.turbo_stream do
           render turbo_stream: turbo_stream.replace(
-            dom_id(@resource, :toggle),
+            dom_id(@resource, "#{field}_toggle"),
             partial: "admin_suite/shared/toggle_cell",
             locals: { record: @resource, field: field, toggle_url: resource_toggle_path(portal: current_portal, resource_name: resource_name, id: @resource.to_param, field: field) }
           )
@@ -218,13 +219,22 @@ module AdminSuite
     end
 
     def toggleable_fields
-      return [] unless resource_config&.index_config&.columns_list
+      return [] unless resource_config
 
-      resource_config.index_config.columns_list.filter_map do |col|
+      index_fields = resource_config.index_config&.columns_list&.filter_map do |col|
         next unless col.type == :toggle
 
         (col.toggle_field || col.name).to_sym
-      end
+      end || []
+
+      form_fields = resource_config.form_config&.fields_list&.filter_map do |field|
+        next unless field.is_a?(Admin::Base::Resource::FieldDefinition)
+        next unless field.type == :toggle
+
+        field.name.to_sym
+      end || []
+
+      (index_fields + form_fields).uniq
     end
 
     def resource_url(record)
