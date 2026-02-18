@@ -145,23 +145,20 @@ module AdminSuite
     end
 
     def set_resource
-      @resource = resource_class.find(params[:id])
-    rescue ActiveRecord::RecordNotFound
-      # Support "friendly" params (e.g. slugged records) without requiring host apps
-      # to change their model primary keys.
+      klass = resource_class
       id = params[:id].to_s
-      columns = resource_class.column_names
+      columns = klass.column_names
 
-      @resource =
-        if columns.include?("slug")
-          resource_class.find_by!(slug: id)
-        elsif columns.include?("uuid")
-          resource_class.find_by!(uuid: id)
-        elsif columns.include?("token")
-          resource_class.find_by!(token: id)
-        else
-          raise
-        end
+      # Prevent ActiveRecord from coercing UUID-ish params like "2ce3-..."
+      # into integer ids (e.g., 2) for integer primary keys.
+      if non_numeric_id_for_numeric_primary_key?(klass, id)
+        @resource = find_friendly_resource!(klass, id, columns)
+        return
+      end
+
+      @resource = klass.find(id)
+    rescue ActiveRecord::RecordNotFound
+      @resource = find_friendly_resource!(klass, id, columns)
     end
 
     def resource
@@ -243,6 +240,34 @@ module AdminSuite
 
     def collection_url
       resources_path(portal: current_portal, resource_name: resource_name)
+    end
+
+    def find_friendly_resource!(klass, id, columns = klass.column_names)
+      if columns.include?("slug")
+        record = klass.find_by(slug: id)
+        return record if record
+      end
+
+      if columns.include?("uuid")
+        record = klass.find_by(uuid: id)
+        return record if record
+      end
+
+      if columns.include?("token")
+        record = klass.find_by(token: id)
+        return record if record
+      end
+
+      raise ActiveRecord::RecordNotFound
+    end
+
+    def non_numeric_id_for_numeric_primary_key?(klass, id)
+      primary_key = klass.primary_key.to_s
+      return false if primary_key.blank?
+
+      pk_type = klass.columns_hash[primary_key]&.type
+      numeric_pk = %i[integer bigint].include?(pk_type)
+      numeric_pk && id !~ /\A\d+\z/
     end
   end
 end

@@ -1079,6 +1079,16 @@ module AdminSuite
       current_label = if current_value.present? && collection.is_a?(Array)
         match = collection.find { |opt| opt.is_a?(Array) ? opt[1].to_s == current_value.to_s : opt.to_s == current_value.to_s }
         match.is_a?(Array) ? match[0] : match.to_s
+      elsif current_value.present? && collection.is_a?(String)
+        association_name = field.name.to_s.sub(/_id\z/, "")
+        assoc = resource.public_send(association_name) if resource.respond_to?(association_name)
+        if assoc.respond_to?(:name) && assoc.name.present?
+          assoc.name
+        elsif assoc.respond_to?(:title) && assoc.title.present?
+          assoc.title
+        else
+          current_value
+        end
       else
         current_value
       end
@@ -1088,7 +1098,8 @@ module AdminSuite
           controller: "admin-suite--searchable-select",
           "admin-suite--searchable-select-options-value": options_json,
           "admin-suite--searchable-select-creatable-value": field.create_url.present?,
-          "admin-suite--searchable-select-search-url-value": collection.is_a?(String) ? collection : ""
+          "admin-suite--searchable-select-search-url-value": collection.is_a?(String) ? collection : "",
+          "admin-suite--searchable-select-create-url-value": field.create_url.to_s
         },
         class: "relative") do
         concat(hidden_field_tag("#{param_key}[#{field.name}]", current_value, data: { "admin-suite--searchable-select-target": "input" }))

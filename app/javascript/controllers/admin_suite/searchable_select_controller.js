@@ -11,6 +11,7 @@ export default class extends Controller {
     options: { type: Array, default: [] },
     creatable: { type: Boolean, default: false },
     searchUrl: { type: String, default: "" },
+    createUrl: { type: String, default: "" },
   }
 
   connect() {
@@ -55,16 +56,8 @@ export default class extends Controller {
         opt.label.toLowerCase().includes(query),
       )
 
-      if (
-        this.creatableValue &&
-        query &&
-        !this.filteredOptions.some((o) => o.value === query)
-      ) {
-        this.filteredOptions.push({
-          value: query,
-          label: `Create "${query}"`,
-          isNew: true,
-        })
+      if (this.creatableValue && query && !this.hasExactOptionMatch(query)) {
+        this.filteredOptions.push(this.buildCreateOption(query))
       }
 
       this.renderDropdown()
@@ -81,19 +74,11 @@ export default class extends Controller {
       const data = await response.json()
       this.filteredOptions = data.map((item) => ({
         value: item.id || item.value,
-        label: item.name || item.label,
+        label: item.name || item.title || item.label,
       }))
 
-      if (
-        this.creatableValue &&
-        query &&
-        !this.filteredOptions.some((o) => o.value === query)
-      ) {
-        this.filteredOptions.push({
-          value: query,
-          label: `Create "${query}"`,
-          isNew: true,
-        })
+      if (this.creatableValue && query && !this.hasExactOptionMatch(query)) {
+        this.filteredOptions.push(this.buildCreateOption(query))
       }
 
       this.renderDropdown()
@@ -117,7 +102,9 @@ export default class extends Controller {
               class="block w-full text-left px-3 py-2 text-sm hover:bg-slate-100 ${index === this.selectedIndex ? "bg-slate-100" : ""} ${opt.isNew ? "text-indigo-600 font-medium" : "text-slate-700"}"
               data-action="click->admin-suite--searchable-select#select"
               data-value="${opt.value}"
-              data-label="${opt.label}">
+              data-label="${opt.label}"
+              data-create-label="${opt.createLabel || ""}"
+              data-is-new="${opt.isNew ? "true" : "false"}">
         ${opt.label}
       </button>
     `,
@@ -125,18 +112,12 @@ export default class extends Controller {
       .join("")
   }
 
-  select(event) {
-    const value = event.currentTarget.dataset.value
-    const label = event.currentTarget.dataset.label
-      .replace(/^Create "/, "")
-      .replace(/"$/, "")
-
-    this.inputTarget.value = value
-    this.searchTarget.value = label
-    this.close()
+  async select(event) {
+    const option = this.optionFromElement(event.currentTarget)
+    await this.applyOption(option)
   }
 
-  keydown(event) {
+  async keydown(event) {
     switch (event.key) {
       case "ArrowDown":
         event.preventDefault()
@@ -154,18 +135,120 @@ export default class extends Controller {
       case "Enter":
         event.preventDefault()
         if (this.selectedIndex >= 0 && this.filteredOptions[this.selectedIndex]) {
-          const opt = this.filteredOptions[this.selectedIndex]
-          this.inputTarget.value = opt.value
-          this.searchTarget.value = opt.label
-            .replace(/^Create "/, "")
-            .replace(/"$/, "")
-          this.close()
+          const option = this.filteredOptions[this.selectedIndex]
+          await this.applyOption(option)
         }
         break
       case "Escape":
         this.close()
         break
     }
+  }
+
+  hasExactOptionMatch(query) {
+    return this.filteredOptions.some((opt) => {
+      const value = String(opt.value || "").toLowerCase().trim()
+      const label = String(opt.label || "").toLowerCase().trim()
+      return value === query || label === query
+    })
+  }
+
+  buildCreateOption(query) {
+    return {
+      value: query,
+      label: `Create "${query}"`,
+      createLabel: query,
+      isNew: true,
+    }
+  }
+
+  optionFromElement(element) {
+    const isNew = element.dataset.isNew === "true"
+    return {
+      value: element.dataset.value,
+      label: isNew
+        ? element.dataset.createLabel || element.dataset.label
+        : element.dataset.label,
+      isNew,
+    }
+  }
+
+  async applyOption(option) {
+    if (!option) return
+
+    let value = option.value
+    let label = option.label || ""
+
+    if (option.isNew) {
+      if (!this.createUrlValue) {
+        this.showInlineError("Create URL is not configured for this field.")
+        return
+      }
+
+      const created = await this.createOption(label)
+      if (!created) return
+
+      value = created.id
+      label = created.name || created.title || label
+    }
+
+    this.inputTarget.value = value
+    this.searchTarget.value = label
+    this.close()
+  }
+
+  async createOption(label) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+    this.searchTarget.disabled = true
+
+    try {
+      const response = await fetch(this.createUrlValue, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+        },
+        body: JSON.stringify({
+          name: label,
+          title: label,
+        }),
+      })
+
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        const errors = Array.isArray(data?.errors) ? data.errors.join(", ") : null
+        this.showInlineError(errors || "Could not create this option.")
+        return null
+      }
+
+      if (!data?.id) {
+        this.showInlineError("Create endpoint returned no id.")
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error("Create failed:", error)
+      this.showInlineError("Could not create this option.")
+      return null
+    } finally {
+      this.searchTarget.disabled = false
+    }
+  }
+
+  showInlineError(message) {
+    this.dropdownTarget.innerHTML = `
+      <div class="px-3 py-2 text-sm text-red-600">${this.escapeHtml(message)}</div>
+    `
+    this.dropdownTarget.classList.remove("hidden")
+    this.isOpen = true
+  }
+
+  escapeHtml(value) {
+    const div = document.createElement("div")
+    div.textContent = value
+    return div.innerHTML
   }
 }
 
