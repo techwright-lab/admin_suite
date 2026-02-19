@@ -64,9 +64,10 @@ module AdminSuite
 
       executor = Admin::Base::ActionExecutor.new(resource_config, action, admin_suite_actor)
       result = executor.execute_member(@resource, params.to_unsafe_h)
+      redirect_target = result.redirect_url.presence || resource_url(@resource)
 
       if result.success?
-        redirect_to resource_url(@resource), notice: result.message
+        redirect_to redirect_target, notice: result.message
       else
         redirect_to resource_url(@resource), alert: result.message
       end
@@ -211,8 +212,18 @@ module AdminSuite
         end
       end
 
-      key = resource_class.model_name.param_key
-      params.require(key).permit(permitted_fields + array_fields)
+      candidate_keys = []
+      candidate_keys << @resource.class.model_name.param_key if defined?(@resource) && @resource.present?
+      candidate_keys << resource_class.model_name.param_key
+      candidate_keys.uniq!
+
+      candidate_keys.each do |key|
+        if params.key?(key) || params.key?(key.to_sym)
+          return params.require(key).permit(permitted_fields + array_fields)
+        end
+      end
+
+      params.require(resource_class.model_name.param_key).permit(permitted_fields + array_fields)
     end
 
     def toggleable_fields

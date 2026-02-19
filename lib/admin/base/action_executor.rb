@@ -109,12 +109,31 @@ module Admin
 
       def execute_model_method(record, action, bang: false)
         method_name = bang ? "#{action.name}!" : action.name
-        record.public_send(method_name)
-        success_result("#{action.label} completed successfully")
+        action_result = record.public_send(method_name)
+        return action_result if action_result.is_a?(Result)
+
+        success_result(
+          "#{action.label} completed successfully",
+          redirect_url: redirect_url_for_action(action, action_result)
+        )
       rescue ActiveRecord::RecordInvalid => e
         failure_result("Validation failed: #{e.record.errors.full_messages.join(', ')}")
       rescue AASM::InvalidTransition => e
         failure_result("Invalid state transition: #{e.message}")
+      end
+
+      def redirect_url_for_action(action, action_result)
+        return nil unless action.name.to_sym == :duplicate
+        return nil unless action_result.respond_to?(:persisted?) && action_result.persisted?
+        return nil unless resource_class.respond_to?(:portal_name) && resource_class.respond_to?(:resource_name_plural)
+
+        AdminSuite::Engine.routes.url_helpers.resource_path(
+          portal: resource_class.portal_name,
+          resource_name: resource_class.resource_name_plural,
+          id: action_result.to_param
+        )
+      rescue StandardError
+        nil
       end
 
       def find_handler_class(action)
