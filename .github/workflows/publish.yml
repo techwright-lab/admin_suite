@@ -81,3 +81,30 @@ jobs:
             git push origin "$TAG"
             echo "Created and pushed tag $TAG"
           fi
+      
+      - name: Extract release notes from CHANGELOG
+        if: steps.version_check.outputs.version_exists == 'false'
+        run: |
+          VERSION="${{ steps.version_check.outputs.current_version }}"
+          awk "/^## \[${VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md \
+            | sed '/^[[:space:]]*$/{ N; /^\n[[:space:]]*$/d }' \
+            > /tmp/release_notes.md
+          if [ ! -s /tmp/release_notes.md ]; then
+            echo "Release v${VERSION}" > /tmp/release_notes.md
+          fi
+      
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.version_exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.version_check.outputs.current_version }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub Release $TAG already exists, skipping"
+          else
+            gh release create "$TAG" \
+              --title "${{ github.event.repository.name }} ${TAG}" \
+              --notes-file /tmp/release_notes.md \
+              --verify-tag
+            echo "Created GitHub Release $TAG"
+          fi

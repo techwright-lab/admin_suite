@@ -20,6 +20,7 @@ The gem is automatically published to RubyGems when changes are merged to `main`
      - Check if the version already exists on RubyGems
      - Build and publish the gem (if it's a new version)
      - Create a Git tag for the release (if it doesn't already exist)
+     - Create a GitHub Release with notes extracted from `CHANGELOG.md`
 
 ### Requirements
 
@@ -59,7 +60,8 @@ gem push "admin_suite-X.Y.Z.gem"
 ## Notes
 
 - RubyGems commonly requires MFA/OTP for pushes (this gem is configured with `rubygems_mfa_required`)
-- The automated workflow uses a GitHub Actions bot to push tags
+- The automated workflow uses a GitHub Actions bot to push tags and create GitHub Releases
 - The publish workflow only runs after the CI workflow completes successfully
+- GitHub Release notes are automatically extracted from the matching version section in `CHANGELOG.md`
 - You can manually trigger the publish workflow from the GitHub Actions tab if needed
 
