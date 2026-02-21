@@ -81,3 +81,53 @@ jobs:
             git push origin "$TAG"
             echo "Created and pushed tag $TAG"
           fi
+      
+      - name: Check release eligibility
+        id: release_check
+        run: |
+          TAG="v${{ steps.version_check.outputs.current_version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate release notes
+        if: steps.release_check.outputs.tag_exists == 'true'
+        run: |
+          VERSION="${{ steps.version_check.outputs.current_version }}"
+
+          # Try to extract notes from CHANGELOG first
+          awk "/^## \[${VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md \
+            | sed '/^[[:space:]]*$/{ N; /^\n[[:space:]]*$/d }' \
+            > /tmp/release_notes.md
+
+          # If CHANGELOG has no meaningful content for this version, generate notes from commits since the previous tag
+          if ! grep -q '[^[:space:]]' /tmp/release_notes.md 2>/dev/null; then
+            PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${VERSION}$" | head -1)
+            if [ -n "$PREV_TAG" ]; then
+              echo "No CHANGELOG entry found for v${VERSION}; generating notes from commits since ${PREV_TAG}"
+              git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges > /tmp/release_notes.md
+            fi
+          fi
+
+          # Final fallback if neither source produced any content
+          if ! grep -q '[^[:space:]]' /tmp/release_notes.md 2>/dev/null; then
+            echo "Release v${VERSION}" > /tmp/release_notes.md
+          fi
+      
+      - name: Create GitHub Release
+        if: steps.release_check.outputs.tag_exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.version_check.outputs.current_version }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub Release $TAG already exists, skipping"
+          else
+            gh release create "$TAG" \
+              --title "${{ github.event.repository.name }} ${TAG}" \
+              --notes-file /tmp/release_notes.md \
+              --verify-tag
+            echo "Created GitHub Release $TAG"
+          fi
