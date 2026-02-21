@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-02-21
+
+### Changed
+
+- Release notes are now auto-generated from commits since the previous tag when no `CHANGELOG.md` entry exists for the current version, instead of falling back to a plain "Release vX.Y.Z" string.
+
 ## [0.2.6] - 2026-02-21
 
 ### Added

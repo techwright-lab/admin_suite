@@ -82,13 +82,26 @@ jobs:
             echo "Created and pushed tag $TAG"
           fi
       
-      - name: Extract release notes from CHANGELOG
+      - name: Generate release notes
         if: steps.version_check.outputs.version_exists == 'false'
         run: |
           VERSION="${{ steps.version_check.outputs.current_version }}"
+
+          # Try to extract notes from CHANGELOG first
           awk "/^## \[${VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md \
             | sed '/^[[:space:]]*$/{ N; /^\n[[:space:]]*$/d }' \
             > /tmp/release_notes.md
+
+          # If CHANGELOG has no entry for this version, generate notes from commits since the previous tag
+          if [ ! -s /tmp/release_notes.md ]; then
+            PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${VERSION}$" | head -1)
+            if [ -n "$PREV_TAG" ]; then
+              echo "No CHANGELOG entry found for v${VERSION}; generating notes from commits since ${PREV_TAG}"
+              git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges > /tmp/release_notes.md
+            fi
+          fi
+
+          # Final fallback if neither source produced any content
           if [ ! -s /tmp/release_notes.md ]; then
             echo "Release v${VERSION}" > /tmp/release_notes.md
           fi
