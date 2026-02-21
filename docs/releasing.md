@@ -62,6 +62,6 @@ gem push "admin_suite-X.Y.Z.gem"
 - RubyGems commonly requires MFA/OTP for pushes (this gem is configured with `rubygems_mfa_required`)
 - The automated workflow uses a GitHub Actions bot to push tags and create GitHub Releases
 - The publish workflow only runs after the CI workflow completes successfully
-- GitHub Release notes are sourced from the matching version section in `CHANGELOG.md`; if no entry exists, they are auto-generated from commits since the previous tag
+- GitHub Release notes are sourced from the matching version section in `CHANGELOG.md`; if no entry exists, they are auto-generated from commits since the previous tag; a plain "Release vX.Y.Z" string is used only as a final fallback when no previous tag or commit-generated notes are available
 - You can manually trigger the publish workflow from the GitHub Actions tab if needed
 
