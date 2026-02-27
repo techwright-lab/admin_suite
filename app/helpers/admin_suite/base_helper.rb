@@ -1137,7 +1137,7 @@ module AdminSuite
           []
         end
 
-      field_name = field.type == :tags ? "tag_list" : field.name
+      field_name = field.name
       full_field_name = "#{param_key}[#{field_name}][]"
 
       content_tag(:div,

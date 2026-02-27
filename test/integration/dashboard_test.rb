@@ -36,7 +36,7 @@ module AdminSuite
         RUBY
 
         AdminSuite.reset_root_dashboard!
-        AdminSuite.config.dashboard_globs = [File.join(dir, "*.rb")]
+        AdminSuite.config.dashboard_globs = [ File.join(dir, "*.rb") ]
 
         get "/internal/admin_suite"
         assert_response :success
