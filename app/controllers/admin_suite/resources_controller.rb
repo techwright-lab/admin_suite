@@ -205,8 +205,20 @@ module AdminSuite
         next unless field.is_a?(Admin::Base::Resource::FieldDefinition)
 
         if field.type == :tags || field.type == :multi_select
-          array_fields << { field.name => [] }
-          array_fields << { tag_list: [] } if field.type == :tags && field.name != :tag_list
+          if field.type == :tags
+            name_str = field.name.to_s
+            submitted_name =
+              if name_str.end_with?("_list")
+                field.name
+              elsif resource_class.method_defined?("#{name_str}_list")
+                :"#{name_str}_list"
+              else
+                :tag_list
+              end
+            array_fields << { submitted_name => [] }
+          else
+            array_fields << { field.name => [] }
+          end
         else
           permitted_fields << field.name
         end

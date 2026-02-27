@@ -1137,7 +1137,19 @@ module AdminSuite
           []
         end
 
-      field_name = field.name
+      field_name =
+        if field.type == :tags
+          name_str = field.name.to_s
+          if name_str.end_with?("_list")
+            field.name
+          elsif resource.class.method_defined?("#{name_str}_list")
+            :"#{name_str}_list"
+          else
+            :tag_list
+          end
+        else
+          field.name
+        end
       full_field_name = "#{param_key}[#{field_name}][]"
 
       content_tag(:div,
