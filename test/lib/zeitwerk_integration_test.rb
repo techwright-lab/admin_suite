@@ -27,7 +27,7 @@ module AdminSuite
         pushed_dirs << { path: path.to_s, namespace: namespace }
       end
 
-      [loader, ignored_dirs, pushed_dirs]
+      [ loader, ignored_dirs, pushed_dirs ]
     end
 
     # Helper method that simulates the Zeitwerk integration logic from engine.rb
@@ -170,7 +170,7 @@ module AdminSuite
 
       # Temporarily override File.binread to simulate read errors
       original_binread = File.singleton_class.instance_method(:binread)
-      
+
       File.singleton_class.define_method(:binread) do |path|
         if path == test_file
           raise StandardError, "Simulated read error"
