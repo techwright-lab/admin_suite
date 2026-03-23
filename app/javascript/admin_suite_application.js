@@ -2,6 +2,7 @@ import { Application } from "@hotwired/stimulus"
 
 // Reuse the host app's Stimulus application if available, otherwise start a new one
 const application = window.Stimulus || Application.start()
+window.Stimulus ||= application
 
 import SearchableSelectController from "controllers/admin_suite/searchable_select_controller"
 application.register("admin-suite--searchable-select", SearchableSelectController)
