@@ -36,6 +36,7 @@
     <% if respond_to?(:javascript_importmap_tags) %>
       <%= javascript_importmap_tags %>
     <% end %>
+    <script type="module">import "admin_suite_application"</script>
   </head>
 
   <body class="admin-suite bg-slate-50">

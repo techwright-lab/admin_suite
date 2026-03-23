@@ -195,6 +195,7 @@ export default class extends Controller {
     this.inputTarget.value = value
     this.searchTarget.value = label
     this.close()
+    this.inputTarget.dispatchEvent(new Event("change", { bubbles: true }))
   }
 
   async createOption(label) {
