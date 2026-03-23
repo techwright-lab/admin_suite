@@ -35,6 +35,7 @@
 
     <% if respond_to?(:javascript_importmap_tags) %>
       <%= javascript_importmap_tags %>
+      <%= javascript_import_module_tag "admin_suite_application" %>
     <% end %>
   </head>
 

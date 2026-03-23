@@ -1117,6 +1117,62 @@ module AdminSuite
       end
     end
 
+    def render_dependent_searchable_select(_f, field, resource)
+      param_key = resource.class.model_name.param_key
+      current_value = resource.public_send(field.name)
+      collection = field.collection.is_a?(Proc) ? field.collection.call : field.collection
+
+      # Collection format: [[label, value, group], ...] — triples with group for filtering
+      all_options_json = if collection.is_a?(Array)
+        collection.map { |opt|
+          if opt.is_a?(Array) && opt.size >= 3
+            { value: opt[1], label: opt[0], group: opt[2] }
+          elsif opt.is_a?(Array)
+            { value: opt[1], label: opt[0] }
+          else
+            { value: opt, label: opt.to_s.humanize }
+          end
+        }.to_json
+      else
+        "[]"
+      end
+
+      parent_selector = if field.parent_field
+        "[name=\"#{param_key}[#{field.parent_field}]\"]"
+      else
+        ""
+      end
+
+      current_label = if current_value.present? && collection.is_a?(Array)
+        match = collection.find { |opt| opt.is_a?(Array) ? opt[1].to_s == current_value.to_s : opt.to_s == current_value.to_s }
+        match.is_a?(Array) ? match[0] : match.to_s
+      else
+        current_value
+      end
+
+      content_tag(:div,
+        data: {
+          controller: "admin-suite--dependent-searchable-select",
+          "admin-suite--dependent-searchable-select-all-options-value": all_options_json,
+          "admin-suite--dependent-searchable-select-parent-selector-value": parent_selector
+        },
+        class: "relative") do
+        concat(hidden_field_tag("#{param_key}[#{field.name}]", current_value,
+          data: { "admin-suite--dependent-searchable-select-target": "input" }))
+        concat(text_field_tag(nil, current_label,
+          class: "form-input w-full",
+          placeholder: field.placeholder || "Search...",
+          autocomplete: "off",
+          data: {
+            "admin-suite--dependent-searchable-select-target": "search",
+            action: "input->admin-suite--dependent-searchable-select#search focus->admin-suite--dependent-searchable-select#open keydown->admin-suite--dependent-searchable-select#keydown"
+          }))
+        concat(content_tag(:div, "",
+          class: "absolute z-40 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto",
+          data: { "admin-suite--dependent-searchable-select-target": "dropdown" }))
+      end
+    end
+
     def render_multi_select(_f, field, resource)
       param_key = resource.class.model_name.param_key
       current_values =

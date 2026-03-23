@@ -58,6 +58,10 @@ AdminSuite::UI::FieldRendererRegistry.register(:searchable_select) do |view, f, 
   view.render_searchable_select(f, field, resource)
 end
 
+AdminSuite::UI::FieldRendererRegistry.register(:dependent_select) do |view, f, field, resource, _field_class|
+  view.render_dependent_searchable_select(f, field, resource)
+end
+
 AdminSuite::UI::FieldRendererRegistry.register(:multi_select) do |view, f, field, resource, _field_class|
   view.render_multi_select(f, field, resource)
 end

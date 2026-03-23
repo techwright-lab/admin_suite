@@ -380,7 +380,8 @@ module Admin
             preview: options[:preview] != false,
             variants: options[:variants],
             label_color: options[:label_color],
-            label_size: options[:label_size]
+            label_size: options[:label_size],
+            parent_field: options[:parent_field]
           )
         end
 
@@ -406,7 +407,7 @@ module Admin
         :name, :type, :required, :label, :help, :placeholder,
         :collection, :create_url, :accept, :rows, :readonly,
         :if_condition, :unless_condition, :multiple, :creatable,
-        :preview, :variants, :label_color, :label_size,
+        :preview, :variants, :label_color, :label_size, :parent_field,
         keyword_init: true
       )
 
