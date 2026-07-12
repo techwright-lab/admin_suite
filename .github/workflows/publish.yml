@@ -39,7 +39,7 @@ jobs:
       - name: Build gem
         id: version_check
         run: |
-          set -o pipefail
+          set -euo pipefail
           CURRENT_VERSION=$(ruby -r ./lib/admin_suite/version.rb -e "puts AdminSuite::VERSION")
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           gem build admin_suite.gemspec
