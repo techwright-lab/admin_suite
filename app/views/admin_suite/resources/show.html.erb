@@ -1,14 +1,14 @@
 <% content_for :title, "#{resource.respond_to?(:name) ? resource.name : "#{resource_config.human_name} ##{resource.id}"} - Admin Suite" %>
 
 <%
-  has_edit_route = begin
+  has_edit_route = !resource_config.read_only? && begin
     url_for(action: :edit, id: resource.to_param)
     true
   rescue ActionController::UrlGenerationError
     false
   end
 
-  has_destroy_route = begin
+  has_destroy_route = !resource_config.read_only? && begin
     url_for(action: :destroy, id: resource.to_param)
     true
   rescue ActionController::UrlGenerationError

@@ -165,6 +165,17 @@ module Admin
           @export_formats = formats
         end
 
+        # Declares whether the generic resource routes may mutate records.
+        # Read-only resources retain index/show access while the controller
+        # rejects direct requests to every built-in mutation endpoint.
+        def read_only(value = true)
+          @read_only = value
+        end
+
+        def read_only?
+          @read_only == true
+        end
+
         # Returns the resource name derived from class name
         #
         # @return [String]
@@ -328,12 +339,13 @@ module Admin
             placeholder: options[:placeholder],
             options: select_options,
             field: options[:field] || name,
-            apply: options[:apply]
+            apply: options[:apply],
+            default: options[:default]
           )
         end
       end
 
-      FilterDefinition = Struct.new(:name, :type, :label, :placeholder, :options, :field, :apply, keyword_init: true)
+      FilterDefinition = Struct.new(:name, :type, :label, :placeholder, :options, :field, :apply, :default, keyword_init: true)
 
       class StatsBuilder
         attr_reader :stats

@@ -1,7 +1,7 @@
 <% content_for :title, "#{resource_config.human_name_plural} - Admin Suite" %>
 
 <%
-  has_new_route = begin
+  has_new_route = !resource_config.read_only? && begin
     url_for(action: :new)
     true
   rescue ActionController::UrlGenerationError
@@ -9,6 +9,8 @@
   end
 
   has_edit_route = ->(record) {
+    next false if resource_config.read_only?
+
     begin
       url_for(action: :edit, id: record.to_param)
       true
