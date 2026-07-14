@@ -57,7 +57,8 @@ module Admin
         # They are handled elsewhere (`apply_sort`) and must not be turned into SQL.
         return scope if %i[sort sort_direction direction page search].include?(filter.name.to_sym)
 
-        value = params[filter.name]
+        value = params[filter.name].presence
+        value = filter.default if value.blank? && filter.respond_to?(:default)
         return scope if value.blank?
 
         if filter.respond_to?(:apply) && filter.apply.present?

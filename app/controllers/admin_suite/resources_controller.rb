@@ -5,14 +5,16 @@ module AdminSuite
     include Pagy::Backend
     include Pagy::Frontend
 
+    before_action :enforce_read_only!, only: %i[new create edit update destroy]
     before_action :set_resource, if: -> { params[:id].present? && !%w[index new create].include?(action_name) }
 
     helper_method :resource_config, :resource_class, :resource, :collection, :current_portal, :resource_name
 
     # GET /:portal/:resource_name
     def index
-      @stats = calculate_stats if resource_config&.index_config&.stats_list&.any?
-      @pagy, @collection = paginate_collection(filtered_collection)
+      scope = filtered_collection
+      @stats = calculate_stats(scope) if resource_config&.index_config&.stats_list&.any?
+      @pagy, @collection = paginate_collection(scope)
     end
 
     # GET /:portal/:resource_name/:id
@@ -181,16 +183,24 @@ module AdminSuite
       pagy(scope, items: per_page)
     end
 
-    def calculate_stats
+    def calculate_stats(scope)
       resource_config.index_config.stats_list.map do |stat_def|
         value =
           begin
-            stat_def.calculator.call
+            if stat_def.calculator.arity.zero?
+              stat_def.calculator.call
+            else
+              stat_def.calculator.call(scope)
+            end
           rescue StandardError
             "N/A"
           end
         { name: stat_def.name.to_s.humanize, value: value, color: stat_def.color }
       end
+    end
+
+    def enforce_read_only!
+      head :not_found if resource_config&.read_only?
     end
 
     def find_action(name)
