@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-07-14
+
+### Added
+
+- Read-only resource support, server-side filter defaults, and filtered-scope statistics.
+
 ## [0.2.8] - 2026-03-23
 
 ### Added
@@ -38,4 +44,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial extraction of the AdminSuite Rails engine.
 - Resource/portal DSL, docs viewer, and theming primitives.
 - Isolated gem test suite with a dummy Rails app.
-
