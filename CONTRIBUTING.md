@@ -12,7 +12,7 @@ Thank you for your interest in contributing to AdminSuite!
 
 ## Development
 
-See `docs/development.md` for detailed information on:
+See `../_vault/products/admin_suite/docs/development.md` for detailed information on:
 - Setting up your development environment
 - Running tests
 - Code style guidelines
@@ -36,7 +36,7 @@ The CI workflow runs automatically on every pull request.
 
 ## Releasing
 
-See `docs/releasing.md` for information on how releases are managed.
+See `../_vault/products/admin_suite/docs/releasing.md` for information on how releases are managed.
 
 Releases are automated via GitHub Actions when changes are merged to `main` with a version bump.
 

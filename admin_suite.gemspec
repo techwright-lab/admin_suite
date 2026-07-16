@@ -23,7 +23,6 @@ Gem::Specification.new do |spec|
   spec.files = Dir.chdir(__dir__) do
     Dir[
       "app/**/*",
-      "docs/**/*",
       "lib/**/*",
       "test/**/*",
       "config/**/*",

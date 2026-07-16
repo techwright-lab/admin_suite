@@ -15,21 +15,9 @@ across other products.
 
 ## Documentation
 
-Start here:
-
-- `docs/README.md` (index)
-
-Read more:
-
-- `docs/installation.md`
-- `docs/configuration.md`
-- `docs/portals.md`
-- `docs/resources.md`
-- `docs/fields.md`
-- `docs/actions.md`
-- `docs/theming.md`
-- `docs/docs_viewer.md`
-- `docs/troubleshooting.md`
+Canonical AdminSuite documentation lives in the TechWright vault at
+`../_vault/products/admin_suite/docs/`. This repo intentionally has no root
+`docs/` tree or docs symlink.
 
 ## Quickstart
 
@@ -67,7 +55,7 @@ AdminSuite.configure do |config|
 end
 ```
 
-Read more: `docs/configuration.md`
+Read more: `../_vault/products/admin_suite/docs/configuration.md`
 
 ### Add portals (navigation metadata)
 
@@ -80,7 +68,7 @@ AdminSuite.configure do |config|
 end
 ```
 
-Read more: `docs/portals.md`
+Read more: `../_vault/products/admin_suite/docs/portals.md`
 
 ### Add a resource
 
@@ -119,25 +107,23 @@ module Admin
 end
 ```
 
-Read more: `docs/resources.md` and `docs/fields.md`
+Read more: `../_vault/products/admin_suite/docs/resources.md` and `../_vault/products/admin_suite/docs/fields.md`
 
 ### Add docs (optional)
 
-Create markdown files in your host app:
-
-- `docs/*.md` (or set `config.docs_path`)
+Set `config.docs_path` to an explicit documentation source. TechWright host apps point this at their canonical `_vault/products/<product>/docs/` directory; they do not create repo `docs/` trees.
 
 Then visit:
 
 - `/internal/admin/docs`
 
-Read more: `docs/docs_viewer.md`
+Read more: `../_vault/products/admin_suite/docs/docs_viewer.md`
 
 ## Contributing
 
 See:
 
 - `CONTRIBUTING.md`
-- `docs/development.md`
-- `docs/releasing.md`
+- `../_vault/products/admin_suite/docs/development.md`
+- `../_vault/products/admin_suite/docs/releasing.md`
 
