@@ -12,7 +12,12 @@ module AdminSuite
         return nil if controller.performed?
 
         actor_hook = options[:current_actor]
-        actor = actor_hook&.call(controller)
+        actor =
+          begin
+            actor_hook&.call(controller)
+          rescue StandardError
+            nil
+          end
         actor || true # authenticated, anonymous actor
       end
     end

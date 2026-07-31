@@ -5,6 +5,7 @@ module AdminSuite
     include Pagy::Backend
     include Pagy::Frontend
 
+    before_action :require_resource_config!
     before_action :enforce_read_only!, only: %i[new create edit update destroy toggle]
     before_action :set_resource, if: -> { params[:id].present? && !%w[index new create].include?(action_name) }
     before_action :authorize_admin_suite!
@@ -144,16 +145,26 @@ module AdminSuite
     def authorize_admin_suite!
       hook = AdminSuite.config.authorize
       return if hook.nil?
-      return if resource_config.nil? # unknown resource 404s elsewhere
 
       permitted = hook.call(
         actor: admin_suite_actor,
-        action: AUTHORIZATION_VERBS.fetch(action_name, :read),
+        action: AUTHORIZATION_VERBS.fetch(action_name),
         resource: resource_config,
         record: (defined?(@resource) ? @resource : nil),
         controller: self
       )
       head :forbidden unless permitted
+    end
+
+    # Guards every action behind a registered resource definition. Undeclared
+    # resource names (anything that doesn't map to an
+    # `Admin::Resources::*Resource` class) 404 here, before authentication's
+    # authorize hook or any model lookup runs — closing off the ability to
+    # reach arbitrary host model classes via unregistered resource names.
+    #
+    # @return [void]
+    def require_resource_config!
+      head :not_found if resource_config.nil?
     end
 
     def current_portal
@@ -173,7 +184,7 @@ module AdminSuite
     end
 
     def resource_class
-      resource_config&.model_class || resource_name.classify.constantize
+      resource_config.model_class
     end
 
     def set_resource

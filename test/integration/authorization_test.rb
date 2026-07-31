@@ -92,5 +92,40 @@ module AdminSuite
       end
       assert_equal :destroy, captured_action
     end
+
+    test "execute_action reaches the authorize hook with :execute before the action-name 404" do
+      captured_action = nil
+      with_authorize(->(action:, **) { captured_action = action; false }) do
+        post "#{BASE}/1/execute_action/anything"
+      end
+      assert_equal :execute, captured_action
+    end
+
+    test "bulk_action reaches the authorize hook with :execute before the action-name 404" do
+      captured_action = nil
+      with_authorize(->(action:, **) { captured_action = action; false }) do
+        post "#{BASE}/bulk_action/anything", params: { ids: [ "1" ] }
+      end
+      assert_equal :execute, captured_action
+    end
+
+    test "unregistered resource name 404s instead of constantizing a host model" do
+      get "/internal/admin_suite/ops/strings"
+      assert_response :not_found
+    end
+
+    test "unregistered resource name 404s on mutating verbs instead of reaching the model" do
+      delete "/internal/admin_suite/ops/strings/1"
+      assert_response :not_found
+    end
+
+    test "unregistered resource name 404s before the authorize hook ever runs" do
+      hook_called = false
+      with_authorize(->(**) { hook_called = true; false }) do
+        get "/internal/admin_suite/ops/strings"
+        assert_response :not_found
+      end
+      refute hook_called, "authorize hook must not run for an unregistered resource name"
+    end
   end
 end

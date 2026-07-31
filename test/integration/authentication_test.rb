@@ -77,6 +77,17 @@ module AdminSuite
       end
     end
 
+    test "legacy authenticate lambda passes but a raising current_actor lambda is rescued to nil" do
+      passes = ->(_controller) {}
+      raising_actor = ->(_controller) { raise "boom" }
+
+      with_config(allow_unauthenticated: false, auth_strategy: nil, authenticate: passes,
+                  current_actor: raising_actor) do
+        get ROOT
+        assert_response :success
+      end
+    end
+
     test "host filter skip list is config-driven with require_authentication default" do
       assert_equal [ :require_authentication ], AdminSuite.config.skip_host_before_actions
       # The controller must consume config rather than hardcode the name:

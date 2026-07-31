@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `config.current_actor` is now consulted at most once per request
   (was invoked repeatedly by views; side-effecting lambdas fired multiple times).
+- Requests for resource names with no registered resource definition now
+  respond 404 instead of resolving host model classes directly (closes an
+  authorization bypass).
 
 ## [0.2.9] - 2026-07-14
 
