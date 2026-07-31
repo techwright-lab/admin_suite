@@ -98,5 +98,15 @@ module AdminSuite
       assert_includes template, "has_edit_route = !resource_config.read_only?"
       assert_includes template, "has_destroy_route = !resource_config.read_only?"
     end
+
+    test "toggle endpoint is rejected on read_only resources" do
+      post "#{BASE_PATH}/1/toggle", params: { field: "name" }
+      assert_response :not_found
+    end
+
+    test "undeclared execute_action names respond 404" do
+      post "#{BASE_PATH}/1/execute_action/nonexistent_action"
+      assert_response :not_found
+    end
   end
 end

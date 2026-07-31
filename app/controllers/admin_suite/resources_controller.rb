@@ -5,7 +5,7 @@ module AdminSuite
     include Pagy::Backend
     include Pagy::Frontend
 
-    before_action :enforce_read_only!, only: %i[new create edit update destroy]
+    before_action :enforce_read_only!, only: %i[new create edit update destroy toggle]
     before_action :set_resource, if: -> { params[:id].present? && !%w[index new create].include?(action_name) }
     before_action :authorize_admin_suite!
 
@@ -60,10 +60,7 @@ module AdminSuite
     def execute_action
       action = params[:action_name].to_s.to_sym
       action_def = find_action(action)
-      unless action_def
-        redirect_to resource_url(@resource), alert: "Action not found."
-        return
-      end
+      return head(:not_found) if action_def.nil?
 
       executor = Admin::Base::ActionExecutor.new(resource_config, action, admin_suite_actor)
       result = executor.execute_member(@resource, params.to_unsafe_h)
@@ -79,6 +76,9 @@ module AdminSuite
     # POST /:portal/:resource_name/bulk_action/:action_name
     def bulk_action
       action = params[:action_name].to_s.to_sym
+      action_def = find_action(action)
+      return head(:not_found) if action_def.nil?
+
       ids = params[:ids] || []
       if ids.empty?
         redirect_to collection_url, alert: "No items selected."
