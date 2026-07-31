@@ -33,6 +33,21 @@ module AdminSuite
       config
     end
 
+    # Resolves the effective authentication strategy instance.
+    #
+    # Precedence: explicit `config.auth_strategy` (Symbol name or Class),
+    # then the legacy `config.authenticate` lambda (wrapped), then nil.
+    #
+    # @return [AdminSuite::Auth::Strategy, nil]
+    def resolved_auth_strategy
+      if config.auth_strategy
+        klass = config.auth_strategy.is_a?(Class) ? config.auth_strategy : Auth.lookup(config.auth_strategy)
+        klass.new(config.auth_options || {})
+      elsif config.authenticate
+        Auth::HostHook.new(authenticate: config.authenticate, current_actor: config.current_actor)
+      end
+    end
+
     # Defines (or updates) a portal using a Ruby DSL.
     #
     # Host apps typically place these in:

@@ -29,4 +29,5 @@ module AdminSuite
 end
 
 require "admin_suite/auth/http_basic"
+require "admin_suite/auth/host_hook"
 AdminSuite::Auth.register(:http_basic, AdminSuite::Auth::HttpBasic)
