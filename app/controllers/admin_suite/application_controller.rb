@@ -56,13 +56,21 @@ module AdminSuite
     #
     # @return [Object, nil]
     def admin_suite_actor
-      if defined?(@admin_suite_actor) && @admin_suite_actor && !@admin_suite_actor.equal?(true)
+      if defined?(@admin_suite_actor) && @admin_suite_actor
+        # HostHook's `true` sentinel means it already consulted current_actor
+        # this request and found nothing — don't consult it again.
+        return nil if @admin_suite_actor.equal?(true)
         return @admin_suite_actor
       end
 
-      AdminSuite.config.current_actor&.call(self)
-    rescue StandardError
-      nil
+      return @admin_suite_fallback_actor if defined?(@admin_suite_fallback_actor)
+
+      @admin_suite_fallback_actor =
+        begin
+          AdminSuite.config.current_actor&.call(self)
+        rescue StandardError
+          nil
+        end
     end
 
     # Loads resource definition files when needed (runs in all environments).

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "minitest/mock"
 
 module AdminSuite
   class AuthenticationTest < ActionDispatch::IntegrationTest
@@ -47,6 +48,32 @@ module AdminSuite
       with_config(allow_unauthenticated: false, auth_strategy: nil, authenticate: denials) do
         get ROOT
         assert_response :forbidden
+      end
+    end
+
+    test "allow_unauthenticated is ignored in production" do
+      with_config(allow_unauthenticated: true, auth_strategy: nil, authenticate: nil) do
+        Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+          get ROOT
+          assert_response :forbidden
+          assert_includes response.body, "no authentication is configured"
+        end
+      end
+    end
+
+    test "current_actor is consulted at most once per request on the legacy path" do
+      calls = 0
+      passes = ->(_controller) {}
+      counting_actor = lambda { |_controller|
+        calls += 1
+        nil
+      }
+
+      with_config(allow_unauthenticated: false, auth_strategy: nil, authenticate: passes,
+                  current_actor: counting_actor) do
+        get ROOT
+        assert_response :success
+        assert_equal 1, calls
       end
     end
   end
