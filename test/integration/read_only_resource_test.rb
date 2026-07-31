@@ -42,6 +42,10 @@ module ReadOnlyResourceFixtures
     def attributes
       { "id" => id, "name" => name }
     end
+
+    def ping
+      true
+    end
   end
 end
 
@@ -57,6 +61,10 @@ module Admin
         columns do
           column :name
         end
+      end
+
+      actions do
+        action :ping
       end
     end
   end
@@ -107,6 +115,16 @@ module AdminSuite
     test "undeclared execute_action names respond 404" do
       post "#{BASE_PATH}/1/execute_action/nonexistent_action"
       assert_response :not_found
+    end
+
+    test "undeclared bulk_action names respond 404" do
+      post "#{BASE_PATH}/bulk_action/nonexistent_bulk", params: { ids: ["1"] }
+      assert_response :not_found
+    end
+
+    test "declared member actions remain allowed on read_only resources" do
+      post "#{BASE_PATH}/1/execute_action/ping"
+      refute_equal 404, response.status
     end
   end
 end

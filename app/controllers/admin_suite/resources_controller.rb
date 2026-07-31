@@ -76,7 +76,7 @@ module AdminSuite
     # POST /:portal/:resource_name/bulk_action/:action_name
     def bulk_action
       action = params[:action_name].to_s.to_sym
-      action_def = find_action(action)
+      action_def = find_bulk_action(action)
       return head(:not_found) if action_def.nil?
 
       ids = params[:ids] || []
@@ -234,6 +234,10 @@ module AdminSuite
 
     def find_action(name)
       resource_config&.actions_config&.member_actions&.find { |a| a.name == name }
+    end
+
+    def find_bulk_action(name)
+      resource_config&.actions_config&.bulk_actions&.find { |a| a.name == name }
     end
 
     def resource_params
