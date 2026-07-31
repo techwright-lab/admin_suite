@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-31
+
+### Changed (BREAKING)
+- AdminSuite now **fails closed**: with no authentication configured, every
+  engine request responds 403. Configure `config.auth_strategy = :http_basic`
+  (or a custom strategy, or the legacy `config.authenticate` lambda). For
+  development/test only, `config.allow_unauthenticated = true` restores open
+  access (ignored in production).
+- `read_only` resources now also reject the built-in `toggle` endpoint;
+  undeclared `execute_action` and `bulk_action` names respond 404 via a
+  dedicated bulk-action lookup. Declared member and bulk actions remain
+  allowed on `read_only` resources by design.
+- `execute_action` with an unknown action name now responds 404 instead of
+  redirecting with an "Action not found." alert.
+
+### Added
+- Pluggable auth strategies: `AdminSuite::Auth.register`, built-in
+  `:http_basic` (ENV or `config.auth_options` credentials, constant-time
+  comparison, blank credentials deny).
+- `config.authorize` is now enforced for every resource action with the
+  contract `->(actor:, action:, resource:, record:, controller:)`,
+  action ∈ :read/:create/:update/:destroy/:execute.
+- `config.skip_host_before_actions` (default `[:require_authentication]`)
+  replaces the hardcoded host-filter skip.
+
+### Fixed
+- `config.current_actor` is now consulted at most once per request
+  (was invoked repeatedly by views; side-effecting lambdas fired multiple times).
+
 ## [0.2.9] - 2026-07-14
 
 ### Added
