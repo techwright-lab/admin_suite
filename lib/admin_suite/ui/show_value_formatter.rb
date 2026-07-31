@@ -54,9 +54,9 @@ module AdminSuite
           end
         end
 
-        if value.is_a?(ActiveStorage::Attached::One)
+        if defined?(ActiveStorage::Attached::One) && value.is_a?(ActiveStorage::Attached::One)
           return render_attachment_preview(value)
-        elsif value.is_a?(ActiveStorage::Attached::Many)
+        elsif defined?(ActiveStorage::Attached::Many) && value.is_a?(ActiveStorage::Attached::Many)
           return render_attachments_preview(value)
         end
 

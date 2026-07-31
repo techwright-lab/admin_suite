@@ -7,6 +7,7 @@ module AdminSuite
 
     before_action :enforce_read_only!, only: %i[new create edit update destroy]
     before_action :set_resource, if: -> { params[:id].present? && !%w[index new create].include?(action_name) }
+    before_action :authorize_admin_suite!
 
     helper_method :resource_config, :resource_class, :resource, :collection, :current_portal, :resource_name
 
@@ -126,6 +127,34 @@ module AdminSuite
     end
 
     private
+
+    # Controller action -> authorization verb.
+    AUTHORIZATION_VERBS = {
+      "index" => :read, "show" => :read,
+      "new" => :create, "create" => :create,
+      "edit" => :update, "update" => :update, "toggle" => :update,
+      "destroy" => :destroy,
+      "execute_action" => :execute, "bulk_action" => :execute
+    }.freeze
+
+    # Enforces the host's `config.authorize` hook. Nil hook = allowed
+    # (authentication remains the gate). Falsy return = 403.
+    #
+    # @return [void]
+    def authorize_admin_suite!
+      hook = AdminSuite.config.authorize
+      return if hook.nil?
+      return if resource_config.nil? # unknown resource 404s elsewhere
+
+      permitted = hook.call(
+        actor: admin_suite_actor,
+        action: AUTHORIZATION_VERBS.fetch(action_name, :read),
+        resource: resource_config,
+        record: (defined?(@resource) ? @resource : nil),
+        controller: self
+      )
+      head :forbidden unless permitted
+    end
 
     def current_portal
       params[:portal].to_s.presence&.to_sym

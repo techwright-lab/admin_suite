@@ -2,48 +2,7 @@
 
 require "test_helper"
 
-# The dummy app is intentionally database-free, while the generic controller
-# supports Active Record hosts. Supply only the exception type its lookup path
-# rescues so show-page behavior can be exercised with an in-memory fixture.
-unless defined?(ActiveRecord::RecordNotFound)
-  module ActiveRecord
-    class RecordNotFound < StandardError; end
-  end
-end
-
-module TurboFrameTestHelper
-  def turbo_frame_tag(name, **options, &block)
-    content_tag(:turbo_frame, capture(&block), id: name, **options)
-  end
-end
-
-ActionView::Base.include(TurboFrameTestHelper)
-
 module ReadOnlyResourceFixtures
-  class Relation
-    include Enumerable
-
-    def initialize(records)
-      @records = records
-    end
-
-    def each(&block)
-      @records.each(&block)
-    end
-
-    def count(*)
-      @records.count
-    end
-
-    def offset(*)
-      self
-    end
-
-    def limit(*)
-      self
-    end
-  end
-
   class Widget
     extend ActiveModel::Naming
 
