@@ -76,5 +76,13 @@ module AdminSuite
         assert_equal 1, calls
       end
     end
+
+    test "host filter skip list is config-driven with require_authentication default" do
+      assert_equal [ :require_authentication ], AdminSuite.config.skip_host_before_actions
+      # The controller must consume config rather than hardcode the name:
+      source = AdminSuite::Engine.root.join("app/controllers/admin_suite/application_controller.rb").read
+      assert_includes source, "skip_host_before_actions"
+      refute_match(/skip_before_action :require_authentication\b/, source)
+    end
   end
 end

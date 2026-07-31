@@ -5,10 +5,14 @@ module AdminSuite
     include ActionView::RecordIdentifier
 
     # Host apps often include global auth concerns in `ApplicationController`.
-    # The engine uses `AdminSuite.config.authenticate` instead, so we defensively
-    # skip any host-level authentication before_actions that would otherwise
-    # redirect to missing routes (e.g. `new_session_path`).
-    skip_before_action :require_authentication, raise: false
+    # The engine authenticates via its own strategy layer instead, so it skips
+    # the host filters named in `config.skip_host_before_actions`
+    # (default: [:require_authentication], the Rails 8 authentication
+    # generator's filter). Evaluated at class load — changing the config
+    # requires a restart.
+    Array(AdminSuite.config.skip_host_before_actions).each do |filter|
+      skip_before_action filter, raise: false
+    end
 
     before_action :admin_suite_authenticate!
     layout "admin_suite/application"
