@@ -65,5 +65,45 @@ module AdminSuite
       AdminSuite.config.root_dashboard_description = old_description
       AdminSuite.reset_root_dashboard!
     end
+
+    test "chart bars have a definite-height wrapper and preserve full labels" do
+      old_globs = AdminSuite.config.dashboard_globs
+
+      Dir.mktmpdir("admin-suite-chart") do |dir|
+        dashboard_rb = File.join(dir, "dashboard.rb")
+
+        File.write(dashboard_rb, <<~'RUBY')
+          # frozen_string_literal: true
+
+          AdminSuite.root_dashboard do
+            row do
+              chart_panel "Daily Cost", data: -> {
+                [
+                  { label: "Jul 30", value: 0.01 },
+                  { label: "Thursday", value: 10 }
+                ]
+              }
+            end
+          end
+        RUBY
+
+        AdminSuite.reset_root_dashboard!
+        AdminSuite.config.dashboard_globs = [ File.join(dir, "*.rb") ]
+
+        get "/internal/admin_suite"
+        assert_response :success
+
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Daily Cost']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart
+        assert_equal 2, chart.css(".h-16 > .h-full").size
+        assert_equal ["height: 2%", "height: 100%"], chart.css(".h-16 > .h-full > div").map { |bar| bar["style"] }
+        assert_includes chart.text, "Jul 30"
+        assert_includes chart.text, "Thursday"
+      end
+    ensure
+      AdminSuite.config.dashboard_globs = old_globs
+      AdminSuite.reset_root_dashboard!
+    end
   end
 end
