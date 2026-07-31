@@ -18,18 +18,48 @@ module AdminSuite
 
     private
 
-    # Runs the host-app authentication hook (if configured).
+    FAIL_CLOSED_MESSAGE =
+      "AdminSuite: access denied because no authentication is configured. " \
+      "Set config.auth_strategy (e.g. :http_basic) or config.authenticate in " \
+      "config/initializers/admin_suite.rb. To run without authentication in " \
+      "development/test only, set config.allow_unauthenticated = true."
+
+    # Fail-closed authentication. An unconfigured engine denies every request.
     #
     # @return [void]
     def admin_suite_authenticate!
-      hook = AdminSuite.config.authenticate
-      hook&.call(self)
+      strategy = AdminSuite.resolved_auth_strategy
+
+      if strategy.nil?
+        if AdminSuite.config.allow_unauthenticated && !Rails.env.production?
+          @admin_suite_actor = nil
+          return
+        end
+        render plain: FAIL_CLOSED_MESSAGE, status: :forbidden
+        return
+      end
+
+      actor = strategy.authenticate!(self)
+      return if performed?
+
+      if actor
+        @admin_suite_actor = actor
+      else
+        head :forbidden
+      end
     end
 
-    # Returns the configured actor for actions/auditing/authorization.
+    # Returns the actor for actions/auditing/authorization.
+    #
+    # Strategy-provided actor wins; the legacy `config.current_actor` lambda
+    # remains the fallback. The HostHook `true` sentinel is never exposed.
     #
     # @return [Object, nil]
     def admin_suite_actor
+      if defined?(@admin_suite_actor) && @admin_suite_actor && !@admin_suite_actor.equal?(true)
+        return @admin_suite_actor
+      end
+
       AdminSuite.config.current_actor&.call(self)
     rescue StandardError
       nil
