@@ -2,16 +2,33 @@
 
 # AdminSuite configuration (host app adapter layer).
 AdminSuite.configure do |config|
-  # Hook called as a before_action inside the engine.
-  # config.authenticate = ->(controller) { ... }
-  config.authenticate = nil
+  # --- Authentication (REQUIRED — AdminSuite fails closed) ---
+  #
+  # Built-in HTTP Basic (reads ADMIN_SUITE_USERNAME / ADMIN_SUITE_PASSWORD):
+  config.auth_strategy = :http_basic
+  # config.auth_options = { username: ENV["ADMIN_SUITE_USERNAME"], password: ENV["ADMIN_SUITE_PASSWORD"] }
+  #
+  # Or a custom strategy (e.g. your SSO). Subclass AdminSuite::Auth::Strategy,
+  # return an actor from #authenticate!(controller), and register it:
+  #   AdminSuite::Auth.register(:my_sso, MySsoStrategy)
+  #   config.auth_strategy = :my_sso
+  #
+  # Or the legacy lambda (still supported):
+  # config.authenticate = ->(controller) { ... render/redirect to deny ... }
+  #
+  # Development/test only — run without authentication (ignored in production):
+  # config.allow_unauthenticated = true
 
-  # Actor used for actions/auditing/authorization.
-  # config.current_actor = ->(controller) { ... }
+  # Host before_actions the engine skips (it authenticates itself):
+  # config.skip_host_before_actions = [ :require_authentication ]
+
+  # Actor used for actions/auditing/authorization when your strategy does not
+  # provide one (legacy fallback):
   config.current_actor = ->(controller) { controller.respond_to?(:current_user) ? controller.current_user : nil }
 
-  # Optional authorization hook (Pundit/CanCan/ActionPolicy/custom).
-  # config.authorize = ->(actor, action:, subject:, resource:, controller:) { true }
+  # Authorization hook — called for every resource request:
+  # action is one of :read, :create, :update, :destroy, :execute.
+  # config.authorize = ->(actor:, action:, resource:, record:, controller:) { true }
   config.authorize = nil
 
   # Optional sign-out action in the topbar.
