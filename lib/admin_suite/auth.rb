@@ -27,3 +27,6 @@ module AdminSuite
     end
   end
 end
+
+require "admin_suite/auth/http_basic"
+AdminSuite::Auth.register(:http_basic, AdminSuite::Auth::HttpBasic)
