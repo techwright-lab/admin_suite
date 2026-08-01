@@ -93,7 +93,27 @@ AdminSuite::UI::FieldRendererRegistry.register(:rich_text) do |_view, f, field, 
   f.rich_text_area(field.name, class: "prose max-w-none")
 end
 
-AdminSuite::UI::FieldRendererRegistry.register(:markdown) do |_view, f, field, resource, field_class|
+AdminSuite::UI::FieldRendererRegistry.register(:markdown) do |view, f, field, resource, field_class|
+  # Load the vendored EasyMDE assets only on pages that actually render a
+  # markdown field, via a dedicated content_for hook consumed by the layout
+  # (see app/views/layouts/admin_suite/application.html.erb). Guarded so
+  # multiple markdown fields on one form don't emit the tags twice. This
+  # relies on Rails rendering the full view (and any partials/forms it
+  # includes) before the layout is rendered, so content_for set here is
+  # available by the time the layout yields it.
+  unless view.content_for?(:easymde_assets)
+    view.content_for(:easymde_assets) do
+      # "vendor/easymde.min" (not bare "easymde.min"): Propshaft resolves
+      # assets by path relative to a load-path root, and app/assets/vendor
+      # lives *under* the already-registered app/assets root, so its files
+      # are found at "vendor/easymde.min.{js,css}".
+      view.safe_join([
+        view.stylesheet_link_tag("vendor/easymde.min", "data-turbo-track": "reload"),
+        view.javascript_include_tag("vendor/easymde.min", "data-turbo-track": "reload")
+      ])
+    end
+  end
+
   f.text_area(field.name, class: "#{field_class} font-mono", rows: field.rows || 12, data: { controller: "admin-suite--markdown-editor" }, placeholder: field.placeholder)
 end
 

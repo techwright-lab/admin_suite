@@ -76,6 +76,13 @@ module AdminSuite
       # Make engine JS/CSS available to the host asset pipeline (Propshaft/Sprockets).
       app.config.assets.paths << root.join("app/javascript")
       app.config.assets.paths << root.join("app/assets")
+
+      # Vendored third-party assets (e.g. EasyMDE, see app/assets/vendor).
+      # Propshaft's load path is recursive, so app/assets (registered above)
+      # already resolves these at the logical path "vendor/<file>" -- this
+      # explicit registration is a defensive belt-and-suspenders addition
+      # matching the intent, not the sole mechanism assets are found by.
+      app.config.assets.paths << root.join("app/assets/vendor")
     end
 
     initializer "admin_suite.importmap", before: "importmap" do |app|
