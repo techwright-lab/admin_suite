@@ -290,5 +290,67 @@ module AdminSuite
         assert_equal 1, bars.size
       end
     end
+
+    test "a non-Symbol, non-String type: (an Integer) falls back to :bar instead of raising" do
+      # `type: 42` used to reach `.presence&.to_sym` directly -- `presence`
+      # passes an Integer through unchanged, and Integer has no `#to_sym`,
+      # so this 500ed the whole dashboard rather than degrading. Regression
+      # test for that total-coercion fix.
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Integer Type", type: 42, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="bar"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Integer Type']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 1, bars.size
+      end
+    end
+
+    test "a Boolean type: (true) falls back to :bar instead of raising" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Boolean Type", type: true, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="bar"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Boolean Type']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 1, bars.size
+      end
+    end
+
+    test "a valid type: given as a String (not a Symbol) is honored, not just tolerated" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "String Type", type: "line", data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="line"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='String Type']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        # "line" still degrades to CSS bars, same as the Symbol form.
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 1, bars.size
+      end
+    end
   end
 end

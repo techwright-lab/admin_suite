@@ -46,7 +46,14 @@
   # Chart.js itself doesn't even ship) must degrade to the bar chart, not
   # break the dashboard or silently render nothing.
   chart_types = %i[bar line area doughnut]
-  chart_type = panel.options[:type].presence&.to_sym
+  # `.to_s` first: `presence&.to_sym` alone raises on any non-String/Symbol
+  # scalar (an Integer, Float, or `true`/`false` don't define `#to_sym`),
+  # which is exactly the host-typo shape this fallback exists to catch.
+  # `.to_s` makes the coercion total -- `42 → "42" → :"42"` (fails the
+  # allowlist below, warns, falls back to :bar) and `nil → "" → nil` via
+  # `presence` (falls back to :bar silently, since an unspecified type is
+  # not a typo).
+  chart_type = panel.options[:type].to_s.presence&.to_sym
   if chart_type && !chart_types.include?(chart_type)
     Rails.logger&.warn(
       "AdminSuite: chart panel #{panel.title.inspect} has unknown type #{chart_type.inspect}; " \
