@@ -21,5 +21,21 @@ module AdminSuite
       executor = Admin::Base::ActionExecutor.new(RedirectFixtures::WidgetResource, :ping, nil)
       assert_nil executor.send(:redirect_url_for_action, Action.new(name: :ping, label: "Ping"), true)
     end
+
+    test "a plain RuntimeError from a model action surfaces its real message, not a NameError" do
+      executor = Admin::Base::ActionExecutor.new(Admin::Resources::ExceptionHandlingBoomerResource, :kaboom, nil)
+      result = executor.execute_member(ExceptionHandlingFixtures::Boomer.new)
+
+      assert result.failure?
+      assert_equal "Error: actual failure message", result.message
+    end
+
+    test "an exception whose class name contains InvalidTransition is reported as a friendly failure" do
+      executor = Admin::Base::ActionExecutor.new(Admin::Resources::ExceptionHandlingStateMachineResource, :transition, nil)
+      result = executor.execute_member(ExceptionHandlingFixtures::StateMachineWidget.new)
+
+      assert result.failure?
+      assert_equal "Invalid state transition: cannot transition from draft to published", result.message
+    end
   end
 end

@@ -85,3 +85,49 @@ module Admin
   end
 end
 RedirectFixtures::WidgetResource = Admin::Resources::RedirectWidgetResource
+
+# Fixtures for exercising execute_model_method's exception-handling chain
+# end-to-end, in the dummy app's DB-free configuration (no ActiveRecord
+# loaded), which is where a bare `rescue ActiveRecord::RecordInvalid` or
+# `rescue AASM::InvalidTransition` would raise NameError while handling the
+# original exception instead of reporting it.
+module ExceptionHandlingFixtures
+  class Boomer
+    extend ActiveModel::Naming
+
+    def kaboom
+      raise "actual failure message"
+    end
+  end
+
+  # Named to mirror AASM::InvalidTransition (and similar state-machine gem
+  # exceptions) without depending on AASM: only the class name matters to
+  # the rescue chain's class-name match.
+  class InvalidTransitionError < StandardError; end
+
+  class StateMachineWidget
+    extend ActiveModel::Naming
+
+    def transition
+      raise InvalidTransitionError, "cannot transition from draft to published"
+    end
+  end
+end
+
+module Admin
+  module Resources
+    class ExceptionHandlingBoomerResource < Admin::Base::Resource
+      model ExceptionHandlingFixtures::Boomer
+      portal :ops
+      section :observability
+      actions { action :kaboom }
+    end
+
+    class ExceptionHandlingStateMachineResource < Admin::Base::Resource
+      model ExceptionHandlingFixtures::StateMachineWidget
+      portal :ops
+      section :observability
+      actions { action :transition }
+    end
+  end
+end

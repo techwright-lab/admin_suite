@@ -116,15 +116,17 @@ module Admin
           "#{action.label} completed successfully",
           redirect_url: redirect_url_for_action(action, action_result)
         )
-      rescue ActiveRecord::RecordInvalid => e
-        failure_result("Validation failed: #{e.record.errors.full_messages.join(', ')}")
       rescue StandardError => e
-        # Host state machines (AASM, Statesman, …) raise their own transition
-        # errors; match by class name so the gem never references a constant it
-        # does not depend on.
-        raise unless e.class.name.to_s.include?("InvalidTransition")
-
-        failure_result("Invalid state transition: #{e.message}")
+        # Neither constant is referenced unless the host actually defines it:
+        # a bare `rescue SomeGem::Error` raises NameError *while handling* the
+        # original exception in hosts without that gem, masking the real error.
+        if defined?(ActiveRecord::RecordInvalid) && e.is_a?(ActiveRecord::RecordInvalid)
+          failure_result("Validation failed: #{e.record.errors.full_messages.join(', ')}")
+        elsif e.class.name.to_s.include?("InvalidTransition")
+          failure_result("Invalid state transition: #{e.message}")
+        else
+          raise
+        end
       end
 
       def redirect_url_for_action(action, action_result)
