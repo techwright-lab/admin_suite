@@ -447,61 +447,11 @@ module AdminSuite
         else
           concat(render_association_list(items, section))
         end
-        concat(render_association_pagination(pagy)) if pagy
+        concat(render("admin_suite/shared/pagination", pagy: pagy, page_param: association_page_param(section))) if pagy
       end
     end
 
     def association_page_param(section) = "#{section.association}_page"
-
-    def render_association_pagination(pagy)
-      content_tag(:div, class: "-mx-6 border-t border-slate-200 bg-slate-50/50 px-6 py-3") do
-        content_tag(:nav, class: "flex items-center justify-between", "aria-label" => "Pagination") do
-          concat(pagy_prev_link(pagy))
-          concat(pagy_page_links(pagy))
-          concat(pagy_next_link(pagy))
-        end
-      end
-    end
-
-    def pagy_prev_link(pagy)
-      if pagy.prev
-        link_to("Prev", pagy_url_for(pagy, pagy.prev),
-          class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors")
-      else
-        content_tag(:span, "Prev",
-          class: "px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed")
-      end
-    end
-
-    def pagy_next_link(pagy)
-      if pagy.next
-        link_to("Next", pagy_url_for(pagy, pagy.next),
-          class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors")
-      else
-        content_tag(:span, "Next",
-          class: "px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed")
-      end
-    end
-
-    def pagy_page_links(pagy)
-      content_tag(:div, class: "flex items-center gap-1") do
-        pagy.series.each { |item| concat(render_pagy_series_item(pagy, item)) }
-      end
-    end
-
-    def render_pagy_series_item(pagy, item)
-      case item
-      when Integer
-        link_to(item, pagy_url_for(pagy, item),
-          class: "px-2.5 py-1 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors")
-      when String
-        content_tag(:span, item, class: "px-2.5 py-1 text-sm font-semibold text-white bg-indigo-600 border border-indigo-600 rounded")
-      when :gap
-        content_tag(:span, "…", class: "px-2 text-sm text-slate-400")
-      else
-        ""
-      end
-    end
 
     def render_association_card_single(item, section)
       link_path = build_association_link(item, section)
