@@ -43,7 +43,7 @@ module Admin
 
       EXPORTABLE_DEPRECATION_MESSAGE_FORMAT =
         "AdminSuite: %<resource>s calls `exportable`, which is a deprecated " \
-        "no-op and will be removed in 0.5.0. It never actually implemented " \
+        "no-op and will be removed in 0.6.0. It never actually implemented " \
         "export in any released version — safe to delete the call."
 
       class << self
@@ -172,7 +172,9 @@ module Admin
           @read_only == true
         end
 
-        # Deprecated no-op, removed in 0.5.0.
+        # Deprecated no-op; removal targeted at 0.6.0 (moved from the
+        # originally-planned 0.5.0 -- pending the gleania/trust_growth host
+        # migrations).
         #
         # `exportable` was write-only in every prior release -- it never had
         # a reader and never drove any export behavior -- but hosts still

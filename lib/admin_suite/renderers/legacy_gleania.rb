@@ -7,9 +7,11 @@ module AdminSuite
     # panels, prompt-template mustache highlighting).
     #
     # These are deprecated: they still work in 0.4.0 (logging a warning once
-    # per key per process the first time each is used), and are DELETED in
-    # 0.5.0 (Phase 2b). Gleania is expected to migrate to host-side renderer
-    # classes under `app/admin/renderers/*.rb` before then.
+    # per key per process the first time each is used), and are targeted for
+    # DELETION in 0.6.0 (moved from the originally-planned 0.5.0/Phase 2b,
+    # pending both the gleania and trust_growth host migrations). Gleania is
+    # expected to migrate to host-side renderer classes under
+    # `app/admin/renderers/*.rb` before then.
     #
     # The renderer bodies below are intentionally byte-equivalent to the
     # BaseHelper methods they replace, other than `resource` -> `record` and
@@ -18,12 +20,12 @@ module AdminSuite
     # so those calls can't resolve as bare method sends the way they did
     # inside the helper module. Do not "improve" this markup: a byte-for-byte
     # move keeps gleania's Assistant/AI portal pages pixel-identical, and
-    # makes the 0.5.0 deletion a clean removal.
+    # makes the eventual 0.6.0 deletion a clean removal.
     module LegacyGleania
       extend AdminSuite::Deprecation
 
       DEPRECATION_MESSAGE_FORMAT =
-        "AdminSuite: the :%<key>s renderer is deprecated and will be removed in 0.5.0. " \
+        "AdminSuite: the :%<key>s renderer is deprecated and will be removed in 0.6.0. " \
         "Move it to app/admin/renderers in your app."
 
       class << self

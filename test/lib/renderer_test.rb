@@ -116,7 +116,14 @@ module AdminSuite
       assert_equal 1, logged.size
       assert_includes logged.first, key.to_s
       assert_includes logged.first, "deprecated"
-      assert_includes logged.first, "0.5.0"
+      # Deliberately a hardcoded literal, not read off
+      # DEPRECATION_MESSAGE_FORMAT: reading the version out of the constant
+      # under test and asserting the message contains it is true by
+      # construction (format() only substitutes %<key>s, never the version
+      # digits), so it can never fail on a wrong retarget -- exactly the
+      # property this test exists to catch. If the removal target changes
+      # again, this literal must be updated by hand; that's the point.
+      assert_includes logged.first, "0.6.0"
     ensure
       AdminSuite.config.custom_renderers.delete(key)
     end

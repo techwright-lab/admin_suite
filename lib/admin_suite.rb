@@ -49,8 +49,10 @@ AdminSuite::RendererRegistry.register_default(:code, AdminSuite::Renderers::Code
 AdminSuite::RendererRegistry.register_default(:json_preview, AdminSuite::Renderers::JsonRenderer)
 AdminSuite::RendererRegistry.register_default(:code_preview, AdminSuite::Renderers::CodeRenderer)
 
-# Deprecated (removed in 0.5.0): the four Gleania-specific LLM chat-transcript
-# renderers. See `AdminSuite::Renderers::LegacyGleania` for details.
+# Deprecated (removal targeted at 0.6.0, moved from the originally-planned
+# 0.5.0 -- both host migrations, gleania and trust_growth, are in flight):
+# the four Gleania-specific LLM chat-transcript renderers. See
+# `AdminSuite::Renderers::LegacyGleania` for details.
 AdminSuite::RendererRegistry.register_default(:prompt_template_preview, AdminSuite::Renderers::LegacyGleania::PromptTemplateRenderer)
 AdminSuite::RendererRegistry.register_default(:messages_preview, AdminSuite::Renderers::LegacyGleania::MessagesPreviewRenderer)
 AdminSuite::RendererRegistry.register_default(:tool_args_preview, AdminSuite::Renderers::LegacyGleania::ToolArgsRenderer)

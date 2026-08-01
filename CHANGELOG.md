@@ -109,10 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Resource.exportable(*formats)` remain deprecated (as of 0.4.0) and
   **still work in 0.5.0**. Their removal, originally targeted at 0.5.0, is
   now targeted at **0.6.0**, pending the Gleania and TrustGrowth host
-  migrations. Note that the runtime deprecation warnings themselves still
-  literally say "removed in 0.5.0" — that string was not updated as part of
-  this release; this CHANGELOG and the renderers doc are authoritative on
-  timing, not the warning text.
+  migrations. The runtime deprecation warnings (and their source comments)
+  have been retargeted to say 0.6.0 as part of this release.
 
 ## [0.4.0] - 2026-08-01
 
@@ -156,12 +154,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   paper only, with no runtime signal.
 - The built-in `:prompt_template_preview`, `:messages_preview`,
   `:tool_args_preview` and `:turn_messages_preview` renderers. They warn once
-  per key per process and are **removed in 0.5.0**.
+  per key per process and are **removed in 0.5.0** (removal retargeted to
+  0.6.0 — see [0.5.0]).
 - `Resource.exportable(*formats)` — a no-op that warns once per resource
-  class, naming the class, and is **removed in 0.5.0**. It was write-only
-  in every prior release (never had a reader, never drove any export
-  behavior); calling it is now harmless instead of raising `NoMethodError`
-  at resource-definition time.
+  class, naming the class, and is **removed in 0.5.0** (removal retargeted
+  to 0.6.0 — see [0.5.0]). It was write-only in every prior release (never
+  had a reader, never drove any export behavior); calling it is now
+  harmless instead of raising `NoMethodError` at resource-definition time.
 
 ### Fixed
 - A host `Admin::Renderers::<Key>Renderer` class (or an explicit
