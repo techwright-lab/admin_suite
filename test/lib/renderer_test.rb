@@ -30,6 +30,7 @@ module AdminSuite
     end
 
     setup { AdminSuite::RendererRegistry.register(:greeting, GreetingRenderer) }
+    teardown { AdminSuite::RendererRegistry.unregister(:greeting) }
 
     test "a renderer subclass receives the record and renders" do
       assert_includes GreetingRenderer.new(Record.new(7), self).render, "Hello 7"
@@ -42,6 +43,10 @@ module AdminSuite
     test "registry lookup returns the registered class and raises for unknown keys" do
       assert_equal GreetingRenderer, AdminSuite::RendererRegistry.lookup(:greeting)
       assert_nil AdminSuite::RendererRegistry.lookup(:nope)
+    end
+
+    test "registered lists every registered key" do
+      assert_includes AdminSuite::RendererRegistry.registered, :greeting
     end
 
     test "primitives render key-value pairs, tables, badges and empty states" do
@@ -62,6 +67,35 @@ module AdminSuite
 
     test "render_custom_section resolves a registered renderer class" do
       assert_includes render_custom_section(Record.new(9), :greeting), "Hello 9"
+    end
+
+    # Lookup-precedence regression guard. Tasks 4 and 5 both insert new
+    # branches into render_custom_section (built-ins, then the deprecated
+    # Gleania four) between the registry lookup and the "Unknown" fallback —
+    # this pins the two boundaries already in place today so neither task can
+    # silently invert them.
+    test "a legacy custom_renderers proc wins over a registered renderer class" do
+      key = :precedence_probe
+      AdminSuite::RendererRegistry.register(key, GreetingRenderer)
+      saved = AdminSuite.config.custom_renderers[key]
+      AdminSuite.config.custom_renderers[key] = ->(record, _view) { "legacy-proc-#{record.id}" }
+
+      html = render_custom_section(Record.new(5), key)
+
+      assert_includes html, "legacy-proc-5"
+      refute_includes html, "Hello 5"
+    ensure
+      AdminSuite::RendererRegistry.unregister(key)
+      AdminSuite.config.custom_renderers.delete(key)
+      AdminSuite.config.custom_renderers[key] = saved if saved
+    end
+
+    test "a registered renderer class wins over the built-in case branches" do
+      # :json_preview has a legacy case branch; a registered class must take it over.
+      AdminSuite::RendererRegistry.register(:json_preview, GreetingRenderer)
+      assert_includes render_custom_section(Record.new(6), :json_preview), "Hello 6"
+    ensure
+      AdminSuite::RendererRegistry.unregister(:json_preview)
     end
 
     # json_block/code_block/badge each delegate to a BaseHelper primitive whose
