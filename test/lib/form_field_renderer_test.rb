@@ -88,27 +88,45 @@ module AdminSuite
       assert_includes html, "is invalid"
     end
 
-    # Table-driven, iterating the registry itself (not a hardcoded list) so
-    # deleting a registration is caught here even if nothing else in the
-    # suite happens to exercise that type. Before this test, 17 of 24
-    # registered field types were entirely unpinned.
-    test "every registered field type renders non-empty markup" do
+    # The full set of field types `FieldRendererRegistry` is expected to
+    # have registered (see `lib/admin_suite/ui/field_renderer_registry.rb`).
+    # Pinned explicitly here, NOT derived from the registry itself: an
+    # earlier version of this test iterated `handlers.keys` directly, which
+    # cannot detect a deletion -- a deleted key simply stops appearing in
+    # the iteration, so the loop body never runs for it and the test still
+    # passes with one fewer assertion (verified by deleting the `:toggle`
+    # registration: 42 assertions became 41, 0 failures). The
+    # size-and-membership assertion in the test below is what actually
+    # catches that; a self-referential "iterate the thing you're testing"
+    # loop cannot.
+    EXPECTED_FIELD_TYPES = %i[
+      textarea url email number toggle label select searchable_select
+      dependent_select multi_select tags image attachment trix rich_text
+      markdown file datetime date time json code text string
+    ].freeze
+
+    # :trix/:rich_text both call `f.rich_text_area`, which only exists once
+    # ActionText's FormBuilder extension is loaded -- and per the plan's
+    # Test-harness fact #2, this dummy app is deliberately database-free and
+    # never requires `action_text/engine`. Confirmed by running the
+    # rendering test with them included: `NoMethodError: undefined method
+    # 'rich_text_area'`, not a bug in FieldRendererRegistry. There is no way
+    # to pin these two types in this harness without pulling in ActionText
+    # (and, transitively, ActiveRecord) — out of scope here. Named
+    # explicitly (not an implicit skip) so `EXPECTED_FIELD_TYPES.size` and
+    # the number of types actually exercised below both stay visible and
+    # add up: 24 expected, 2 excluded, 22 rendered.
+    UNTESTABLE_WITHOUT_ACTION_TEXT = %i[trix rich_text].freeze
+
+    test "the registry has exactly the expected set of field types, no more, no fewer" do
+      assert_equal EXPECTED_FIELD_TYPES.sort, AdminSuite::UI::FieldRendererRegistry.handlers.keys.sort
+    end
+
+    test "every expected field type except the ActionText-only ones renders non-empty markup" do
       sample_collection = [ [ "One", 1 ], [ "Two", 2 ] ]
       needs_collection = %i[select searchable_select dependent_select multi_select tags]
 
-      # :trix/:rich_text both call `f.rich_text_area`, which only exists
-      # once ActionText's FormBuilder extension is loaded -- and per the
-      # plan's Test-harness fact #2, this dummy app is deliberately
-      # database-free and never requires `action_text/engine`. Confirmed by
-      # running this test with them included: `NoMethodError: undefined
-      # method 'rich_text_area'`, not a bug in FieldRendererRegistry. There
-      # is no way to pin these two types in this harness without pulling in
-      # ActionText (and, transitively, ActiveRecord) — out of scope here.
-      untestable_without_action_text = %i[trix rich_text]
-
-      AdminSuite::UI::FieldRendererRegistry.handlers.keys.each do |type|
-        next if untestable_without_action_text.include?(type)
-
+      (EXPECTED_FIELD_TYPES - UNTESTABLE_WITHOUT_ACTION_TEXT).each do |type|
         overrides = needs_collection.include?(type) ? { collection: sample_collection } : {}
         html = render_field(type, **overrides)
         assert html.present?, "expected #{type.inspect} to render non-empty markup"
