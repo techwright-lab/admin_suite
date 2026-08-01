@@ -28,7 +28,9 @@ module AdminSuite
       # autoload root (`app/admin`) would expect top-level constants like
       # `Resources::UserResource`. We fix that by mapping `app/admin` to `Admin`.
       # This avoids requiring host apps to add their own Zeitwerk initializer.
-      if admin_dir.exist? && self.class.host_admin_namespace_files?(admin_dir)
+      admin_dir_mapped = admin_dir.exist? && self.class.host_admin_namespace_files?(admin_dir)
+
+      if admin_dir_mapped
         admin_dir_s = admin_dir.to_s
         app.config.autoload_paths.delete(admin_dir_s)
         app.config.eager_load_paths.delete(admin_dir_s)
@@ -37,6 +39,25 @@ module AdminSuite
         module ::Admin; end
 
         Rails.autoloaders.main.push_dir(admin_dir, namespace: ::Admin)
+        # `app/admin/renderers/foo_renderer.rb` now resolves to
+        # `Admin::Renderers::FooRenderer` under this same push_dir, with no
+        # extra work: the whole `app/admin` tree (including `renderers/`) is
+        # namespaced under `::Admin` by Zeitwerk's directory conventions.
+      end
+
+      # A host with ONLY DSL files under `app/admin` (no `Admin::*` constants
+      # anywhere) never takes the branch above, so `app/admin` remains a
+      # default Rails autoload root mapping to top-level constants. Without
+      # this, `app/admin/renderers/foo_renderer.rb` would need to define a
+      # top-level `Renderers::FooRenderer` instead of the documented
+      # `Admin::Renderers::FooRenderer`, and `host_renderer_class` in
+      # base_helper.rb would never find it. Map `app/admin/renderers`
+      # explicitly in that case.
+      renderers_dir = Rails.root.join("app/admin/renderers")
+      if renderers_dir.exist? && !admin_dir_mapped
+        module ::Admin; end
+        module ::Admin::Renderers; end
+        Rails.autoloaders.main.push_dir(renderers_dir, namespace: ::Admin::Renderers)
       end
 
       Rails.autoloaders.each do |loader|

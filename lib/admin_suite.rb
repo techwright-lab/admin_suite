@@ -17,6 +17,8 @@ require "admin_suite/portal_definition"
 require "admin_suite/auth"
 require "admin_suite/ui/form_field_renderer"
 require "admin_suite/ui/show_value_formatter"
+require "admin_suite/renderer"
+require "admin_suite/renderer_registry"
 require "admin_suite/engine"
 
 module AdminSuite

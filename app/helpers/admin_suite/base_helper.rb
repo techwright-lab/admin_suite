@@ -268,10 +268,15 @@ module AdminSuite
     end
 
     def render_custom_section(resource, render_type)
-      renderer = AdminSuite.config.custom_renderers[render_type.to_sym] rescue nil
-      return renderer.call(resource, self) if renderer
+      key = render_type.to_sym
 
-      case render_type.to_sym
+      legacy_proc = AdminSuite.config.custom_renderers[key]
+      return legacy_proc.call(resource, self) if legacy_proc
+
+      klass = AdminSuite::RendererRegistry.lookup(key) || host_renderer_class(key)
+      return klass.new(resource, self).render if klass
+
+      case key
       when :prompt_template_preview
         render_prompt_template(resource)
       when :json_preview
@@ -287,6 +292,11 @@ module AdminSuite
       else
         content_tag(:p, "Unknown render type: #{render_type}", class: "text-slate-500 italic")
       end
+    end
+
+    # Resolves `Admin::Renderers::<Key>Renderer` in the host app, if defined.
+    def host_renderer_class(key)
+      "Admin::Renderers::#{key.to_s.camelize}Renderer".safe_constantize
     end
 
     # --- generic custom renderers (fallbacks) ---
