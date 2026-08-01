@@ -83,6 +83,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A column value that is `nil` now renders as `—`, matching every other
   surface in the gem, instead of a blank cell. Applies to both plain
   scalar columns and `belongs_to`-shaped association columns.
+- **Host-visible:** the `pagy` dependency range is now `>= 9.0, < 10`
+  (previously `>= 6.0, < 11.0`). `paginate_collection` calls `pagy(scope,
+  limit:)` (see the Fixed entry above) — `limit:` is Pagy 9.x's vars key,
+  silently ignored on Pagy 6-8, and Pagy 10 reworked the backend API
+  again. A host resolving Pagy 6-8 for another reason will now get a real
+  bundler resolution conflict at `bundle update` instead of quietly
+  reintroducing the "paginate(n) ignored, 20 rows forever" bug this
+  release fixes.
+- `turbo-rails` is now an explicit gem dependency. The engine has always
+  hard-depended on it (`turbo_frame_tag` in the resource views;
+  `format.turbo_stream`/`turbo_stream.replace` in the `toggle` action) —
+  this declares what was already true, it does not add a new
+  requirement.
 
 ### Fixed
 - `paginate_collection` called `pagy(scope, items: n)`. Pagy's vars key

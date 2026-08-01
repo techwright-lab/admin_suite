@@ -43,14 +43,6 @@ unless defined?(ActiveRecord::Base)
   end
 end
 
-module TurboFrameTestHelper
-  def turbo_frame_tag(name, **options, &block)
-    content_tag(:turbo_frame, capture(&block), id: name, **options)
-  end
-end
-
-ActionView::Base.include(TurboFrameTestHelper)
-
 module ReadOnlyResourceFixtures
   class Relation
     include Enumerable

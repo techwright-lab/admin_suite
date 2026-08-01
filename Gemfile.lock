@@ -3,11 +3,12 @@ PATH
   specs:
     admin_suite (0.5.0)
       lucide-rails (~> 0.7)
-      pagy (>= 6.0, < 11.0)
+      pagy (>= 9.0, < 10)
       rails (>= 8.0, < 9.0)
       redcarpet (~> 3.6)
       rouge (~> 4.7)
       tailwindcss-ruby (~> 4.1)
+      turbo-rails (>= 2.0, < 3.0)
 
 GEM
   remote: https://rubygems.org/
@@ -216,6 +217,9 @@ GEM
     thor (1.5.0)
     timeout (0.6.1)
     tsort (0.2.0)
+    turbo-rails (2.0.23)
+      actionpack (>= 7.1.0)
+      railties (>= 7.1.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     uri (1.1.1)
