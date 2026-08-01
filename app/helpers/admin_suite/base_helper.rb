@@ -87,7 +87,7 @@ module AdminSuite
 
 
     include AdminSuite::UI::ShowValueFormatter
-    prepend AdminSuite::UI::FormFieldRenderer
+    include AdminSuite::UI::FormFieldRenderer
 
     # Returns the color scheme for a portal
     #
@@ -911,58 +911,6 @@ module AdminSuite
         "bg-cyan-100 text-cyan-700"
       else
         "bg-slate-100 text-slate-600"
-      end
-    end
-
-    # ---- form fields ----
-    def render_form_field(f, field, resource)
-      return if field.if_condition.present? && !field.if_condition.call(resource)
-      return if field.unless_condition.present? && field.unless_condition.call(resource)
-
-      capture do
-        concat(content_tag(:div, class: "form-group") do
-          concat(f.label(field.name, class: "form-label") do
-            concat(field.label)
-            concat(content_tag(:span, " *", class: "text-red-500")) if field.required
-          end)
-
-          field_class = "form-input w-full"
-          field_class += " border-red-500" if resource.errors[field.name].any?
-
-          field_html = case field.type
-          when :textarea then f.text_area(field.name, class: field_class, rows: field.rows || 4, placeholder: field.placeholder, readonly: field.readonly)
-          when :url then f.url_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          when :email then f.email_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          when :number then f.number_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          when :toggle then render_toggle_field(f, field, resource)
-          when :label
-            label_value = resource.public_send(field.name) rescue nil
-            render_label_badge(label_value, color: field.label_color, size: field.label_size, record: resource)
-          when :select
-            collection = field.collection.is_a?(Proc) ? field.collection.call : field.collection
-            f.select(field.name, collection, { include_blank: true }, class: field_class, disabled: field.readonly)
-          when :searchable_select then render_searchable_select(f, field, resource)
-          when :multi_select, :tags then render_multi_select(f, field, resource)
-          when :image, :attachment then render_file_upload(f, field, resource)
-          when :trix, :rich_text then f.rich_text_area(field.name, class: "prose max-w-none")
-          when :markdown
-            f.text_area(field.name, class: "#{field_class} font-mono", rows: field.rows || 12, data: { controller: "admin-suite--markdown-editor" }, placeholder: field.placeholder)
-          when :file then f.file_field(field.name, class: "form-input-file", accept: field.accept)
-          when :datetime then f.datetime_local_field(field.name, class: field_class, readonly: field.readonly)
-          when :date then f.date_field(field.name, class: field_class, readonly: field.readonly)
-          when :time then f.time_field(field.name, class: field_class, readonly: field.readonly)
-          when :json
-            render("admin_suite/shared/json_editor_field", f: f, field: field, resource: resource)
-          when :code then render_code_editor(f, field, resource)
-          else
-            f.text_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          end
-
-          concat(field_html)
-
-          concat(content_tag(:p, field.help, class: "mt-1 text-sm text-slate-500")) if field.help.present?
-          concat(content_tag(:p, resource.errors[field.name].first, class: "mt-1 text-sm text-red-600")) if resource.errors[field.name].any?
-        end)
       end
     end
 

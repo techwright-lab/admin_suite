@@ -4,12 +4,9 @@ require "admin_suite/ui/field_renderer_registry"
 
 module AdminSuite
   module UI
-    # Overrides `render_form_field` to use a registry of field renderers,
-    # while leaving the legacy implementation available via `super`.
+    # Implements `render_form_field` using a registry of field renderers.
     module FormFieldRenderer
       def render_form_field(f, field, resource)
-        return super unless defined?(AdminSuite::UI::FieldRendererRegistry)
-
         return if field.if_condition.present? && !field.if_condition.call(resource)
         return if field.unless_condition.present? && field.unless_condition.call(resource)
 
@@ -32,9 +29,6 @@ module AdminSuite
                 resource: resource,
                 field_class: field_class
               )
-
-            # If the registry doesn't know how to render, fall back to legacy behavior.
-            return super if field_html.nil?
 
             concat(field_html)
 

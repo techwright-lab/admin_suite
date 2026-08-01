@@ -12,10 +12,17 @@ module AdminSuite
           handlers[type.to_sym] = block
         end
 
-        def render(type, view:, f:, field:, resource:, field_class:)
-          handler = handlers[type.to_sym]
-          return nil unless handler
+        # Fallback for unregistered field types: a plain text input. Keeps the
+        # registry total so callers never need a secondary rendering path.
+        def default_handler
+          @default_handler ||= ->(_view, f, field, _resource, field_class) {
+            f.text_field(field.name, class: field_class, placeholder: field.placeholder,
+                         readonly: field.readonly)
+          }
+        end
 
+        def render(type, view:, f:, field:, resource:, field_class:)
+          handler = handlers[type.to_sym] || default_handler
           handler.call(view, f, field, resource, field_class)
         end
       end
