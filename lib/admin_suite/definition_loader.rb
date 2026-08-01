@@ -14,9 +14,12 @@ module AdminSuite
   # branches on environment except for *how* a matching file gets loaded):
   # - `loaded?` gates every call, in every environment: once a kind is
   #   loaded, `load!(kind)` is a no-op until something explicitly clears it.
-  # - In development, matching files are loaded with `load` (so editing a
-  #   file's method bodies takes effect the next time it runs); everywhere
-  #   else, `require` (loaded once per process, forever).
+  # - In development, matching files are loaded with `load` instead of
+  #   `require`; everywhere else, `require` (loaded once per process,
+  #   forever). This only matters for kinds that actually get reloaded a
+  #   second time -- `:resources` is excluded from that (see below), so for
+  #   resources `load` vs `require` is a distinction without a difference:
+  #   the file is read exactly once, same as pre-0.4.0.
   # - Live-reload in development comes from *outside* `load!`: the engine's
   #   "admin_suite.definition_reload" initializer hooks `reset_for_new_request!`
   #   into `app.reloader.to_prepare`, which Rails runs once at boot and again
@@ -24,7 +27,8 @@ module AdminSuite
   #   the loaded flag (and, for kinds where it's safe, the registry) so the
   #   *next* `load!` call re-globs and reloads -- at most once per such
   #   request, not once per call. See `reset_for_new_request!` for why
-  #   `:resources` is deliberately excluded from that reset.
+  #   `:resources` is deliberately excluded from that reset (and gets no
+  #   live-reload at all as a result).
   #
   # Error policy (generalized from ActionExecutor's pre-existing policy):
   # log the failing file and error, then re-raise in development/test so
@@ -66,13 +70,17 @@ module AdminSuite
         # process. This bit twice within a single request in production use
         # (`navigation_items` is re-entered by `portal_color`/`portal_icon`
         # while building the sidebar), wiping the nav on the very first
-        # request. So :resources is never reset for a live dev-mode reload:
-        # `load!` still uses `load` (refreshing method bodies via Ruby's
-        # reopen semantics), but the registered_resources array itself is
-        # populated once per process and never cleared again. A resource
-        # file removed from disk therefore stays registered until a real
-        # process restart -- matching pre-Task-9 behavior, which had no dev
-        # reload path for resources at all.
+        # request. So :resources is never reset -- not for a dev-mode
+        # reload, not ever.
+        #
+        # Consequence (this is a real cost, not a wash): resources are
+        # loaded once per process. Once `loaded?` is true, `load!(:resources)`
+        # never runs again, so the file is never re-read -- `load` (vs
+        # `require`) buys nothing here, unlike the other three kinds, because
+        # nothing ever calls it a second time. In development, both edits to
+        # an existing resource file and newly added resource files require a
+        # restart, unchanged from pre-0.4.0 behavior (which had no dev reload
+        # path for resources at all).
         dev_resettable: false
       },
       portals: {

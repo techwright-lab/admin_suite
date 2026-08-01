@@ -102,6 +102,15 @@ module AdminSuite
         marker = File.join(dir, "count.txt")
         File.write(File.join(dir, "thing.rb"), "File.write(#{marker.inspect}, File.exist?(#{marker.inspect}) ? File.read(#{marker.inspect}).to_i + 1 : 1)")
         with_globs(:dashboards, [ File.join(dir, "*.rb") ]) do
+          # reset_for_new_request! resets *every* dev_resettable kind, not
+          # just :dashboards -- it also touches PortalRegistry and
+          # handlers_loaded, which is exactly the shared global state
+          # Finding 3 established a snapshot/restore discipline for. Wrap
+          # it here too, or this test becomes seed-dependent the day some
+          # other test registers a portal at file-load time.
+          restore_portals = snapshot_registry(:portals)
+          restore_actions = snapshot_registry(:actions)
+
           with_rails_env(:development) do
             3.times { AdminSuite::DefinitionLoader.load!(:dashboards) }
             assert_equal 1, File.read(marker).to_i,
@@ -114,6 +123,9 @@ module AdminSuite
             assert_equal 2, File.read(marker).to_i,
                          "expected reset_for_new_request! to make the next load! call reload"
           end
+        ensure
+          restore_portals.call
+          restore_actions.call
         end
       end
     end
