@@ -35,7 +35,12 @@ module AdminSuite
 
     def content_tag(...) = view.content_tag(...)
     def safe_join(...) = view.safe_join(...)
-    def h(...) = view.h(...)
+
+    # `ERB::Util#h` (aliased from `html_escape`) is a private instance method
+    # on every Rails view context, including `ActionView::Base` itself — not
+    # just in `ActionView::TestCase`. `view.h(...)` would raise a private-method
+    # `NoMethodError` on every call site, so this goes through `#send` instead.
+    def h(...) = view.send(:h, ...)
 
     # Resolves the panel's `source:` option: a Proc called with the record
     # (or with no args, if it takes none), a Symbol/String sent to the

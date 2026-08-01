@@ -23,6 +23,7 @@ require "admin_suite/renderers/json_renderer"
 require "admin_suite/renderers/key_value_renderer"
 require "admin_suite/renderers/table_from_renderer"
 require "admin_suite/renderers/code_renderer"
+require "admin_suite/renderers/legacy_gleania"
 require "admin_suite/engine"
 
 AdminSuite::RendererRegistry.register(:json, AdminSuite::Renderers::JsonRenderer)
@@ -36,6 +37,13 @@ AdminSuite::RendererRegistry.register(:code, AdminSuite::Renderers::CodeRenderer
 # keys keep working unchanged against the new built-in renderers.
 AdminSuite::RendererRegistry.register(:json_preview, AdminSuite::Renderers::JsonRenderer)
 AdminSuite::RendererRegistry.register(:code_preview, AdminSuite::Renderers::CodeRenderer)
+
+# Deprecated (removed in 0.5.0): the four Gleania-specific LLM chat-transcript
+# renderers. See `AdminSuite::Renderers::LegacyGleania` for details.
+AdminSuite::RendererRegistry.register(:prompt_template_preview, AdminSuite::Renderers::LegacyGleania::PromptTemplateRenderer)
+AdminSuite::RendererRegistry.register(:messages_preview, AdminSuite::Renderers::LegacyGleania::MessagesPreviewRenderer)
+AdminSuite::RendererRegistry.register(:tool_args_preview, AdminSuite::Renderers::LegacyGleania::ToolArgsRenderer)
+AdminSuite::RendererRegistry.register(:turn_messages_preview, AdminSuite::Renderers::LegacyGleania::TurnMessagesRenderer)
 
 module AdminSuite
   class << self
