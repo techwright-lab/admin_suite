@@ -84,11 +84,21 @@ module AdminSuite
       content_tag(:div, safe_join(rows))
     end
 
-    # @param rows [Array<Hash>] row hashes keyed by the column names
+    # @param rows [Array<Hash>] row hashes keyed by the column names. `columns`
+    #   is always an array of Symbols (see callers), but row hashes commonly
+    #   are not — Rails deserializes JSONB columns to String-keyed Hashes, so
+    #   rows are symbolized once here rather than requiring every caller (and
+    #   every host renderer calling this primitive directly) to remember to
+    #   do it themselves. A per-cell `row.key?(c) ? row[c] : row[c.to_s]`
+    #   would avoid the copy but re-checks both key forms on every cell of
+    #   every row; symbolizing each row once up front is both simpler and
+    #   cheaper for any table with more than one column.
     # @param columns [Array<Symbol>] column order
     # @param empty [String, nil] message when rows are blank
     def data_table(rows, columns:, empty: nil)
       return empty_state(empty || "None found.") if rows.blank?
+
+      rows = rows.map { |row| row.is_a?(Hash) ? row.symbolize_keys : row }
 
       header = content_tag(:tr, safe_join(columns.map { |c|
         content_tag(:th, c.to_s.humanize, class: "text-left text-xs font-medium text-slate-400 uppercase tracking-wider pb-2")

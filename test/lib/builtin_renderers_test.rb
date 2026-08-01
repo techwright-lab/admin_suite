@@ -55,6 +55,30 @@ module AdminSuite
       assert_includes html, "no data"
     end
 
+    # Regression: Rails deserializes JSONB columns to String-keyed Hashes —
+    # exactly what trust_growth's organic_results/metadata/SERP arrays are.
+    # TableFromRenderer infers Symbol columns from `rows.first.keys.to_sym`,
+    # but `data_table`'s cell lookup (`row[c]`) previously looked those
+    # Symbols up against the original String-keyed rows and silently found
+    # nothing — headers rendered, every <td> came back blank, and
+    # `rows.blank?` never caught it because the rows themselves were present.
+    test "table_from renderer renders cell values (not just headers) for String-keyed rows" do
+      html = build(:table_from, source: ->(_r) { [ { "name" => "alpha", "count" => 2 } ] })
+
+      assert_includes html, "Name"
+      assert_includes html, "Count"
+      # The values, not just the headers, must survive the String/Symbol
+      # key mismatch — this is the assertion whose absence let the bug
+      # through originally.
+      assert_includes html, "alpha"
+      assert_includes html, "2"
+    end
+
+    test "table_from renderer raises a clear error for a non-Array source" do
+      error = assert_raises(ArgumentError) { build(:table_from, source: ->(_r) { { name: "alpha" } }) }
+      assert_match(/table_from expects an Array of Hashes, got Hash/, error.message)
+    end
+
     test "code renderer renders the snippet" do
       assert_includes build(:code, source: ->(r) { r.snippet }, language: :ruby), "puts"
     end
@@ -71,6 +95,23 @@ module AdminSuite
     test "key_value renderer shows an empty state for a blank source" do
       html = build(:key_value, source: ->(_r) { {} })
       assert_includes html, "Nothing to display."
+    end
+
+    test "key_value renderer raises a clear error for a flat non-pair Array" do
+      error = assert_raises(ArgumentError) { build(:key_value, source: ->(_r) { [ 1, 2, 3 ] }) }
+      assert_match(/key_value expects a Hash or an Array of \[key, value\] pairs/, error.message)
+    end
+
+    # data_table is a public primitive hosts may call directly from their own
+    # Renderer subclasses (not just through TableFromRenderer), so the
+    # String-keyed-rows fix belongs on the primitive itself.
+    test "data_table renders cell values for String-keyed rows" do
+      html = AdminSuite::Renderer.new(record, self).send(
+        :data_table, [ { "name" => "alpha", "count" => 2 } ], columns: %i[name count]
+      )
+
+      assert_includes html, "alpha"
+      assert_includes html, "2"
     end
 
     test "table_from renderer's :columns option reaches the renderer through render_custom_section" do
