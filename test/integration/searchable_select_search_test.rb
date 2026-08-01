@@ -278,6 +278,39 @@ module AdminSuite
       assert_equal AdminSuite::ResourcesController, captured[:controller]
     end
 
+    test "a stray ?id= is never loaded and never reaches authorize's record:" do
+      captured_record = :not_set
+      hook = lambda do |record:, **|
+        captured_record = record
+        true
+      end
+
+      # Company id 1000 ("Acme Corp") genuinely exists in this fixture --
+      # this must not load it, unlike show/edit/update/destroy, where an
+      # `:id` is expected and meaningful.
+      with_authorize(hook) { get COMPANIES_SEARCH, params: { q: "Acme", id: "1000" } }
+
+      assert_response :success
+      assert_nil captured_record,
+        "search must never load a record from a stray ?id= -- doing so hands an " \
+        "attacker-chosen record to config.authorize and creates a 404-vs-403 " \
+        "existence oracle over find_friendly_resource!'s slug/uuid/token lookups"
+    end
+
+    test "a stray ?id= for a nonexistent record does not 404 before authorize runs" do
+      # Before excluding `search` from `set_resource`, an unmatched id here
+      # raised ActiveRecord::RecordNotFound (404) *before* authorize_admin_suite!
+      # ever ran -- letting a denied actor distinguish "no such id" from
+      # "denied" by id, on a resource they have no read access to.
+      hook_called = false
+      with_authorize(->(**) { hook_called = true; false }) do
+        get COMPANIES_SEARCH, params: { q: "Acme", id: "999999" }
+      end
+
+      assert_response :forbidden
+      assert hook_called, "authorize must run even with a nonexistent stray ?id="
+    end
+
     test "unregistered resource name 404s before the authorize hook ever runs" do
       hook_called = false
       with_authorize(->(**) { hook_called = true; false }) do
@@ -308,6 +341,28 @@ module AdminSuite
       get "/internal/admin_suite/ops/searchable_select_deals/new"
       assert_response :success
       assert_includes response.body, "/custom/vendor/search"
+    end
+
+    # Pins requirement #1 (authentication) with an actual test, not trace
+    # only -- this controller relies on ApplicationController's
+    # `admin_suite_authenticate!` before_action, and nothing here re-proves
+    # that for this specific action. Mirrors
+    # authentication_test.rb's "unconfigured auth fails closed with 403".
+    test "unconfigured auth fails closed with 403 on /search" do
+      saved_allow = AdminSuite.config.allow_unauthenticated
+      saved_strategy = AdminSuite.config.auth_strategy
+      saved_authenticate = AdminSuite.config.authenticate
+
+      AdminSuite.config.allow_unauthenticated = false
+      AdminSuite.config.auth_strategy = nil
+      AdminSuite.config.authenticate = nil
+
+      get COMPANIES_SEARCH, params: { q: "Acme" }
+      assert_response :forbidden
+    ensure
+      AdminSuite.config.allow_unauthenticated = saved_allow
+      AdminSuite.config.auth_strategy = saved_strategy
+      AdminSuite.config.authenticate = saved_authenticate
     end
   end
 end

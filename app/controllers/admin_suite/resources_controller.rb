@@ -7,7 +7,15 @@ module AdminSuite
 
     before_action :require_resource_config!
     before_action :enforce_read_only!, only: %i[new create edit update destroy toggle]
-    before_action :set_resource, if: -> { params[:id].present? && !%w[index new create].include?(action_name) }
+    # `search` is excluded even though it can receive an `:id`-shaped query
+    # param: unlike show/edit/update/destroy, a record has no business
+    # participating in this action at all. Without this exclusion, a stray
+    # `?id=` would (a) hand an attacker-chosen record to `config.authorize`'s
+    # `record:` on an action that should never carry one, and (b) let a
+    # denied actor distinguish 404 (bad id) from 403 (denied) -- an
+    # existence oracle over `find_friendly_resource!`'s slug/uuid/token
+    # lookups, on a resource they have no read access to.
+    before_action :set_resource, if: -> { params[:id].present? && !%w[index new create search].include?(action_name) }
     before_action :authorize_admin_suite!
 
     helper_method :resource_config, :resource_class, :resource, :collection, :current_portal, :resource_name

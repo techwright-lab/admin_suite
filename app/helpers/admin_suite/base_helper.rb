@@ -803,7 +803,11 @@ module AdminSuite
       return nil unless target&.portal_name
 
       search_resources_path(portal: target.portal_name, resource_name: target.resource_name_plural)
-    rescue StandardError
+    rescue StandardError => e
+      Rails.logger&.warn(
+        "AdminSuite: resolving the search URL for `resource: #{resource_key.inspect}` raised " \
+        "#{e.class}: #{e.message}; rendering the field with no remote search."
+      )
       nil
     end
 
