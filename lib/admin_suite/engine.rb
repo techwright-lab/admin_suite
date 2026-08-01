@@ -171,13 +171,23 @@ module AdminSuite
           ]
         end
 
-        config.portals = {
-          ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
-          email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },
-          ai: { label: "AI Portal", icon: "cpu", color: :cyan, order: 30 },
-          assistant: { label: "Assistant Portal", icon: "message-circle", color: :violet, order: 40 }
-        } if config.portals.blank?
+        self.class.apply_default_portals!(config)
       end
+    end
+
+    # Applies the engine's built-in default portals, unless the host has
+    # explicitly assigned `config.portals` itself (even to `{}`). Extracted
+    # from the "admin_suite.configuration" initializer so it is directly
+    # testable without booting a full Rails app.
+    def self.apply_default_portals!(config)
+      return if config.portals_configured? || config.portals.present?
+
+      config.send(:default_portals!, {
+        ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
+        email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },
+        ai: { label: "AI Portal", icon: "cpu", color: :cyan, order: 30 },
+        assistant: { label: "Assistant Portal", icon: "message-circle", color: :violet, order: 40 }
+      })
     end
 
     initializer "admin_suite.tailwind_build" do

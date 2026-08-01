@@ -55,9 +55,6 @@ module Admin
         # Actions configuration
         attr_reader :actions_config
 
-        # Export configuration
-        attr_reader :export_formats
-
         # Sets the model class for this resource
         #
         # @param klass [Class] The ActiveRecord model class
@@ -155,14 +152,6 @@ module Admin
         def actions(&block)
           @actions_config = ActionsConfig.new
           @actions_config.instance_eval(&block) if block_given?
-        end
-
-        # Configures export formats
-        #
-        # @param formats [Array<Symbol>] Export formats (:json, :csv)
-        # @return [void]
-        def exportable(*formats)
-          @export_formats = formats
         end
 
         # Declares whether the generic resource routes may mutate records.
@@ -309,7 +298,6 @@ module Admin
           @columns << ColumnDefinition.new(
             name: name,
             content: content,
-            render: options[:render],
             header: options[:header] || name.to_s.humanize,
             css_class: options[:class],
             type: options[:type],
@@ -321,7 +309,7 @@ module Admin
         end
       end
 
-      ColumnDefinition = Struct.new(:name, :content, :render, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
+      ColumnDefinition = Struct.new(:name, :content, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
 
       class FiltersBuilder
         attr_reader :filters

@@ -74,10 +74,6 @@ AdminSuite.configure do |config|
   # In apps that use Tailwind, this is typically `:app`.
   config.host_stylesheet = :app
 
-  # Tailwind CDN fallback (helps when host doesn't compile Tailwind).
-  # Disable if you provide your own Tailwind build.
-  config.tailwind_cdn = true
-
   # Optional docs link shown in the sidebar.
   # config.docs_url = "https://..."
   config.docs_url = nil
