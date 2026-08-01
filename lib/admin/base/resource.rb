@@ -272,7 +272,7 @@ module Admin
       # Index view configuration
       class IndexConfig
         attr_reader :searchable_fields, :sortable_fields, :default_sort, :default_sort_direction,
-                    :columns_list, :filters_list, :stats_list, :per_page
+                    :columns_list, :filters_list, :stats_list, :per_page, :includes_list
 
         def initialize
           @searchable_fields = []
@@ -283,6 +283,7 @@ module Admin
           @filters_list = []
           @stats_list = []
           @per_page = 25
+          @includes_list = []
         end
 
         def searchable(*fields)
@@ -297,6 +298,23 @@ module Admin
 
         def paginate(count)
           @per_page = count
+        end
+
+        # Kills the index's association N+1 (Task 3 made `belongs_to`
+        # columns render as links, so each one now genuinely dereferences
+        # the association -- one query per row without this). The
+        # controller applies this to the filtered scope only when the
+        # scope actually responds to `#includes` -- PORO test doubles and
+        # some host scopes don't -- and swallows a bad association name
+        # (typo, renamed association) by logging and rendering
+        # unoptimized rather than 500ing. `nil` entries (e.g. a stray
+        # `includes nil`) are dropped rather than stored and handed to the
+        # scope verbatim.
+        #
+        # @param associations [Array<Symbol, String>]
+        # @return [void]
+        def includes(*associations)
+          @includes_list = associations.flatten.compact
         end
 
         def columns(&block)

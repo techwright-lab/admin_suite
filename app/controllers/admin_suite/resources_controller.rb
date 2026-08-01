@@ -222,7 +222,36 @@ module AdminSuite
     def filtered_collection
       return resource_class.all unless resource_config&.index_config
 
-      Admin::Base::FilterBuilder.new(resource_config, params).apply(resource_class.all)
+      scope = Admin::Base::FilterBuilder.new(resource_config, params).apply(resource_class.all)
+      apply_index_includes(scope)
+    end
+
+    # Applies the index's `includes:` DSL option (see
+    # `Admin::Base::Resource::IndexConfig#includes`) to the filtered scope.
+    # Only when the scope actually responds to `#includes` -- the PORO
+    # `Relation` test doubles used throughout this gem's own test suite
+    # don't, and a host's own non-AR scope object may not either -- so this
+    # skips silently rather than raising. `.includes` itself can raise for
+    # a bad/renamed/typo'd association name once the scope is a real AR
+    # relation; that must degrade the index to an unoptimized-but-working
+    # page, not 500 it, so it's logged and swallowed the same way the
+    # chart panel's bad `type:`/`data` values are (see
+    # `app/views/admin_suite/panels/_chart.html.erb`).
+    #
+    # @param scope [Object] the filtered collection
+    # @return [Object] the scope, with associations eager-loaded when possible
+    def apply_index_includes(scope)
+      includes_list = resource_config.index_config.includes_list
+      return scope if includes_list.blank?
+      return scope unless scope.respond_to?(:includes)
+
+      scope.includes(*includes_list)
+    rescue StandardError => e
+      Rails.logger&.warn(
+        "AdminSuite: #{resource_class}'s index `includes(#{includes_list.inspect})` raised " \
+        "#{e.class}: #{e.message}; rendering the index without eager loading."
+      )
+      scope
     end
 
     def paginate_collection(scope)

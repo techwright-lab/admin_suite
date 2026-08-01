@@ -311,14 +311,31 @@ module AdminSuite
     def auto_admin_suite_path_for(item)
       return nil unless active_record_base?(item)
 
-      ensure_admin_resources_loaded_for!(item.class)
-
-      resource = Admin::Base::Resource.registered_resources.find { |r| r.model_class == item.class }
+      resource = admin_suite_resource_for(item.class)
       return nil unless resource&.portal_name && resource.respond_to?(:resource_name_plural)
 
       resource_path(portal: resource.portal_name, resource_name: resource.resource_name_plural, id: item.to_param)
     rescue StandardError
       nil
+    end
+
+    # Memoized per-request (the helper is mixed into a view instance created
+    # fresh per request) resource-class lookup. Before this, every rendered
+    # association value re-ran `ensure_admin_resources_loaded_for!`'s
+    # `registered_resources.any?` scan *plus* a `registered_resources.find`
+    # scan -- both full linear scans of the registry (28-38 resources in the
+    # real hosts) -- once per rendered row. Keying the memo on the model
+    # class (not the item's identity) means a page with N rows of the same
+    # class costs one lookup, not N.
+    #
+    # @param model_class [Class]
+    # @return [Class, nil] the registered `Admin::Base::Resource` subclass, if any
+    def admin_suite_resource_for(model_class)
+      @admin_suite_resource_for ||= {}
+      return @admin_suite_resource_for[model_class] if @admin_suite_resource_for.key?(model_class)
+
+      ensure_admin_resources_loaded_for!(model_class)
+      @admin_suite_resource_for[model_class] = Admin::Base::Resource.registered_resources.find { |r| r.model_class == model_class }
     end
 
     def ensure_admin_resources_loaded_for!(model_class)

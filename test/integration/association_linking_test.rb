@@ -115,10 +115,50 @@ module LinkingFixtures
   end
 
   LineItem = Struct.new(:id, :label, :company)
+
+  # Five deals, each pointing at a *distinct instance* of the *same*
+  # `LinkingFixtures::Company` class. `auto_admin_suite_path_for`'s registry
+  # lookup is keyed on `item.class`, not identity, so a correct memo
+  # resolves the resource once for this whole page -- pre-memo, each of
+  # the 5 rows independently re-ran the full registry scan.
+  class RepeatedCompanyDeal
+    extend ActiveModel::Naming
+
+    attr_reader :id, :label, :company
+
+    def initialize(id:, label:, company:)
+      @id = id
+      @label = label
+      @company = company
+    end
+
+    ROWS = Array.new(5) { |i| new(id: i + 1, label: "Deal #{i + 1}", company: Company.new(id: 100 + i, name: "Company #{i + 1}")) }
+
+    def self.all = ReadOnlyResourceFixtures::Relation.new(ROWS)
+    def self.column_names = %w[id label]
+    def self.primary_key = "id"
+    def self.columns_hash = { "id" => Struct.new(:type).new(:integer) }
+    def self.find(id) = all.find { |d| d.to_param == id.to_s }
+    def to_param = id.to_s
+    def attributes = { "id" => id, "label" => label }
+  end
 end
 
 module Admin
   module Resources
+    class LinkingRepeatedCompanyDealResource < Admin::Base::Resource
+      model LinkingFixtures::RepeatedCompanyDeal
+      portal :ops
+      section :observability
+
+      index do
+        columns do
+          column :label
+          column :company
+        end
+      end
+    end
+
     class LinkingRaisingCoResource < Admin::Base::Resource
       model LinkingFixtures::RaisingCo
       portal :ops
@@ -141,6 +181,11 @@ module Admin
           column :label
           column :company
         end
+        # `Deal.all` is a `ReadOnlyResourceFixtures::Relation` -- it has no
+        # `#includes` method at all. This exercises Task 4's "skip
+        # silently, don't raise" path on every request this test file
+        # already makes to `/linking_deals`, not just a dedicated test.
+        includes :company
       end
 
       show do
@@ -198,6 +243,50 @@ module AdminSuite
       # The second line item's company has no registered resource: plain text.
       assert_includes response.body, "Ghost Vendor"
       refute_match %r{<a[^>]*>\s*Ghost Vendor\s*</a>}, response.body
+    end
+
+    # Non-vacuous by construction: it counts actual invocations of
+    # `ensure_admin_resources_loaded_for!` -- called exactly once per
+    # registry *cache miss* inside `admin_suite_resource_for`, and nowhere
+    # else in the gem. (A page-wide spy on
+    # `Admin::Base::Resource.registered_resources` itself was tried first
+    # and rejected: navigation building calls it many more times per
+    # request for unrelated reasons -- e.g. `resources_for_portal` -- so
+    # that count is dominated by noise this task didn't touch.)
+    #
+    # Pre-memo, `auto_admin_suite_path_for` called
+    # `ensure_admin_resources_loaded_for!(item.class)` unconditionally on
+    # every invocation -- 5 rows of the same class meant 5 calls (and 2
+    # full registry scans apiece: the `.any?` inside it, plus the
+    # `registered_resources.find` right after). Memoized, only the first
+    # row's lookup is a cache miss; the other 4 hit
+    # `@admin_suite_resource_for` and never call this method at all -- so
+    # the call count for 5 rows must be 1, not 5. A test that only
+    # asserted "the memo hash is non-empty" would still pass if the memo
+    # were consulted but the scan ran unconditionally anyway; this asserts
+    # the scan was actually skipped.
+    test "auto_admin_suite_path_for memoizes the registry lookup per class, not per row" do
+      call_count = 0
+      helper_module = AdminSuite::BaseHelper
+      original_method = helper_module.instance_method(:ensure_admin_resources_loaded_for!)
+
+      helper_module.send(:define_method, :ensure_admin_resources_loaded_for!) do |model_class|
+        call_count += 1
+        original_method.bind(self).call(model_class)
+      end
+
+      begin
+        get "/internal/admin_suite/ops/linking_repeated_company_deals"
+        assert_response :success
+        assert_includes response.body, "Company 1"
+        assert_includes response.body, "Company 5"
+      ensure
+        helper_module.send(:define_method, :ensure_admin_resources_loaded_for!, original_method)
+      end
+
+      assert_equal 1, call_count,
+        "expected exactly one registry lookup for 5 rows of the same class (LinkingFixtures::Company) " \
+        "-- got #{call_count}, which means the memo isn't preventing a rescan per row"
     end
   end
 end
