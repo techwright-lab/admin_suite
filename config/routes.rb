@@ -14,6 +14,9 @@ AdminSuite::Engine.routes.draw do
   scope ":portal/:resource_name" do
     get "/", to: "resources#index", as: :resources
     get "/new", to: "resources#new", as: :new_resource
+    # Must precede "/:id" -- a literal segment match wins over the dynamic
+    # one only because Rails tries routes in declaration order.
+    get "/search", to: "resources#search", as: :search_resources
     post "/", to: "resources#create"
     get "/:id", to: "resources#show", as: :resource
     get "/:id/edit", to: "resources#edit", as: :edit_resource

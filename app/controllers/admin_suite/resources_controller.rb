@@ -23,6 +23,26 @@ module AdminSuite
     def show
     end
 
+    # GET /:portal/:resource_name/search?q=term
+    #
+    # Feeds `searchable_select_controller.js`'s `fetchOptions`, which expects
+    # a bare JSON array (not `{results: [...]}`) of objects each carrying
+    # `id`/`value` and `name`/`title`/`label`. Matches that contract exactly
+    # -- the JS needs no changes.
+    #
+    # Reuses `FilterBuilder.search_predicate`, the same ILIKE-over-
+    # `searchable_fields` logic the index's own search box uses, so this can
+    # only ever search the resource's declared `searchable` whitelist --
+    # never an arbitrary column supplied via `q`. `require_resource_config!`
+    # and `authorize_admin_suite!` (both already-registered before_actions,
+    # the latter driven by `AUTHORIZATION_VERBS["search"] = :read` below)
+    # gate this exactly like every other action on this controller: unknown
+    # resource names 404 before either runs, and a denying `config.authorize`
+    # 403s before any query executes.
+    def search
+      render json: search_results.first(SEARCH_RESULT_LIMIT).map { |record| search_result_json(record) }
+    end
+
     # GET /:portal/:resource_name/new
     def new
       @resource = resource_class.new
@@ -129,14 +149,48 @@ module AdminSuite
 
     private
 
+    # Hard cap on searchable_select results, regardless of table size or how
+    # permissive the resource's `searchable` list is.
+    SEARCH_RESULT_LIMIT = 25
+
     # Controller action -> authorization verb.
     AUTHORIZATION_VERBS = {
-      "index" => :read, "show" => :read,
+      "index" => :read, "show" => :read, "search" => :read,
       "new" => :create, "create" => :create,
       "edit" => :update, "update" => :update, "toggle" => :update,
       "destroy" => :destroy,
       "execute_action" => :execute, "bulk_action" => :execute
     }.freeze
+
+    # Filters the resource's own records by `params[:q]` via the shared
+    # `FilterBuilder` predicate. A nil predicate (blank `q`, no index config,
+    # no declared `searchable` fields, or `q` shorter than
+    # `FilterBuilder::MIN_SEARCH_LENGTH`) means no results at all here --
+    # deliberately *not* the "fall back to unfiltered scope" behavior
+    # `FilterBuilder#apply_search` uses for the index filter box. A raw JSON
+    # endpoint must never hand back arbitrary rows just because the query
+    # was empty or the resource isn't configured for search.
+    #
+    # @return [Enumerable]
+    def search_results
+      predicate = Admin::Base::FilterBuilder.search_predicate(resource_config&.index_config, params[:q])
+      return [] unless predicate
+
+      conditions, search_term = predicate
+      resource_class.where(conditions, search: search_term)
+    end
+
+    # @param record [Object]
+    # @return [Hash]
+    def search_result_json(record)
+      { id: record.id, name: search_result_label(record) }
+    end
+
+    def search_result_label(record)
+      return record.name if record.respond_to?(:name) && record.name.present?
+      return record.title if record.respond_to?(:title) && record.title.present?
+      record.to_s
+    end
 
     # Enforces the host's `config.authorize` hook. Nil hook = allowed
     # (authentication remains the gate). Falsy return = 403.

@@ -430,7 +430,8 @@ module Admin
             variants: options[:variants],
             label_color: options[:label_color],
             label_size: options[:label_size],
-            parent_field: options[:parent_field]
+            parent_field: options[:parent_field],
+            resource: options[:resource]
           )
         end
 
@@ -457,6 +458,12 @@ module Admin
         :collection, :create_url, :accept, :rows, :readonly,
         :if_condition, :unless_condition, :multiple, :creatable,
         :preview, :variants, :label_color, :label_size, :parent_field,
+        # `resource:` (e.g. `resource: :companies`) lets a `searchable_select`
+        # field resolve its search URL automatically against the gem's own
+        # search endpoint, rather than requiring every host to supply a
+        # `collection:` String pointing at a hand-rolled route. See
+        # `render_searchable_select` in `app/helpers/admin_suite/base_helper.rb`.
+        :resource,
         keyword_init: true
       )
 

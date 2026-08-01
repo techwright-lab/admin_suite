@@ -777,10 +777,44 @@ module AdminSuite
       end
     end
 
+    # Resolves the default search URL for a `searchable_select` field
+    # declared with `resource:` (e.g. `field :company_id,
+    # type: :searchable_select, resource: :companies`), so it can reach the
+    # gem's own search endpoint (`ResourcesController#search`) without the
+    # host wiring up a `collection:` URL by hand. A String `collection:`
+    # option always takes precedence over this -- see `render_searchable_select`.
+    #
+    # Looks up the resource by its plural (or singular) resource name among
+    # `Admin::Base::Resource.registered_resources`; returns nil (never raises)
+    # when the key is blank, unregistered, or has no `portal_name` to route
+    # through, so a typo'd `resource:` degrades to "no remote search" rather
+    # than a 500 on the very page meant to render a form.
+    #
+    # @param resource_key [Symbol, String, nil]
+    # @return [String, nil]
+    def admin_suite_search_url_for(resource_key)
+      return nil if resource_key.blank?
+
+      AdminSuite::DefinitionLoader.load!(:resources)
+      key = resource_key.to_s
+      target = Admin::Base::Resource.registered_resources.find do |r|
+        r.resource_name_plural == key || r.resource_name == key
+      end
+      return nil unless target&.portal_name
+
+      search_resources_path(portal: target.portal_name, resource_name: target.resource_name_plural)
+    rescue StandardError
+      nil
+    end
+
     def render_searchable_select(_f, field, resource)
       param_key = resource.class.model_name.param_key
       current_value = resource.public_send(field.name)
       collection = field.collection.is_a?(Proc) ? field.collection.call : field.collection
+      # A String `collection:` is an explicit search-URL override and always
+      # wins (unchanged host behavior); otherwise fall back to the field's
+      # `resource:` option resolved via `admin_suite_search_url_for`.
+      search_url = collection.is_a?(String) ? collection : admin_suite_search_url_for(field.resource).to_s
 
       options_json = if collection.is_a?(Array)
         collection.map { |opt| opt.is_a?(Array) ? { value: opt[1], label: opt[0] } : { value: opt, label: opt.to_s.humanize } }.to_json
@@ -810,7 +844,7 @@ module AdminSuite
           controller: "admin-suite--searchable-select",
           "admin-suite--searchable-select-options-value": options_json,
           "admin-suite--searchable-select-creatable-value": field.create_url.present?,
-          "admin-suite--searchable-select-search-url-value": collection.is_a?(String) ? collection : "",
+          "admin-suite--searchable-select-search-url-value": search_url,
           "admin-suite--searchable-select-create-url-value": field.create_url.to_s
         },
         class: "relative") do
