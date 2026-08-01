@@ -9,15 +9,52 @@ end
 require "pagy"
 
 require "admin_suite/version"
+require "admin_suite/deprecation"
 require "admin_suite/configuration"
 require "admin_suite/markdown_renderer"
 require "admin_suite/theme_palette"
 require "admin_suite/portal_registry"
+require "admin_suite/section_definition"
 require "admin_suite/portal_definition"
 require "admin_suite/auth"
 require "admin_suite/ui/form_field_renderer"
 require "admin_suite/ui/show_value_formatter"
+require "admin_suite/renderer"
+require "admin_suite/renderer_registry"
+require "admin_suite/renderers/json_renderer"
+require "admin_suite/renderers/key_value_renderer"
+require "admin_suite/renderers/table_from_renderer"
+require "admin_suite/renderers/code_renderer"
+require "admin_suite/renderers/legacy_gleania"
+require "admin_suite/legacy_custom_renderer_procs"
+require "admin_suite/definition_loader"
+require "admin_suite/host_autoload_policy"
 require "admin_suite/engine"
+
+# Registered as *defaults* (register_default), not explicit registrations:
+# `render_custom_section` checks a host's own `RendererRegistry.register`
+# call and a host's `Admin::Renderers::<Key>Renderer` class *before* falling
+# back to these, so a host following the deprecation advice below (or simply
+# overriding a built-in like `:json`) actually takes effect instead of being
+# silently shadowed by the gem's own boot-time registrations.
+AdminSuite::RendererRegistry.register_default(:json, AdminSuite::Renderers::JsonRenderer)
+AdminSuite::RendererRegistry.register_default(:key_value, AdminSuite::Renderers::KeyValueRenderer)
+AdminSuite::RendererRegistry.register_default(:table_from, AdminSuite::Renderers::TableFromRenderer)
+AdminSuite::RendererRegistry.register_default(:code, AdminSuite::Renderers::CodeRenderer)
+
+# Aliases: `:json_preview`/`:code_preview` were the previous generic
+# `render_custom_section` case branches (BaseHelper#render_json_preview /
+# #render_code_preview, now deleted). Host resources declared against those
+# keys keep working unchanged against the new built-in renderers.
+AdminSuite::RendererRegistry.register_default(:json_preview, AdminSuite::Renderers::JsonRenderer)
+AdminSuite::RendererRegistry.register_default(:code_preview, AdminSuite::Renderers::CodeRenderer)
+
+# Deprecated (removed in 0.5.0): the four Gleania-specific LLM chat-transcript
+# renderers. See `AdminSuite::Renderers::LegacyGleania` for details.
+AdminSuite::RendererRegistry.register_default(:prompt_template_preview, AdminSuite::Renderers::LegacyGleania::PromptTemplateRenderer)
+AdminSuite::RendererRegistry.register_default(:messages_preview, AdminSuite::Renderers::LegacyGleania::MessagesPreviewRenderer)
+AdminSuite::RendererRegistry.register_default(:tool_args_preview, AdminSuite::Renderers::LegacyGleania::ToolArgsRenderer)
+AdminSuite::RendererRegistry.register_default(:turn_messages_preview, AdminSuite::Renderers::LegacyGleania::TurnMessagesRenderer)
 
 module AdminSuite
   class << self

@@ -102,6 +102,15 @@ AdminSuite::UI::ShowFormatterRegistry.register_class(Float) do |value, view, _re
   view.content_tag(:span, view.number_with_delimiter(value), class: "font-mono")
 end
 
+AdminSuite::UI::ShowFormatterRegistry.register_class(BigDecimal) do |value, view, _record, _field|
+  # `.to_f` avoids number_with_delimiter rendering exponential notation
+  # (e.g. "0.98765e4") for BigDecimal input, at the cost of Float precision
+  # for values beyond Float's exact range (e.g. sub-cent monetary sums).
+  # That's an accepted display-only tradeoff here — don't "fix" this by
+  # dropping the conversion, or exponential notation comes back.
+  view.content_tag(:span, view.number_with_delimiter(value.to_f), class: "font-mono")
+end
+
 AdminSuite::UI::ShowFormatterRegistry.register_default do |value, view, _record, field_name|
   value_str = value.to_s
 

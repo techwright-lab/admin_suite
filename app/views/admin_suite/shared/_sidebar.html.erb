@@ -60,7 +60,7 @@
 
         <% if active %>
           <div class="mt-1 ml-11 space-y-0.5 text-sm">
-            <% portal[:sections].sort_by { |(_k, s)| s[:label].to_s }.each do |_section_key, section| %>
+            <% portal[:sections].sort_by { |(_k, s)| [ (s[:order] || 100).to_i, s[:label].to_s ] }.each do |_section_key, section| %>
               <div class="text-xs font-medium text-white/70 uppercase tracking-wider px-3 pt-2 pb-1">
                 <%= section[:label] %>
               </div>

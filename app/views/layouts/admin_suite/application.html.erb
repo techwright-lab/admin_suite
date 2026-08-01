@@ -29,9 +29,11 @@
 
     <%= stylesheet_link_tag "rouge", "data-turbo-track": "reload" %>
 
-    <%# EasyMDE Markdown Editor %>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css" data-turbo-track="reload">
-    <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js" data-turbo-track="reload"></script>
+    <%# EasyMDE Markdown Editor: vendored (see app/assets/vendor), loaded only
+        when the page actually renders a :markdown field (see
+        AdminSuite::UI::FieldRendererRegistry's :markdown handler, which sets
+        this content_for). %>
+    <%= yield :easymde_assets %>
 
     <% if respond_to?(:javascript_importmap_tags) %>
       <%= javascript_importmap_tags %>

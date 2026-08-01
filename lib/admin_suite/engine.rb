@@ -14,65 +14,7 @@ module AdminSuite
     end
 
     initializer "admin_suite.host_dsl_ignore", before: :setup_main_autoloader do |app|
-      # Host apps may store AdminSuite DSL files under `app/admin_suite/**` and
-      # `app/admin/portals/**`.
-      #
-      # These are side-effect DSL files (they do not define constants), so Zeitwerk
-      # must ignore them to avoid eager-load `Zeitwerk::NameError`s in production.
-
-      admin_suite_app_dir = Rails.root.join("app/admin_suite")
-      admin_dir = Rails.root.join("app/admin")
-      admin_portals_dir = Rails.root.join("app/admin/portals")
-
-      # If the host uses `Admin::*` constants inside `app/admin/**`, Rails' default
-      # autoload root (`app/admin`) would expect top-level constants like
-      # `Resources::UserResource`. We fix that by mapping `app/admin` to `Admin`.
-      # This avoids requiring host apps to add their own Zeitwerk initializer.
-      if admin_dir.exist? && self.class.host_admin_namespace_files?(admin_dir)
-        admin_dir_s = admin_dir.to_s
-        app.config.autoload_paths.delete(admin_dir_s)
-        app.config.eager_load_paths.delete(admin_dir_s)
-
-        # Ensure `Admin` exists so Zeitwerk can use it as a namespace.
-        module ::Admin; end
-
-        Rails.autoloaders.main.push_dir(admin_dir, namespace: ::Admin)
-      end
-
-      Rails.autoloaders.each do |loader|
-        loader.ignore(admin_suite_app_dir) if admin_suite_app_dir.exist?
-
-        next unless admin_portals_dir.exist?
-
-        loader.ignore(admin_portals_dir) if self.class.contains_admin_suite_portal_dsl?(admin_portals_dir)
-      end
-    end
-
-    def self.host_admin_namespace_files?(admin_dir)
-      # True if any file under app/admin appears to define `Admin::*` constants.
-      Dir[admin_dir.join("**/*.rb").to_s].any? do |file|
-        next false if file.include?("/portals/")
-
-        content = File.binread(file)
-        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-
-        content.match?(/\b(module|class)\s+Admin\b/) ||
-          content.match?(/\b(module|class)\s+Admin::/)
-      rescue StandardError
-        false
-      end
-    end
-
-    def self.contains_admin_suite_portal_dsl?(admin_portals_dir)
-      portal_files = Dir[admin_portals_dir.join("**/*.rb").to_s]
-      portal_files.any? do |file|
-        content = File.binread(file)
-        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-        portal_dsl_pattern = /(::)?AdminSuite\s*\.\s*portal\b/
-        portal_dsl_pattern.match?(content)
-      rescue StandardError
-        false
-      end
+      AdminSuite::HostAutoloadPolicy.apply!(app)
     end
 
     initializer "admin_suite.admin_dsl" do
@@ -83,17 +25,6 @@ module AdminSuite
       require "admin/base/action_handler"
     end
 
-    initializer "admin_suite.reloader" do |app|
-      # Reset the handlers_loaded flag in development so handlers are reloaded
-      # when code changes. This ensures the expensive glob operation happens at
-      # most once per request (or code reload) rather than on every NameError.
-      if Rails.env.development?
-        app.reloader.to_prepare do
-          Admin::Base::ActionExecutor.handlers_loaded = false
-        end
-      end
-    end
-
     initializer "admin_suite.watchable_dirs" do |app|
       next unless Rails.env.development?
 
@@ -101,6 +32,44 @@ module AdminSuite
       app.config.watchable_dirs[root.join("app").to_s] = %w[rb erb js css]
       app.config.watchable_dirs[root.join("lib").to_s] = %w[rb]
       app.config.watchable_dirs[root.join("config").to_s] = %w[rb]
+    end
+
+    initializer "admin_suite.host_watchable_dirs" do |app|
+      next unless Rails.env.development?
+
+      # Rails only re-runs `to_prepare` callbacks (see
+      # "admin_suite.definition_reload" below) when it detects a change in a
+      # watched path -- by default, `config.autoload_paths` +
+      # `eager_load_paths` + `watchable_files` + `watchable_dirs`.
+      # `app/admin*` directories are covered automatically (Rails treats
+      # every directory under `app/` as an autoload path). But
+      # `config/admin_suite/**` -- the *recommended*, deliberately
+      # non-autoload location for resource/portal/dashboard/action
+      # definitions (see "admin_suite.configuration" below) -- isn't in any
+      # of those by default, so editing only a file there would never be
+      # noticed. Watch it explicitly.
+      host_admin_suite_config_dir = Rails.root.join("config/admin_suite")
+      next unless host_admin_suite_config_dir.exist?
+
+      app.config.watchable_dirs[host_admin_suite_config_dir.to_s] = %w[rb]
+    end
+
+    initializer "admin_suite.definition_reload" do |app|
+      next unless Rails.env.development?
+
+      # Drives DefinitionLoader's development live-reload. Rails runs
+      # `to_prepare` callbacks once at boot and again on any request where
+      # it detects a change in a watched path (see
+      # "admin_suite.host_watchable_dirs" above) -- NOT unconditionally on
+      # every request (that's gated by `config.reload_classes_only_on_change`,
+      # true by default; see Rails::Application::Finisher#set_clear_dependencies_hook).
+      # Clearing the loaded flags here, rather than inside `load!` itself,
+      # is what bounds a reload to at most once per such request instead of
+      # once per `load!` call (application_controller.rb's `navigation_items`
+      # alone triggers several per request).
+      app.reloader.to_prepare do
+        AdminSuite::DefinitionLoader.reset_for_new_request!
+      end
     end
 
     initializer "admin_suite.assets", before: "propshaft" do |app|
@@ -150,13 +119,23 @@ module AdminSuite
           ]
         end
 
-        config.portals = {
-          ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
-          email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },
-          ai: { label: "AI Portal", icon: "cpu", color: :cyan, order: 30 },
-          assistant: { label: "Assistant Portal", icon: "message-circle", color: :violet, order: 40 }
-        } if config.portals.blank?
+        self.class.apply_default_portals!(config)
       end
+    end
+
+    # Applies the engine's built-in default portals, unless the host has
+    # explicitly assigned `config.portals` itself (even to `{}`). Extracted
+    # from the "admin_suite.configuration" initializer so it is directly
+    # testable without booting a full Rails app.
+    def self.apply_default_portals!(config)
+      return if config.portals_configured? || config.portals.present?
+
+      config.send(:default_portals!, {
+        ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
+        email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },
+        ai: { label: "AI Portal", icon: "cpu", color: :cyan, order: 30 },
+        assistant: { label: "Assistant Portal", icon: "message-circle", color: :violet, order: 40 }
+      })
     end
 
     initializer "admin_suite.tailwind_build" do

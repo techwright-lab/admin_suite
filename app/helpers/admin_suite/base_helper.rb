@@ -6,11 +6,9 @@ module AdminSuite
   # This is intentionally very close to the `/internal/developer` helper so we can
   # keep both UIs side-by-side and compare behavior while migrating.
   module BaseHelper
-    include Pagy::Frontend
     include AdminSuite::IconHelper
     include AdminSuite::PanelsHelper
     include AdminSuite::ThemeHelper
-    include ::Internal::Developer::CustomRenderersHelper if defined?(::Internal::Developer::CustomRenderersHelper)
     # ActiveStorage route helpers live on the host app (main_app), not the isolated engine.
     def admin_suite_rails_blob_path(...)
       if respond_to?(:main_app) && main_app.respond_to?(:rails_blob_path)
@@ -86,9 +84,8 @@ module AdminSuite
     end
 
 
-    # Prefer registry-driven implementations (with legacy fallbacks via `super`).
-    prepend AdminSuite::UI::ShowValueFormatter
-    prepend AdminSuite::UI::FormFieldRenderer
+    include AdminSuite::UI::ShowValueFormatter
+    include AdminSuite::UI::FormFieldRenderer
 
     # Returns the color scheme for a portal
     #
@@ -145,79 +142,6 @@ module AdminSuite
         column.content.call(record)
       else
         record.public_send(column.name) rescue "—"
-      end
-    end
-
-    # Formats a value for display on show pages
-    #
-    # @param record [ActiveRecord::Base] The record
-    # @param field_name [Symbol, String] Field name
-    # @return [String] HTML safe formatted value
-    def format_show_value(record, field_name)
-      value = record.public_send(field_name) rescue nil
-
-      if value.is_a?(ActiveStorage::Attached::One)
-        return render_attachment_preview(value)
-      elsif value.is_a?(ActiveStorage::Attached::Many)
-        return render_attachments_preview(value)
-      end
-
-      case value
-      when nil
-        content_tag(:span, "—", class: "text-slate-400")
-      when true
-        content_tag(:span, class: "inline-flex items-center gap-1") do
-          svg = '<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'.html_safe
-          concat(svg)
-          concat(content_tag(:span, "Yes", class: "text-green-600 font-medium"))
-        end
-      when false
-        content_tag(:span, class: "inline-flex items-center gap-1") do
-          svg = '<svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>'.html_safe
-          concat(svg)
-          concat(content_tag(:span, "No", class: "text-slate-500"))
-        end
-      when Time, DateTime
-        content_tag(:span, class: "inline-flex items-center gap-2") do
-          concat(content_tag(:span, value.strftime("%B %d, %Y at %H:%M"), class: "font-medium"))
-          concat(content_tag(:span, "(#{time_ago_in_words(value)} ago)", class: "text-slate-500 text-xs"))
-        end
-      when Date
-        value.strftime("%B %d, %Y")
-      when ActiveRecord::Base
-        link_text = value.respond_to?(:name) ? value.name : "#{value.class.name} ##{value.id}"
-        content_tag(:span, link_text, class: "text-indigo-600")
-      when Hash
-        render_json_block(value)
-      when Array
-        if value.empty?
-          content_tag(:span, "Empty array", class: "text-slate-400 italic")
-        elsif value.first.is_a?(Hash)
-          render_json_block(value)
-        else
-          content_tag(:div, class: "flex flex-wrap gap-1") do
-            value.each do |item|
-              concat(content_tag(:span, item.to_s, class: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"))
-            end
-          end
-        end
-      when Integer, Float, BigDecimal
-        content_tag(:span, number_with_delimiter(value), class: "font-mono")
-      else
-        value_str = value.to_s
-
-        if value_str.start_with?("{", "[") && value_str.length > 10
-          begin
-            parsed = JSON.parse(value_str)
-            render_json_block(parsed)
-          rescue JSON::ParserError
-            render_text_block(value_str)
-          end
-        elsif value_str.include?("\n") || value_str.length > 200
-          render_text_block(value_str, detect_language(field_name, value_str))
-        else
-          value_str
-        end
       end
     end
 
@@ -341,209 +265,50 @@ module AdminSuite
       nil
     end
 
-    def render_custom_section(resource, render_type)
-      renderer = AdminSuite.config.custom_renderers[render_type.to_sym] rescue nil
-      return renderer.call(resource, self) if renderer
+    def render_custom_section(resource, render_type, options = {})
+      key = render_type.to_sym
 
-      case render_type.to_sym
-      when :prompt_template_preview
-        render_prompt_template(resource)
-      when :json_preview
-        render_json_preview(resource)
-      when :code_preview
-        render_code_preview(resource)
-      when :messages_preview
-        render_messages_preview(resource)
-      when :tool_args_preview
-        render_tool_args_preview(resource)
-      when :turn_messages_preview
-        render_turn_messages_preview(resource)
-      else
-        content_tag(:p, "Unknown render type: #{render_type}", class: "text-slate-500 italic")
+      legacy_proc = AdminSuite.config.custom_renderers[key]
+      if legacy_proc
+        AdminSuite::LegacyCustomRendererProcs.warn_once(key)
+        return legacy_proc.call(resource, self)
       end
+
+      # Precedence, after the legacy proc above (unchanged, Task 3 has tests
+      # pinning that): a host's explicit registration, then a host renderer
+      # class, then the gem's own defaults (built-ins + the deprecated four
+      # Gleania renderers). Checking the gem defaults last means a host that
+      # defines `Admin::Renderers::<Key>Renderer` -- exactly the migration
+      # path the deprecation warnings recommend -- actually takes effect
+      # instead of being silently shadowed by the gem's boot-time
+      # registrations (see `RendererRegistry`).
+      klass = AdminSuite::RendererRegistry.lookup(key) ||
+        host_renderer_class(key) ||
+        AdminSuite::RendererRegistry.lookup_default(key)
+      return klass.new(resource, self, options).render if klass
+
+      content_tag(:p, "Unknown render type: #{render_type}", class: "text-slate-500 italic")
     end
 
-    # --- generic custom renderers (fallbacks) ---
-    def render_prompt_template(resource)
-      template = resource.respond_to?(:prompt_template) ? resource.prompt_template : nil
-      return content_tag(:p, "No template defined", class: "text-slate-500 italic") if template.blank?
-
-      highlighted_template = h(template).gsub(/\{\{(\w+)\}\}/) do
-        "<span class=\"text-amber-400 bg-amber-900/30 px-1 rounded\">{{#{$1}}}</span>"
-      end
-
-      content_tag(:div, class: "relative group") do
-        concat(content_tag(:div, class: "absolute top-2 right-2 flex items-center gap-2") do
-          concat(content_tag(:span, "TEMPLATE", class: "text-xs font-medium text-slate-400 uppercase tracking-wider"))
-          concat(content_tag(:button,
-            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'.html_safe,
-            type: "button",
-            class: "p-1 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity",
-            data: { controller: "admin-suite--clipboard", action: "click->admin-suite--clipboard#copy", "admin-suite--clipboard-text-value": template },
-            title: "Copy to clipboard"))
-        end)
-
-        concat(content_tag(:pre, class: "bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm font-mono max-h-[600px] overflow-y-auto whitespace-pre-wrap leading-relaxed") do
-          highlighted_template.html_safe
-        end)
-
-        variables = template.scan(/\{\{(\w+)\}\}/).flatten.uniq
-        if variables.any?
-          concat(content_tag(:div, class: "mt-3 pt-3 border-t border-slate-700") do
-            concat(content_tag(:span, "Variables: ", class: "text-sm text-slate-400"))
-            concat(content_tag(:div, class: "inline-flex flex-wrap gap-1 mt-1") do
-              variables.each do |var|
-                concat(content_tag(:code, "{{#{var}}}", class: "text-xs px-2 py-0.5 bg-amber-900/30 text-amber-400 rounded"))
-              end
-            end)
-          end)
-        end
-      end
+    # Resolves `Admin::Renderers::<Key>Renderer` in the host app, if defined.
+    def host_renderer_class(key)
+      "Admin::Renderers::#{key.to_s.camelize}Renderer".safe_constantize
     end
 
-    def render_json_preview(resource)
-      data = resource.respond_to?(:data) ? resource.data : resource.attributes
-      render_json_block(data)
-    end
-
-    def render_code_preview(resource)
-      code = resource.respond_to?(:code) ? resource.code : resource.to_s
-      render_text_block(code, :ruby)
-    end
-
-    def render_messages_preview(resource)
-      messages = resource.respond_to?(:messages) ? resource.messages : []
-      if messages.respond_to?(:chronological)
-        messages = messages.chronological
-      end
-      messages = messages.limit(50) if messages.respond_to?(:limit)
-      messages = Array.wrap(messages)
-
-      return content_tag(:p, "No messages", class: "text-slate-500 italic") if messages.blank?
-
-      content_tag(:div, class: "space-y-4 max-h-[600px] overflow-y-auto -mx-6 -mb-6 p-6 pt-0") do
-        messages.each_with_index do |msg, idx|
-          if msg.respond_to?(:role)
-            role = msg.role
-            content = msg.content
-            created_at = msg.respond_to?(:created_at) ? msg.created_at : nil
-          else
-            role = msg["role"] || msg[:role] || "unknown"
-            content = msg["content"] || msg[:content] || ""
-            created_at = msg["created_at"] || msg[:created_at]
-          end
-
-          role_class = case role.to_s
-          when "user" then "bg-blue-50 border-blue-200"
-          when "assistant" then "bg-emerald-50 border-emerald-200"
-          when "tool" then "bg-amber-50 border-amber-200"
-          when "system" then "bg-slate-50 border-slate-200"
-          else "bg-slate-50 border-slate-200"
-          end
-
-          role_icon = case role.to_s
-          when "user"
-            '<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'.html_safe
-          when "assistant"
-            '<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>'.html_safe
-          when "tool"
-            '<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>'.html_safe
-          else
-            '<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>'.html_safe
-          end
-
-          concat(content_tag(:div, class: "rounded-lg border p-4 #{role_class}") do
-            concat(content_tag(:div, class: "flex items-center justify-between mb-3") do
-              concat(content_tag(:div, class: "flex items-center gap-2") do
-                concat(role_icon)
-                concat(content_tag(:span, role.to_s.capitalize, class: "text-sm font-medium text-slate-700"))
-              end)
-              concat(content_tag(:div, class: "flex items-center gap-2 text-xs text-slate-400") do
-                concat(content_tag(:span, created_at.strftime("%H:%M:%S"))) if created_at.respond_to?(:strftime)
-                concat(content_tag(:span, "##{idx + 1}"))
-              end)
-            end)
-
-            content_str = content.to_s
-            if role.to_s == "tool" && content_str.start_with?("{", "[")
-              begin
-                parsed = JSON.parse(content_str)
-                concat(render_json_block(parsed))
-              rescue JSON::ParserError
-                concat(content_tag(:div, simple_format(h(content_str)), class: "prose prose-sm max-w-none"))
-              end
-            else
-              concat(content_tag(:div, simple_format(h(content_str)), class: "prose prose-sm max-w-none"))
-            end
-          end)
-        end
-      end
-    end
-
-    def render_tool_args_preview(resource)
-      args = resource.respond_to?(:args) ? resource.args : (resource.respond_to?(:arguments) ? resource.arguments : {})
-      result = resource.respond_to?(:result) ? resource.result : nil
-      error = resource.respond_to?(:error) ? resource.error : nil
-
-      content_tag(:div, class: "space-y-6") do
-        concat(content_tag(:div) do
-          concat(content_tag(:h4, "Arguments", class: "text-sm font-medium text-slate-500 mb-2"))
-          if args.present? && args != {}
-            concat(render_json_block(args))
-          else
-            concat(content_tag(:p, "No arguments", class: "text-slate-400 italic text-sm"))
-          end
-        end)
-
-        if result.present? && result != {}
-          concat(content_tag(:div, class: "pt-4 border-t border-slate-200") do
-            concat(content_tag(:h4, "Result", class: "text-sm font-medium text-slate-500 mb-2"))
-            concat(render_json_block(result))
-          end)
-        end
-
-        if error.present?
-          concat(content_tag(:div, class: "pt-4 border-t border-slate-200") do
-            concat(content_tag(:h4, "Error", class: "text-sm font-medium text-red-500 mb-2"))
-            concat(content_tag(:div, class: "bg-red-50 border border-red-200 rounded-lg p-4") do
-              content_tag(:pre, h(error.to_s), class: "text-sm text-red-700 whitespace-pre-wrap font-mono")
-            end)
-          end)
-        end
-      end
-    end
-
-    def render_turn_messages_preview(resource)
-      user_msg = resource.respond_to?(:user_message) ? resource.user_message : nil
-      asst_msg = resource.respond_to?(:assistant_message) ? resource.assistant_message : nil
-
-      content_tag(:div, class: "space-y-4") do
-        if user_msg
-          concat(content_tag(:div, class: "rounded-lg border p-4 bg-blue-50 border-blue-200") do
-            concat(content_tag(:div, class: "flex items-center gap-2 mb-2") do
-              concat('<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'.html_safe)
-              concat(content_tag(:span, "User", class: "text-sm font-medium text-slate-700"))
-            end)
-            concat(content_tag(:div, simple_format(h(user_msg.respond_to?(:content) ? user_msg.content.to_s : user_msg.to_s)), class: "prose prose-sm max-w-none"))
-          end)
-        end
-
-        if asst_msg
-          concat(content_tag(:div, class: "rounded-lg border p-4 bg-emerald-50 border-emerald-200") do
-            concat(content_tag(:div, class: "flex items-center gap-2 mb-2") do
-              concat('<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>'.html_safe)
-              concat(content_tag(:span, "Assistant", class: "text-sm font-medium text-slate-700"))
-            end)
-            concat(content_tag(:div, simple_format(h(asst_msg.respond_to?(:content) ? asst_msg.content.to_s : asst_msg.to_s)), class: "prose prose-sm max-w-none"))
-          end)
-        end
-
-        concat(content_tag(:p, "No messages found", class: "text-slate-400 italic text-sm")) unless user_msg || asst_msg
-      end
+    # A bare `object.is_a?(ActiveRecord::Base)` crashes with `NameError` in a
+    # host without ActiveRecord loaded (this gem's own reference DB-free
+    # configuration among them) -- not masking, since it isn't inside a
+    # rescue, just a plain 500. Same idiom already used by
+    # `AdminSuite::UI::ShowFormatterRegistry` (`if defined?(ActiveRecord::Base)`).
+    #
+    # @param object [Object]
+    # @return [Boolean]
+    def active_record_base?(object)
+      defined?(ActiveRecord::Base) && object.is_a?(ActiveRecord::Base)
     end
 
     def auto_admin_suite_path_for(item)
-      return nil unless item.is_a?(ActiveRecord::Base)
+      return nil unless active_record_base?(item)
 
       ensure_admin_resources_loaded_for!(item.class)
 
@@ -559,12 +324,7 @@ module AdminSuite
       already_loaded = Admin::Base::Resource.registered_resources.any? { |r| r.model_class == model_class }
       return if already_loaded
 
-      Array(AdminSuite.config.resource_globs).flat_map { |g| Dir[g] }.uniq.each do |file|
-        require file
-      end
-    rescue NameError
-      require "admin/base/resource"
-      retry
+      AdminSuite::DefinitionLoader.load!(:resources)
     end
 
     # ---- show page sections / associations ----
@@ -573,7 +333,7 @@ module AdminSuite
     # `/internal/developer`. This is intentionally "UI heavy".
 
     def render_show_section(resource, section, position = :main)
-      is_association = section.association.present? && !resource.public_send(section.association).is_a?(ActiveRecord::Base) rescue false
+      is_association = section.association.present? && !active_record_base?(resource.public_send(section.association)) rescue false
 
       content_tag(:div, class: "bg-white rounded-xl border border-slate-200 overflow-hidden") do
         header_padding = position == :sidebar ? "px-4 py-2.5" : "px-6 py-3"
@@ -585,7 +345,7 @@ module AdminSuite
 
           if section.association.present?
             assoc = resource.public_send(section.association) rescue nil
-            if assoc && !assoc.is_a?(ActiveRecord::Base)
+            if assoc && !active_record_base?(assoc)
               count = assoc.count rescue 0
               color_class = count > 0 ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-600"
               concat(content_tag(:span, number_with_delimiter(count), class: "text-xs font-semibold px-2 py-0.5 rounded-full #{color_class}"))
@@ -601,7 +361,7 @@ module AdminSuite
 
         concat(content_tag(:div, class: content_padding) do
           if section.render.present?
-            render_custom_section(resource, section.render)
+            render_custom_section(resource, section.render, section.options || {})
           elsif section.association.present?
             render_association_section(resource, section)
           elsif section.fields.any?
@@ -681,7 +441,7 @@ module AdminSuite
       associated = resource.public_send(section.association) rescue nil
       return content_tag(:p, "None found", class: "text-slate-400 italic text-sm") if associated.nil?
 
-      is_single = !associated.respond_to?(:to_a) || associated.is_a?(ActiveRecord::Base)
+      is_single = !associated.respond_to?(:to_a) || active_record_base?(associated)
       return render_association_card_single(associated, section) if is_single
 
       items = associated
@@ -711,61 +471,11 @@ module AdminSuite
         else
           concat(render_association_list(items, section))
         end
-        concat(render_association_pagination(pagy)) if pagy
+        concat(render("admin_suite/shared/pagination", pagy: pagy, page_param: association_page_param(section))) if pagy
       end
     end
 
     def association_page_param(section) = "#{section.association}_page"
-
-    def render_association_pagination(pagy)
-      content_tag(:div, class: "-mx-6 border-t border-slate-200 bg-slate-50/50 px-6 py-3") do
-        content_tag(:nav, class: "flex items-center justify-between", "aria-label" => "Pagination") do
-          concat(pagy_prev_link(pagy))
-          concat(pagy_page_links(pagy))
-          concat(pagy_next_link(pagy))
-        end
-      end
-    end
-
-    def pagy_prev_link(pagy)
-      if pagy.prev
-        link_to("Prev", pagy_url_for(pagy, pagy.prev),
-          class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors")
-      else
-        content_tag(:span, "Prev",
-          class: "px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed")
-      end
-    end
-
-    def pagy_next_link(pagy)
-      if pagy.next
-        link_to("Next", pagy_url_for(pagy, pagy.next),
-          class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors")
-      else
-        content_tag(:span, "Next",
-          class: "px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed")
-      end
-    end
-
-    def pagy_page_links(pagy)
-      content_tag(:div, class: "flex items-center gap-1") do
-        pagy.series.each { |item| concat(render_pagy_series_item(pagy, item)) }
-      end
-    end
-
-    def render_pagy_series_item(pagy, item)
-      case item
-      when Integer
-        link_to(item, pagy_url_for(pagy, item),
-          class: "px-2.5 py-1 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors")
-      when String
-        content_tag(:span, item, class: "px-2.5 py-1 text-sm font-semibold text-white bg-indigo-600 border border-indigo-600 rounded")
-      when :gap
-        content_tag(:span, "…", class: "px-2 text-sm text-slate-400")
-      else
-        ""
-      end
-    end
 
     def render_association_card_single(item, section)
       link_path = build_association_link(item, section)
@@ -901,8 +611,14 @@ module AdminSuite
       when true, false then value ? "Yes" : "No"
       when Time, DateTime then value.strftime("%b %d, %H:%M")
       when Date then value.strftime("%b %d, %Y")
-      when ActiveRecord::Base then item_display_title(value)
-      else value.to_s.truncate(50)
+      else
+        # A `when ActiveRecord::Base` clause would evaluate that constant
+        # reference unconditionally (crashing in a host without ActiveRecord
+        # loaded), so this branch is checked explicitly via the predicate
+        # instead of folded into the `case`.
+        return item_display_title(value) if active_record_base?(value)
+
+        value.to_s.truncate(50)
       end
     end
 
@@ -985,58 +701,6 @@ module AdminSuite
         "bg-cyan-100 text-cyan-700"
       else
         "bg-slate-100 text-slate-600"
-      end
-    end
-
-    # ---- form fields ----
-    def render_form_field(f, field, resource)
-      return if field.if_condition.present? && !field.if_condition.call(resource)
-      return if field.unless_condition.present? && field.unless_condition.call(resource)
-
-      capture do
-        concat(content_tag(:div, class: "form-group") do
-          concat(f.label(field.name, class: "form-label") do
-            concat(field.label)
-            concat(content_tag(:span, " *", class: "text-red-500")) if field.required
-          end)
-
-          field_class = "form-input w-full"
-          field_class += " border-red-500" if resource.errors[field.name].any?
-
-          field_html = case field.type
-          when :textarea then f.text_area(field.name, class: field_class, rows: field.rows || 4, placeholder: field.placeholder, readonly: field.readonly)
-          when :url then f.url_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          when :email then f.email_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          when :number then f.number_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          when :toggle then render_toggle_field(f, field, resource)
-          when :label
-            label_value = resource.public_send(field.name) rescue nil
-            render_label_badge(label_value, color: field.label_color, size: field.label_size, record: resource)
-          when :select
-            collection = field.collection.is_a?(Proc) ? field.collection.call : field.collection
-            f.select(field.name, collection, { include_blank: true }, class: field_class, disabled: field.readonly)
-          when :searchable_select then render_searchable_select(f, field, resource)
-          when :multi_select, :tags then render_multi_select(f, field, resource)
-          when :image, :attachment then render_file_upload(f, field, resource)
-          when :trix, :rich_text then f.rich_text_area(field.name, class: "prose max-w-none")
-          when :markdown
-            f.text_area(field.name, class: "#{field_class} font-mono", rows: field.rows || 12, data: { controller: "admin-suite--markdown-editor" }, placeholder: field.placeholder)
-          when :file then f.file_field(field.name, class: "form-input-file", accept: field.accept)
-          when :datetime then f.datetime_local_field(field.name, class: field_class, readonly: field.readonly)
-          when :date then f.date_field(field.name, class: field_class, readonly: field.readonly)
-          when :time then f.time_field(field.name, class: field_class, readonly: field.readonly)
-          when :json
-            render("admin_suite/shared/json_editor_field", f: f, field: field, resource: resource)
-          when :code then render_code_editor(f, field, resource)
-          else
-            f.text_field(field.name, class: field_class, placeholder: field.placeholder, readonly: field.readonly)
-          end
-
-          concat(field_html)
-
-          concat(content_tag(:p, field.help, class: "mt-1 text-sm text-slate-500")) if field.help.present?
-          concat(content_tag(:p, resource.errors[field.name].first, class: "mt-1 text-sm text-red-600")) if resource.errors[field.name].any?
-        end)
       end
     end
 

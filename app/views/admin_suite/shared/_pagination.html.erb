@@ -1,0 +1,74 @@
+<% page_param = local_assigns.fetch(:page_param, :page) %>
+
+<% if pagy.pages > 1 %>
+  <div class="px-6 py-4 border-t border-slate-200">
+    <div class="flex items-center justify-between">
+      <div class="text-sm text-slate-500">
+        Showing <span class="font-medium text-slate-700"><%= pagy.from %></span> to
+        <span class="font-medium text-slate-700"><%= pagy.to %></span> of
+        <span class="font-medium text-slate-700"><%= number_with_delimiter(pagy.count) %></span> results
+      </div>
+
+      <nav class="flex items-center gap-1">
+        <% if pagy.prev %>
+          <%= link_to url_for(params.permit!.merge(page_param => pagy.prev)),
+              class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Prev
+          <% end %>
+        <% else %>
+          <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Prev
+          </span>
+        <% end %>
+
+        <div class="hidden sm:flex items-center gap-1 mx-2">
+          <% pagy.series.each do |item| %>
+            <% if item == :gap %>
+              <span class="px-2 py-1 text-sm text-slate-400">…</span>
+            <% elsif item.is_a?(Integer) %>
+              <%= link_to item, url_for(params.permit!.merge(page_param => item)),
+                  class: "px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors" %>
+            <% elsif item.is_a?(String) %>
+              <span class="px-3 py-1.5 text-sm font-medium text-white rounded-lg" style="background: var(--admin-suite-primary); border: 1px solid var(--admin-suite-primary);">
+                <%= item %>
+              </span>
+            <% end %>
+          <% end %>
+        </div>
+
+        <span class="sm:hidden px-3 py-1.5 text-sm text-slate-500">
+          Page <%= pagy.page %> of <%= pagy.pages %>
+        </span>
+
+        <% if pagy.next %>
+          <%= link_to url_for(params.permit!.merge(page_param => pagy.next)),
+              class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors" do %>
+            Next
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          <% end %>
+        <% else %>
+          <span class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed">
+            Next
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </span>
+        <% end %>
+      </nav>
+    </div>
+  </div>
+<% else %>
+  <div class="px-6 py-3 border-t border-slate-200">
+    <div class="text-sm text-slate-500">
+      Showing <span class="font-medium text-slate-700"><%= pagy.count %></span> results
+    </div>
+  </div>
+<% end %>

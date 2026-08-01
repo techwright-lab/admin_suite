@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-01
+
+### Added
+- `AdminSuite::Renderer` base class for show-panel renderers, with shared
+  primitives (`json_block`, `code_block`, `key_value_list`, `data_table`,
+  `badge`, `empty_state`). Host renderers live in `app/admin/renderers/*.rb`
+  as `Admin::Renderers::<Key>Renderer` and are autoloaded from a panel's
+  `render: :<key>` option.
+- Built-in renderers `:json`, `:key_value`, `:table_from` and `:code`, usable
+  from any resource with no host code. See
+  `../_vault/products/admin_suite/docs/renderers.md`.
+- Explicit renderer registration via `AdminSuite::RendererRegistry.register`.
+- Sections are first-class: `AdminSuite.portal :ops do section(:runs) { label "Runs"; order 10 } end`.
+  Undeclared sections keep the previous humanized-label, alphabetical-order behavior.
+- `BigDecimal` show-value formatting.
+
+### Changed (BREAKING)
+- `config.portals = {}` now suppresses the gem's built-in default portals.
+  Previously `{}` was `blank?` and the defaults re-applied, giving hosts that
+  cleared portals four phantom nav entries.
+- Removed `config.tailwind_cdn` (no consumers) and `ColumnDefinition`'s
+  `render:` option (never read).
+- Actions returning a persisted record now derive a redirect for any action,
+  not only one named `:duplicate`.
+- Association-panel pagination now renders through the same partial as index
+  pagination, which has richer markup than the old association-only
+  implementation — a visual change for hosts using paginated association
+  panels.
+- Unknown form field types now render a plain text field via a registry
+  default, the same fallback `:text`/`:string` already used, instead of a
+  separate legacy fallback path. Recognized types are unaffected.
+
+### Deprecated
+- `config.custom_renderers[:key] = ->(record, view) {}` procs — migrate to
+  `AdminSuite::Renderer` subclasses. Procs keep working in 0.4.x and take
+  precedence over a renderer class registered under the same key, so hosts
+  can migrate one panel at a time. See
+  `../_vault/products/admin_suite/docs/renderers.md`. Now warns once per
+  key per process when a legacy proc is used — previously deprecated on
+  paper only, with no runtime signal.
+- The built-in `:prompt_template_preview`, `:messages_preview`,
+  `:tool_args_preview` and `:turn_messages_preview` renderers. They warn once
+  per key per process and are **removed in 0.5.0**.
+- `Resource.exportable(*formats)` — a no-op that warns once per resource
+  class, naming the class, and is **removed in 0.5.0**. It was write-only
+  in every prior release (never had a reader, never drove any export
+  behavior); calling it is now harmless instead of raising `NoMethodError`
+  at resource-definition time.
+
+### Fixed
+- A host `Admin::Renderers::<Key>Renderer` class (or an explicit
+  `RendererRegistry.register` call) could be silently shadowed by the
+  gem's own built-in/deprecated-Gleania registrations under the same key,
+  defeating the deprecation advice that recommends defining exactly such a
+  class. `RendererRegistry` now separates gem defaults
+  (`register_default`) from explicit registrations (`register`);
+  `render_custom_section`'s precedence is: legacy `config.custom_renderers`
+  proc, explicit registration, host renderer class, gem default.
+- A bare `rescue ActiveRecord::RecordNotFound` in `ResourcesController#set_resource`
+  raised `NameError` while handling the real exception in a host without
+  ActiveRecord loaded, masking it (same failure class as the AASM fix
+  below). Three `object.is_a?(ActiveRecord::Base)` call sites in
+  `BaseHelper` had the same problem in its plain-crash form (not masking,
+  just a 500) and are now guarded by a shared `active_record_base?`
+  predicate.
+- The engine no longer force-includes
+  `Internal::Developer::CustomRenderersHelper` into every view. Verified
+  non-breaking: a host's `helper :all` (the Rails default) still supplies
+  it.
+- EasyMDE is vendored instead of loaded from a CDN (strict-CSP and
+  air-gapped hosts).
+- A bare `AASM::InvalidTransition` rescue raised `NameError` during exception
+  handling in hosts without AASM installed, masking the original error.
+- Index stat cards no longer emit dynamic Tailwind classes the content
+  scanner cannot see.
+- Index and association-panel pagination were two divergent implementations;
+  now one partial.
+- Definition files (resources/actions/portals/dashboards) that raise during
+  load now surface the error immediately in development and test, instead of
+  being silently retried — the old `rescue NameError; retry` could infinite-loop
+  in production when a require legitimately failed.
+
 ## [0.3.1] - 2026-08-01
 
 ### Fixed

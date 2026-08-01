@@ -81,37 +81,14 @@ module AdminSuite
     #
     # @return [void]
     def ensure_resources_loaded!
-      require "admin/base/resource" unless defined?(Admin::Base::Resource)
-      return if Admin::Base::Resource.registered_resources.any?
-
-      Array(AdminSuite.config.resource_globs).flat_map { |g| Dir[g] }.uniq.each do |file|
-        require file
-      end
-    rescue NameError
-      # Ensure base DSL is loaded first.
-      require "admin/base/resource"
-      retry
+      AdminSuite::DefinitionLoader.load!(:resources)
     end
 
     # Loads portal definition files in development (safe to call per-request).
     #
     # @return [void]
     def ensure_portals_loaded!
-      globs = Array(AdminSuite.config.portal_globs).flat_map { |g| Dir[g] }.uniq
-      return if globs.empty?
-
-      if Rails.env.development?
-        # Re-evaluate definitions on each request in development.
-        AdminSuite::PortalRegistry.reset!
-        globs.each { |file| load file }
-      else
-        # In non-dev, load once (typically at boot / first request).
-        return if AdminSuite::PortalRegistry.all.any?
-        globs.each { |file| require file }
-      end
-    rescue NameError
-      require "admin_suite"
-      retry
+      AdminSuite::DefinitionLoader.load!(:portals)
     end
 
     # Loads the root dashboard definition files (safe to call per-request).
@@ -122,33 +99,25 @@ module AdminSuite
     #
     # @return [void]
     def ensure_root_dashboard_loaded!
-      if Rails.env.development?
-        globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
-        # Re-evaluate dashboard layout on each request in development.
-        # Always reset, even when no files match, so removed dashboards are cleared.
-        AdminSuite.reset_root_dashboard!
-        globs.each { |file| load file }
-      else
-        # In non-dev, load once.
-        return if AdminSuite.config.root_dashboard_loaded
-        globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
-        if globs.empty?
-          # Avoid hitting the filesystem on every request when no dashboard files exist.
-          AdminSuite.config.root_dashboard_loaded = true
-          return
-        end
-        globs.each { |file| require file }
-        AdminSuite.config.root_dashboard_loaded = true
-      end
-    rescue NameError
-      require "admin_suite"
-      retry
+      AdminSuite::DefinitionLoader.load!(:dashboards)
     end
 
     # Builds the navigation structure from registered resources.
     #
+    # Memoized per request/controller-instance: views re-enter this method
+    # repeatedly while rendering a single page (e.g. `portal_color` and
+    # `portal_icon` in base_helper.rb each call it, and the sidebar partial
+    # calls those once per portal), and it's rebuilt from scratch each time
+    # it isn't memoized -- on top of that, `ensure_resources_loaded!` /
+    # `ensure_portals_loaded!` would otherwise glob the filesystem on every
+    # one of those re-entries in development.
+    #
     # @return [Hash]
     def navigation_items
+      @navigation_items ||= build_navigation_items
+    end
+
+    def build_navigation_items
       ensure_resources_loaded!
       ensure_portals_loaded!
 
@@ -163,6 +132,13 @@ module AdminSuite
         navigation[key.to_sym] ||= { label: key.to_s.humanize, order: 100, sections: {} }
         navigation[key.to_sym].merge!(definition.to_nav_meta)
         navigation[key.to_sym][:sections] ||= {}
+
+        # Declared sections appear even before any resource is assigned to
+        # them, so their label/order take effect immediately.
+        definition.sections.each do |section_key, section_definition|
+          navigation[key.to_sym][:sections][section_key] ||=
+            { label: section_key.to_s.humanize, order: 100, items: [] }.merge(section_definition.to_nav_meta)
+        end
       end
 
       Admin::Base::Resource.registered_resources.each do |resource|
@@ -172,7 +148,10 @@ module AdminSuite
         section = resource.section_name.to_sym
 
         navigation[portal] ||= { label: portal.to_s.humanize, order: 100, sections: {} }
-        navigation[portal][:sections][section] ||= { label: section.to_s.humanize, items: [] }
+        navigation[portal][:sections][section] ||= begin
+          declared = AdminSuite::PortalRegistry.all[portal]&.sections&.[](section)
+          { label: section.to_s.humanize, order: 100, items: [] }.merge(declared&.to_nav_meta || {})
+        end
 
         label = resource.nav_label.presence || resource.human_name_plural
         navigation[portal][:sections][section][:items] << {

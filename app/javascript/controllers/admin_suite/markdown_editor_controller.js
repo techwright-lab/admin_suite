@@ -4,18 +4,37 @@ import { Controller } from "@hotwired/stimulus"
  * Markdown Editor Controller (Admin Suite)
  *
  * Initializes EasyMDE on a textarea element for rich markdown editing.
- * EasyMDE is loaded globally via script tag in the admin layout.
+ * EasyMDE is loaded from the engine's vendored asset (see app/assets/vendor)
+ * only on pages that render a markdown field.
  */
+
+// Bounded retry: ~50 attempts at 100ms each (~5s) before giving up. Guards
+// against an unbounded poll if the EasyMDE asset fails to load (e.g. blocked
+// by a CSP, 404, or a page that never actually included it).
+const MAX_INIT_ATTEMPTS = 50
+const INIT_RETRY_DELAY_MS = 100
+
 export default class extends Controller {
   static targets = ["textarea"]
 
   connect() {
+    this.initAttempts = 0
     this.initEditor()
   }
 
   initEditor() {
     if (typeof window.EasyMDE === "undefined") {
-      setTimeout(() => this.initEditor(), 100)
+      this.initAttempts += 1
+      if (this.initAttempts >= MAX_INIT_ATTEMPTS) {
+        console.warn(
+          "admin-suite--markdown-editor: EasyMDE failed to load after " +
+            MAX_INIT_ATTEMPTS +
+            " attempts; falling back to a plain textarea."
+        )
+        return
+      }
+
+      setTimeout(() => this.initEditor(), INIT_RETRY_DELAY_MS)
       return
     }
 

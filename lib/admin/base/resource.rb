@@ -39,6 +39,13 @@ module Admin
     #     end
     #   end
     class Resource
+      extend AdminSuite::Deprecation
+
+      EXPORTABLE_DEPRECATION_MESSAGE_FORMAT =
+        "AdminSuite: %<resource>s calls `exportable`, which is a deprecated " \
+        "no-op and will be removed in 0.5.0. It never actually implemented " \
+        "export in any released version — safe to delete the call."
+
       class << self
         # Model configuration
         attr_reader :model_class, :portal_name, :section_name, :nav_label, :nav_icon, :nav_order
@@ -54,9 +61,6 @@ module Admin
 
         # Actions configuration
         attr_reader :actions_config
-
-        # Export configuration
-        attr_reader :export_formats
 
         # Sets the model class for this resource
         #
@@ -157,14 +161,6 @@ module Admin
           @actions_config.instance_eval(&block) if block_given?
         end
 
-        # Configures export formats
-        #
-        # @param formats [Array<Symbol>] Export formats (:json, :csv)
-        # @return [void]
-        def exportable(*formats)
-          @export_formats = formats
-        end
-
         # Declares whether the generic resource routes may mutate records.
         # Read-only resources retain index/show access while the controller
         # rejects direct requests to every built-in mutation endpoint.
@@ -174,6 +170,30 @@ module Admin
 
         def read_only?
           @read_only == true
+        end
+
+        # Deprecated no-op, removed in 0.5.0.
+        #
+        # `exportable` was write-only in every prior release -- it never had
+        # a reader and never drove any export behavior -- but hosts still
+        # call it from resource-definition bodies (gleania: 30 files;
+        # trust_growth: 1). A real removal would raise `NoMethodError` at
+        # definition-load time, and in production `DefinitionLoader` logs
+        # and swallows that, so the resource just silently vanishes from the
+        # admin. Kept as a no-op instead, so those files keep loading.
+        #
+        # Deliberately does not restore `@export_formats` or any reader --
+        # only the harmless no-op comes back.
+        #
+        # @param _formats [Array<Symbol>] ignored
+        # @return [void]
+        def exportable(*_formats)
+          # `warn_once`, `warn_once_sink` and `reset_deprecation_notices!`
+          # come from `AdminSuite::Deprecation`, extended above. Keyed on the
+          # resource class itself, so each resource warns independently (and
+          # only once) rather than one call anywhere silencing every other
+          # resource's first call.
+          warn_once(name, format(EXPORTABLE_DEPRECATION_MESSAGE_FORMAT, resource: name))
         end
 
         # Returns the resource name derived from class name
@@ -309,7 +329,6 @@ module Admin
           @columns << ColumnDefinition.new(
             name: name,
             content: content,
-            render: options[:render],
             header: options[:header] || name.to_s.humanize,
             css_class: options[:class],
             type: options[:type],
@@ -321,7 +340,7 @@ module Admin
         end
       end
 
-      ColumnDefinition = Struct.new(:name, :content, :render, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
+      ColumnDefinition = Struct.new(:name, :content, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
 
       class FiltersBuilder
         attr_reader :filters
@@ -470,7 +489,25 @@ module Admin
 
         private
 
+        # Struct members already given a dedicated home above. Everything
+        # else in the panel/section DSL call (`source:`, `empty:`,
+        # `language:`, plus `columns:` again — see below) is forwarded
+        # verbatim to the renderer via `ShowSectionDefinition#options`.
+        RESERVED_SECTION_OPTION_KEYS = %i[
+          fields association limit render title display link_to resource
+          paginate pagination per_page collapsible collapsed
+        ].freeze
+
         def build_section(name, options)
+          # `columns:` is deliberately NOT excluded here even though it also
+          # populates the dedicated `columns` member below (used today by
+          # association-table display). Built-in renderers like
+          # `:table_from` only ever see `section.options`, not the section
+          # itself, so `columns:` has to reach `options[:columns]` too or a
+          # DSL author's explicit column list would be silently dropped in
+          # favor of the renderer's own inference.
+          leftover_options = options.except(*RESERVED_SECTION_OPTION_KEYS)
+
           ShowSectionDefinition.new(
             name: name,
             fields: options[:fields] || [],
@@ -485,7 +522,8 @@ module Admin
             paginate: options[:paginate] || options[:pagination] || false,
             per_page: options[:per_page],
             collapsible: options[:collapsible] || false,
-            collapsed: options[:collapsed] || false
+            collapsed: options[:collapsed] || false,
+            options: leftover_options
           )
         end
       end
@@ -493,6 +531,7 @@ module Admin
       ShowSectionDefinition = Struct.new(
         :name, :fields, :association, :limit, :render, :title,
         :display, :columns, :link_to, :resource, :paginate, :per_page, :collapsible, :collapsed,
+        :options,
         keyword_init: true
       )
 

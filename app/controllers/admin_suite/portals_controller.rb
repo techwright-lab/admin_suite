@@ -11,8 +11,8 @@ module AdminSuite
       raise ActionController::RoutingError, "Portal not found" if @portal.blank?
 
       @sections =
-        (@portal[:sections] || {}).sort_by { |(_k, s)| s[:label].to_s }.map do |section_key, section|
-          items = Array(section[:items]).sort_by { |it| it[:label].to_s }
+        (@portal[:sections] || {}).sort_by { |(_k, s)| [ (s[:order] || 100).to_i, s[:label].to_s ] }.map do |section_key, section|
+          items = Array(section[:items]).sort_by { |it| [ (it[:order] || 100).to_i, it[:label].to_s ] }
           [ section_key, section.merge(items: items) ]
         end
 
