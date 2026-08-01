@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-08-01
 
 ### Added
-- `AdminSuite::Renderer` base class for show-panel renderers, with shared
+- `AdminSuite::Renderer` base class for panel renderers, with shared
   primitives (`json_block`, `code_block`, `key_value_list`, `data_table`,
   `badge`, `empty_state`). Host renderers live in `app/admin/renderers/*.rb`
   as `Admin::Renderers::<Key>Renderer` and are autoloaded from a panel's

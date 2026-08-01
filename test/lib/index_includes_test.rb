@@ -185,17 +185,39 @@ module AdminSuite
     end
 
     test "a scope whose includes raises for a bad association degrades instead of 500ing" do
-      get "/internal/admin_suite/ops/index_includes_bad_widgets"
+      logged = []
+      Rails.logger.stub(:warn, ->(msg) { logged << msg }) do
+        get "/internal/admin_suite/ops/index_includes_bad_widgets"
+      end
+
       assert_response :success
       assert_includes response.body, "Bad Widget"
+      # The rescue in `apply_index_includes` logs the failure -- pinning
+      # that here so the "skipped silently" test below (which asserts NO
+      # warn fires) is actually distinguishing two different code paths,
+      # not just two tests that both happen to pass.
+      assert_equal 1, logged.size
+      assert_includes logged.first, "nonexistent_association"
     end
 
     test "a scope that does not respond to includes is skipped silently, not raised" do
       refute IndexIncludesFixtures::NoIncludesWidget.all.respond_to?(:includes)
 
-      get "/internal/admin_suite/ops/index_includes_no_includes_widgets"
+      logged = []
+      Rails.logger.stub(:warn, ->(msg) { logged << msg }) do
+        get "/internal/admin_suite/ops/index_includes_no_includes_widgets"
+      end
+
       assert_response :success
       assert_includes response.body, "Plain Widget"
+      # `apply_index_includes`'s `respond_to?(:includes)` guard exists so a
+      # scope that can never support includes doesn't spam a warning on
+      # every request. Deleting that guard would still return a 200 here
+      # (the catch-all rescue produces an identical response), so the
+      # response alone doesn't prove the guard does anything -- this
+      # asserts its actual purpose: no warn fires on this path. Contrast
+      # with the bad-association test above, where one does.
+      assert_empty logged
     end
   end
 end

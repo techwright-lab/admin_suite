@@ -41,6 +41,18 @@ module AdminSuite
           before.each_value { |definition| AdminSuite::PortalRegistry.register(definition) }
         end
       else
+        # :dashboards/:actions have no accumulating registry to snapshot --
+        # unlike :resources/:portals (which pick up real fixtures registered
+        # by *other* test files at load time), reset! for these two kinds
+        # only clears a single flag/definition object
+        # (`root_dashboard_loaded`/`root_dashboard_definition`,
+        # `handlers_loaded`) that is entirely local to whichever test set it,
+        # via its own `with_globs`/`with_dashboard`-style ensure block. So
+        # there is nothing cross-test left to preserve, and "restore" here
+        # deliberately degrades to a second `reset!` call rather than a real
+        # snapshot+restore -- do not read this branch as returning a
+        # value-preserving restore the way the :resources/:portals branches
+        # above do.
         -> { AdminSuite::DefinitionLoader.reset!(kind) }
       end
     end

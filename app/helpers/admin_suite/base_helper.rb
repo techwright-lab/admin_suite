@@ -711,6 +711,15 @@ module AdminSuite
       when true, false then value ? "Yes" : "No"
       when Time, DateTime then value.strftime("%b %d, %H:%M")
       when Date then value.strftime("%b %d, %Y")
+      # Aligns with `format_show_value`'s Integer/Float/BigDecimal handling
+      # (see `AdminSuite::UI::ShowFormatterRegistry`) -- table cells used to
+      # render large numbers with no delimiter at all (via the `else`
+      # branch's plain `to_s`), inconsistent with the same value shown on
+      # the record's own show page.
+      when Integer, Float then number_with_delimiter(value)
+      # `.to_f` avoids number_with_delimiter rendering exponential notation
+      # for BigDecimal input, matching the show-value formatter's tradeoff.
+      when BigDecimal then number_with_delimiter(value.to_f)
       else
         # A `when ActiveRecord::Base` clause would evaluate that constant
         # reference unconditionally (crashing in a host without ActiveRecord

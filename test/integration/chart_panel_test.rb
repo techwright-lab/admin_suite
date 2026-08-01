@@ -180,9 +180,25 @@ module AdminSuite
     end
 
     test "chart assets load only on pages that render a chart" do
-      get "/internal/admin_suite/ops/read_only_widgets"
-      assert_response :success
-      refute_includes response.body, "vendor/chart"
+      # Self-contained via `with_dashboard` (defined above in this file)
+      # rather than hitting a fixture route registered by a *different* test
+      # file (`/ops/read_only_widgets`, from read_only_resource_test.rb):
+      # that made this test pass in the full suite but 404 under
+      # `TEST=test/integration/chart_panel_test.rb` isolation, since that
+      # other file's resource/route never gets registered. A `stat_panel`
+      # renders no chart at all, so this is guaranteed chart-free regardless
+      # of what else has (or hasn't) been loaded.
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            stat_panel "Active Users", 42
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        refute_includes response.body, "vendor/chart"
+      end
     end
 
     test "chart_panel with no type: still renders exactly as a bar chart" do

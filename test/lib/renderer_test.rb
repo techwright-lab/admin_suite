@@ -144,6 +144,12 @@ module AdminSuite
       assert_includes html, "host-class-7"
       refute_includes html, "Hello 7"
     ensure
+      # `register_default` seeds AdminSuite's *permanent* default store (the
+      # same one the built-ins live in), so this probe key must be removed
+      # via `unregister_default` -- unlike `unregister`, which only ever
+      # touches the explicit store and would silently leave this key behind
+      # for every test that runs afterward.
+      AdminSuite::RendererRegistry.unregister_default(key)
       if Admin::Renderers.const_defined?(:HostBeatsDefaultProbeRenderer, false)
         Admin::Renderers.send(:remove_const, :HostBeatsDefaultProbeRenderer)
       end
@@ -172,12 +178,15 @@ module AdminSuite
     test "a registered renderer class wins over the built-in case branches" do
       # :json_preview has a legacy case branch; a registered class must take it over.
       #
-      # Task 4 registers :json_preview as a permanent alias to JsonRenderer
-      # at require time, so — unlike when this test was first written —
-      # there is now always a prior registration to restore. Unregistering
-      # unconditionally in `ensure` would delete that alias process-wide for
-      # every test that runs after this one (a real, order-dependent bug
-      # this exact test used to hide).
+      # Task 4 registers :json_preview as a permanent alias to JsonRenderer,
+      # but via `register_default` (the gem-defaults store), not `register`
+      # (the explicit store). `lookup` below only ever reads the explicit
+      # store, so `previous` is nil here -- there is no explicit registration
+      # to save or restore, and the `ensure` branch's plain `unregister` is
+      # a safe no-op that cannot touch the permanent default alias (which
+      # only `unregister_default` could remove). This test still needs the
+      # save/restore shape below in case some future test registers
+      # :json_preview explicitly and forgets to clean up after itself.
       previous = AdminSuite::RendererRegistry.lookup(:json_preview)
       AdminSuite::RendererRegistry.register(:json_preview, GreetingRenderer)
       assert_includes render_custom_section(Record.new(6), :json_preview), "Hello 6"

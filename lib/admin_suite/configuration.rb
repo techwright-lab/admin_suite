@@ -79,13 +79,17 @@ module AdminSuite
       @resolve_action_handler = nil
     end
 
-    private
-
     # Sets the built-in default portals without marking portals as
-    # host-configured. Only the engine's `apply_default_portals!` should
-    # call this — it deliberately bypasses the public `portals=` writer so
-    # gem-applied defaults stay distinguishable from an explicit host
-    # assignment (including an explicit `{}` meant to suppress defaults).
+    # host-configured.
+    #
+    # Engine-internal: public so `AdminSuite::Engine.apply_default_portals!`
+    # can call it directly, without reaching past `Configuration`'s privacy
+    # via `send`. Not part of the host-facing configuration API -- a host
+    # app should never call this itself; use `config.portals = { ... }` (or
+    # `config.portals = {}` to suppress the built-in defaults). This
+    # deliberately bypasses the public `portals=` writer so gem-applied
+    # defaults stay distinguishable from an explicit host assignment
+    # (including an explicit `{}` meant to suppress defaults).
     def default_portals!(value)
       @portals = value
     end

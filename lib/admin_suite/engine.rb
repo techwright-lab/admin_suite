@@ -130,7 +130,7 @@ module AdminSuite
     def self.apply_default_portals!(config)
       return if config.portals_configured? || config.portals.present?
 
-      config.send(:default_portals!, {
+      config.default_portals!({
         ops: { label: "Ops Portal", icon: "settings", color: :amber, order: 10 },
         email: { label: "Email Portal", icon: "inbox", color: :emerald, order: 20 },
         ai: { label: "AI Portal", icon: "cpu", color: :cyan, order: 30 },
