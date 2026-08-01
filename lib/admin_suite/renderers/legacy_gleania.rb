@@ -20,39 +20,21 @@ module AdminSuite
     # move keeps gleania's Assistant/AI portal pages pixel-identical, and
     # makes the 0.5.0 deletion a clean removal.
     module LegacyGleania
+      extend AdminSuite::Deprecation
+
       DEPRECATION_MESSAGE_FORMAT =
         "AdminSuite: the :%<key>s renderer is deprecated and will be removed in 0.5.0. " \
         "Move it to app/admin/renderers in your app."
 
       class << self
-        # Swappable sink for the deprecation message — a method rather than an
-        # attribute so `Minitest::Mock#stub(:warn_once_sink, replacement)` can
-        # intercept it directly: `stub` invokes the replacement with whatever
-        # arguments the stubbed call site passes (here, the message), rather
-        # than substituting it as a return value. Defaults to logging via
-        # `Rails.logger`.
-        #
-        # @param msg [String]
-        # @return [void]
-        def warn_once_sink(msg)
-          Rails.logger&.warn(msg)
-        end
-
-        # @return [void]
-        def reset_deprecation_notices!
-          @warned_keys = {}
-        end
-
         # Fires the deprecation sink at most once per `key` per process.
+        # `warn_once_sink` and `reset_deprecation_notices!` come from
+        # `AdminSuite::Deprecation`, extended above.
         #
         # @param key [Symbol]
         # @return [void]
         def warn_once(key)
-          @warned_keys ||= {}
-          return if @warned_keys[key]
-
-          @warned_keys[key] = true
-          warn_once_sink(format(DEPRECATION_MESSAGE_FORMAT, key: key))
+          super(key, format(DEPRECATION_MESSAGE_FORMAT, key: key))
         end
       end
 

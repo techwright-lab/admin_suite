@@ -2,6 +2,14 @@
 
 require "test_helper"
 
+# Reopened (never redefined) so RendererTest can define/remove scratch
+# `Admin::Renderers::<Key>Renderer` probe classes per test, for Finding 2's
+# host-class-vs-gem-default precedence tests below.
+module Admin
+  module Renderers
+  end
+end
+
 module AdminSuite
   class RendererTest < ActionView::TestCase
     # See ShowValueFormatterTest for why this is needed: BaseHelper's
@@ -88,6 +96,77 @@ module AdminSuite
       AdminSuite::RendererRegistry.unregister(key)
       AdminSuite.config.custom_renderers.delete(key)
       AdminSuite.config.custom_renderers[key] = saved if saved
+    end
+
+    # Finding 4 of the whole-branch review: `config.custom_renderers` procs
+    # were deprecated on paper only (CHANGELOG, 0.4.0) with no runtime
+    # signal -- unlike the four legacy Gleania renderers, which warn once
+    # per key. trust_growth has 23 of these procs and needs a way to notice
+    # during the migration window.
+    test "using a legacy custom_renderers proc logs a deprecation once per key" do
+      key = :legacy_proc_warning_probe
+      AdminSuite::LegacyCustomRendererProcs.reset_deprecation_notices!
+      AdminSuite.config.custom_renderers[key] = ->(record, _view) { "legacy-proc-#{record.id}" }
+
+      logged = []
+      AdminSuite::LegacyCustomRendererProcs.stub(:warn_once_sink, ->(msg) { logged << msg }) do
+        2.times { render_custom_section(Record.new(5), key) }
+      end
+
+      assert_equal 1, logged.size
+      assert_includes logged.first, key.to_s
+      assert_includes logged.first, "deprecated"
+      assert_includes logged.first, "0.5.0"
+    ensure
+      AdminSuite.config.custom_renderers.delete(key)
+    end
+
+    # Finding 2 of the whole-branch review: render_custom_section used to
+    # resolve `RendererRegistry.lookup(key) || host_renderer_class(key)`,
+    # but the gem's own built-ins and the deprecated Gleania four were
+    # registered into that same `lookup` store at require time -- so a host
+    # that followed the deprecation advice ("Move it to app/admin/renderers
+    # in your app") and defined its own `Admin::Renderers::<Key>Renderer`
+    # was silently shadowed, and the deprecation warning never stopped.
+    # Built-ins/deprecated-four now live in a separate `register_default`
+    # store, checked only *after* a host renderer class.
+    test "a host renderer class beats a gem default registered under the same key" do
+      key = :host_beats_default_probe
+      AdminSuite::RendererRegistry.register_default(key, GreetingRenderer)
+      Admin::Renderers.const_set(:HostBeatsDefaultProbeRenderer, Class.new(AdminSuite::Renderer) do
+        def render
+          "host-class-#{record.id}"
+        end
+      end)
+
+      html = render_custom_section(Record.new(7), key)
+
+      assert_includes html, "host-class-7"
+      refute_includes html, "Hello 7"
+    ensure
+      if Admin::Renderers.const_defined?(:HostBeatsDefaultProbeRenderer, false)
+        Admin::Renderers.send(:remove_const, :HostBeatsDefaultProbeRenderer)
+      end
+    end
+
+    test "an explicit registration still beats a host renderer class" do
+      key = :explicit_beats_host_probe
+      AdminSuite::RendererRegistry.register(key, GreetingRenderer)
+      Admin::Renderers.const_set(:ExplicitBeatsHostProbeRenderer, Class.new(AdminSuite::Renderer) do
+        def render
+          "host-class-#{record.id}"
+        end
+      end)
+
+      html = render_custom_section(Record.new(8), key)
+
+      assert_includes html, "Hello 8"
+      refute_includes html, "host-class-8"
+    ensure
+      AdminSuite::RendererRegistry.unregister(key)
+      if Admin::Renderers.const_defined?(:ExplicitBeatsHostProbeRenderer, false)
+        Admin::Renderers.send(:remove_const, :ExplicitBeatsHostProbeRenderer)
+      end
     end
 
     test "a registered renderer class wins over the built-in case branches" do

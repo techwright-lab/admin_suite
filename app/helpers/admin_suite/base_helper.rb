@@ -269,9 +269,22 @@ module AdminSuite
       key = render_type.to_sym
 
       legacy_proc = AdminSuite.config.custom_renderers[key]
-      return legacy_proc.call(resource, self) if legacy_proc
+      if legacy_proc
+        AdminSuite::LegacyCustomRendererProcs.warn_once(key)
+        return legacy_proc.call(resource, self)
+      end
 
-      klass = AdminSuite::RendererRegistry.lookup(key) || host_renderer_class(key)
+      # Precedence, after the legacy proc above (unchanged, Task 3 has tests
+      # pinning that): a host's explicit registration, then a host renderer
+      # class, then the gem's own defaults (built-ins + the deprecated four
+      # Gleania renderers). Checking the gem defaults last means a host that
+      # defines `Admin::Renderers::<Key>Renderer` -- exactly the migration
+      # path the deprecation warnings recommend -- actually takes effect
+      # instead of being silently shadowed by the gem's boot-time
+      # registrations (see `RendererRegistry`).
+      klass = AdminSuite::RendererRegistry.lookup(key) ||
+        host_renderer_class(key) ||
+        AdminSuite::RendererRegistry.lookup_default(key)
       return klass.new(resource, self, options).render if klass
 
       content_tag(:p, "Unknown render type: #{render_type}", class: "text-slate-500 italic")
@@ -282,8 +295,20 @@ module AdminSuite
       "Admin::Renderers::#{key.to_s.camelize}Renderer".safe_constantize
     end
 
+    # A bare `object.is_a?(ActiveRecord::Base)` crashes with `NameError` in a
+    # host without ActiveRecord loaded (this gem's own reference DB-free
+    # configuration among them) -- not masking, since it isn't inside a
+    # rescue, just a plain 500. Same idiom already used by
+    # `AdminSuite::UI::ShowFormatterRegistry` (`if defined?(ActiveRecord::Base)`).
+    #
+    # @param object [Object]
+    # @return [Boolean]
+    def active_record_base?(object)
+      defined?(ActiveRecord::Base) && object.is_a?(ActiveRecord::Base)
+    end
+
     def auto_admin_suite_path_for(item)
-      return nil unless item.is_a?(ActiveRecord::Base)
+      return nil unless active_record_base?(item)
 
       ensure_admin_resources_loaded_for!(item.class)
 
@@ -308,7 +333,7 @@ module AdminSuite
     # `/internal/developer`. This is intentionally "UI heavy".
 
     def render_show_section(resource, section, position = :main)
-      is_association = section.association.present? && !resource.public_send(section.association).is_a?(ActiveRecord::Base) rescue false
+      is_association = section.association.present? && !active_record_base?(resource.public_send(section.association)) rescue false
 
       content_tag(:div, class: "bg-white rounded-xl border border-slate-200 overflow-hidden") do
         header_padding = position == :sidebar ? "px-4 py-2.5" : "px-6 py-3"
@@ -320,7 +345,7 @@ module AdminSuite
 
           if section.association.present?
             assoc = resource.public_send(section.association) rescue nil
-            if assoc && !assoc.is_a?(ActiveRecord::Base)
+            if assoc && !active_record_base?(assoc)
               count = assoc.count rescue 0
               color_class = count > 0 ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-600"
               concat(content_tag(:span, number_with_delimiter(count), class: "text-xs font-semibold px-2 py-0.5 rounded-full #{color_class}"))
@@ -416,7 +441,7 @@ module AdminSuite
       associated = resource.public_send(section.association) rescue nil
       return content_tag(:p, "None found", class: "text-slate-400 italic text-sm") if associated.nil?
 
-      is_single = !associated.respond_to?(:to_a) || associated.is_a?(ActiveRecord::Base)
+      is_single = !associated.respond_to?(:to_a) || active_record_base?(associated)
       return render_association_card_single(associated, section) if is_single
 
       items = associated
@@ -586,8 +611,14 @@ module AdminSuite
       when true, false then value ? "Yes" : "No"
       when Time, DateTime then value.strftime("%b %d, %H:%M")
       when Date then value.strftime("%b %d, %Y")
-      when ActiveRecord::Base then item_display_title(value)
-      else value.to_s.truncate(50)
+      else
+        # A `when ActiveRecord::Base` clause would evaluate that constant
+        # reference unconditionally (crashing in a host without ActiveRecord
+        # loaded), so this branch is checked explicitly via the predicate
+        # instead of folded into the `case`.
+        return item_display_title(value) if active_record_base?(value)
+
+        value.to_s.truncate(50)
       end
     end
 

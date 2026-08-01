@@ -21,7 +21,13 @@ module AdminSuite
     end
 
     def build(key, **options)
-      AdminSuite::RendererRegistry.lookup(key).new(record, self, options).render
+      # The four built-ins (and their aliases) are gem defaults now (Finding
+      # 2 of the whole-branch review: `register_default`, not `register`,
+      # so a host's own explicit registration or renderer class can beat
+      # them) -- fall back to the default store the same way
+      # `render_custom_section` does.
+      klass = AdminSuite::RendererRegistry.lookup(key) || AdminSuite::RendererRegistry.lookup_default(key)
+      klass.new(record, self, options).render
     end
 
     # A minimal double for the shape TableFromRenderer/KeyValueRenderer must
@@ -113,8 +119,8 @@ module AdminSuite
     end
 
     test "json_preview and code_preview are registered aliases to the same classes" do
-      assert_equal AdminSuite::Renderers::JsonRenderer, AdminSuite::RendererRegistry.lookup(:json_preview)
-      assert_equal AdminSuite::Renderers::CodeRenderer, AdminSuite::RendererRegistry.lookup(:code_preview)
+      assert_equal AdminSuite::Renderers::JsonRenderer, AdminSuite::RendererRegistry.lookup_default(:json_preview)
+      assert_equal AdminSuite::Renderers::CodeRenderer, AdminSuite::RendererRegistry.lookup_default(:code_preview)
     end
 
     test "key_value renderer shows an empty state for a blank source" do

@@ -31,7 +31,8 @@ module AdminSuite
 
     test "dead configuration and DSL members are gone" do
       refute AdminSuite::Configuration.new.respond_to?(:tailwind_cdn)
-      refute Admin::Base::Resource.respond_to?(:exportable)
+      assert Admin::Base::Resource.respond_to?(:exportable),
+        "exportable is a deprecated no-op, not removed -- see ResourceExportableDeprecationTest"
       refute Admin::Base::Resource::ColumnDefinition.members.include?(:render)
     end
   end

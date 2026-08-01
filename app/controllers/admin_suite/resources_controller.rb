@@ -200,7 +200,14 @@ module AdminSuite
       end
 
       @resource = klass.find(id)
-    rescue ActiveRecord::RecordNotFound
+    rescue StandardError => e
+      # A bare `rescue ActiveRecord::RecordNotFound` raises `NameError`
+      # *while handling* whatever the real exception was, in a host without
+      # ActiveRecord loaded (e.g. `column_names` above failing on a PORO
+      # model) -- destroying the original diagnostic. Only recover the one
+      # case this method actually knows how to recover from.
+      raise unless defined?(ActiveRecord::RecordNotFound) && e.is_a?(ActiveRecord::RecordNotFound)
+
       @resource = find_friendly_resource!(klass, id, columns)
     end
 
