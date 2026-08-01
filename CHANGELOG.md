@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Index rows are now clickable end to end via the already-existing (but
+  previously unwired) `ClickActionsController`: clicking anywhere on a row
+  other than an interactive element (link, button, form input) navigates to
+  the record's show page.
+- A 25/50/100 per-page selector in the index's existing filter form,
+  clamped server-side to a maximum of 100 regardless of what the
+  `per_page` query param requests, falling back to the resource's
+  `paginate(n)` value when the param is absent or invalid (non-numeric,
+  zero, negative, or array-shaped).
+- `column :name, align: :right` (also `:center`, `:left`) DSL option,
+  emitting the matching Tailwind alignment class on the `<td>`.
+- The index's `<thead>` is now `sticky top-0`, and its scroll wrapper is
+  now bounded (`max-h-[70vh] overflow-y-auto`, alongside the existing
+  `overflow-x-auto`) so the header actually pins while scrolling a long
+  page of results instead of scrolling away with it.
+
+### Changed
+- **Host-visible:** resources declaring `paginate(n)` now render that many
+  rows per page instead of Pagy's own default of 20 — see the Fixed entry
+  below. Operators may see different row counts and pagination boundaries
+  than they're used to.
+- `column.css_class` (populated by the DSL's `class:` option) is now
+  applied to the rendered `<td>`. Previously accepted but never read.
+- A column value that is `nil` now renders as `—`, matching every other
+  surface in the gem, instead of a blank cell. Applies to both plain
+  scalar columns and `belongs_to`-shaped association columns.
+
+### Fixed
+- `paginate_collection` called `pagy(scope, items: n)`. Pagy's vars key
+  is `limit:`, not `items:` — `items:` silently did nothing, so **every
+  resource's `paginate(n)` DSL value has been ignored since the gem's
+  first commit**, with every index quietly paginating at Pagy's own
+  default of 20 regardless of what was declared. This is a long-standing
+  latent bug, not a regression introduced by this release; declared page
+  sizes now take effect.
+
 ## [0.4.0] - 2026-08-01
 
 ### Added

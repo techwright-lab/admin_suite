@@ -122,13 +122,31 @@ end
 
 module AdminSuite
   class IndexTableTest < ActionDispatch::IntegrationTest
-    # Item 1: sticky header. Class-presence only -- see this task's report
-    # for the CSS reasoning on whether it actually sticks inside the
-    # `overflow-x-auto` wrapper.
+    # Item 1: sticky header.
     test "the index thead carries the sticky header classes" do
       get "/internal/admin_suite/ops/index_table_widgets"
       assert_response :success
       assert_match %r{<thead[^>]*\bsticky\b[^>]*\btop-0\b[^>]*\bz-10\b[^>]*>}, response.body
+    end
+
+    # `sticky top-0` only actually pins the header if its nearest scroll
+    # container ancestor genuinely scrolls internally. `overflow-x: auto`
+    # alone forces the browser to compute `overflow-y` as `auto` too (per
+    # the CSS Overflow spec's "visible becomes auto when the other axis
+    # isn't visible" rule), making the wrapper div a sticky containing
+    # block -- but with no bounded height, that div never scrolls, so the
+    # header has nothing to stick against and just scrolls away with the
+    # page. This asserts the wrapper is *also* given a bounded height and
+    # `overflow-y-auto`, so a future edit that drops the height silently
+    # re-breaks sticky (a class-presence-only test on `<thead>` would stay
+    # green even if the header stopped sticking) and fails here instead.
+    test "the table's scroll wrapper is bounded so the sticky header has something to stick against" do
+      get "/internal/admin_suite/ops/index_table_widgets"
+      assert_response :success
+      assert_match(
+        %r{<div class="[^"]*overflow-x-auto[^"]*overflow-y-auto[^"]*max-h-\[70vh\][^"]*"},
+        response.body
+      )
     end
 
     # Item 2: row click wiring, via the already-existing ClickActionsController.

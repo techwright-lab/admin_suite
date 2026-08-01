@@ -151,7 +151,7 @@
       <%= turbo_frame_tag "resource_results", data: { turbo_action: "advance" } do %>
         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <% if @collection.any? %>
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
             <table class="min-w-full divide-y divide-slate-200">
               <thead class="bg-slate-50 sticky top-0 z-10">
                 <tr>
