@@ -194,55 +194,17 @@ module Admin
         nil
       end
 
+      # Loads action handler files configured via `AdminSuite.config.action_globs`.
+      #
+      # Kept as a thin wrapper (rather than calling DefinitionLoader directly
+      # from `find_handler_class`) because `test/lib/action_executor_test.rb`
+      # exercises this exact method name against `self.class.handlers_loaded`.
+      #
+      # @return [void]
       def load_action_handlers_for_admin_suite!
         return unless defined?(AdminSuite)
 
-        # Track whether we've already loaded handlers to avoid expensive repeated globs.
-        # In development, this flag is reset by the Rails reloader (see engine.rb).
-        # In production/test, it persists for the process lifetime.
-        return if self.class.handlers_loaded
-
-        files = Array(AdminSuite.config.action_globs).flat_map { |g| Dir[g] }.uniq
-
-        # Set the flag even if no files found - we've done the glob and shouldn't repeat it
-        if files.empty?
-          self.class.handlers_loaded = true
-          return
-        end
-
-        files.each do |file|
-          begin
-            if Rails.env.development?
-              load file
-            else
-              require file
-            end
-          rescue StandardError, ScriptError => e
-            log_action_handler_load_error(file, e)
-
-            # Fail fast in dev/test so broken handler files are immediately discoverable.
-            raise if Rails.env.development? || Rails.env.test?
-          end
-        end
-
-        # We attempted to load the configured handlers. Avoid repeating expensive globs
-        # and file loads for the rest of the process lifetime.
-        self.class.handlers_loaded = true
-      end
-
-      def log_action_handler_load_error(file, error)
-        message = "[AdminSuite] Failed to load action handler file #{file}: #{error.class}: #{error.message}"
-
-        if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
-          Rails.logger.error(message)
-
-          backtrace = Array(error.backtrace).take(20).join("\n")
-          Rails.logger.error(backtrace) unless backtrace.empty?
-        else
-          warn(message)
-        end
-      rescue StandardError
-        nil
+        AdminSuite::DefinitionLoader.load!(:actions)
       end
     end
   end

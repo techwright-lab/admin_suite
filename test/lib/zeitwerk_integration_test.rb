@@ -30,43 +30,13 @@ module AdminSuite
       [ loader, ignored_dirs, pushed_dirs ]
     end
 
-    # Helper method that simulates the Zeitwerk integration logic from engine.rb
-    def simulate_zeitwerk_integration(app_root, loader)
-      admin_suite_app_dir = app_root.join("app/admin_suite")
-      admin_dir = app_root.join("app/admin")
-      admin_portals_dir = app_root.join("app/admin/portals")
-
-      # Map app/admin -> Admin namespace if files define Admin::* constants.
-      if admin_dir.exist?
-        rb_files = Dir[admin_dir.join("**/*.rb").to_s]
-        rb_files.reject! { |f| f.include?("/portals/") }
-
-        host_uses_admin_namespace =
-          rb_files.any? do |file|
-            content = File.binread(file).encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            content.match?(/\b(module|class)\s+Admin\b/) || content.match?(/\b(module|class)\s+Admin::/)
-          rescue StandardError
-            false
-          end
-
-        loader.push_dir(admin_dir, namespace: Admin) if host_uses_admin_namespace
-      end
-
-      loader.ignore(admin_suite_app_dir) if admin_suite_app_dir.exist?
-
-      # Ignore portal DSL files (side-effect DSL, not constants).
-      if admin_portals_dir.exist?
-        portal_files = Dir[admin_portals_dir.join("**/*.rb").to_s]
-        contains_admin_suite_portals =
-          portal_files.any? do |file|
-            content = File.binread(file).encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-            content.match?(/(::)?AdminSuite\s*\.\s*portal\b/)
-          rescue StandardError
-            false
-          end
-
-        loader.ignore(admin_portals_dir) if contains_admin_suite_portals
-      end
+    # A minimal stand-in for the Rails::Application instance HostAutoloadPolicy
+    # is invoked with in production: it only needs `#root` and a
+    # `#config.autoload_paths` / `#config.eager_load_paths` that respond to
+    # `#delete` (exercised only by the "maps app/admin..." test below).
+    def create_fake_app(root)
+      config = Struct.new(:autoload_paths, :eager_load_paths).new([], [])
+      Struct.new(:root, :config).new(Pathname.new(root), config)
     end
 
     test "ignores app/admin/portals when it contains AdminSuite portal DSL" do
@@ -78,13 +48,12 @@ module AdminSuite
         "AdminSuite.portal :ops do\n  # portal config\nend"
       )
 
-      # Create loader and simulate initializer logic
-      app_root = Pathname.new(@temp_dir)
+      app = create_fake_app(@temp_dir)
       loader, ignored_dirs, _pushed_dirs = create_tracked_loader
-      simulate_zeitwerk_integration(app_root, loader)
+      AdminSuite::HostAutoloadPolicy.apply!(app, loaders: [ loader ])
 
       # Verify that app/admin/portals was ignored
-      expected_path = app_root.join("app/admin/portals").to_s
+      expected_path = app.root.join("app/admin/portals").to_s
       assert_includes ignored_dirs, expected_path,
                       "Expected app/admin/portals to be ignored when it contains AdminSuite portal DSL"
     end
@@ -98,13 +67,12 @@ module AdminSuite
         "module Admin\n  module Portals\n    class AdminUser\n    end\n  end\nend"
       )
 
-      # Create loader and simulate initializer logic
-      app_root = Pathname.new(@temp_dir)
+      app = create_fake_app(@temp_dir)
       loader, ignored_dirs, _pushed_dirs = create_tracked_loader
-      simulate_zeitwerk_integration(app_root, loader)
+      AdminSuite::HostAutoloadPolicy.apply!(app, loaders: [ loader ])
 
       # Verify that app/admin/portals was NOT ignored
-      unexpected_path = app_root.join("app/admin/portals").to_s
+      unexpected_path = app.root.join("app/admin/portals").to_s
       assert_not_includes ignored_dirs, unexpected_path,
                           "Expected app/admin/portals to NOT be ignored when it contains only real constants"
     end
@@ -118,13 +86,12 @@ module AdminSuite
         "# Some DSL configuration"
       )
 
-      # Create loader and simulate initializer logic
-      app_root = Pathname.new(@temp_dir)
+      app = create_fake_app(@temp_dir)
       loader, ignored_dirs, _pushed_dirs = create_tracked_loader
-      simulate_zeitwerk_integration(app_root, loader)
+      AdminSuite::HostAutoloadPolicy.apply!(app, loaders: [ loader ])
 
       # Verify that app/admin_suite was ignored
-      expected_path = app_root.join("app/admin_suite").to_s
+      expected_path = app.root.join("app/admin_suite").to_s
       assert_includes ignored_dirs, expected_path,
                       "Expected app/admin_suite to always be ignored"
     end
@@ -146,13 +113,12 @@ module AdminSuite
         "AdminSuite.portal :ops do\n  # portal config\nend"
       )
 
-      # Create loader and simulate initializer logic
-      app_root = Pathname.new(@temp_dir)
+      app = create_fake_app(@temp_dir)
       loader, ignored_dirs, _pushed_dirs = create_tracked_loader
-      simulate_zeitwerk_integration(app_root, loader)
+      AdminSuite::HostAutoloadPolicy.apply!(app, loaders: [ loader ])
 
       # Verify that app/admin/portals was ignored due to presence of portal DSL
-      expected_path = app_root.join("app/admin/portals").to_s
+      expected_path = app.root.join("app/admin/portals").to_s
       assert_includes ignored_dirs, expected_path,
                       "Expected app/admin/portals to be ignored when any file contains portal DSL"
     end
@@ -164,8 +130,7 @@ module AdminSuite
       test_file = File.join(portals_dir, "test.rb")
       File.write(test_file, "AdminSuite.portal :ops do; end")
 
-      # Create loader
-      app_root = Pathname.new(@temp_dir)
+      app = create_fake_app(@temp_dir)
       loader, ignored_dirs, _pushed_dirs = create_tracked_loader
 
       # Temporarily override File.binread to simulate read errors
@@ -180,11 +145,10 @@ module AdminSuite
       end
 
       begin
-        # Simulate the initializer logic
-        simulate_zeitwerk_integration(app_root, loader)
+        AdminSuite::HostAutoloadPolicy.apply!(app, loaders: [ loader ])
 
         # Verify that app/admin/portals was NOT ignored due to read error
-        unexpected_path = app_root.join("app/admin/portals").to_s
+        unexpected_path = app.root.join("app/admin/portals").to_s
         assert_not_includes ignored_dirs, unexpected_path,
                             "Expected app/admin/portals to NOT be ignored when file read fails"
       ensure
@@ -201,11 +165,11 @@ module AdminSuite
         "module Admin\n  module Resources\n    class UserResource; end\n  end\nend\n"
       )
 
-      app_root = Pathname.new(@temp_dir)
+      app = create_fake_app(@temp_dir)
       loader, _ignored_dirs, pushed_dirs = create_tracked_loader
-      simulate_zeitwerk_integration(app_root, loader)
+      AdminSuite::HostAutoloadPolicy.apply!(app, loaders: [ loader ])
 
-      assert pushed_dirs.any? { |h| h[:path] == app_root.join("app/admin").to_s && h[:namespace] == Admin },
+      assert pushed_dirs.any? { |h| h[:path] == app.root.join("app/admin").to_s && h[:namespace] == Admin },
              "Expected app/admin to be pushed with namespace Admin when files define Admin::* constants"
     end
 
@@ -217,11 +181,11 @@ module AdminSuite
         "module Resources\n  class UserResource; end\nend\n"
       )
 
-      app_root = Pathname.new(@temp_dir)
+      app = create_fake_app(@temp_dir)
       loader, _ignored_dirs, pushed_dirs = create_tracked_loader
-      simulate_zeitwerk_integration(app_root, loader)
+      AdminSuite::HostAutoloadPolicy.apply!(app, loaders: [ loader ])
 
-      assert pushed_dirs.none? { |h| h[:path] == app_root.join("app/admin").to_s },
+      assert pushed_dirs.none? { |h| h[:path] == app.root.join("app/admin").to_s },
              "Expected app/admin to NOT be pushed when files contain only top-level constants"
     end
   end

@@ -14,86 +14,7 @@ module AdminSuite
     end
 
     initializer "admin_suite.host_dsl_ignore", before: :setup_main_autoloader do |app|
-      # Host apps may store AdminSuite DSL files under `app/admin_suite/**` and
-      # `app/admin/portals/**`.
-      #
-      # These are side-effect DSL files (they do not define constants), so Zeitwerk
-      # must ignore them to avoid eager-load `Zeitwerk::NameError`s in production.
-
-      admin_suite_app_dir = Rails.root.join("app/admin_suite")
-      admin_dir = Rails.root.join("app/admin")
-      admin_portals_dir = Rails.root.join("app/admin/portals")
-
-      # If the host uses `Admin::*` constants inside `app/admin/**`, Rails' default
-      # autoload root (`app/admin`) would expect top-level constants like
-      # `Resources::UserResource`. We fix that by mapping `app/admin` to `Admin`.
-      # This avoids requiring host apps to add their own Zeitwerk initializer.
-      admin_dir_mapped = admin_dir.exist? && self.class.host_admin_namespace_files?(admin_dir)
-
-      if admin_dir_mapped
-        admin_dir_s = admin_dir.to_s
-        app.config.autoload_paths.delete(admin_dir_s)
-        app.config.eager_load_paths.delete(admin_dir_s)
-
-        # Ensure `Admin` exists so Zeitwerk can use it as a namespace.
-        module ::Admin; end
-
-        Rails.autoloaders.main.push_dir(admin_dir, namespace: ::Admin)
-        # `app/admin/renderers/foo_renderer.rb` now resolves to
-        # `Admin::Renderers::FooRenderer` under this same push_dir, with no
-        # extra work: the whole `app/admin` tree (including `renderers/`) is
-        # namespaced under `::Admin` by Zeitwerk's directory conventions.
-      end
-
-      # A host with ONLY DSL files under `app/admin` (no `Admin::*` constants
-      # anywhere) never takes the branch above, so `app/admin` remains a
-      # default Rails autoload root mapping to top-level constants. Without
-      # this, `app/admin/renderers/foo_renderer.rb` would need to define a
-      # top-level `Renderers::FooRenderer` instead of the documented
-      # `Admin::Renderers::FooRenderer`, and `host_renderer_class` in
-      # base_helper.rb would never find it. Map `app/admin/renderers`
-      # explicitly in that case.
-      renderers_dir = Rails.root.join("app/admin/renderers")
-      if renderers_dir.exist? && !admin_dir_mapped
-        module ::Admin; end
-        module ::Admin::Renderers; end
-        Rails.autoloaders.main.push_dir(renderers_dir, namespace: ::Admin::Renderers)
-      end
-
-      Rails.autoloaders.each do |loader|
-        loader.ignore(admin_suite_app_dir) if admin_suite_app_dir.exist?
-
-        next unless admin_portals_dir.exist?
-
-        loader.ignore(admin_portals_dir) if self.class.contains_admin_suite_portal_dsl?(admin_portals_dir)
-      end
-    end
-
-    def self.host_admin_namespace_files?(admin_dir)
-      # True if any file under app/admin appears to define `Admin::*` constants.
-      Dir[admin_dir.join("**/*.rb").to_s].any? do |file|
-        next false if file.include?("/portals/")
-
-        content = File.binread(file)
-        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-
-        content.match?(/\b(module|class)\s+Admin\b/) ||
-          content.match?(/\b(module|class)\s+Admin::/)
-      rescue StandardError
-        false
-      end
-    end
-
-    def self.contains_admin_suite_portal_dsl?(admin_portals_dir)
-      portal_files = Dir[admin_portals_dir.join("**/*.rb").to_s]
-      portal_files.any? do |file|
-        content = File.binread(file)
-        content = content.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
-        portal_dsl_pattern = /(::)?AdminSuite\s*\.\s*portal\b/
-        portal_dsl_pattern.match?(content)
-      rescue StandardError
-        false
-      end
+      AdminSuite::HostAutoloadPolicy.apply!(app)
     end
 
     initializer "admin_suite.admin_dsl" do
@@ -102,17 +23,6 @@ module AdminSuite
       require "admin/base/filter_builder"
       require "admin/base/action_executor"
       require "admin/base/action_handler"
-    end
-
-    initializer "admin_suite.reloader" do |app|
-      # Reset the handlers_loaded flag in development so handlers are reloaded
-      # when code changes. This ensures the expensive glob operation happens at
-      # most once per request (or code reload) rather than on every NameError.
-      if Rails.env.development?
-        app.reloader.to_prepare do
-          Admin::Base::ActionExecutor.handlers_loaded = false
-        end
-      end
     end
 
     initializer "admin_suite.watchable_dirs" do |app|

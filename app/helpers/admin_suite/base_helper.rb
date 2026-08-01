@@ -300,12 +300,7 @@ module AdminSuite
       already_loaded = Admin::Base::Resource.registered_resources.any? { |r| r.model_class == model_class }
       return if already_loaded
 
-      Array(AdminSuite.config.resource_globs).flat_map { |g| Dir[g] }.uniq.each do |file|
-        require file
-      end
-    rescue NameError
-      require "admin/base/resource"
-      retry
+      AdminSuite::DefinitionLoader.load!(:resources)
     end
 
     # ---- show page sections / associations ----

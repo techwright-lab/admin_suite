@@ -81,37 +81,14 @@ module AdminSuite
     #
     # @return [void]
     def ensure_resources_loaded!
-      require "admin/base/resource" unless defined?(Admin::Base::Resource)
-      return if Admin::Base::Resource.registered_resources.any?
-
-      Array(AdminSuite.config.resource_globs).flat_map { |g| Dir[g] }.uniq.each do |file|
-        require file
-      end
-    rescue NameError
-      # Ensure base DSL is loaded first.
-      require "admin/base/resource"
-      retry
+      AdminSuite::DefinitionLoader.load!(:resources)
     end
 
     # Loads portal definition files in development (safe to call per-request).
     #
     # @return [void]
     def ensure_portals_loaded!
-      globs = Array(AdminSuite.config.portal_globs).flat_map { |g| Dir[g] }.uniq
-      return if globs.empty?
-
-      if Rails.env.development?
-        # Re-evaluate definitions on each request in development.
-        AdminSuite::PortalRegistry.reset!
-        globs.each { |file| load file }
-      else
-        # In non-dev, load once (typically at boot / first request).
-        return if AdminSuite::PortalRegistry.all.any?
-        globs.each { |file| require file }
-      end
-    rescue NameError
-      require "admin_suite"
-      retry
+      AdminSuite::DefinitionLoader.load!(:portals)
     end
 
     # Loads the root dashboard definition files (safe to call per-request).
@@ -122,27 +99,7 @@ module AdminSuite
     #
     # @return [void]
     def ensure_root_dashboard_loaded!
-      if Rails.env.development?
-        globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
-        # Re-evaluate dashboard layout on each request in development.
-        # Always reset, even when no files match, so removed dashboards are cleared.
-        AdminSuite.reset_root_dashboard!
-        globs.each { |file| load file }
-      else
-        # In non-dev, load once.
-        return if AdminSuite.config.root_dashboard_loaded
-        globs = Array(AdminSuite.config.dashboard_globs).flat_map { |g| Dir[g] }.uniq
-        if globs.empty?
-          # Avoid hitting the filesystem on every request when no dashboard files exist.
-          AdminSuite.config.root_dashboard_loaded = true
-          return
-        end
-        globs.each { |file| require file }
-        AdminSuite.config.root_dashboard_loaded = true
-      end
-    rescue NameError
-      require "admin_suite"
-      retry
+      AdminSuite::DefinitionLoader.load!(:dashboards)
     end
 
     # Builds the navigation structure from registered resources.

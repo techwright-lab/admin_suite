@@ -25,6 +25,8 @@ require "admin_suite/renderers/key_value_renderer"
 require "admin_suite/renderers/table_from_renderer"
 require "admin_suite/renderers/code_renderer"
 require "admin_suite/renderers/legacy_gleania"
+require "admin_suite/definition_loader"
+require "admin_suite/host_autoload_policy"
 require "admin_suite/engine"
 
 AdminSuite::RendererRegistry.register(:json, AdminSuite::Renderers::JsonRenderer)
