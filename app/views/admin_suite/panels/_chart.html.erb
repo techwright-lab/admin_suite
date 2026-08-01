@@ -19,10 +19,22 @@
     row = row.symbolize_keys if row.respond_to?(:symbolize_keys)
     next unless row.is_a?(Hash)
 
-    # Value stays as originally provided (e.g. an Integer) so titles/labels
-    # still read "Mon: 3" rather than "Mon: 3.0" — it's only coerced to a
-    # Float where the height math below actually needs one.
-    { label: row[:label], value: row[:value] }
+    raw_value = row[:value]
+    # Total coercion: `Float()` (unlike `#to_f`) raises on Boolean/Hash/Array/
+    # nil/non-numeric-String values instead of silently returning 0 or
+    # blowing up later, so a junk value degrades to 0 here rather than
+    # 500ing the dashboard when the height math below reaches it.
+    numeric = begin
+      Float(raw_value)
+    rescue ArgumentError, TypeError
+      0.0
+    end
+
+    # `value` stays as originally provided (e.g. an Integer or a numeric
+    # String) so titles/labels still read "Mon: 3" rather than "Mon: 3.0" —
+    # `numeric` is the only thing the height math and the JSON series handed
+    # to Chart.js should ever touch.
+    { label: row[:label], value: raw_value, numeric: numeric }
   end
 %>
 <% total = panel.options[:total] %>
@@ -40,7 +52,7 @@
   chart_height = chart_height.to_i
   chart_height = 192 if chart_height <= 0
 %>
-<% max_value = (data.map { |d| d[:value].to_f }.max || 1).to_f %>
+<% max_value = (data.map { |d| d[:numeric] }.max || 1).to_f %>
 <% max_value = 1.0 if max_value.zero? %>
 
 <% bar_color = case color
@@ -80,14 +92,21 @@ end %>
       <% end %>
     <% end %>
 
+    <%
+      # Chart.js gets the coerced numeric series, never the raw display
+      # value — a Boolean/Hash/Array/nil `value` would otherwise reach
+      # Chart.js as-is and break the chart, even though it's already been
+      # safely zeroed out for the CSS bars above.
+      series_for_chart_js = data.map { |d| { label: d[:label], value: d[:numeric] } }
+    %>
     <div data-controller="admin-suite--chart"
-         data-admin-suite--chart-series-value="<%= data.to_json %>"
+         data-admin-suite--chart-series-value="<%= series_for_chart_js.to_json %>"
          data-admin-suite--chart-type-value="<%= (panel.options[:type] || :bar) %>"
          data-admin-suite--chart-color-value="<%= color %>"
          data-admin-suite--chart-height-value="<%= chart_height %>">
       <div class="flex items-end gap-1" data-admin-suite--chart-target="bars" style="height: <%= chart_height %>px;">
         <% data.each do |d| %>
-          <% value = d[:value].to_f %>
+          <% value = d[:numeric] %>
           <% height_float = (value / max_value) * 100.0 %>
           <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
           <% height = height_float.round %>

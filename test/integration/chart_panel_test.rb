@@ -100,6 +100,60 @@ module AdminSuite
       end
     end
 
+    test "a Hash row with a non-numeric value degrades to a zero-height bar instead of a 500" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Junk Values", data: -> {
+              [
+                { label: "bool", value: true },
+                { label: "hash", value: {} },
+                { label: "array", value: [ 1, 2 ] },
+                { label: "good", value: 5 }
+              ]
+            }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, "Junk Values"
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Junk Values']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        # Boolean/Hash/Array values used to raise via #to_f (e.g. `true.to_f`
+        # is a NoMethodError). They now coerce to 0 instead of 500ing, and
+        # the one well-formed row alongside them still renders at full height.
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 4, bars.size
+        assert_equal [ "height: 0%", "height: 0%", "height: 0%", "height: 100%" ], bars.map { |bar| bar["style"] }
+        assert_includes chart.text, "good"
+      end
+    end
+
+    test "a numeric-string value still displays without a trailing .0 in the tooltip" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "String Value", data: -> { [ { label: "Str", value: "3" } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='String Value']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        bar = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div").first
+        assert bar, "expected a rendered bar"
+        # Display keeps the original value ("3"), even though the height math
+        # underneath uses the coerced numeric (3.0) — no display regression
+        # from the total-coercion fix.
+        assert_equal "Str: 3", bar["title"]
+        assert_equal "height: 100%", bar["style"]
+      end
+    end
+
     test "chart height defaults to a real chart size and is configurable" do
       with_dashboard(<<~RUBY) do
         AdminSuite.root_dashboard do
