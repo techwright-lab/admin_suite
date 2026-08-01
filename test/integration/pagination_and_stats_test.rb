@@ -36,6 +36,28 @@ module PaginationStatsFixtures
 
     def to_param = id.to_s
     def attributes = { "id" => id, "name" => name }
+
+    # A plain Array, not ReadOnlyResourceFixtures::Relation: render_association_section
+    # slices it via `Array.wrap(associated)[pagy.offset, per_page]` (the
+    # branch taken when the association doesn't respond to :offset), which
+    # exercises real pagination slicing rather than the Relation stand-in's
+    # no-op #offset/#limit.
+    def parts
+      (1..5).map { |n| Part.new(n) }
+    end
+  end
+
+  # Plain (non-ActiveRecord) associated record: exercises
+  # render_association_section's pagination path, the sole surviving caller
+  # of the deleted pagy_prev_link/pagy_next_link/pagy_page_links/
+  # render_pagy_series_item/render_association_pagination helpers.
+  class Part
+    attr_reader :id, :name
+
+    def initialize(id)
+      @id = id
+      @name = "Part #{id}"
+    end
   end
 end
 
@@ -53,6 +75,10 @@ module Admin
         stats do
           stat :total, -> { 7 }, color: :indigo
         end
+      end
+
+      show do
+        section :parts, association: :parts, paginate: true, per_page: 2
       end
     end
   end
@@ -100,6 +126,27 @@ module AdminSuite
       assert_includes response.body, "Prev"
       assert_includes response.body, "Next"
       assert_includes response.body, "3"
+    end
+
+    test "association panel pagination renders through the same shared partial" do
+      get "/internal/admin_suite/ops/pagination_stats_widgets/1", params: { parts_page: 2 }
+      assert_response :success
+      assert_includes response.body, "Prev"
+      assert_includes response.body, "Next"
+      # Richer, index-derived markup that render_association_pagination
+      # (now deleted) never rendered: the "Showing X to Y of Z results"
+      # summary line (5 parts, 2 per page, page 2 => items 3-4).
+      assert_includes response.body, "Showing"
+      assert_includes response.body, "results"
+      assert_includes response.body, "3"
+      assert_includes response.body, "4"
+      assert_includes response.body, "5"
+      # The part most likely to regress: the per-association page param
+      # (association_page_param -> "#{section.association}_page"), not the
+      # generic :page the index uses.
+      assert_includes response.body, "parts_page=1"
+      assert_includes response.body, "parts_page=3"
+      refute_includes response.body, "?page=1"
     end
   end
 end

@@ -6,7 +6,6 @@ module AdminSuite
   # This is intentionally very close to the `/internal/developer` helper so we can
   # keep both UIs side-by-side and compare behavior while migrating.
   module BaseHelper
-    include Pagy::Frontend
     include AdminSuite::IconHelper
     include AdminSuite::PanelsHelper
     include AdminSuite::ThemeHelper

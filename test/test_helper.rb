@@ -32,6 +32,17 @@ unless defined?(ActiveRecord::RecordNotFound)
   end
 end
 
+# Same rationale as above: base_helper.rb's show-page/association rendering
+# checks `record.is_a?(ActiveRecord::Base)` to distinguish a real AR
+# association from a plain in-memory relation stand-in. Supply just the bare
+# constant so that check can run (and return false for our PORO fixtures)
+# without requiring the full active_record/railtie in this DB-free dummy app.
+unless defined?(ActiveRecord::Base)
+  module ActiveRecord
+    class Base; end
+  end
+end
+
 module TurboFrameTestHelper
   def turbo_frame_tag(name, **options, &block)
     content_tag(:turbo_frame, capture(&block), id: name, **options)
