@@ -38,7 +38,15 @@
   end
 %>
 <% total = panel.options[:total] %>
-<% color = (panel.options[:color] || theme_primary).to_sym %>
+<%
+  # Total coercion, same idiom as `type:` below: `.to_sym` alone raises for
+  # any `color:` value that doesn't implement it (an Integer, Boolean, ...) --
+  # `NoMethodError` 500ing the whole dashboard. `.to_s` first makes it total;
+  # an unrecognized result (e.g. `color: 42` -> `:"42"`) already falls through
+  # to indigo in both the `case` below and the JS `COLOR_HEX` map, so no new
+  # fallback logic is needed here.
+  color = (panel.options[:color] || theme_primary).to_s.presence&.to_sym
+%>
 <%
   # `type:` is validated here, not just passed through, because it flows to
   # both the Chart.js config (an unrecognized string throws inside Chart.js)
@@ -72,8 +80,17 @@
   # comment for the same lesson), so both the degraded bars and the upgraded
   # canvas share an identical, explicit height and there's no layout shift
   # when Chart.js takes over.
-  chart_height = panel.options[:height].presence || 192
-  chart_height = chart_height.to_i
+  # Total coercion, same idiom as `data:`'s per-row `value` above: `presence`
+  # filters `nil`/`""`/`false`/`{}`/`[]`, but `true`, Symbols, non-empty
+  # Arrays and non-empty Hashes all survive it and none respond to `#to_i` --
+  # `NoMethodError` 500ing the whole dashboard. `Integer(Float(...))` raises
+  # on exactly those (plus non-numeric Strings), so anything that can't
+  # genuinely parse degrades to the default instead.
+  chart_height = begin
+    Integer(Float(panel.options[:height]))
+  rescue ArgumentError, TypeError
+    192
+  end
   chart_height = 192 if chart_height <= 0
 %>
 <% max_value = (data.map { |d| d[:numeric] }.max || 1).to_f %>

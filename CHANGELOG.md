@@ -101,6 +101,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   column) are also now tolerated the same way `data_table` already
   handles them — previously they rendered blank/zero bars silently rather
   than the real value.
+- A chart panel's `height:` option 500'd the dashboard for any value that
+  survives `presence` but doesn't respond to `#to_i` (`true`, a Symbol, a
+  non-empty Array or Hash — e.g. `height: :tall` or `height: [200]`). Now
+  totally coerced the same way `data:` row values are, falling back to the
+  default 192px for anything that doesn't genuinely parse as a number.
+  `color:` had the same gap (pre-existing since 0.4.0): any value without
+  `#to_sym` (an Integer, Boolean, ...) 500'd the dashboard instead of
+  falling through to the existing unknown-color default (indigo).
 
 ### Deprecated
 - **Unchanged, reiterated for clarity:** the four Gleania-specific renderer

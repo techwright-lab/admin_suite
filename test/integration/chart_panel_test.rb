@@ -179,6 +179,118 @@ module AdminSuite
       end
     end
 
+    # Final review Finding 1: `chart_height.presence || 192` lets any value
+    # that survives `presence` (true, Symbols, non-empty Arrays/Hashes)
+    # through to `#to_i`, which none of those implement -- NoMethodError,
+    # 500ing the whole dashboard. Regression tests for the total-coercion fix
+    # (`Integer(Float(...))` rescuing ArgumentError/TypeError), mirroring the
+    # `type:` junk-value tests above.
+    [ "true", ":tall", "[200]", "{ px: 200 }", '"abc"', "nil", "0", "-5" ].each do |literal|
+      test "height: #{literal} does not raise and falls back to the default 192px" do
+        with_dashboard(<<~RUBY) do
+          AdminSuite.root_dashboard do
+            row do
+              chart_panel "Junk Height", height: #{literal}, data: -> { [ { label: "Mon", value: 3 } ] }
+            end
+          end
+        RUBY
+          get "/internal/admin_suite"
+          assert_response :success
+          document = Nokogiri::HTML(response.body)
+          chart = document.at_xpath("//h3[normalize-space()='Junk Height']/ancestor::div[contains(@class, 'rounded-xl')]")
+          assert chart, "expected the chart panel card"
+          bars = chart.css("[data-admin-suite--chart-target='bars']").first
+          assert_equal "height: 192px;", bars["style"]
+          assert_includes chart.to_s, 'data-admin-suite--chart-height-value="192"'
+        end
+      end
+    end
+
+    [ [ '"240"', "240" ], [ "240.7", "240" ] ].each do |literal, expected|
+      test "height: #{literal} is coerced to a real pixel height instead of the default" do
+        with_dashboard(<<~RUBY) do
+          AdminSuite.root_dashboard do
+            row do
+              chart_panel "Parsed Height", height: #{literal}, data: -> { [ { label: "Mon", value: 3 } ] }
+            end
+          end
+        RUBY
+          get "/internal/admin_suite"
+          assert_response :success
+          document = Nokogiri::HTML(response.body)
+          chart = document.at_xpath("//h3[normalize-space()='Parsed Height']/ancestor::div[contains(@class, 'rounded-xl')]")
+          assert chart, "expected the chart panel card"
+          bars = chart.css("[data-admin-suite--chart-target='bars']").first
+          assert_equal "height: #{expected}px;", bars["style"]
+          assert_includes chart.to_s, %(data-admin-suite--chart-height-value="#{expected}")
+        end
+      end
+    end
+
+    # Final review Finding 2: `(panel.options[:color] || theme_primary).to_sym`
+    # raises `NoMethodError` for any `color:` value that doesn't implement
+    # `#to_sym` (e.g. an Integer or Boolean). Pre-existing since 0.4.0.
+    # Regression tests for the `.to_s.presence&.to_sym` fix -- unknown colors
+    # already fall through to indigo in both the ERB `case` and the JS
+    # `COLOR_HEX` map, so an unrecognized coerced value is expected to render
+    # the indigo bar, not raise.
+    test "a non-Symbol, non-String color: (an Integer) falls back to indigo instead of raising" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Integer Color", color: 42, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Integer Color']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        assert_includes chart.to_s, 'data-admin-suite--chart-color-value="42"'
+        bar = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div").first
+        assert_includes bar["class"], "bg-indigo-500"
+      end
+    end
+
+    test "a Boolean color: (true) falls back to indigo instead of raising" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Boolean Color", color: true, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Boolean Color']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        assert_includes chart.to_s, 'data-admin-suite--chart-color-value="true"'
+        bar = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div").first
+        assert_includes bar["class"], "bg-indigo-500"
+      end
+    end
+
+    test "a known color: as a Symbol still renders its matching bar color" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Amber Color", color: :amber, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Amber Color']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        assert_includes chart.to_s, 'data-admin-suite--chart-color-value="amber"'
+        bar = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div").first
+        assert_includes bar["class"], "bg-amber-500"
+      end
+    end
+
     test "chart assets load only on pages that render a chart" do
       # Self-contained via `with_dashboard` (defined above in this file)
       # rather than hitting a fixture route registered by a *different* test
