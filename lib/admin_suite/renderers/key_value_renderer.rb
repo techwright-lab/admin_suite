@@ -16,7 +16,14 @@ module AdminSuite
           when Array then value
           when nil then []
           else
-            raise ArgumentError, "key_value expects a Hash or an Array of pairs, got #{value.class}"
+            # A Hash is handled above; anything else that coerces via #to_a
+            # (AR relations, Sets, ...) is supported the same way `Array(value)`
+            # supported it before this guard existed — only reject things
+            # that genuinely aren't enumerable.
+            unless value.respond_to?(:to_a)
+              raise ArgumentError, "key_value expects a Hash or an Array of pairs, got #{value.class}"
+            end
+            value.to_a
           end
         return empty_state(options[:empty] || "Nothing to display.") if pairs.blank?
 

@@ -6,6 +6,10 @@ module AdminSuite
     class TableFromRenderer < Renderer
       def render
         rows = source_value([]) || []
+        # A Hash source is the contract violation worth naming; other
+        # Enumerables (AR relations, Sets, ...) coerce cleanly via #to_a and
+        # were supported before this guard existed — don't narrow that away.
+        rows = rows.to_a if !rows.is_a?(Array) && !rows.is_a?(Hash) && rows.respond_to?(:to_a)
         unless rows.is_a?(Array)
           raise ArgumentError, "table_from expects an Array of Hashes, got #{rows.class}"
         end

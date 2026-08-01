@@ -24,6 +24,18 @@ module AdminSuite
       AdminSuite::RendererRegistry.lookup(key).new(record, self, options).render
     end
 
+    # A minimal double for the shape TableFromRenderer/KeyValueRenderer must
+    # keep supporting: something relation-like — not an Array, not a Hash,
+    # but Enumerable/#to_a-able, the way a real ActiveRecord::Relation or
+    # CollectionProxy is. Deliberately not ActiveRecord itself: the dummy
+    # app is database-free (see test/test_helper.rb).
+    class FakeRelation
+      include Enumerable
+
+      def initialize(records) = @records = records
+      def each(&block) = @records.each(&block)
+    end
+
     test "json renderer prints the source hash" do
       assert_includes build(:json, source: ->(r) { r.config }), "mode"
     end
@@ -79,6 +91,19 @@ module AdminSuite
       assert_match(/table_from expects an Array of Hashes, got Hash/, error.message)
     end
 
+    # Regression: the Array-only guard above must not narrow what worked
+    # before it existed. `Array(source_value([]))` used to coerce any
+    # #to_a-able Enumerable — most importantly an ActiveRecord relation,
+    # the single most likely `source:` shape in the real migration — into a
+    # real Array. Only a bare Hash is the actual contract violation.
+    test "table_from renderer accepts a non-Array Enumerable source (e.g. an AR relation)" do
+      relation = FakeRelation.new([ { name: "alpha", count: 2 } ])
+      html = build(:table_from, source: ->(_r) { relation })
+
+      assert_includes html, "alpha"
+      assert_includes html, "2"
+    end
+
     test "code renderer renders the snippet" do
       assert_includes build(:code, source: ->(r) { r.snippet }, language: :ruby), "puts"
     end
@@ -100,6 +125,16 @@ module AdminSuite
     test "key_value renderer raises a clear error for a flat non-pair Array" do
       error = assert_raises(ArgumentError) { build(:key_value, source: ->(_r) { [ 1, 2, 3 ] }) }
       assert_match(/key_value expects a Hash or an Array of \[key, value\] pairs/, error.message)
+    end
+
+    # Same narrowing risk as table_from's Enumerable regression test above:
+    # a non-Array Enumerable of pairs must still coerce, not raise.
+    test "key_value renderer accepts a non-Array Enumerable of pairs" do
+      relation = FakeRelation.new([ [ "mode", "fast" ] ])
+      html = build(:key_value, source: ->(_r) { relation })
+
+      assert_includes html, "Mode"
+      assert_includes html, "fast"
     end
 
     # data_table is a public primitive hosts may call directly from their own
