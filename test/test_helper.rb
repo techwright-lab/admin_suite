@@ -142,3 +142,50 @@ module Admin
     end
   end
 end
+
+# The dummy app is database-free and `ActiveRecord::Base` above is a bare
+# stub class, so every other fixture in this suite is a PORO and
+# `active_record_base?` is false for all of them -- every AR-dependent path
+# (`auto_admin_suite_path_for`, `format_table_cell`'s AR branch) is
+# otherwise unreachable by tests. Subclassing the stub gives a fixture that
+# genuinely satisfies `active_record_base?`, with no database and no
+# railtie required. Established here (Task 3, phase 2b) because it's
+# reused by later tasks (4, 7); those tasks' own test files each `require
+# "test_helper"`, so this is visible to them even when a single test file
+# is run in isolation via `rake test TEST=...` -- unlike a fixture defined
+# only in association_linking_test.rb, which would not be.
+module LinkingFixtures
+  class Company < ActiveRecord::Base
+    extend ActiveModel::Naming
+
+    attr_reader :id, :name
+
+    def initialize(id: 7, name: "Acme Corp")
+      @id = id
+      @name = name
+    end
+
+    def self.all = ReadOnlyResourceFixtures::Relation.new([ new ])
+    def self.column_names = %w[id name]
+    def self.primary_key = "id"
+    def self.columns_hash = { "id" => Struct.new(:type).new(:integer) }
+    def self.find(_id) = new
+    def to_param = id.to_s
+    def attributes = { "id" => id, "name" => name }
+  end
+end
+
+module Admin
+  module Resources
+    # Registered so `auto_admin_suite_path_for` can resolve a real path for
+    # `LinkingFixtures::Company` instances (it looks up `registered_resources`
+    # by `model_class`). Never call `Admin::Base::Resource.reset_registry!` in
+    # a test: `inherited` fires only on class creation, so a reset-then-reload
+    # would permanently empty the registry for the rest of the run.
+    class LinkingCompanyResource < Admin::Base::Resource
+      model LinkingFixtures::Company
+      portal :ops
+      section :observability
+    end
+  end
+end

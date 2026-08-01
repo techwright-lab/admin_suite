@@ -141,7 +141,8 @@ module AdminSuite
       elsif column.content.is_a?(Proc)
         column.content.call(record)
       else
-        record.public_send(column.name) rescue "—"
+        value = record.public_send(column.name) rescue "—"
+        active_record_base?(value) ? render_association_value(value) : value
       end
     end
 
@@ -616,11 +617,41 @@ module AdminSuite
         # reference unconditionally (crashing in a host without ActiveRecord
         # loaded), so this branch is checked explicitly via the predicate
         # instead of folded into the `case`.
-        return item_display_title(value) if active_record_base?(value)
+        return render_association_value(value) if active_record_base?(value)
 
         value.to_s.truncate(50)
       end
     end
+
+    # Renders a `belongs_to`-shaped association value (typically reached via
+    # `render_column_value`'s fallback branch or `format_table_cell`'s AR
+    # branch) as its display title, wrapped in a link to the record's own
+    # admin page when one resolves -- never the bare `#<Company:0x...>` that
+    # ERB's implicit `to_s` would otherwise produce for an AR object, and
+    # never the indigo-styled-but-unlinked plain text `format_table_cell`
+    # used to render on its own.
+    #
+    # `item_display_title` can raise on a host record whose `name`/`title`
+    # method blows up, and `auto_admin_suite_path_for` already swallows its
+    # own errors (unpersisted records, no registered resource, etc.) -- but
+    # this wraps the whole thing anyway so one bad row degrades to a plain
+    # dash instead of 500ing the entire index or show page.
+    #
+    # @param value [ActiveRecord::Base]
+    # @return [String, ActiveSupport::SafeBuffer]
+    def render_association_value(value)
+      title = begin
+        item_display_title(value).to_s
+      rescue StandardError
+        "—"
+      end
+
+      path = auto_admin_suite_path_for(value)
+      path ? link_to(title, path, class: "text-indigo-600 hover:underline") : title
+    rescue StandardError
+      "—"
+    end
+    private :render_association_value
 
     def item_display_title(item)
       return item.name if item.respond_to?(:name) && item.name.present?
