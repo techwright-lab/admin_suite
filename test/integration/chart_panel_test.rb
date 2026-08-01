@@ -184,5 +184,111 @@ module AdminSuite
       assert_response :success
       refute_includes response.body, "vendor/chart"
     end
+
+    test "chart_panel with no type: still renders exactly as a bar chart" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Bar Default", data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="bar"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Bar Default']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 1, bars.size
+      end
+    end
+
+    test "chart_panel type: :line serializes to the DOM and degrades to CSS bars" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Line Chart", type: :line, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="line"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Line Chart']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        # line's degraded (no-JS) rendering is the same CSS bars as bar/area —
+        # a line chart with one data point has no sensible line-only degrade.
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 1, bars.size
+      end
+    end
+
+    test "chart_panel type: :area serializes to the DOM and degrades to CSS bars" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Area Chart", type: :area, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="area"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Area Chart']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 1, bars.size
+      end
+    end
+
+    test "chart_panel type: :doughnut serializes to the DOM and degrades to a labelled value list, not bars" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Doughnut Chart", type: :doughnut, data: -> {
+              [ { label: "Mon", value: 3 }, { label: "Tue", value: 7 } ]
+            }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="doughnut"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Doughnut Chart']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        # A stacked bar makes no sense for a doughnut's degraded state — assert
+        # there are no percentage-height bars, and instead a plain label/value
+        # list carries both rows' data.
+        assert_empty chart.css("[data-admin-suite--chart-target='bars']")
+        assert_includes chart.text, "Mon"
+        assert_includes chart.text, "3"
+        assert_includes chart.text, "Tue"
+        assert_includes chart.text, "7"
+      end
+    end
+
+    test "an unknown chart type falls back to :bar and does not raise" do
+      with_dashboard(<<~RUBY) do
+        AdminSuite.root_dashboard do
+          row do
+            chart_panel "Weird Chart", type: :bogus, data: -> { [ { label: "Mon", value: 3 } ] }
+          end
+        end
+      RUBY
+        get "/internal/admin_suite"
+        assert_response :success
+        assert_includes response.body, 'data-admin-suite--chart-type-value="bar"'
+        refute_includes response.body, 'data-admin-suite--chart-type-value="bogus"'
+        document = Nokogiri::HTML(response.body)
+        chart = document.at_xpath("//h3[normalize-space()='Weird Chart']/ancestor::div[contains(@class, 'rounded-xl')]")
+        assert chart, "expected the chart panel card"
+        bars = chart.css("[data-admin-suite--chart-target='bars'] > .h-full > div")
+        assert_equal 1, bars.size
+      end
+    end
   end
 end

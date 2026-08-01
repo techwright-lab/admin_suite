@@ -40,6 +40,23 @@
 <% total = panel.options[:total] %>
 <% color = (panel.options[:color] || theme_primary).to_sym %>
 <%
+  # `type:` is validated here, not just passed through, because it flows to
+  # both the Chart.js config (an unrecognized string throws inside Chart.js)
+  # and the degraded ERB branch below — a host typo (e.g. `type: :pie`, which
+  # Chart.js itself doesn't even ship) must degrade to the bar chart, not
+  # break the dashboard or silently render nothing.
+  chart_types = %i[bar line area doughnut]
+  chart_type = panel.options[:type].presence&.to_sym
+  if chart_type && !chart_types.include?(chart_type)
+    Rails.logger&.warn(
+      "AdminSuite: chart panel #{panel.title.inspect} has unknown type #{chart_type.inspect}; " \
+      "falling back to :bar. Supported: #{chart_types.join(', ')}."
+    )
+    chart_type = nil
+  end
+  chart_type ||= :bar
+%>
+<%
   # Chart height: 64px (the old `h-16` bar height) was fine for sparkline-ish
   # CSS bars, but is not usable for a real Chart.js chart with axes/legend.
   # Emitted as an inline style below, not an interpolated Tailwind height
@@ -101,28 +118,42 @@ end %>
     %>
     <div data-controller="admin-suite--chart"
          data-admin-suite--chart-series-value="<%= series_for_chart_js.to_json %>"
-         data-admin-suite--chart-type-value="<%= (panel.options[:type] || :bar) %>"
+         data-admin-suite--chart-type-value="<%= chart_type %>"
          data-admin-suite--chart-color-value="<%= color %>"
          data-admin-suite--chart-height-value="<%= chart_height %>">
-      <div class="flex items-end gap-1" data-admin-suite--chart-target="bars" style="height: <%= chart_height %>px;">
-        <% data.each do |d| %>
-          <% value = d[:numeric] %>
-          <% height_float = (value / max_value) * 100.0 %>
-          <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
-          <% height = height_float.round %>
-          <% height = [height, 2].max if value.positive? %>
-          <div class="flex-1 h-full flex flex-col items-center justify-end">
-            <div class="w-full rounded-t <%= bar_color %> transition-all" style="height: <%= height %>%"
-                 title="<%= "#{d[:label]}: #{d[:value]}" %>"></div>
-          </div>
-        <% end %>
-      </div>
+      <% if chart_type == :doughnut %>
+        <%# A stacked bar makes no sense as a doughnut's degraded (no-JS)
+            state -- there's no "height" a doughnut slice maps to. A plain
+            labelled value list carries the same data legibly instead. %>
+        <div class="divide-y divide-slate-100" data-admin-suite--chart-target="list">
+          <% data.each do |d| %>
+            <div class="flex items-center justify-between py-1.5 text-sm">
+              <span class="text-slate-600 truncate" title="<%= d[:label] %>"><%= d[:label] %></span>
+              <span class="font-medium text-slate-900"><%= d[:value] %></span>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="flex items-end gap-1" data-admin-suite--chart-target="bars" style="height: <%= chart_height %>px;">
+          <% data.each do |d| %>
+            <% value = d[:numeric] %>
+            <% height_float = (value / max_value) * 100.0 %>
+            <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
+            <% height = height_float.round %>
+            <% height = [height, 2].max if value.positive? %>
+            <div class="flex-1 h-full flex flex-col items-center justify-end">
+              <div class="w-full rounded-t <%= bar_color %> transition-all" style="height: <%= height %>%"
+                   title="<%= "#{d[:label]}: #{d[:value]}" %>"></div>
+            </div>
+          <% end %>
+        </div>
 
-      <div class="flex gap-1 mt-2" data-admin-suite--chart-target="labels">
-        <% data.each do |d| %>
-          <div class="flex-1 text-center text-xs text-slate-400" title="<%= d[:label] %>"><%= d[:label] %></div>
-        <% end %>
-      </div>
+        <div class="flex gap-1 mt-2" data-admin-suite--chart-target="labels">
+          <% data.each do |d| %>
+            <div class="flex-1 text-center text-xs text-slate-400" title="<%= d[:label] %>"><%= d[:label] %></div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
   <% else %>
     <div class="p-4 text-sm text-slate-500">No chart data.</div>

@@ -34,6 +34,14 @@ const DOUGHNUT_PALETTE = [
   "#06b6d4", "#8b5cf6", "#64748b", "#ec4899",
 ]
 
+// Mirrors the ERB partial's own `chart_types` allowlist (see
+// _chart.html.erb). The ERB already normalizes an unknown `type:` down to
+// "bar" before it reaches the DOM, so this is a defensive second check, not
+// the primary one — it only matters if something other than the shipped
+// partial writes the type-value attribute (e.g. a host's `panel_chart`
+// override that skips the ERB's own validation).
+const KNOWN_TYPES = [ "bar", "line", "area", "doughnut" ]
+
 // Fallback height (px) if the server didn't send a height value for some
 // reason. Kept in sync with the ERB partial's own default.
 const DEFAULT_HEIGHT_PX = 192
@@ -75,7 +83,13 @@ export default class extends Controller {
     const series = this.hasSeriesValue ? this.seriesValue : []
     if (series.length === 0) return
 
-    const type = this.hasTypeValue && this.typeValue ? this.typeValue : "bar"
+    let type = this.hasTypeValue && this.typeValue ? this.typeValue : "bar"
+    if (!KNOWN_TYPES.includes(type)) {
+      console.warn(
+        "admin-suite--chart: unknown chart type " + JSON.stringify(type) + "; falling back to \"bar\"."
+      )
+      type = "bar"
+    }
     const color = COLOR_HEX[this.colorValue] || COLOR_HEX.indigo
     const height = this.hasHeightValue && this.heightValue > 0 ? this.heightValue : DEFAULT_HEIGHT_PX
 
