@@ -102,6 +102,10 @@ AdminSuite::UI::ShowFormatterRegistry.register_class(Float) do |value, view, _re
   view.content_tag(:span, view.number_with_delimiter(value), class: "font-mono")
 end
 
+AdminSuite::UI::ShowFormatterRegistry.register_class(BigDecimal) do |value, view, _record, _field|
+  view.content_tag(:span, view.number_with_delimiter(value.to_f), class: "font-mono")
+end
+
 AdminSuite::UI::ShowFormatterRegistry.register_default do |value, view, _record, field_name|
   value_str = value.to_s
 

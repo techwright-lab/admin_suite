@@ -4,8 +4,7 @@ require "admin_suite/ui/show_formatter_registry"
 
 module AdminSuite
   module UI
-    # Overrides `format_show_value` to use a registry of show value formatters,
-    # while leaving the legacy implementation available via `super`.
+    # Implements `format_show_value` using a registry of show value formatters.
     module ShowValueFormatter
       def format_show_value(record, field_name)
         value = record.public_send(field_name) rescue nil
@@ -70,7 +69,10 @@ module AdminSuite
 
         return formatted unless formatted.nil?
 
-        super
+        # The registry's default handler always returns a value; nil means a
+        # handler was registered that returned nothing, which is a bug in that
+        # handler rather than a case to silently absorb.
+        content_tag(:span, value.to_s, class: "text-slate-900")
       end
 
       private

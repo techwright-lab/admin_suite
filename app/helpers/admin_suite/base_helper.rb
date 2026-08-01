@@ -86,8 +86,7 @@ module AdminSuite
     end
 
 
-    # Prefer registry-driven implementations (with legacy fallbacks via `super`).
-    prepend AdminSuite::UI::ShowValueFormatter
+    include AdminSuite::UI::ShowValueFormatter
     prepend AdminSuite::UI::FormFieldRenderer
 
     # Returns the color scheme for a portal
@@ -145,79 +144,6 @@ module AdminSuite
         column.content.call(record)
       else
         record.public_send(column.name) rescue "—"
-      end
-    end
-
-    # Formats a value for display on show pages
-    #
-    # @param record [ActiveRecord::Base] The record
-    # @param field_name [Symbol, String] Field name
-    # @return [String] HTML safe formatted value
-    def format_show_value(record, field_name)
-      value = record.public_send(field_name) rescue nil
-
-      if value.is_a?(ActiveStorage::Attached::One)
-        return render_attachment_preview(value)
-      elsif value.is_a?(ActiveStorage::Attached::Many)
-        return render_attachments_preview(value)
-      end
-
-      case value
-      when nil
-        content_tag(:span, "—", class: "text-slate-400")
-      when true
-        content_tag(:span, class: "inline-flex items-center gap-1") do
-          svg = '<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'.html_safe
-          concat(svg)
-          concat(content_tag(:span, "Yes", class: "text-green-600 font-medium"))
-        end
-      when false
-        content_tag(:span, class: "inline-flex items-center gap-1") do
-          svg = '<svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>'.html_safe
-          concat(svg)
-          concat(content_tag(:span, "No", class: "text-slate-500"))
-        end
-      when Time, DateTime
-        content_tag(:span, class: "inline-flex items-center gap-2") do
-          concat(content_tag(:span, value.strftime("%B %d, %Y at %H:%M"), class: "font-medium"))
-          concat(content_tag(:span, "(#{time_ago_in_words(value)} ago)", class: "text-slate-500 text-xs"))
-        end
-      when Date
-        value.strftime("%B %d, %Y")
-      when ActiveRecord::Base
-        link_text = value.respond_to?(:name) ? value.name : "#{value.class.name} ##{value.id}"
-        content_tag(:span, link_text, class: "text-indigo-600")
-      when Hash
-        render_json_block(value)
-      when Array
-        if value.empty?
-          content_tag(:span, "Empty array", class: "text-slate-400 italic")
-        elsif value.first.is_a?(Hash)
-          render_json_block(value)
-        else
-          content_tag(:div, class: "flex flex-wrap gap-1") do
-            value.each do |item|
-              concat(content_tag(:span, item.to_s, class: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700"))
-            end
-          end
-        end
-      when Integer, Float, BigDecimal
-        content_tag(:span, number_with_delimiter(value), class: "font-mono")
-      else
-        value_str = value.to_s
-
-        if value_str.start_with?("{", "[") && value_str.length > 10
-          begin
-            parsed = JSON.parse(value_str)
-            render_json_block(parsed)
-          rescue JSON::ParserError
-            render_text_block(value_str)
-          end
-        elsif value_str.include?("\n") || value_str.length > 200
-          render_text_block(value_str, detect_language(field_name, value_str))
-        else
-          value_str
-        end
       end
     end
 
