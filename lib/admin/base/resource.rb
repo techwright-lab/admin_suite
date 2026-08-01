@@ -520,7 +520,7 @@ module Admin
         # verbatim to the renderer via `ShowSectionDefinition#options`.
         RESERVED_SECTION_OPTION_KEYS = %i[
           fields association limit render title display link_to resource
-          paginate pagination per_page collapsible collapsed
+          paginate pagination per_page collapsible collapsed hide_blank
         ].freeze
 
         def build_section(name, options)
@@ -548,6 +548,13 @@ module Admin
             per_page: options[:per_page],
             collapsible: options[:collapsible] || false,
             collapsed: options[:collapsed] || false,
+            # `fields:`-only rows whose value is blank (nil or `.empty?`)
+            # are omitted entirely -- see `show_value_blank?` in
+            # `AdminSuite::BaseHelper`, which reads this member. Default
+            # `false`: no existing show page changes unless it opts in.
+            # Deliberately NOT `value.blank?` -- that's true for `false`
+            # and `0`, both of which are meaningful, rendered values today.
+            hide_blank: options[:hide_blank] || false,
             options: leftover_options
           )
         end
@@ -556,6 +563,7 @@ module Admin
       ShowSectionDefinition = Struct.new(
         :name, :fields, :association, :limit, :render, :title,
         :display, :columns, :link_to, :resource, :paginate, :per_page, :collapsible, :collapsed,
+        :hide_blank,
         :options,
         keyword_init: true
       )

@@ -383,7 +383,11 @@ module AdminSuite
           elsif section.association.present?
             render_association_section(resource, section)
           elsif section.fields.any?
-            position == :sidebar ? render_sidebar_fields(resource, section.fields) : render_main_fields(resource, section.fields)
+            if position == :sidebar
+              render_sidebar_fields(resource, section.fields, hide_blank: section.hide_blank)
+            else
+              render_main_fields(resource, section.fields, hide_blank: section.hide_blank)
+            end
           else
             content_tag(:p, "No content", class: "text-slate-400 italic text-sm")
           end
@@ -391,11 +395,13 @@ module AdminSuite
       end
     end
 
-    def render_sidebar_fields(resource, fields)
+    def render_sidebar_fields(resource, fields, hide_blank: false)
       content_tag(:div, class: "space-y-3") do
         fields.each do |field_name|
           value = resource.public_send(field_name) rescue nil
-          if value.is_a?(ActiveStorage::Attached::One) || value.is_a?(ActiveStorage::Attached::Many)
+          next if hide_blank && show_value_blank?(value)
+
+          if attached_file_value?(value)
             concat(render_sidebar_attachment(value))
           else
             concat(content_tag(:div, class: "flex justify-between items-start gap-2") do
@@ -443,9 +449,18 @@ module AdminSuite
       end
     end
 
-    def render_main_fields(resource, fields)
+    def render_main_fields(resource, fields, hide_blank: false)
       content_tag(:dl, class: "space-y-6") do
         fields.each do |field_name|
+          # Only re-read the value (and only when `hide_blank` is actually
+          # on) so a plain `field :foo` row with no `hide_blank:` costs
+          # exactly what it cost before this option existed --
+          # `format_show_value` re-reads the value itself below regardless.
+          if hide_blank
+            value = resource.public_send(field_name) rescue nil
+            next if show_value_blank?(value)
+          end
+
           concat(content_tag(:div) do
             concat(content_tag(:dt, field_name.to_s.humanize, class: "text-sm font-medium text-slate-500 mb-2"))
             concat(content_tag(:dd, class: "text-sm text-slate-900") { format_show_value(resource, field_name) })
@@ -453,6 +468,38 @@ module AdminSuite
         end
       end
     end
+
+    # Whether `resource.public_send(field_name)` should be omitted entirely
+    # from a `hide_blank: true` show panel.
+    #
+    # Deliberately not `value.blank?`: `false.blank?` is `true` in Ruby, and
+    # `false` renders as a real, meaningful grey "No" toggle icon today (see
+    # `ShowFormatterRegistry`'s `FalseClass` handler) -- hiding it would
+    # erase a real signal, not absence of one. Same reasoning for `0` and
+    # `0.0`: neither responds to `:empty?`, so both are kept. A
+    # whitespace-only string (`"   "`) is also kept -- `String#empty?`
+    # checks length, not content, and this option only claims to hide
+    # values with *zero* content, not "content a human would consider
+    # meaningless."
+    #
+    # @param value [Object]
+    # @return [Boolean]
+    def show_value_blank?(value)
+      value.nil? || (value.respond_to?(:empty?) && value.empty?)
+    end
+    private :show_value_blank?
+
+    # True for an `ActiveStorage::Attached::One`/`::Many` proxy -- guarded
+    # with `defined?` because the host (and this gem's own dummy test app)
+    # may not load ActiveStorage at all.
+    #
+    # @param value [Object]
+    # @return [Boolean]
+    def attached_file_value?(value)
+      (defined?(ActiveStorage::Attached::One) && value.is_a?(ActiveStorage::Attached::One)) ||
+        (defined?(ActiveStorage::Attached::Many) && value.is_a?(ActiveStorage::Attached::Many))
+    end
+    private :attached_file_value?
 
     # ---- association rendering ----
     def render_association_section(resource, section)
