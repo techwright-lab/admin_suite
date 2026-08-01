@@ -89,6 +89,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   being silently retried — the old `rescue NameError; retry` could infinite-loop
   in production when a require legitimately failed.
 
+## [0.3.1] - 2026-08-01
+
+### Fixed
+
+- Chart panels now give percentage-height bars a definite-height container, preserve full axis labels, and keep small nonzero values visible.
+
 ## [0.3.0] - 2026-07-31
 
 ### Changed (BREAKING)

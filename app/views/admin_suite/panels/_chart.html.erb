@@ -29,7 +29,8 @@ end %>
         <% height_float = (value / max_value) * 100.0 %>
         <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
         <% height = height_float.round %>
-        <div class="flex-1 flex flex-col items-center gap-1">
+        <% height = [height, 2].max if value.positive? %>
+        <div class="flex-1 h-full flex flex-col items-center justify-end">
           <div class="w-full rounded-t <%= bar_color %> transition-all" style="height: <%= height %>%"
                title="<%= "#{d[:label]}: #{d[:value]}" %>"></div>
         </div>
@@ -38,7 +39,7 @@ end %>
 
     <div class="flex gap-1 mt-2">
       <% data.each do |d| %>
-        <div class="flex-1 text-center text-xs text-slate-400"><%= d[:label].to_s.first(3) %></div>
+        <div class="flex-1 text-center text-xs text-slate-400" title="<%= d[:label] %>"><%= d[:label] %></div>
       <% end %>
     </div>
   <% else %>
