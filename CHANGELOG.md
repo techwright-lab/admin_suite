@@ -5,9 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - 2026-08-01
 
 ### Added
+- **Charts.** `chart_panel` now renders a real Chart.js chart (Chart.js
+  4.5.1, vendored at `app/assets/vendor/chart.umd.min.js` — no gem
+  dependency, no CDN, works air-gapped/under a strict CSP), loaded only on
+  pages that actually render a chart with data. New `type:` option —
+  `:bar` (default), `:line`, `:area` (a Chart.js line chart with
+  `fill: true`), or `:doughnut`; an unrecognized value falls back to
+  `:bar` and logs a warning rather than raising, regardless of the input's
+  type (Symbol, String, Integer, Boolean, ...). New `height:` option (see
+  Changed below for the new default). The existing CSS bar chart remains
+  the no-JS degraded state — nothing is hidden until Chart.js has actually
+  built the real chart. See
+  `../_vault/products/admin_suite/docs/charts.md`.
 - Index rows are now clickable end to end via the already-existing (but
   previously unwired) `ClickActionsController`: clicking anywhere on a row
   other than an interactive element (link, button, form input) navigates to
@@ -21,10 +33,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   emitting the matching Tailwind alignment class on the `<td>`.
 - The index's `<thead>` is now `sticky top-0`, and its scroll wrapper is
   now bounded (`max-h-[70vh] overflow-y-auto`, alongside the existing
-  `overflow-x-auto`) so the header actually pins while scrolling a long
-  page of results instead of scrolling away with it.
+  `overflow-x-auto`) so the header actually pins **within that scroll
+  region** while scrolling a long page of results — not to the browser
+  viewport — instead of scrolling away with the page.
+- `index do includes :company, :line_items end` — eager-loads the named
+  associations on the index's filtered/sorted/searched scope, before
+  pagination. Skips silently on a scope that doesn't support `#includes`;
+  logs and degrades (unoptimized, still renders) if `#includes` itself
+  raises (e.g. a bad association name). See
+  `../_vault/products/admin_suite/docs/resources.md`.
+- A gem-provided JSON search endpoint, `GET <mount>/:portal/:resource/search?q=`,
+  for `searchable_select` — hosts no longer need to hand-build one. Enforces
+  authentication and `config.authorize` (`action: :read`), only searches the
+  resource's declared `searchable` fields, hard-caps at 25 results, and
+  returns `[]` (never the whole table) for a blank/missing `q`. New field
+  option `resource:` resolves a `searchable_select` field's search URL to
+  this endpoint automatically; a String `collection:` still overrides it
+  unconditionally. See `../_vault/products/admin_suite/docs/fields.md`.
+- `hide_blank: true` on show `fields:` panels (sidebar or main column) hides
+  a field's row entirely instead of rendering a label with an empty value.
+  Deliberately stricter than `.blank?`: only `nil`/`""`/`[]`/`{}` are
+  hidden — whitespace-only strings, `false`, and `0`/`0.0` are kept, since
+  none of those are "no data," and `false`/`0` are today's real rendered
+  values for a lot of fields. See
+  `../_vault/products/admin_suite/docs/resources.md`.
 
 ### Changed
+- **Host-visible:** `belongs_to`-shaped values now render as links to the
+  associated record's own admin show page — in both index columns
+  (previously a raw `#<Company:0x...>` inspect string) and association
+  tables (previously plain text). Falls back to plain text (never a raw
+  inspect string, never a 500) when no resource is registered for the
+  associated class, the record is unpersisted, or its display title
+  raises.
+- **Host-visible:** the chart panel's default height changed from a 64px
+  strip to **192px**. 64px was enough for a sparkline-style bar row but not
+  a real chart with axes/labels; both the degraded bars and the live canvas
+  read the same height value, so there's no shift between the two, but
+  every existing dashboard's chart panels are now taller unless `height:`
+  is set explicitly. `chart_panel`'s markup for hosts overriding
+  `config.partials[:panel_chart]` has also changed shape (new Stimulus
+  mount + data attributes) — see the charts doc.
 - **Host-visible:** resources declaring `paginate(n)` now render that many
   rows per page instead of Pagy's own default of 20 — see the Fixed entry
   below. Operators may see different row counts and pagination boundaries
@@ -43,6 +92,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   default of 20 regardless of what was declared. This is a long-standing
   latent bug, not a regression introduced by this release; declared page
   sizes now take effect.
+- A chart panel's `data:` proc raising, returning junk rows (non-Hash
+  entries mixed into the array), or returning rows with a non-numeric
+  `value` (Boolean, Hash, Array, nil, non-numeric String) all previously
+  500'd the dashboard. All three now degrade instead: a raising proc logs
+  and shows "No chart data."; junk rows are dropped; junk values render as
+  a zero-height bar/slice. String-keyed data rows (e.g. from a JSONB
+  column) are also now tolerated the same way `data_table` already
+  handles them — previously they rendered blank/zero bars silently rather
+  than the real value.
+
+### Deprecated
+- **Unchanged, reiterated for clarity:** the four Gleania-specific renderer
+  keys (`:prompt_template_preview`, `:messages_preview`,
+  `:tool_args_preview`, `:turn_messages_preview`) and
+  `Resource.exportable(*formats)` remain deprecated (as of 0.4.0) and
+  **still work in 0.5.0**. Their removal, originally targeted at 0.5.0, is
+  now targeted at **0.6.0**, pending the Gleania and TrustGrowth host
+  migrations. Note that the runtime deprecation warnings themselves still
+  literally say "removed in 0.5.0" — that string was not updated as part of
+  this release; this CHANGELOG and the renderers doc are authoritative on
+  timing, not the warning text.
 
 ## [0.4.0] - 2026-08-01
 
