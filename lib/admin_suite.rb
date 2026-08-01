@@ -14,6 +14,7 @@ require "admin_suite/markdown_renderer"
 require "admin_suite/theme_palette"
 require "admin_suite/portal_registry"
 require "admin_suite/portal_definition"
+require "admin_suite/auth"
 require "admin_suite/ui/form_field_renderer"
 require "admin_suite/ui/show_value_formatter"
 require "admin_suite/engine"
@@ -30,6 +31,21 @@ module AdminSuite
     def configure
       yield(config)
       config
+    end
+
+    # Resolves the effective authentication strategy instance.
+    #
+    # Precedence: explicit `config.auth_strategy` (Symbol name or Class),
+    # then the legacy `config.authenticate` lambda (wrapped), then nil.
+    #
+    # @return [AdminSuite::Auth::Strategy, nil]
+    def resolved_auth_strategy
+      if config.auth_strategy
+        klass = config.auth_strategy.is_a?(Class) ? config.auth_strategy : Auth.lookup(config.auth_strategy)
+        klass.new(config.auth_options || {})
+      elsif config.authenticate
+        Auth::HostHook.new(authenticate: config.authenticate, current_actor: config.current_actor)
+      end
     end
 
     # Defines (or updates) a portal using a Ruby DSL.

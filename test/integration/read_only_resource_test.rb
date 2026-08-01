@@ -2,48 +2,7 @@
 
 require "test_helper"
 
-# The dummy app is intentionally database-free, while the generic controller
-# supports Active Record hosts. Supply only the exception type its lookup path
-# rescues so show-page behavior can be exercised with an in-memory fixture.
-unless defined?(ActiveRecord::RecordNotFound)
-  module ActiveRecord
-    class RecordNotFound < StandardError; end
-  end
-end
-
-module TurboFrameTestHelper
-  def turbo_frame_tag(name, **options, &block)
-    content_tag(:turbo_frame, capture(&block), id: name, **options)
-  end
-end
-
-ActionView::Base.include(TurboFrameTestHelper)
-
 module ReadOnlyResourceFixtures
-  class Relation
-    include Enumerable
-
-    def initialize(records)
-      @records = records
-    end
-
-    def each(&block)
-      @records.each(&block)
-    end
-
-    def count(*)
-      @records.count
-    end
-
-    def offset(*)
-      self
-    end
-
-    def limit(*)
-      self
-    end
-  end
-
   class Widget
     extend ActiveModel::Naming
 
@@ -83,6 +42,10 @@ module ReadOnlyResourceFixtures
     def attributes
       { "id" => id, "name" => name }
     end
+
+    def ping
+      true
+    end
   end
 end
 
@@ -98,6 +61,10 @@ module Admin
         columns do
           column :name
         end
+      end
+
+      actions do
+        action :ping
       end
     end
   end
@@ -138,6 +105,26 @@ module AdminSuite
 
       assert_includes template, "has_edit_route = !resource_config.read_only?"
       assert_includes template, "has_destroy_route = !resource_config.read_only?"
+    end
+
+    test "toggle endpoint is rejected on read_only resources" do
+      post "#{BASE_PATH}/1/toggle", params: { field: "name" }
+      assert_response :not_found
+    end
+
+    test "undeclared execute_action names respond 404" do
+      post "#{BASE_PATH}/1/execute_action/nonexistent_action"
+      assert_response :not_found
+    end
+
+    test "undeclared bulk_action names respond 404" do
+      post "#{BASE_PATH}/bulk_action/nonexistent_bulk", params: { ids: ["1"] }
+      assert_response :not_found
+    end
+
+    test "declared member actions remain allowed on read_only resources" do
+      post "#{BASE_PATH}/1/execute_action/ping"
+      refute_equal 404, response.status
     end
   end
 end

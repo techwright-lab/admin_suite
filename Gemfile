@@ -10,4 +10,7 @@ end
 
 group :test do
   gem "simplecov", require: false
+  # minitest 6.x split Object#stub out of core; needed for Rails.stub in
+  # test/integration/authentication_test.rb.
+  gem "minitest-mock"
 end

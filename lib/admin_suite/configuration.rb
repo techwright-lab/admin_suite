@@ -6,6 +6,10 @@ module AdminSuite
     attr_accessor :authenticate,
       :current_actor,
       :authorize,
+      :auth_strategy,
+      :auth_options,
+      :allow_unauthenticated,
+      :skip_host_before_actions,
       :logout_path,
       :logout_method,
       :logout_label,
@@ -33,6 +37,10 @@ module AdminSuite
       @authenticate = nil
       @current_actor = nil
       @authorize = nil
+      @auth_strategy = nil
+      @auth_options = {}
+      @allow_unauthenticated = false
+      @skip_host_before_actions = [ :require_authentication ]
       @logout_path = nil
       @logout_method = :delete
       @logout_label = "Log out"

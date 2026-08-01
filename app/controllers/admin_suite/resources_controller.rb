@@ -5,8 +5,10 @@ module AdminSuite
     include Pagy::Backend
     include Pagy::Frontend
 
-    before_action :enforce_read_only!, only: %i[new create edit update destroy]
+    before_action :require_resource_config!
+    before_action :enforce_read_only!, only: %i[new create edit update destroy toggle]
     before_action :set_resource, if: -> { params[:id].present? && !%w[index new create].include?(action_name) }
+    before_action :authorize_admin_suite!
 
     helper_method :resource_config, :resource_class, :resource, :collection, :current_portal, :resource_name
 
@@ -59,10 +61,7 @@ module AdminSuite
     def execute_action
       action = params[:action_name].to_s.to_sym
       action_def = find_action(action)
-      unless action_def
-        redirect_to resource_url(@resource), alert: "Action not found."
-        return
-      end
+      return head(:not_found) if action_def.nil?
 
       executor = Admin::Base::ActionExecutor.new(resource_config, action, admin_suite_actor)
       result = executor.execute_member(@resource, params.to_unsafe_h)
@@ -78,6 +77,9 @@ module AdminSuite
     # POST /:portal/:resource_name/bulk_action/:action_name
     def bulk_action
       action = params[:action_name].to_s.to_sym
+      action_def = find_bulk_action(action)
+      return head(:not_found) if action_def.nil?
+
       ids = params[:ids] || []
       if ids.empty?
         redirect_to collection_url, alert: "No items selected."
@@ -127,6 +129,44 @@ module AdminSuite
 
     private
 
+    # Controller action -> authorization verb.
+    AUTHORIZATION_VERBS = {
+      "index" => :read, "show" => :read,
+      "new" => :create, "create" => :create,
+      "edit" => :update, "update" => :update, "toggle" => :update,
+      "destroy" => :destroy,
+      "execute_action" => :execute, "bulk_action" => :execute
+    }.freeze
+
+    # Enforces the host's `config.authorize` hook. Nil hook = allowed
+    # (authentication remains the gate). Falsy return = 403.
+    #
+    # @return [void]
+    def authorize_admin_suite!
+      hook = AdminSuite.config.authorize
+      return if hook.nil?
+
+      permitted = hook.call(
+        actor: admin_suite_actor,
+        action: AUTHORIZATION_VERBS.fetch(action_name),
+        resource: resource_config,
+        record: (defined?(@resource) ? @resource : nil),
+        controller: self
+      )
+      head :forbidden unless permitted
+    end
+
+    # Guards every action behind a registered resource definition. Undeclared
+    # resource names (anything that doesn't map to an
+    # `Admin::Resources::*Resource` class) 404 here, before authentication's
+    # authorize hook or any model lookup runs — closing off the ability to
+    # reach arbitrary host model classes via unregistered resource names.
+    #
+    # @return [void]
+    def require_resource_config!
+      head :not_found if resource_config.nil?
+    end
+
     def current_portal
       params[:portal].to_s.presence&.to_sym
     end
@@ -144,7 +184,7 @@ module AdminSuite
     end
 
     def resource_class
-      resource_config&.model_class || resource_name.classify.constantize
+      resource_config.model_class
     end
 
     def set_resource
@@ -205,6 +245,10 @@ module AdminSuite
 
     def find_action(name)
       resource_config&.actions_config&.member_actions&.find { |a| a.name == name }
+    end
+
+    def find_bulk_action(name)
+      resource_config&.actions_config&.bulk_actions&.find { |a| a.name == name }
     end
 
     def resource_params
