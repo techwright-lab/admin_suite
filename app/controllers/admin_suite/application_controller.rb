@@ -104,8 +104,20 @@ module AdminSuite
 
     # Builds the navigation structure from registered resources.
     #
+    # Memoized per request/controller-instance: views re-enter this method
+    # repeatedly while rendering a single page (e.g. `portal_color` and
+    # `portal_icon` in base_helper.rb each call it, and the sidebar partial
+    # calls those once per portal), and it's rebuilt from scratch each time
+    # it isn't memoized -- on top of that, `ensure_resources_loaded!` /
+    # `ensure_portals_loaded!` would otherwise glob the filesystem on every
+    # one of those re-entries in development.
+    #
     # @return [Hash]
     def navigation_items
+      @navigation_items ||= build_navigation_items
+    end
+
+    def build_navigation_items
       ensure_resources_loaded!
       ensure_portals_loaded!
 

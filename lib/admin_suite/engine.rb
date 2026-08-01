@@ -34,6 +34,44 @@ module AdminSuite
       app.config.watchable_dirs[root.join("config").to_s] = %w[rb]
     end
 
+    initializer "admin_suite.host_watchable_dirs" do |app|
+      next unless Rails.env.development?
+
+      # Rails only re-runs `to_prepare` callbacks (see
+      # "admin_suite.definition_reload" below) when it detects a change in a
+      # watched path -- by default, `config.autoload_paths` +
+      # `eager_load_paths` + `watchable_files` + `watchable_dirs`.
+      # `app/admin*` directories are covered automatically (Rails treats
+      # every directory under `app/` as an autoload path). But
+      # `config/admin_suite/**` -- the *recommended*, deliberately
+      # non-autoload location for resource/portal/dashboard/action
+      # definitions (see "admin_suite.configuration" below) -- isn't in any
+      # of those by default, so editing only a file there would never be
+      # noticed. Watch it explicitly.
+      host_admin_suite_config_dir = Rails.root.join("config/admin_suite")
+      next unless host_admin_suite_config_dir.exist?
+
+      app.config.watchable_dirs[host_admin_suite_config_dir.to_s] = %w[rb]
+    end
+
+    initializer "admin_suite.definition_reload" do |app|
+      next unless Rails.env.development?
+
+      # Drives DefinitionLoader's development live-reload. Rails runs
+      # `to_prepare` callbacks once at boot and again on any request where
+      # it detects a change in a watched path (see
+      # "admin_suite.host_watchable_dirs" above) -- NOT unconditionally on
+      # every request (that's gated by `config.reload_classes_only_on_change`,
+      # true by default; see Rails::Application::Finisher#set_clear_dependencies_hook).
+      # Clearing the loaded flags here, rather than inside `load!` itself,
+      # is what bounds a reload to at most once per such request instead of
+      # once per `load!` call (application_controller.rb's `navigation_items`
+      # alone triggers several per request).
+      app.reloader.to_prepare do
+        AdminSuite::DefinitionLoader.reset_for_new_request!
+      end
+    end
+
     initializer "admin_suite.assets", before: "propshaft" do |app|
       # Make engine JS/CSS available to the host asset pipeline (Propshaft/Sprockets).
       app.config.assets.paths << root.join("app/javascript")

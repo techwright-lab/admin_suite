@@ -9,16 +9,46 @@ module AdminSuite
               dashboards: :dashboard_globs, actions: :action_globs }.fetch(kind)
       saved = AdminSuite.config.public_send(key)
       AdminSuite.config.public_send("#{key}=", paths)
+      restore_registry = snapshot_registry(kind)
       AdminSuite::DefinitionLoader.reset!(kind)
       yield
     ensure
       AdminSuite.config.public_send("#{key}=", saved)
-      AdminSuite::DefinitionLoader.reset!(kind)
+      restore_registry.call
+    end
+
+    # `DefinitionLoader.reset!` clears shared global state (the resource
+    # registry, the portal registry) that accumulates real fixtures
+    # registered by *other* tests at file-load time -- e.g.
+    # `test/integration/read_only_resource_test.rb`'s `ReadOnlyWidgetResource`
+    # and `test_helper.rb`'s fixture resources are registered once, forever,
+    # before any test runs. An earlier version of this helper called
+    # `reset!` bare and broke `navigation_sections_test.rb` whenever it ran
+    # afterward. Snapshot what's there before resetting and restore exactly
+    # that afterward, rather than trusting it to come back on its own.
+    def snapshot_registry(kind)
+      case kind
+      when :resources
+        before = Admin::Base::Resource.registered_resources.dup
+        lambda do
+          Admin::Base::Resource.reset_registry!
+          before.each { |r| Admin::Base::Resource.registered_resources << r }
+        end
+      when :portals
+        before = AdminSuite::PortalRegistry.all.dup
+        lambda do
+          AdminSuite::PortalRegistry.reset!
+          before.each_value { |definition| AdminSuite::PortalRegistry.register(definition) }
+        end
+      else
+        -> { AdminSuite::DefinitionLoader.reset!(kind) }
+      end
     end
 
     # Stubs Rails.env for the duration of the block, restoring it afterward.
-    # Used to exercise DefinitionLoader's development-only reload branch,
-    # which never runs under the dummy app's normal (test-env) CI suite.
+    # Used to exercise DefinitionLoader's `load` (vs `require`) file-loading
+    # mode, which never runs under the dummy app's normal (test-env) CI
+    # suite.
     def with_rails_env(name)
       original = Rails.env
       Rails.env = ActiveSupport::EnvironmentInquirer.new(name.to_s)
@@ -60,26 +90,35 @@ module AdminSuite
 
     # --- Development-mode reload coverage ---
     #
-    # The dummy app never runs in development, so this branch has never
-    # executed in CI (per Task 9 brief). It matters because it changes
-    # per-kind reload semantics: dev now resets + reloads on every call,
-    # for all four kinds uniformly (previously portals/dashboards did this,
-    # inconsistently, and resources/actions did not at all).
+    # Per the Task 9 erratum: `load!` itself must NEVER reset a kind's
+    # registry automatically (in development or otherwise) -- only
+    # `reset_for_new_request!` (wired into Rails' `to_prepare` by the
+    # engine, simulating "a new request began") or a test's explicit
+    # `reset!`/`with_globs` may do that. These tests simulate the request
+    # boundary explicitly rather than assuming `load!` reloads on every call.
 
-    test "in development, reloads on every call even when nothing changed" do
+    test "in development, load! does not reload on repeated calls (bounded to the request boundary)" do
       Dir.mktmpdir do |dir|
         marker = File.join(dir, "count.txt")
         File.write(File.join(dir, "thing.rb"), "File.write(#{marker.inspect}, File.exist?(#{marker.inspect}) ? File.read(#{marker.inspect}).to_i + 1 : 1)")
         with_globs(:dashboards, [ File.join(dir, "*.rb") ]) do
           with_rails_env(:development) do
             3.times { AdminSuite::DefinitionLoader.load!(:dashboards) }
-            assert_equal 3, File.read(marker).to_i
+            assert_equal 1, File.read(marker).to_i,
+                         "expected load! to load the file once, not once per call, without an intervening reset"
+            assert AdminSuite.config.root_dashboard_loaded,
+                   "expected load! to mark the kind loaded in development too, not only outside it"
+
+            AdminSuite::DefinitionLoader.reset_for_new_request!
+            AdminSuite::DefinitionLoader.load!(:dashboards)
+            assert_equal 2, File.read(marker).to_i,
+                         "expected reset_for_new_request! to make the next load! call reload"
           end
         end
       end
     end
 
-    test "in development, resets the kind's registry before reloading so removed files disappear" do
+    test "in development, a portal removed from disk only disappears after reset_for_new_request!, not on a bare repeated load!" do
       Dir.mktmpdir do |dir|
         portal_file = File.join(dir, "temp_portal.rb")
         File.write(portal_file, "AdminSuite.portal(:definition_loader_dev_test) {}")
@@ -92,54 +131,68 @@ module AdminSuite
 
             File.delete(portal_file)
 
+            # No reset happened -- load! alone must not touch the registry.
+            AdminSuite::DefinitionLoader.load!(:portals)
+            assert AdminSuite::PortalRegistry.all.key?(:definition_loader_dev_test),
+                   "expected the portal to remain registered without an intervening reset_for_new_request!"
+
+            AdminSuite::DefinitionLoader.reset_for_new_request!
             AdminSuite::DefinitionLoader.load!(:portals)
             assert_not AdminSuite::PortalRegistry.all.key?(:definition_loader_dev_test),
-                       "expected the removed portal to disappear after the next dev-mode reload"
+                       "expected the removed portal to disappear once reset_for_new_request! ran"
           end
         end
       end
-    ensure
-      AdminSuite::PortalRegistry.reset!
     end
 
-    test "in development, reset runs even when the glob list is empty" do
-      # Guards the bug in the old ensure_portals_loaded!: it returned before
-      # resetting when no files matched, so a portal removed via the *last*
-      # remaining file never got cleared. DefinitionLoader must reset first.
-      #
-      # The portal is registered *inside* with_globs (after its own reset!)
-      # so that this test's assertion exercises `load!`'s own reset, not
-      # with_globs's unrelated setup-time reset.
-      with_globs(:portals, []) do
-        AdminSuite.portal(:definition_loader_dev_test_2) {}
-        assert AdminSuite::PortalRegistry.all.key?(:definition_loader_dev_test_2)
+    test "reset_for_new_request! resets portals, dashboards and actions, but never resources" do
+      # This is the regression this task's erratum exists for: resource
+      # registration happens only via Class#inherited, which never refires
+      # on a reopened (already-defined) class, so resetting the resource
+      # registry between requests would empty it permanently after the
+      # first reset+reload cycle. See the :resources KINDS entry.
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "resource.rb"), <<~RUBY)
+          module Admin
+            module Resources
+              class ResetForNewRequestResource < Admin::Base::Resource
+              end
+            end
+          end
+        RUBY
 
-        with_rails_env(:development) do
-          AdminSuite::DefinitionLoader.load!(:portals)
-          assert_not AdminSuite::PortalRegistry.all.key?(:definition_loader_dev_test_2),
-                     "expected the reset lambda to run even with an empty glob list"
+        with_globs(:resources, [ File.join(dir, "*.rb") ]) do
+          with_globs(:portals, []) do
+            with_globs(:dashboards, []) do
+              with_globs(:actions, []) do
+                AdminSuite.portal(:reset_for_new_request_test) {}
+                AdminSuite::DefinitionLoader.load!(:resources)
+                Admin::Base::ActionExecutor.handlers_loaded = true
+                AdminSuite.config.root_dashboard_loaded = true
+
+                AdminSuite::DefinitionLoader.reset_for_new_request!
+
+                assert_not AdminSuite::PortalRegistry.all.key?(:reset_for_new_request_test),
+                           "expected portals to be reset"
+                assert_not AdminSuite.config.root_dashboard_loaded, "expected dashboards to be reset"
+                assert_not Admin::Base::ActionExecutor.handlers_loaded, "expected actions to be reset"
+                assert Admin::Base::Resource.registered_resources.any? { |r| r.name == "Admin::Resources::ResetForNewRequestResource" },
+                       "expected resources to survive reset_for_new_request! untouched"
+              end
+            end
+          end
         end
       end
     end
 
-    # --- Per-kind wiring sanity (guards against a kind pointed at the wrong globals) ---
-
-    test "resources kind is backed by Admin::Base::Resource's registry" do
-      # `Admin::Base::Resource.registered_resources` accumulates real
-      # resources registered elsewhere in the suite at file-load time (e.g.
-      # fixtures in test_helper.rb and other test files) and is *already*
-      # non-empty before this test runs. That means the resources kind's
-      # `loaded?` (registered_resources.any?) is already true, so the
-      # non-development branch would short-circuit without touching the
-      # filesystem -- this has to run in "development" (which never checks
-      # `loaded?`) to actually exercise the glob+load path, and must restore
-      # every pre-existing entry afterward rather than calling
-      # `reset_registry!` bare, which would wipe every other test's fixtures
-      # for the rest of the run (see Task 9 brief's note on registries
-      # leaking across tests).
-      resources_before = Admin::Base::Resource.registered_resources.dup
-      saved_globs = AdminSuite.config.resource_globs
-
+    # The assertion whose absence let the erratum's bug through: the
+    # dev-mode resources test that existed before this fix only ever loaded
+    # a brand-new constant exactly once -- the one case where Class#inherited
+    # actually fires. Calling load! twice against the *same* file, with no
+    # reset in between, is what a single request actually does (base_helper's
+    # `portal_color`/`portal_icon` both re-enter `navigation_items`, which
+    # calls `ensure_resources_loaded!` again).
+    test "load!(:resources) called twice against the same file leaves the registry populated after the second call" do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, "definition_loader_dev_resource.rb"), <<~RUBY)
           module Admin
@@ -150,17 +203,35 @@ module AdminSuite
           end
         RUBY
 
-        AdminSuite.config.resource_globs = [ File.join(dir, "*.rb") ]
+        with_globs(:resources, [ File.join(dir, "*.rb") ]) do
+          with_rails_env(:development) do
+            2.times { AdminSuite::DefinitionLoader.load!(:resources) }
 
-        with_rails_env(:development) do
-          AdminSuite::DefinitionLoader.load!(:resources)
-          assert Admin::Base::Resource.registered_resources.any? { |r| r.name == "Admin::Resources::DefinitionLoaderDevResource" }
+            assert Admin::Base::Resource.registered_resources.any? { |r| r.name == "Admin::Resources::DefinitionLoaderDevResource" },
+                   "expected the resource to still be registered after a second load! call"
+          end
         end
       end
-    ensure
-      AdminSuite.config.resource_globs = saved_globs
-      Admin::Base::Resource.reset_registry!
-      resources_before.each { |r| Admin::Base::Resource.registered_resources << r }
+    end
+
+    # --- Per-kind wiring sanity (guards against a kind pointed at the wrong globals) ---
+
+    test "resources kind is backed by Admin::Base::Resource's registry" do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "definition_loader_dev_resource.rb"), <<~RUBY)
+          module Admin
+            module Resources
+              class DefinitionLoaderDevResource2 < Admin::Base::Resource
+              end
+            end
+          end
+        RUBY
+
+        with_globs(:resources, [ File.join(dir, "*.rb") ]) do
+          AdminSuite::DefinitionLoader.load!(:resources)
+          assert Admin::Base::Resource.registered_resources.any? { |r| r.name == "Admin::Resources::DefinitionLoaderDevResource2" }
+        end
+      end
     end
 
     test "actions kind is backed by ActionExecutor.handlers_loaded" do
@@ -169,13 +240,10 @@ module AdminSuite
         AdminSuite::DefinitionLoader.load!(:actions)
         assert Admin::Base::ActionExecutor.handlers_loaded
       end
-    ensure
-      Admin::Base::ActionExecutor.handlers_loaded = false
     end
 
     test "dashboards kind is backed by AdminSuite.config.root_dashboard_loaded" do
       with_globs(:dashboards, []) do
-        AdminSuite.reset_root_dashboard!
         AdminSuite::DefinitionLoader.load!(:dashboards)
         assert AdminSuite.config.root_dashboard_loaded
       end
