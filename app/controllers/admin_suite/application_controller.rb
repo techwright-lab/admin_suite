@@ -163,6 +163,13 @@ module AdminSuite
         navigation[key.to_sym] ||= { label: key.to_s.humanize, order: 100, sections: {} }
         navigation[key.to_sym].merge!(definition.to_nav_meta)
         navigation[key.to_sym][:sections] ||= {}
+
+        # Declared sections appear even before any resource is assigned to
+        # them, so their label/order take effect immediately.
+        definition.sections.each do |section_key, section_definition|
+          navigation[key.to_sym][:sections][section_key] ||=
+            { label: section_key.to_s.humanize, order: 100, items: [] }.merge(section_definition.to_nav_meta)
+        end
       end
 
       Admin::Base::Resource.registered_resources.each do |resource|
@@ -172,7 +179,10 @@ module AdminSuite
         section = resource.section_name.to_sym
 
         navigation[portal] ||= { label: portal.to_s.humanize, order: 100, sections: {} }
-        navigation[portal][:sections][section] ||= { label: section.to_s.humanize, items: [] }
+        navigation[portal][:sections][section] ||= begin
+          declared = AdminSuite::PortalRegistry.all[portal]&.sections&.[](section)
+          { label: section.to_s.humanize, order: 100, items: [] }.merge(declared&.to_nav_meta || {})
+        end
 
         label = resource.nav_label.presence || resource.human_name_plural
         navigation[portal][:sections][section][:items] << {

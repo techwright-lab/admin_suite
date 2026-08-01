@@ -14,6 +14,7 @@ module AdminSuite
       @order = nil
       @description = nil
       @dashboard = nil
+      @sections = {}
     end
 
     def label(value = nil)
@@ -49,6 +50,16 @@ module AdminSuite
 
     def dashboard_definition
       @dashboard
+    end
+
+    def section(key, &block)
+      definition = (@sections[key.to_sym] ||= SectionDefinition.new(key))
+      definition.instance_eval(&block) if block_given?
+      definition
+    end
+
+    def sections
+      @sections
     end
 
     def to_nav_meta
