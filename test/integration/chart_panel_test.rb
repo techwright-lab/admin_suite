@@ -185,7 +185,14 @@ module AdminSuite
     # 500ing the whole dashboard. Regression tests for the total-coercion fix
     # (`Integer(Float(...))` rescuing ArgumentError/TypeError), mirroring the
     # `type:` junk-value tests above.
-    [ "true", ":tall", "[200]", "{ px: 200 }", '"abc"', "nil", "0", "-5" ].each do |literal|
+    #
+    # The Float::INFINITY/NAN cases come from the fix's own re-review: those
+    # parse as Floats but have no Integer form, so `Integer()` raises
+    # FloatDomainError -- a RangeError, which the first cut of the rescue did
+    # not name. They were the one junk value still 500ing the dashboard, and a
+    # host reaches them by computing a height from a ratio that divides by zero.
+    [ "true", ":tall", "[200]", "{ px: 200 }", '"abc"', "nil", "0", "-5",
+      "Float::INFINITY", "-Float::INFINITY", "Float::NAN" ].each do |literal|
       test "height: #{literal} does not raise and falls back to the default 192px" do
         with_dashboard(<<~RUBY) do
           AdminSuite.root_dashboard do

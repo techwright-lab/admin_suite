@@ -7,6 +7,7 @@ rescue LoadError
 end
 
 require "pagy"
+
 # Hard dependency, declared in the gemspec but not a direct Gemfile entry in
 # any host -- Bundler's `Bundler.require` only auto-requires gems declared
 # directly in the Gemfile (or via `gemspec`'s own path entry), not a gem's

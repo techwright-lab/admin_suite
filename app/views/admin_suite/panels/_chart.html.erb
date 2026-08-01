@@ -85,10 +85,13 @@
   # Arrays and non-empty Hashes all survive it and none respond to `#to_i` --
   # `NoMethodError` 500ing the whole dashboard. `Integer(Float(...))` raises
   # on exactly those (plus non-numeric Strings), so anything that can't
-  # genuinely parse degrades to the default instead.
+  # genuinely parse degrades to the default instead. `RangeError` covers its
+  # `FloatDomainError` subclass: `Float::INFINITY` and `NAN` parse fine but
+  # have no Integer form, and a host can reach them by computing a height
+  # from a ratio that divides by zero.
   chart_height = begin
     Integer(Float(panel.options[:height]))
-  rescue ArgumentError, TypeError
+  rescue ArgumentError, TypeError, RangeError
     192
   end
   chart_height = 192 if chart_height <= 0
