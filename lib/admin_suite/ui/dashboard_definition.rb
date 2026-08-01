@@ -48,6 +48,12 @@ module AdminSuite
         panel(:health, title, span: span, **options.merge(status: status, metrics: metrics, block: block))
       end
 
+      # `type:` selects the Chart.js chart type: `:bar` (default), `:line`,
+      # `:area` (a line chart rendered with fill), or `:doughnut`. It flows
+      # through `**options` untouched by this method -- the `_chart.html.erb`
+      # partial is what validates it, falling back to `:bar` with a logged
+      # warning for anything else, so a host typo degrades rather than
+      # breaking the dashboard.
       def chart_panel(title, data: nil, span: nil, **options, &block)
         data_proc = data.is_a?(Proc) ? data : (block_given? ? block : nil)
         panel(:chart, title, span: span, **options.merge(data: data_proc || data))

@@ -65,6 +65,17 @@ module AdminSuite
       def unregister(key)
         @registry.delete(key.to_sym)
       end
+
+      # Test-support only. Removes a single *default* registration.
+      #
+      # Exists solely so a spec that seeds a scratch key into the default
+      # store (e.g. to test host-class-vs-default precedence) can clean up
+      # after itself. AdminSuite's own built-in defaults are registered once
+      # at require time and are never expected to be removed in a running
+      # process -- do not call this outside a test teardown.
+      def unregister_default(key)
+        @defaults.delete(key.to_sym)
+      end
     end
   end
 end

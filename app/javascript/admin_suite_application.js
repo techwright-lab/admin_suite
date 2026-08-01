@@ -42,3 +42,6 @@ application.register("admin-suite--flash", FlashController)
 
 import DependentSearchableSelectController from "controllers/admin_suite/dependent_searchable_select_controller"
 application.register("admin-suite--dependent-searchable-select", DependentSearchableSelectController)
+
+import ChartController from "controllers/admin_suite/chart_controller"
+application.register("admin-suite--chart", ChartController)

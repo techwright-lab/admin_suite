@@ -35,6 +35,12 @@
         this content_for). %>
     <%= yield :easymde_assets %>
 
+    <%# Chart.js: vendored (see app/assets/vendor), loaded only when the page
+        actually renders a chart panel with data (see
+        app/views/admin_suite/panels/_chart.html.erb, which sets this
+        content_for). %>
+    <%= yield :chart_assets %>
+
     <% if respond_to?(:javascript_importmap_tags) %>
       <%= javascript_importmap_tags %>
       <%= javascript_import_module_tag "admin_suite_application" %>

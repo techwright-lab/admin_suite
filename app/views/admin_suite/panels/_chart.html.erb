@@ -1,7 +1,102 @@
-<% data = Array(panel_eval(panel.options[:data])) %>
+<%
+  raw_data =
+    begin
+      Array(panel_eval(panel.options[:data]))
+    rescue StandardError => e
+      Rails.logger&.warn(
+        "AdminSuite: chart panel #{panel.title.inspect} data raised #{e.class}: #{e.message}\n" \
+        "#{e.backtrace&.first(5)&.join("\n")}"
+      )
+      []
+    end
+  # Accept String-keyed rows (JSONB, API payloads) the same way data_table does
+  # (see lib/admin_suite/renderer.rb#data_table), and skip any row that isn't
+  # Hash-like: a data proc can *succeed* and still hand back a junk row (e.g.
+  # a bare Integer or nil mixed into the array), and indexing that with
+  # `row[:value]` raises rather than returning nil, so it must be filtered
+  # before it reaches the height math below.
+  data = raw_data.filter_map do |row|
+    row = row.symbolize_keys if row.respond_to?(:symbolize_keys)
+    next unless row.is_a?(Hash)
+
+    raw_value = row[:value]
+    # Total coercion: `Float()` (unlike `#to_f`) raises on Boolean/Hash/Array/
+    # nil/non-numeric-String values instead of silently returning 0 or
+    # blowing up later, so a junk value degrades to 0 here rather than
+    # 500ing the dashboard when the height math below reaches it.
+    numeric = begin
+      Float(raw_value)
+    rescue ArgumentError, TypeError
+      0.0
+    end
+
+    # `value` stays as originally provided (e.g. an Integer or a numeric
+    # String) so titles/labels still read "Mon: 3" rather than "Mon: 3.0" —
+    # `numeric` is the only thing the height math and the JSON series handed
+    # to Chart.js should ever touch.
+    { label: row[:label], value: raw_value, numeric: numeric }
+  end
+%>
 <% total = panel.options[:total] %>
-<% color = (panel.options[:color] || theme_primary).to_sym %>
-<% max_value = (data.map { |d| d[:value].to_f }.max || 1).to_f %>
+<%
+  # Total coercion, same idiom as `type:` below: `.to_sym` alone raises for
+  # any `color:` value that doesn't implement it (an Integer, Boolean, ...) --
+  # `NoMethodError` 500ing the whole dashboard. `.to_s` first makes it total;
+  # an unrecognized result (e.g. `color: 42` -> `:"42"`) already falls through
+  # to indigo in both the `case` below and the JS `COLOR_HEX` map, so no new
+  # fallback logic is needed here.
+  color = (panel.options[:color] || theme_primary).to_s.presence&.to_sym
+%>
+<%
+  # `type:` is validated here, not just passed through, because it flows to
+  # both the Chart.js config (an unrecognized string throws inside Chart.js)
+  # and the degraded ERB branch below — a host typo (e.g. `type: :pie`, which
+  # Chart.js itself doesn't even ship) must degrade to the bar chart, not
+  # break the dashboard or silently render nothing.
+  chart_types = %i[bar line area doughnut]
+  # `.to_s` first: `presence&.to_sym` alone raises on any non-String/Symbol
+  # scalar (an Integer, Float, or `true`/`false` don't define `#to_sym`),
+  # which is exactly the host-typo shape this fallback exists to catch.
+  # `.to_s` makes the coercion total -- `42 → "42" → :"42"` (fails the
+  # allowlist below, warns, falls back to :bar) and `nil → "" → nil` via
+  # `presence` (falls back to :bar silently, since an unspecified type is
+  # not a typo).
+  chart_type = panel.options[:type].to_s.presence&.to_sym
+  if chart_type && !chart_types.include?(chart_type)
+    Rails.logger&.warn(
+      "AdminSuite: chart panel #{panel.title.inspect} has unknown type #{chart_type.inspect}; " \
+      "falling back to :bar. Supported: #{chart_types.join(', ')}."
+    )
+    chart_type = nil
+  end
+  chart_type ||= :bar
+%>
+<%
+  # Chart height: 64px (the old `h-16` bar height) was fine for sparkline-ish
+  # CSS bars, but is not usable for a real Chart.js chart with axes/legend.
+  # Emitted as an inline style below, not an interpolated Tailwind height
+  # class (which the content scanner can't see at build time, since it's
+  # never a literal class name in source — see panels_helper.rb's span
+  # comment for the same lesson), so both the degraded bars and the upgraded
+  # canvas share an identical, explicit height and there's no layout shift
+  # when Chart.js takes over.
+  # Total coercion, same idiom as `data:`'s per-row `value` above: `presence`
+  # filters `nil`/`""`/`false`/`{}`/`[]`, but `true`, Symbols, non-empty
+  # Arrays and non-empty Hashes all survive it and none respond to `#to_i` --
+  # `NoMethodError` 500ing the whole dashboard. `Integer(Float(...))` raises
+  # on exactly those (plus non-numeric Strings), so anything that can't
+  # genuinely parse degrades to the default instead. `RangeError` covers its
+  # `FloatDomainError` subclass: `Float::INFINITY` and `NAN` parse fine but
+  # have no Integer form, and a host can reach them by computing a height
+  # from a ratio that divides by zero.
+  chart_height = begin
+    Integer(Float(panel.options[:height]))
+  rescue ArgumentError, TypeError, RangeError
+    192
+  end
+  chart_height = 192 if chart_height <= 0
+%>
+<% max_value = (data.map { |d| d[:numeric] }.max || 1).to_f %>
 <% max_value = 1.0 if max_value.zero? %>
 
 <% bar_color = case color
@@ -23,23 +118,68 @@ end %>
   </div>
 
   <% if data.any? %>
-    <div class="flex items-end gap-1 h-16">
-      <% data.each do |d| %>
-        <% value = d[:value].to_f %>
-        <% height_float = (value / max_value) * 100.0 %>
-        <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
-        <% height = height_float.round %>
-        <% height = [height, 2].max if value.positive? %>
-        <div class="flex-1 h-full flex flex-col items-center justify-end">
-          <div class="w-full rounded-t <%= bar_color %> transition-all" style="height: <%= height %>%"
-               title="<%= "#{d[:label]}: #{d[:value]}" %>"></div>
-        </div>
+    <%
+      # Load the vendored Chart.js assets only on pages that actually render a
+      # chart with data, via a dedicated content_for hook consumed by the
+      # layout (see app/views/layouts/admin_suite/application.html.erb).
+      # Mirrors the EasyMDE hook in
+      # lib/admin_suite/ui/field_renderer_registry.rb's :markdown handler.
+      # Guarded so multiple chart panels on one page don't emit the tags twice.
+    %>
+    <% unless content_for?(:chart_assets) %>
+      <% content_for(:chart_assets) do %>
+        <%# "vendor/chart.umd.min" (not bare "chart.umd.min"): Propshaft resolves
+            assets by path relative to a load-path root, and app/assets/vendor
+            lives *under* the already-registered app/assets root, so its files
+            are found at "vendor/chart.umd.min.js". %>
+        <%= javascript_include_tag "vendor/chart.umd.min", "data-turbo-track": "reload" %>
       <% end %>
-    </div>
+    <% end %>
 
-    <div class="flex gap-1 mt-2">
-      <% data.each do |d| %>
-        <div class="flex-1 text-center text-xs text-slate-400" title="<%= d[:label] %>"><%= d[:label] %></div>
+    <%
+      # Chart.js gets the coerced numeric series, never the raw display
+      # value — a Boolean/Hash/Array/nil `value` would otherwise reach
+      # Chart.js as-is and break the chart, even though it's already been
+      # safely zeroed out for the CSS bars above.
+      series_for_chart_js = data.map { |d| { label: d[:label], value: d[:numeric] } }
+    %>
+    <div data-controller="admin-suite--chart"
+         data-admin-suite--chart-series-value="<%= series_for_chart_js.to_json %>"
+         data-admin-suite--chart-type-value="<%= chart_type %>"
+         data-admin-suite--chart-color-value="<%= color %>"
+         data-admin-suite--chart-height-value="<%= chart_height %>">
+      <% if chart_type == :doughnut %>
+        <%# A stacked bar makes no sense as a doughnut's degraded (no-JS)
+            state -- there's no "height" a doughnut slice maps to. A plain
+            labelled value list carries the same data legibly instead. %>
+        <div class="divide-y divide-slate-100" data-admin-suite--chart-target="list">
+          <% data.each do |d| %>
+            <div class="flex items-center justify-between py-1.5 text-sm">
+              <span class="text-slate-600 truncate" title="<%= d[:label] %>"><%= d[:label] %></span>
+              <span class="font-medium text-slate-900"><%= d[:value] %></span>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="flex items-end gap-1" data-admin-suite--chart-target="bars" style="height: <%= chart_height %>px;">
+          <% data.each do |d| %>
+            <% value = d[:numeric] %>
+            <% height_float = (value / max_value) * 100.0 %>
+            <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
+            <% height = height_float.round %>
+            <% height = [height, 2].max if value.positive? %>
+            <div class="flex-1 h-full flex flex-col items-center justify-end">
+              <div class="w-full rounded-t <%= bar_color %> transition-all" style="height: <%= height %>%"
+                   title="<%= "#{d[:label]}: #{d[:value]}" %>"></div>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="flex gap-1 mt-2" data-admin-suite--chart-target="labels">
+          <% data.each do |d| %>
+            <div class="flex-1 text-center text-xs text-slate-400" title="<%= d[:label] %>"><%= d[:label] %></div>
+          <% end %>
+        </div>
       <% end %>
     </div>
   <% else %>

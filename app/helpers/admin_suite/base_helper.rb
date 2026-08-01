@@ -141,7 +141,43 @@ module AdminSuite
       elsif column.content.is_a?(Proc)
         column.content.call(record)
       else
-        record.public_send(column.name) rescue "—"
+        value = record.public_send(column.name) rescue "—"
+        if active_record_base?(value)
+          render_association_value(value)
+        else
+          # `rescue "—"` above only fires on an exception; a genuinely nil
+          # attribute reaches here untouched and used to render as an empty
+          # cell. Every other surface in the gem (`format_table_cell`,
+          # `render_association_value`'s own rescues) already shows "—" for
+          # nil, so this closes the one place that didn't -- including a
+          # nil `belongs_to` value, which Task 3 deliberately left alone
+          # because this task owns it.
+          value.nil? ? "—" : value
+        end
+      end
+    end
+
+    # Maps a column's `align:` DSL option to a literal Tailwind class.
+    #
+    # `align` is resource-author-supplied, not end-user input, but it's
+    # still an arbitrary value handed to us from outside this method, so
+    # this follows the same precedent as the stat panel's `color` mapping
+    # (`app/views/admin_suite/panels/_stat.html.erb`) and the dashboard
+    # row's `span` clamp (`panels_helper.rb#render_panel`): a closed
+    # `case`/`else` over known values, never `"text-#{align}"` string
+    # interpolation. Dynamic Tailwind class names are invisible to the
+    # content scanner (unstyled in production) even when they happen to be
+    # spelled correctly, and an unrecognized or malformed `align:` here
+    # must degrade to no alignment class rather than emit a broken one.
+    #
+    # @param align [Symbol, String, nil]
+    # @return [String]
+    def column_align_class(align)
+      case align.respond_to?(:to_sym) ? align.to_sym : align
+      when :right then "text-right"
+      when :center then "text-center"
+      when :left then "text-left"
+      else ""
       end
     end
 
@@ -310,14 +346,31 @@ module AdminSuite
     def auto_admin_suite_path_for(item)
       return nil unless active_record_base?(item)
 
-      ensure_admin_resources_loaded_for!(item.class)
-
-      resource = Admin::Base::Resource.registered_resources.find { |r| r.model_class == item.class }
+      resource = admin_suite_resource_for(item.class)
       return nil unless resource&.portal_name && resource.respond_to?(:resource_name_plural)
 
       resource_path(portal: resource.portal_name, resource_name: resource.resource_name_plural, id: item.to_param)
     rescue StandardError
       nil
+    end
+
+    # Memoized per-request (the helper is mixed into a view instance created
+    # fresh per request) resource-class lookup. Before this, every rendered
+    # association value re-ran `ensure_admin_resources_loaded_for!`'s
+    # `registered_resources.any?` scan *plus* a `registered_resources.find`
+    # scan -- both full linear scans of the registry (28-38 resources in the
+    # real hosts) -- once per rendered row. Keying the memo on the model
+    # class (not the item's identity) means a page with N rows of the same
+    # class costs one lookup, not N.
+    #
+    # @param model_class [Class]
+    # @return [Class, nil] the registered `Admin::Base::Resource` subclass, if any
+    def admin_suite_resource_for(model_class)
+      @admin_suite_resource_for ||= {}
+      return @admin_suite_resource_for[model_class] if @admin_suite_resource_for.key?(model_class)
+
+      ensure_admin_resources_loaded_for!(model_class)
+      @admin_suite_resource_for[model_class] = Admin::Base::Resource.registered_resources.find { |r| r.model_class == model_class }
     end
 
     def ensure_admin_resources_loaded_for!(model_class)
@@ -365,7 +418,11 @@ module AdminSuite
           elsif section.association.present?
             render_association_section(resource, section)
           elsif section.fields.any?
-            position == :sidebar ? render_sidebar_fields(resource, section.fields) : render_main_fields(resource, section.fields)
+            if position == :sidebar
+              render_sidebar_fields(resource, section.fields, hide_blank: section.hide_blank)
+            else
+              render_main_fields(resource, section.fields, hide_blank: section.hide_blank)
+            end
           else
             content_tag(:p, "No content", class: "text-slate-400 italic text-sm")
           end
@@ -373,11 +430,13 @@ module AdminSuite
       end
     end
 
-    def render_sidebar_fields(resource, fields)
+    def render_sidebar_fields(resource, fields, hide_blank: false)
       content_tag(:div, class: "space-y-3") do
         fields.each do |field_name|
           value = resource.public_send(field_name) rescue nil
-          if value.is_a?(ActiveStorage::Attached::One) || value.is_a?(ActiveStorage::Attached::Many)
+          next if hide_blank && show_value_blank?(value)
+
+          if attached_file_value?(value)
             concat(render_sidebar_attachment(value))
           else
             concat(content_tag(:div, class: "flex justify-between items-start gap-2") do
@@ -425,9 +484,18 @@ module AdminSuite
       end
     end
 
-    def render_main_fields(resource, fields)
+    def render_main_fields(resource, fields, hide_blank: false)
       content_tag(:dl, class: "space-y-6") do
         fields.each do |field_name|
+          # Only re-read the value (and only when `hide_blank` is actually
+          # on) so a plain `field :foo` row with no `hide_blank:` costs
+          # exactly what it cost before this option existed --
+          # `format_show_value` re-reads the value itself below regardless.
+          if hide_blank
+            value = resource.public_send(field_name) rescue nil
+            next if show_value_blank?(value)
+          end
+
           concat(content_tag(:div) do
             concat(content_tag(:dt, field_name.to_s.humanize, class: "text-sm font-medium text-slate-500 mb-2"))
             concat(content_tag(:dd, class: "text-sm text-slate-900") { format_show_value(resource, field_name) })
@@ -435,6 +503,38 @@ module AdminSuite
         end
       end
     end
+
+    # Whether `resource.public_send(field_name)` should be omitted entirely
+    # from a `hide_blank: true` show panel.
+    #
+    # Deliberately not `value.blank?`: `false.blank?` is `true` in Ruby, and
+    # `false` renders as a real, meaningful grey "No" toggle icon today (see
+    # `ShowFormatterRegistry`'s `FalseClass` handler) -- hiding it would
+    # erase a real signal, not absence of one. Same reasoning for `0` and
+    # `0.0`: neither responds to `:empty?`, so both are kept. A
+    # whitespace-only string (`"   "`) is also kept -- `String#empty?`
+    # checks length, not content, and this option only claims to hide
+    # values with *zero* content, not "content a human would consider
+    # meaningless."
+    #
+    # @param value [Object]
+    # @return [Boolean]
+    def show_value_blank?(value)
+      value.nil? || (value.respond_to?(:empty?) && value.empty?)
+    end
+    private :show_value_blank?
+
+    # True for an `ActiveStorage::Attached::One`/`::Many` proxy -- guarded
+    # with `defined?` because the host (and this gem's own dummy test app)
+    # may not load ActiveStorage at all.
+    #
+    # @param value [Object]
+    # @return [Boolean]
+    def attached_file_value?(value)
+      (defined?(ActiveStorage::Attached::One) && value.is_a?(ActiveStorage::Attached::One)) ||
+        (defined?(ActiveStorage::Attached::Many) && value.is_a?(ActiveStorage::Attached::Many))
+    end
+    private :attached_file_value?
 
     # ---- association rendering ----
     def render_association_section(resource, section)
@@ -611,16 +711,55 @@ module AdminSuite
       when true, false then value ? "Yes" : "No"
       when Time, DateTime then value.strftime("%b %d, %H:%M")
       when Date then value.strftime("%b %d, %Y")
+      # Aligns with `format_show_value`'s Integer/Float/BigDecimal handling
+      # (see `AdminSuite::UI::ShowFormatterRegistry`) -- table cells used to
+      # render large numbers with no delimiter at all (via the `else`
+      # branch's plain `to_s`), inconsistent with the same value shown on
+      # the record's own show page.
+      when Integer, Float then number_with_delimiter(value)
+      # `.to_f` avoids number_with_delimiter rendering exponential notation
+      # for BigDecimal input, matching the show-value formatter's tradeoff.
+      when BigDecimal then number_with_delimiter(value.to_f)
       else
         # A `when ActiveRecord::Base` clause would evaluate that constant
         # reference unconditionally (crashing in a host without ActiveRecord
         # loaded), so this branch is checked explicitly via the predicate
         # instead of folded into the `case`.
-        return item_display_title(value) if active_record_base?(value)
+        return render_association_value(value) if active_record_base?(value)
 
         value.to_s.truncate(50)
       end
     end
+
+    # Renders a `belongs_to`-shaped association value (typically reached via
+    # `render_column_value`'s fallback branch or `format_table_cell`'s AR
+    # branch) as its display title, wrapped in a link to the record's own
+    # admin page when one resolves -- never the bare `#<Company:0x...>` that
+    # ERB's implicit `to_s` would otherwise produce for an AR object, and
+    # never the indigo-styled-but-unlinked plain text `format_table_cell`
+    # used to render on its own.
+    #
+    # `item_display_title` can raise on a host record whose `name`/`title`
+    # method blows up, and `auto_admin_suite_path_for` already swallows its
+    # own errors (unpersisted records, no registered resource, etc.) -- but
+    # this wraps the whole thing anyway so one bad row degrades to a plain
+    # dash instead of 500ing the entire index or show page.
+    #
+    # @param value [ActiveRecord::Base]
+    # @return [String, ActiveSupport::SafeBuffer]
+    def render_association_value(value)
+      title = begin
+        item_display_title(value).to_s
+      rescue StandardError
+        "—"
+      end
+
+      path = auto_admin_suite_path_for(value)
+      path ? link_to(title, path, class: "text-indigo-600 hover:underline") : title
+    rescue StandardError
+      "—"
+    end
+    private :render_association_value
 
     def item_display_title(item)
       return item.name if item.respond_to?(:name) && item.name.present?
@@ -729,10 +868,48 @@ module AdminSuite
       end
     end
 
+    # Resolves the default search URL for a `searchable_select` field
+    # declared with `resource:` (e.g. `field :company_id,
+    # type: :searchable_select, resource: :companies`), so it can reach the
+    # gem's own search endpoint (`ResourcesController#search`) without the
+    # host wiring up a `collection:` URL by hand. A String `collection:`
+    # option always takes precedence over this -- see `render_searchable_select`.
+    #
+    # Looks up the resource by its plural (or singular) resource name among
+    # `Admin::Base::Resource.registered_resources`; returns nil (never raises)
+    # when the key is blank, unregistered, or has no `portal_name` to route
+    # through, so a typo'd `resource:` degrades to "no remote search" rather
+    # than a 500 on the very page meant to render a form.
+    #
+    # @param resource_key [Symbol, String, nil]
+    # @return [String, nil]
+    def admin_suite_search_url_for(resource_key)
+      return nil if resource_key.blank?
+
+      AdminSuite::DefinitionLoader.load!(:resources)
+      key = resource_key.to_s
+      target = Admin::Base::Resource.registered_resources.find do |r|
+        r.resource_name_plural == key || r.resource_name == key
+      end
+      return nil unless target&.portal_name
+
+      search_resources_path(portal: target.portal_name, resource_name: target.resource_name_plural)
+    rescue StandardError => e
+      Rails.logger&.warn(
+        "AdminSuite: resolving the search URL for `resource: #{resource_key.inspect}` raised " \
+        "#{e.class}: #{e.message}; rendering the field with no remote search."
+      )
+      nil
+    end
+
     def render_searchable_select(_f, field, resource)
       param_key = resource.class.model_name.param_key
       current_value = resource.public_send(field.name)
       collection = field.collection.is_a?(Proc) ? field.collection.call : field.collection
+      # A String `collection:` is an explicit search-URL override and always
+      # wins (unchanged host behavior); otherwise fall back to the field's
+      # `resource:` option resolved via `admin_suite_search_url_for`.
+      search_url = collection.is_a?(String) ? collection : admin_suite_search_url_for(field.resource).to_s
 
       options_json = if collection.is_a?(Array)
         collection.map { |opt| opt.is_a?(Array) ? { value: opt[1], label: opt[0] } : { value: opt, label: opt.to_s.humanize } }.to_json
@@ -762,7 +939,7 @@ module AdminSuite
           controller: "admin-suite--searchable-select",
           "admin-suite--searchable-select-options-value": options_json,
           "admin-suite--searchable-select-creatable-value": field.create_url.present?,
-          "admin-suite--searchable-select-search-url-value": collection.is_a?(String) ? collection : "",
+          "admin-suite--searchable-select-search-url-value": search_url,
           "admin-suite--searchable-select-create-url-value": field.create_url.to_s
         },
         class: "relative") do

@@ -125,6 +125,14 @@
               </div>
             <% end %>
 
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Per page</label>
+              <%= select_tag :per_page,
+                  options_for_select([ 25, 50, 100 ], @pagy&.limit),
+                  class: "form-input w-full",
+                  data: { "admin-suite--live-filter-target": "input", action: "change->admin-suite--live-filter#submit" } %>
+            </div>
+
             <div class="flex gap-2 pt-2">
               <button type="submit" class="admin-suite-btn-primary flex-1 text-sm font-medium rounded-lg transition-colors">
                 Apply
@@ -143,9 +151,9 @@
       <%= turbo_frame_tag "resource_results", data: { turbo_action: "advance" } do %>
         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <% if @collection.any? %>
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
             <table class="min-w-full divide-y divide-slate-200">
-              <thead class="bg-slate-50">
+              <thead class="bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <%
                     current_sort = params[:sort]&.to_sym || resource_config.index_config.default_sort
@@ -189,9 +197,20 @@
               </thead>
               <tbody class="divide-y divide-slate-200">
                 <% @collection.each do |record| %>
-                  <tr class="hover:bg-slate-50">
+                  <%
+                    show_path = url_for(action: :show, id: record.to_param)
+                  %>
+                  <%= tag.tr class: "hover:bg-slate-50 cursor-pointer",
+                      data: {
+                        controller: "admin-suite--click-actions",
+                        action: "click->admin-suite--click-actions#navigate",
+                        "admin-suite--click-actions-url-value": show_path
+                      } do %>
                     <% resource_config.index_config.columns_list.each do |column| %>
-                      <td class="px-4 py-3 text-sm text-slate-900">
+                      <%
+                        td_class = [ "px-4 py-3 text-sm text-slate-900", column_align_class(column.align), column.css_class ].reject(&:blank?).join(" ")
+                      %>
+                      <td class="<%= td_class %>">
                         <%= render_column_value(record, column) %>
                       </td>
                     <% end %>
@@ -211,7 +230,7 @@
                         <% end %>
                       </div>
                     </td>
-                  </tr>
+                  <% end %>
                 <% end %>
               </tbody>
             </table>

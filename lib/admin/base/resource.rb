@@ -43,7 +43,7 @@ module Admin
 
       EXPORTABLE_DEPRECATION_MESSAGE_FORMAT =
         "AdminSuite: %<resource>s calls `exportable`, which is a deprecated " \
-        "no-op and will be removed in 0.5.0. It never actually implemented " \
+        "no-op and will be removed in 0.6.0. It never actually implemented " \
         "export in any released version — safe to delete the call."
 
       class << self
@@ -172,7 +172,9 @@ module Admin
           @read_only == true
         end
 
-        # Deprecated no-op, removed in 0.5.0.
+        # Deprecated no-op; removal targeted at 0.6.0 (moved from the
+        # originally-planned 0.5.0 -- pending the gleania/trust_growth host
+        # migrations).
         #
         # `exportable` was write-only in every prior release -- it never had
         # a reader and never drove any export behavior -- but hosts still
@@ -272,7 +274,7 @@ module Admin
       # Index view configuration
       class IndexConfig
         attr_reader :searchable_fields, :sortable_fields, :default_sort, :default_sort_direction,
-                    :columns_list, :filters_list, :stats_list, :per_page
+                    :columns_list, :filters_list, :stats_list, :per_page, :includes_list
 
         def initialize
           @searchable_fields = []
@@ -283,6 +285,7 @@ module Admin
           @filters_list = []
           @stats_list = []
           @per_page = 25
+          @includes_list = []
         end
 
         def searchable(*fields)
@@ -297,6 +300,23 @@ module Admin
 
         def paginate(count)
           @per_page = count
+        end
+
+        # Kills the index's association N+1 (Task 3 made `belongs_to`
+        # columns render as links, so each one now genuinely dereferences
+        # the association -- one query per row without this). The
+        # controller applies this to the filtered scope only when the
+        # scope actually responds to `#includes` -- PORO test doubles and
+        # some host scopes don't -- and swallows a bad association name
+        # (typo, renamed association) by logging and rendering
+        # unoptimized rather than 500ing. `nil` entries (e.g. a stray
+        # `includes nil`) are dropped rather than stored and handed to the
+        # scope verbatim.
+        #
+        # @param associations [Array<Symbol, String>]
+        # @return [void]
+        def includes(*associations)
+          @includes_list = associations.flatten.compact
         end
 
         def columns(&block)
@@ -335,12 +355,13 @@ module Admin
             toggle_field: options[:toggle_field],
             label_color: options[:label_color],
             label_size: options[:label_size],
-            sortable: options[:sortable] || false
+            sortable: options[:sortable] || false,
+            align: options[:align]
           )
         end
       end
 
-      ColumnDefinition = Struct.new(:name, :content, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
+      ColumnDefinition = Struct.new(:name, :content, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, :align, keyword_init: true)
 
       class FiltersBuilder
         attr_reader :filters
@@ -412,7 +433,8 @@ module Admin
             variants: options[:variants],
             label_color: options[:label_color],
             label_size: options[:label_size],
-            parent_field: options[:parent_field]
+            parent_field: options[:parent_field],
+            resource: options[:resource]
           )
         end
 
@@ -439,6 +461,12 @@ module Admin
         :collection, :create_url, :accept, :rows, :readonly,
         :if_condition, :unless_condition, :multiple, :creatable,
         :preview, :variants, :label_color, :label_size, :parent_field,
+        # `resource:` (e.g. `resource: :companies`) lets a `searchable_select`
+        # field resolve its search URL automatically against the gem's own
+        # search endpoint, rather than requiring every host to supply a
+        # `collection:` String pointing at a hand-rolled route. See
+        # `render_searchable_select` in `app/helpers/admin_suite/base_helper.rb`.
+        :resource,
         keyword_init: true
       )
 
@@ -495,7 +523,7 @@ module Admin
         # verbatim to the renderer via `ShowSectionDefinition#options`.
         RESERVED_SECTION_OPTION_KEYS = %i[
           fields association limit render title display link_to resource
-          paginate pagination per_page collapsible collapsed
+          paginate pagination per_page collapsible collapsed hide_blank
         ].freeze
 
         def build_section(name, options)
@@ -523,6 +551,13 @@ module Admin
             per_page: options[:per_page],
             collapsible: options[:collapsible] || false,
             collapsed: options[:collapsed] || false,
+            # `fields:`-only rows whose value is blank (nil or `.empty?`)
+            # are omitted entirely -- see `show_value_blank?` in
+            # `AdminSuite::BaseHelper`, which reads this member. Default
+            # `false`: no existing show page changes unless it opts in.
+            # Deliberately NOT `value.blank?` -- that's true for `false`
+            # and `0`, both of which are meaningful, rendered values today.
+            hide_blank: options[:hide_blank] || false,
             options: leftover_options
           )
         end
@@ -531,6 +566,7 @@ module Admin
       ShowSectionDefinition = Struct.new(
         :name, :fields, :association, :limit, :render, :title,
         :display, :columns, :link_to, :resource, :paginate, :per_page, :collapsible, :collapsed,
+        :hide_blank,
         :options,
         keyword_init: true
       )

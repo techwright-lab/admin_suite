@@ -12,7 +12,7 @@ module AdminSuite
 
     DEPRECATION_MESSAGE_FORMAT =
       "AdminSuite: config.custom_renderers[:%<key>s] is a deprecated proc " \
-      "and will be removed in 0.5.0. Migrate to an AdminSuite::Renderer subclass."
+      "and will be removed in 0.6.0. Migrate to an AdminSuite::Renderer subclass."
 
     class << self
       # Fires the deprecation sink at most once per `key` per process.

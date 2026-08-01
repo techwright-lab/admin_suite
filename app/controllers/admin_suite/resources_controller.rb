@@ -7,7 +7,15 @@ module AdminSuite
 
     before_action :require_resource_config!
     before_action :enforce_read_only!, only: %i[new create edit update destroy toggle]
-    before_action :set_resource, if: -> { params[:id].present? && !%w[index new create].include?(action_name) }
+    # `search` is excluded even though it can receive an `:id`-shaped query
+    # param: unlike show/edit/update/destroy, a record has no business
+    # participating in this action at all. Without this exclusion, a stray
+    # `?id=` would (a) hand an attacker-chosen record to `config.authorize`'s
+    # `record:` on an action that should never carry one, and (b) let a
+    # denied actor distinguish 404 (bad id) from 403 (denied) -- an
+    # existence oracle over `find_friendly_resource!`'s slug/uuid/token
+    # lookups, on a resource they have no read access to.
+    before_action :set_resource, if: -> { params[:id].present? && !%w[index new create search].include?(action_name) }
     before_action :authorize_admin_suite!
 
     helper_method :resource_config, :resource_class, :resource, :collection, :current_portal, :resource_name
@@ -21,6 +29,26 @@ module AdminSuite
 
     # GET /:portal/:resource_name/:id
     def show
+    end
+
+    # GET /:portal/:resource_name/search?q=term
+    #
+    # Feeds `searchable_select_controller.js`'s `fetchOptions`, which expects
+    # a bare JSON array (not `{results: [...]}`) of objects each carrying
+    # `id`/`value` and `name`/`title`/`label`. Matches that contract exactly
+    # -- the JS needs no changes.
+    #
+    # Reuses `FilterBuilder.search_predicate`, the same ILIKE-over-
+    # `searchable_fields` logic the index's own search box uses, so this can
+    # only ever search the resource's declared `searchable` whitelist --
+    # never an arbitrary column supplied via `q`. `require_resource_config!`
+    # and `authorize_admin_suite!` (both already-registered before_actions,
+    # the latter driven by `AUTHORIZATION_VERBS["search"] = :read` below)
+    # gate this exactly like every other action on this controller: unknown
+    # resource names 404 before either runs, and a denying `config.authorize`
+    # 403s before any query executes.
+    def search
+      render json: search_results.first(SEARCH_RESULT_LIMIT).map { |record| search_result_json(record) }
     end
 
     # GET /:portal/:resource_name/new
@@ -129,14 +157,48 @@ module AdminSuite
 
     private
 
+    # Hard cap on searchable_select results, regardless of table size or how
+    # permissive the resource's `searchable` list is.
+    SEARCH_RESULT_LIMIT = 25
+
     # Controller action -> authorization verb.
     AUTHORIZATION_VERBS = {
-      "index" => :read, "show" => :read,
+      "index" => :read, "show" => :read, "search" => :read,
       "new" => :create, "create" => :create,
       "edit" => :update, "update" => :update, "toggle" => :update,
       "destroy" => :destroy,
       "execute_action" => :execute, "bulk_action" => :execute
     }.freeze
+
+    # Filters the resource's own records by `params[:q]` via the shared
+    # `FilterBuilder` predicate. A nil predicate (blank `q`, no index config,
+    # no declared `searchable` fields, or `q` shorter than
+    # `FilterBuilder::MIN_SEARCH_LENGTH`) means no results at all here --
+    # deliberately *not* the "fall back to unfiltered scope" behavior
+    # `FilterBuilder#apply_search` uses for the index filter box. A raw JSON
+    # endpoint must never hand back arbitrary rows just because the query
+    # was empty or the resource isn't configured for search.
+    #
+    # @return [Enumerable]
+    def search_results
+      predicate = Admin::Base::FilterBuilder.search_predicate(resource_config&.index_config, params[:q])
+      return [] unless predicate
+
+      conditions, search_term = predicate
+      resource_class.where(conditions, search: search_term)
+    end
+
+    # @param record [Object]
+    # @return [Hash]
+    def search_result_json(record)
+      { id: record.id, name: search_result_label(record) }
+    end
+
+    def search_result_label(record)
+      return record.name if record.respond_to?(:name) && record.name.present?
+      return record.title if record.respond_to?(:title) && record.title.present?
+      record.to_s
+    end
 
     # Enforces the host's `config.authorize` hook. Nil hook = allowed
     # (authentication remains the gate). Falsy return = 403.
@@ -222,12 +284,75 @@ module AdminSuite
     def filtered_collection
       return resource_class.all unless resource_config&.index_config
 
-      Admin::Base::FilterBuilder.new(resource_config, params).apply(resource_class.all)
+      scope = Admin::Base::FilterBuilder.new(resource_config, params).apply(resource_class.all)
+      apply_index_includes(scope)
     end
 
+    # Applies the index's `includes:` DSL option (see
+    # `Admin::Base::Resource::IndexConfig#includes`) to the filtered scope.
+    # Only when the scope actually responds to `#includes` -- the PORO
+    # `Relation` test doubles used throughout this gem's own test suite
+    # don't, and a host's own non-AR scope object may not either -- so this
+    # skips silently rather than raising. `.includes` itself can raise for
+    # a bad/renamed/typo'd association name once the scope is a real AR
+    # relation; that must degrade the index to an unoptimized-but-working
+    # page, not 500 it, so it's logged and swallowed the same way the
+    # chart panel's bad `type:`/`data` values are (see
+    # `app/views/admin_suite/panels/_chart.html.erb`).
+    #
+    # @param scope [Object] the filtered collection
+    # @return [Object] the scope, with associations eager-loaded when possible
+    def apply_index_includes(scope)
+      includes_list = resource_config.index_config.includes_list
+      return scope if includes_list.blank?
+      return scope unless scope.respond_to?(:includes)
+
+      scope.includes(*includes_list)
+    rescue StandardError => e
+      Rails.logger&.warn(
+        "AdminSuite: #{resource_class}'s index `includes(#{includes_list.inspect})` raised " \
+        "#{e.class}: #{e.message}; rendering the index without eager loading."
+      )
+      scope
+    end
+
+    # Max a request can push the index's per-page count to, regardless of
+    # what `per_page` the query string carries -- `per_page` is user-supplied
+    # (a plain query param), so this exists to stop `?per_page=999999` from
+    # turning the index into an unbounded query.
+    MAX_PER_PAGE = 100
+
     def paginate_collection(scope)
-      per_page = resource_config&.index_config&.per_page || 25
-      pagy(scope, items: per_page)
+      dsl_per_page = resource_config&.index_config&.per_page || 25
+      # Pagy 9.x's vars key is `limit:`, not `items:` -- the pre-existing
+      # `items:` call silently did nothing (pagy fell through to its own
+      # `DEFAULT[:limit]` of 20), so every resource's `paginate(n)` DSL
+      # value was already being ignored before this task. Fixed here since
+      # this task's clamp is meaningless without it.
+      pagy(scope, limit: clamped_per_page(dsl_per_page))
+    end
+
+    # Resolves the effective per-page count for the index from the
+    # `per_page` query param, clamped to `MAX_PER_PAGE` and falling back to
+    # the DSL's `paginate(n)` value (`dsl_per_page`) whenever the param is
+    # absent or not a usable positive integer.
+    #
+    # `per_page` is the most directly attacker-influenceable input this
+    # phase adds, so every shape it can arrive in is handled without
+    # raising: missing (nil), non-numeric ("abc"), zero, negative, an
+    # array (`per_page[]=1`, which Rails hands back as a plain Array, not
+    # a String -- `Integer(Array)` raises `TypeError`), and absurdly large
+    # (clamped, never passed through to the query).
+    #
+    # @param dsl_per_page [Integer] the resource's `paginate(n)` value
+    # @return [Integer]
+    def clamped_per_page(dsl_per_page)
+      value = Integer(params[:per_page])
+      return dsl_per_page if value <= 0
+
+      value.clamp(..MAX_PER_PAGE)
+    rescue ArgumentError, TypeError
+      dsl_per_page
     end
 
     def calculate_stats(scope)

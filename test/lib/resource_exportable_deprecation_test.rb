@@ -25,7 +25,7 @@ module AdminSuite
       refute LegacyExportableResource.instance_variable_defined?(:@export_formats)
     end
 
-    test "exportable warns once per resource class, naming the class and the 0.5.0 removal" do
+    test "exportable warns once per resource class, naming the class and the 0.6.0 removal" do
       logged = []
       LegacyExportableResource.stub(:warn_once_sink, ->(msg) { logged << msg }) do
         2.times { LegacyExportableResource.exportable(:json, :csv) }
@@ -33,7 +33,15 @@ module AdminSuite
 
       assert_equal 1, logged.size
       assert_includes logged.first, "LegacyExportableResource"
-      assert_includes logged.first, "0.5.0"
+      # Deliberately a hardcoded literal, not read off
+      # EXPORTABLE_DEPRECATION_MESSAGE_FORMAT: reading the version out of
+      # the constant under test and asserting the message contains it is
+      # true by construction (format() only substitutes %<resource>s, never
+      # the version digits), so it can never fail on a wrong retarget --
+      # exactly the property this test exists to catch. If the removal
+      # target changes again, this literal must be updated by hand; that's
+      # the point.
+      assert_includes logged.first, "0.6.0"
     end
   end
 end

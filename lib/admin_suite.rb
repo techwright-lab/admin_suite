@@ -8,6 +8,15 @@ end
 
 require "pagy"
 
+# Hard dependency, declared in the gemspec but not a direct Gemfile entry in
+# any host -- Bundler's `Bundler.require` only auto-requires gems declared
+# directly in the Gemfile (or via `gemspec`'s own path entry), not a gem's
+# *transitive* runtime dependencies. Same reasoning as `pagy` above and
+# `redcarpet`/`rouge` in markdown_renderer.rb: required explicitly here so
+# `turbo_frame_tag`/`turbo_stream`/the `:turbo_stream` MIME type are real
+# regardless of what else the host's own Gemfile happens to require.
+require "turbo-rails"
+
 require "admin_suite/version"
 require "admin_suite/deprecation"
 require "admin_suite/configuration"
@@ -49,8 +58,10 @@ AdminSuite::RendererRegistry.register_default(:code, AdminSuite::Renderers::Code
 AdminSuite::RendererRegistry.register_default(:json_preview, AdminSuite::Renderers::JsonRenderer)
 AdminSuite::RendererRegistry.register_default(:code_preview, AdminSuite::Renderers::CodeRenderer)
 
-# Deprecated (removed in 0.5.0): the four Gleania-specific LLM chat-transcript
-# renderers. See `AdminSuite::Renderers::LegacyGleania` for details.
+# Deprecated (removal targeted at 0.6.0, moved from the originally-planned
+# 0.5.0 -- both host migrations, gleania and trust_growth, are in flight):
+# the four Gleania-specific LLM chat-transcript renderers. See
+# `AdminSuite::Renderers::LegacyGleania` for details.
 AdminSuite::RendererRegistry.register_default(:prompt_template_preview, AdminSuite::Renderers::LegacyGleania::PromptTemplateRenderer)
 AdminSuite::RendererRegistry.register_default(:messages_preview, AdminSuite::Renderers::LegacyGleania::MessagesPreviewRenderer)
 AdminSuite::RendererRegistry.register_default(:tool_args_preview, AdminSuite::Renderers::LegacyGleania::ToolArgsRenderer)
