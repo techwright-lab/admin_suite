@@ -65,3 +65,23 @@ module ReadOnlyResourceFixtures
     end
   end
 end
+
+module RedirectFixtures
+  class Widget
+    extend ActiveModel::Naming
+
+    def persisted? = true
+    def to_param = "42"
+  end
+end
+
+module Admin
+  module Resources
+    class RedirectWidgetResource < Admin::Base::Resource
+      model RedirectFixtures::Widget
+      portal :ops
+      section :observability
+    end
+  end
+end
+RedirectFixtures::WidgetResource = Admin::Resources::RedirectWidgetResource

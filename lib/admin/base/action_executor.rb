@@ -118,12 +118,16 @@ module Admin
         )
       rescue ActiveRecord::RecordInvalid => e
         failure_result("Validation failed: #{e.record.errors.full_messages.join(', ')}")
-      rescue AASM::InvalidTransition => e
+      rescue StandardError => e
+        # Host state machines (AASM, Statesman, …) raise their own transition
+        # errors; match by class name so the gem never references a constant it
+        # does not depend on.
+        raise unless e.class.name.to_s.include?("InvalidTransition")
+
         failure_result("Invalid state transition: #{e.message}")
       end
 
       def redirect_url_for_action(action, action_result)
-        return nil unless action.name.to_sym == :duplicate
         return nil unless action_result.respond_to?(:persisted?) && action_result.persisted?
         return nil unless resource_class.respond_to?(:portal_name) && resource_class.respond_to?(:resource_name_plural)
 
