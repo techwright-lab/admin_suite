@@ -316,9 +316,43 @@ module AdminSuite
       scope
     end
 
+    # Max a request can push the index's per-page count to, regardless of
+    # what `per_page` the query string carries -- `per_page` is user-supplied
+    # (a plain query param), so this exists to stop `?per_page=999999` from
+    # turning the index into an unbounded query.
+    MAX_PER_PAGE = 100
+
     def paginate_collection(scope)
-      per_page = resource_config&.index_config&.per_page || 25
-      pagy(scope, items: per_page)
+      dsl_per_page = resource_config&.index_config&.per_page || 25
+      # Pagy 9.x's vars key is `limit:`, not `items:` -- the pre-existing
+      # `items:` call silently did nothing (pagy fell through to its own
+      # `DEFAULT[:limit]` of 20), so every resource's `paginate(n)` DSL
+      # value was already being ignored before this task. Fixed here since
+      # this task's clamp is meaningless without it.
+      pagy(scope, limit: clamped_per_page(dsl_per_page))
+    end
+
+    # Resolves the effective per-page count for the index from the
+    # `per_page` query param, clamped to `MAX_PER_PAGE` and falling back to
+    # the DSL's `paginate(n)` value (`dsl_per_page`) whenever the param is
+    # absent or not a usable positive integer.
+    #
+    # `per_page` is the most directly attacker-influenceable input this
+    # phase adds, so every shape it can arrive in is handled without
+    # raising: missing (nil), non-numeric ("abc"), zero, negative, an
+    # array (`per_page[]=1`, which Rails hands back as a plain Array, not
+    # a String -- `Integer(Array)` raises `TypeError`), and absurdly large
+    # (clamped, never passed through to the query).
+    #
+    # @param dsl_per_page [Integer] the resource's `paginate(n)` value
+    # @return [Integer]
+    def clamped_per_page(dsl_per_page)
+      value = Integer(params[:per_page])
+      return dsl_per_page if value <= 0
+
+      value.clamp(..MAX_PER_PAGE)
+    rescue ArgumentError, TypeError
+      dsl_per_page
     end
 
     def calculate_stats(scope)

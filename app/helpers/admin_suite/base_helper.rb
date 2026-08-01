@@ -142,7 +142,42 @@ module AdminSuite
         column.content.call(record)
       else
         value = record.public_send(column.name) rescue "—"
-        active_record_base?(value) ? render_association_value(value) : value
+        if active_record_base?(value)
+          render_association_value(value)
+        else
+          # `rescue "—"` above only fires on an exception; a genuinely nil
+          # attribute reaches here untouched and used to render as an empty
+          # cell. Every other surface in the gem (`format_table_cell`,
+          # `render_association_value`'s own rescues) already shows "—" for
+          # nil, so this closes the one place that didn't -- including a
+          # nil `belongs_to` value, which Task 3 deliberately left alone
+          # because this task owns it.
+          value.nil? ? "—" : value
+        end
+      end
+    end
+
+    # Maps a column's `align:` DSL option to a literal Tailwind class.
+    #
+    # `align` is resource-author-supplied, not end-user input, but it's
+    # still an arbitrary value handed to us from outside this method, so
+    # this follows the same precedent as the stat panel's `color` mapping
+    # (`app/views/admin_suite/panels/_stat.html.erb`) and the dashboard
+    # row's `span` clamp (`panels_helper.rb#render_panel`): a closed
+    # `case`/`else` over known values, never `"text-#{align}"` string
+    # interpolation. Dynamic Tailwind class names are invisible to the
+    # content scanner (unstyled in production) even when they happen to be
+    # spelled correctly, and an unrecognized or malformed `align:` here
+    # must degrade to no alignment class rather than emit a broken one.
+    #
+    # @param align [Symbol, String, nil]
+    # @return [String]
+    def column_align_class(align)
+      case align.respond_to?(:to_sym) ? align.to_sym : align
+      when :right then "text-right"
+      when :center then "text-center"
+      when :left then "text-left"
+      else ""
       end
     end
 

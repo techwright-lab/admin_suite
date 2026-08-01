@@ -353,12 +353,13 @@ module Admin
             toggle_field: options[:toggle_field],
             label_color: options[:label_color],
             label_size: options[:label_size],
-            sortable: options[:sortable] || false
+            sortable: options[:sortable] || false,
+            align: options[:align]
           )
         end
       end
 
-      ColumnDefinition = Struct.new(:name, :content, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, keyword_init: true)
+      ColumnDefinition = Struct.new(:name, :content, :header, :css_class, :type, :toggle_field, :label_color, :label_size, :sortable, :align, keyword_init: true)
 
       class FiltersBuilder
         attr_reader :filters
