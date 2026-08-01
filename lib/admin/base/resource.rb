@@ -470,7 +470,25 @@ module Admin
 
         private
 
+        # Struct members already given a dedicated home above. Everything
+        # else in the panel/section DSL call (`source:`, `empty:`,
+        # `language:`, plus `columns:` again — see below) is forwarded
+        # verbatim to the renderer via `ShowSectionDefinition#options`.
+        RESERVED_SECTION_OPTION_KEYS = %i[
+          fields association limit render title display link_to resource
+          paginate pagination per_page collapsible collapsed
+        ].freeze
+
         def build_section(name, options)
+          # `columns:` is deliberately NOT excluded here even though it also
+          # populates the dedicated `columns` member below (used today by
+          # association-table display). Built-in renderers like
+          # `:table_from` only ever see `section.options`, not the section
+          # itself, so `columns:` has to reach `options[:columns]` too or a
+          # DSL author's explicit column list would be silently dropped in
+          # favor of the renderer's own inference.
+          leftover_options = options.except(*RESERVED_SECTION_OPTION_KEYS)
+
           ShowSectionDefinition.new(
             name: name,
             fields: options[:fields] || [],
@@ -485,7 +503,8 @@ module Admin
             paginate: options[:paginate] || options[:pagination] || false,
             per_page: options[:per_page],
             collapsible: options[:collapsible] || false,
-            collapsed: options[:collapsed] || false
+            collapsed: options[:collapsed] || false,
+            options: leftover_options
           )
         end
       end
@@ -493,6 +512,7 @@ module Admin
       ShowSectionDefinition = Struct.new(
         :name, :fields, :association, :limit, :render, :title,
         :display, :columns, :link_to, :resource, :paginate, :per_page, :collapsible, :collapsed,
+        :options,
         keyword_init: true
       )
 

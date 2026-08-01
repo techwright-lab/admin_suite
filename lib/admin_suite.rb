@@ -19,7 +19,23 @@ require "admin_suite/ui/form_field_renderer"
 require "admin_suite/ui/show_value_formatter"
 require "admin_suite/renderer"
 require "admin_suite/renderer_registry"
+require "admin_suite/renderers/json_renderer"
+require "admin_suite/renderers/key_value_renderer"
+require "admin_suite/renderers/table_from_renderer"
+require "admin_suite/renderers/code_renderer"
 require "admin_suite/engine"
+
+AdminSuite::RendererRegistry.register(:json, AdminSuite::Renderers::JsonRenderer)
+AdminSuite::RendererRegistry.register(:key_value, AdminSuite::Renderers::KeyValueRenderer)
+AdminSuite::RendererRegistry.register(:table_from, AdminSuite::Renderers::TableFromRenderer)
+AdminSuite::RendererRegistry.register(:code, AdminSuite::Renderers::CodeRenderer)
+
+# Aliases: `:json_preview`/`:code_preview` were the previous generic
+# `render_custom_section` case branches (BaseHelper#render_json_preview /
+# #render_code_preview, now deleted). Host resources declared against those
+# keys keep working unchanged against the new built-in renderers.
+AdminSuite::RendererRegistry.register(:json_preview, AdminSuite::Renderers::JsonRenderer)
+AdminSuite::RendererRegistry.register(:code_preview, AdminSuite::Renderers::CodeRenderer)
 
 module AdminSuite
   class << self

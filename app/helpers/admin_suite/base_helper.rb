@@ -267,22 +267,18 @@ module AdminSuite
       nil
     end
 
-    def render_custom_section(resource, render_type)
+    def render_custom_section(resource, render_type, options = {})
       key = render_type.to_sym
 
       legacy_proc = AdminSuite.config.custom_renderers[key]
       return legacy_proc.call(resource, self) if legacy_proc
 
       klass = AdminSuite::RendererRegistry.lookup(key) || host_renderer_class(key)
-      return klass.new(resource, self).render if klass
+      return klass.new(resource, self, options).render if klass
 
       case key
       when :prompt_template_preview
         render_prompt_template(resource)
-      when :json_preview
-        render_json_preview(resource)
-      when :code_preview
-        render_code_preview(resource)
       when :messages_preview
         render_messages_preview(resource)
       when :tool_args_preview
@@ -335,16 +331,6 @@ module AdminSuite
           end)
         end
       end
-    end
-
-    def render_json_preview(resource)
-      data = resource.respond_to?(:data) ? resource.data : resource.attributes
-      render_json_block(data)
-    end
-
-    def render_code_preview(resource)
-      code = resource.respond_to?(:code) ? resource.code : resource.to_s
-      render_text_block(code, :ruby)
     end
 
     def render_messages_preview(resource)
@@ -537,7 +523,7 @@ module AdminSuite
 
         concat(content_tag(:div, class: content_padding) do
           if section.render.present?
-            render_custom_section(resource, section.render)
+            render_custom_section(resource, section.render, section.options || {})
           elsif section.association.present?
             render_association_section(resource, section)
           elsif section.fields.any?

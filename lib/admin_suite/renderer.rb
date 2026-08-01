@@ -13,11 +13,17 @@ module AdminSuite
   # hand-building markup, so panels stay visually consistent with the rest of
   # the admin UI.
   class Renderer
-    attr_reader :record, :view
+    attr_reader :record, :view, :options
 
-    def initialize(record, view)
+    # @param record [Object] the resource being rendered
+    # @param view [ActionView::Base] the calling view/helper context
+    # @param options [Hash] leftover panel DSL options (e.g. `source:`,
+    #   `columns:`, `empty:`, `language:`) forwarded from `ShowSectionDefinition#options`.
+    #   Defaults to `{}` so Task 3's two-arg construction keeps working.
+    def initialize(record, view, options = {})
       @record = record
       @view = view
+      @options = options || {}
     end
 
     # @return [String] HTML-safe markup for the panel body
@@ -30,6 +36,20 @@ module AdminSuite
     def content_tag(...) = view.content_tag(...)
     def safe_join(...) = view.safe_join(...)
     def h(...) = view.h(...)
+
+    # Resolves the panel's `source:` option: a Proc called with the record
+    # (or with no args, if it takes none), a Symbol/String sent to the
+    # record, or a literal value. Falls back to `default` when no `source:`
+    # option was given.
+    def source_value(default = nil)
+      source = options[:source]
+      case source
+      when Proc then source.arity.zero? ? source.call : source.call(record)
+      when Symbol, String then record.public_send(source)
+      when nil then default
+      else source
+      end
+    end
 
     # Pretty-printed JSON in a copyable dark block.
     #
