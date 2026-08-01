@@ -1,4 +1,14 @@
-<% data = Array(panel_eval(panel.options[:data])) %>
+<%
+  raw_data =
+    begin
+      Array(panel_eval(panel.options[:data]))
+    rescue StandardError => e
+      Rails.logger&.warn("AdminSuite: chart panel #{panel.title.inspect} data raised #{e.class}: #{e.message}")
+      []
+    end
+  # Accept String-keyed rows (JSONB, API payloads) the same way data_table does.
+  data = raw_data.map { |d| d.respond_to?(:symbolize_keys) ? d.symbolize_keys : d }
+%>
 <% total = panel.options[:total] %>
 <% color = (panel.options[:color] || theme_primary).to_sym %>
 <% max_value = (data.map { |d| d[:value].to_f }.max || 1).to_f %>
@@ -23,24 +33,47 @@ end %>
   </div>
 
   <% if data.any? %>
-    <div class="flex items-end gap-1 h-16">
-      <% data.each do |d| %>
-        <% value = d[:value].to_f %>
-        <% height_float = (value / max_value) * 100.0 %>
-        <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
-        <% height = height_float.round %>
-        <% height = [height, 2].max if value.positive? %>
-        <div class="flex-1 h-full flex flex-col items-center justify-end">
-          <div class="w-full rounded-t <%= bar_color %> transition-all" style="height: <%= height %>%"
-               title="<%= "#{d[:label]}: #{d[:value]}" %>"></div>
-        </div>
+    <%
+      # Load the vendored Chart.js assets only on pages that actually render a
+      # chart with data, via a dedicated content_for hook consumed by the
+      # layout (see app/views/layouts/admin_suite/application.html.erb).
+      # Mirrors the EasyMDE hook in
+      # lib/admin_suite/ui/field_renderer_registry.rb's :markdown handler.
+      # Guarded so multiple chart panels on one page don't emit the tags twice.
+    %>
+    <% unless content_for?(:chart_assets) %>
+      <% content_for(:chart_assets) do %>
+        <%# "vendor/chart.umd.min" (not bare "chart.umd.min"): Propshaft resolves
+            assets by path relative to a load-path root, and app/assets/vendor
+            lives *under* the already-registered app/assets root, so its files
+            are found at "vendor/chart.umd.min.js". %>
+        <%= javascript_include_tag "vendor/chart.umd.min", "data-turbo-track": "reload" %>
       <% end %>
-    </div>
+    <% end %>
 
-    <div class="flex gap-1 mt-2">
-      <% data.each do |d| %>
-        <div class="flex-1 text-center text-xs text-slate-400" title="<%= d[:label] %>"><%= d[:label] %></div>
-      <% end %>
+    <div data-controller="admin-suite--chart"
+         data-admin-suite--chart-series-value="<%= data.to_json %>"
+         data-admin-suite--chart-type-value="<%= (panel.options[:type] || :bar) %>"
+         data-admin-suite--chart-color-value="<%= color %>">
+      <div class="flex items-end gap-1 h-16" data-admin-suite--chart-target="bars">
+        <% data.each do |d| %>
+          <% value = d[:value].to_f %>
+          <% height_float = (value / max_value) * 100.0 %>
+          <% height_float = 0.0 if height_float.nan? || height_float.infinite? %>
+          <% height = height_float.round %>
+          <% height = [height, 2].max if value.positive? %>
+          <div class="flex-1 h-full flex flex-col items-center justify-end">
+            <div class="w-full rounded-t <%= bar_color %> transition-all" style="height: <%= height %>%"
+                 title="<%= "#{d[:label]}: #{d[:value]}" %>"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="flex gap-1 mt-2" data-admin-suite--chart-target="labels">
+        <% data.each do |d| %>
+          <div class="flex-1 text-center text-xs text-slate-400" title="<%= d[:label] %>"><%= d[:label] %></div>
+        <% end %>
+      </div>
     </div>
   <% else %>
     <div class="p-4 text-sm text-slate-500">No chart data.</div>
