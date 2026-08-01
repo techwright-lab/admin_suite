@@ -32,6 +32,7 @@ module AdminSuite
     test "dates and times render humanized with relative age" do
       assert_includes fmt(Date.new(2026, 1, 2)), "January"
       assert_includes fmt(Time.utc(2026, 1, 2, 3, 4)), "January"
+      assert_includes fmt(DateTime.new(2026, 1, 2, 3, 4)), "January"
     end
 
     test "integers and floats render delimited" do
@@ -49,6 +50,10 @@ module AdminSuite
       assert_includes fmt({ "a" => 1 }), "JSON"
     end
 
+    test "arrays of hashes render as a JSON block" do
+      assert_includes fmt([ { "a" => 1 } ]), "JSON"
+    end
+
     test "empty arrays render a placeholder, populated arrays render chips" do
       assert_includes fmt([]), "Empty array"
       assert_includes fmt(%w[alpha beta]), "alpha"
@@ -59,5 +64,25 @@ module AdminSuite
       assert_includes fmt(long), "x"
       assert_includes fmt("short"), "short"
     end
+
+    test "strings containing JSON render as a JSON block" do
+      assert_includes fmt('{"mode":"fast"}'), "mode"
+    end
+
+    test "malformed JSON-looking strings fall back to plain rendering" do
+      assert_includes fmt("{not actually json"), "not actually json"
+    end
+
+    test "short strings containing a newline render as a text block" do
+      result = fmt("first line\nsecond line")
+      assert_includes result, "bg-slate-900"
+      assert_includes result, "second line"
+    end
+
+    # ActiveRecord::Base branch (show_formatter_registry.rb:72-77) is
+    # untestable in this harness: the dummy app is database-free and
+    # ActiveRecord::Base is never loaded/defined here, so the registry's
+    # `if defined?(ActiveRecord::Base)` guard never registers that handler.
+    # See task-1-report.md's fix report for the verification.
   end
 end

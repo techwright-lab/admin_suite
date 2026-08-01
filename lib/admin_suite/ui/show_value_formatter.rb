@@ -69,9 +69,11 @@ module AdminSuite
 
         return formatted unless formatted.nil?
 
-        # The registry's default handler always returns a value; nil means a
-        # handler was registered that returned nothing, which is a bug in that
-        # handler rather than a case to silently absorb.
+        # Unreachable in practice: the registry's unconditional default
+        # handler always returns a value for any input, so `formatted` is
+        # never nil here. This is a last-resort guard, not a real code path
+        # — kept only in case a future handler is registered that returns
+        # nil, so rendering degrades to a plain span instead of raising.
         content_tag(:span, value.to_s, class: "text-slate-900")
       end
 
