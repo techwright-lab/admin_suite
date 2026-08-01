@@ -92,10 +92,22 @@ module AdminSuite
 
     test "a registered renderer class wins over the built-in case branches" do
       # :json_preview has a legacy case branch; a registered class must take it over.
+      #
+      # Task 4 registers :json_preview as a permanent alias to JsonRenderer
+      # at require time, so — unlike when this test was first written —
+      # there is now always a prior registration to restore. Unregistering
+      # unconditionally in `ensure` would delete that alias process-wide for
+      # every test that runs after this one (a real, order-dependent bug
+      # this exact test used to hide).
+      previous = AdminSuite::RendererRegistry.lookup(:json_preview)
       AdminSuite::RendererRegistry.register(:json_preview, GreetingRenderer)
       assert_includes render_custom_section(Record.new(6), :json_preview), "Hello 6"
     ensure
-      AdminSuite::RendererRegistry.unregister(:json_preview)
+      if previous
+        AdminSuite::RendererRegistry.register(:json_preview, previous)
+      else
+        AdminSuite::RendererRegistry.unregister(:json_preview)
+      end
     end
 
     # json_block/code_block/badge each delegate to a BaseHelper primitive whose
