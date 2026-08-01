@@ -96,8 +96,15 @@ module AdminSuite
         document = Nokogiri::HTML(response.body)
         chart = document.at_xpath("//h3[normalize-space()='Daily Cost']/ancestor::div[contains(@class, 'rounded-xl')]")
         assert chart
-        assert_equal 2, chart.css(".h-16 > .h-full").size
-        assert_equal ["height: 2%", "height: 100%"], chart.css(".h-16 > .h-full > div").map { |bar| bar["style"] }
+        # The bars container carries an explicit inline height (not a
+        # Tailwind class) so the degraded CSS bars and the upgraded canvas
+        # share an identical, non-content-derived height — see
+        # app/views/admin_suite/panels/_chart.html.erb.
+        bars = chart.css("[data-admin-suite--chart-target='bars']").first
+        assert bars, "expected the bars wrapper"
+        assert_equal "height: 192px;", bars["style"], "bars wrapper must carry the default definite chart height"
+        assert_equal 2, bars.css(".h-full").size
+        assert_equal ["height: 2%", "height: 100%"], bars.css(".h-full > div").map { |bar| bar["style"] }
         assert_includes chart.text, "Jul 30"
         assert_includes chart.text, "Thursday"
       end

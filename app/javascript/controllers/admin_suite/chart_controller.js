@@ -34,17 +34,22 @@ const DOUGHNUT_PALETTE = [
   "#06b6d4", "#8b5cf6", "#64748b", "#ec4899",
 ]
 
+// Fallback height (px) if the server didn't send a height value for some
+// reason. Kept in sync with the ERB partial's own default.
+const DEFAULT_HEIGHT_PX = 192
+
 export default class extends Controller {
   static values = {
     series: Array,
     type: String,
     color: String,
+    height: Number,
   }
 
   connect() {
     this.initAttempts = 0
     this.chart = null
-    this.canvas = null
+    this.canvasWrapper = null
     this.initChart()
   }
 
@@ -72,10 +77,27 @@ export default class extends Controller {
 
     const type = this.hasTypeValue && this.typeValue ? this.typeValue : "bar"
     const color = COLOR_HEX[this.colorValue] || COLOR_HEX.indigo
+    const height = this.hasHeightValue && this.heightValue > 0 ? this.heightValue : DEFAULT_HEIGHT_PX
+
+    // Chart.js's `responsive: true` / `maintainAspectRatio: false` combo
+    // requires the canvas's parent to have an explicit, non-content-derived
+    // height — otherwise there is no reference box to size against, and the
+    // canvas can render at 0px or grow unboundedly. The wrapper's height
+    // matches the server-rendered bars' height exactly (same data value), so
+    // there's no layout shift when the canvas replaces them.
+    const wrapper = document.createElement("div")
+    wrapper.style.position = "relative"
+    wrapper.style.height = `${height}px`
+    wrapper.style.width = "100%"
 
     const canvas = document.createElement("canvas")
     canvas.setAttribute("role", "img")
     canvas.setAttribute("aria-label", "Chart")
+    wrapper.appendChild(canvas)
+
+    // Attach to the document before constructing the Chart so Chart.js can
+    // actually measure the wrapper's box on first render.
+    this.element.appendChild(wrapper)
 
     const labels = series.map((row) => row.label)
     const values = series.map((row) => row.value)
@@ -91,9 +113,9 @@ export default class extends Controller {
       tension: 0.3,
     }
 
-    // Only mutate the DOM once Chart.js has actually accepted the config and
-    // rendered — this is what keeps the CSS bars visible as the degraded
-    // state on any earlier failure path.
+    // Only hide the degraded bar markup once Chart.js has actually accepted
+    // the config and rendered — this is what keeps the CSS bars visible as
+    // the degraded state on any earlier failure path.
     this.chart = new window.Chart(canvas.getContext("2d"), {
       type: chartType,
       data: { labels, datasets: [ dataset ] },
@@ -105,13 +127,12 @@ export default class extends Controller {
       },
     })
 
-    this.canvas = canvas
-    this.element.appendChild(canvas)
+    this.canvasWrapper = wrapper
 
     // Hide (not remove) the server-rendered bar markup so it can be restored
-    // by simply removing the canvas if the controller disconnects.
+    // by simply removing the canvas wrapper if the controller disconnects.
     Array.from(this.element.children).forEach((child) => {
-      if (child !== canvas) child.style.display = "none"
+      if (child !== wrapper) child.style.display = "none"
     })
   }
 
@@ -126,9 +147,9 @@ export default class extends Controller {
       this.chart = null
     }
 
-    if (this.canvas) {
-      this.canvas.remove()
-      this.canvas = null
+    if (this.canvasWrapper) {
+      this.canvasWrapper.remove()
+      this.canvasWrapper = null
     }
 
     Array.from(this.element.children).forEach((child) => {

@@ -3,14 +3,43 @@
     begin
       Array(panel_eval(panel.options[:data]))
     rescue StandardError => e
-      Rails.logger&.warn("AdminSuite: chart panel #{panel.title.inspect} data raised #{e.class}: #{e.message}")
+      Rails.logger&.warn(
+        "AdminSuite: chart panel #{panel.title.inspect} data raised #{e.class}: #{e.message}\n" \
+        "#{e.backtrace&.first(5)&.join("\n")}"
+      )
       []
     end
-  # Accept String-keyed rows (JSONB, API payloads) the same way data_table does.
-  data = raw_data.map { |d| d.respond_to?(:symbolize_keys) ? d.symbolize_keys : d }
+  # Accept String-keyed rows (JSONB, API payloads) the same way data_table does
+  # (see lib/admin_suite/renderer.rb#data_table), and skip any row that isn't
+  # Hash-like: a data proc can *succeed* and still hand back a junk row (e.g.
+  # a bare Integer or nil mixed into the array), and indexing that with
+  # `row[:value]` raises rather than returning nil, so it must be filtered
+  # before it reaches the height math below.
+  data = raw_data.filter_map do |row|
+    row = row.symbolize_keys if row.respond_to?(:symbolize_keys)
+    next unless row.is_a?(Hash)
+
+    # Value stays as originally provided (e.g. an Integer) so titles/labels
+    # still read "Mon: 3" rather than "Mon: 3.0" — it's only coerced to a
+    # Float where the height math below actually needs one.
+    { label: row[:label], value: row[:value] }
+  end
 %>
 <% total = panel.options[:total] %>
 <% color = (panel.options[:color] || theme_primary).to_sym %>
+<%
+  # Chart height: 64px (the old `h-16` bar height) was fine for sparkline-ish
+  # CSS bars, but is not usable for a real Chart.js chart with axes/legend.
+  # Emitted as an inline style below, not an interpolated Tailwind height
+  # class (which the content scanner can't see at build time, since it's
+  # never a literal class name in source — see panels_helper.rb's span
+  # comment for the same lesson), so both the degraded bars and the upgraded
+  # canvas share an identical, explicit height and there's no layout shift
+  # when Chart.js takes over.
+  chart_height = panel.options[:height].presence || 192
+  chart_height = chart_height.to_i
+  chart_height = 192 if chart_height <= 0
+%>
 <% max_value = (data.map { |d| d[:value].to_f }.max || 1).to_f %>
 <% max_value = 1.0 if max_value.zero? %>
 
@@ -54,8 +83,9 @@ end %>
     <div data-controller="admin-suite--chart"
          data-admin-suite--chart-series-value="<%= data.to_json %>"
          data-admin-suite--chart-type-value="<%= (panel.options[:type] || :bar) %>"
-         data-admin-suite--chart-color-value="<%= color %>">
-      <div class="flex items-end gap-1 h-16" data-admin-suite--chart-target="bars">
+         data-admin-suite--chart-color-value="<%= color %>"
+         data-admin-suite--chart-height-value="<%= chart_height %>">
+      <div class="flex items-end gap-1" data-admin-suite--chart-target="bars" style="height: <%= chart_height %>px;">
         <% data.each do |d| %>
           <% value = d[:value].to_f %>
           <% height_float = (value / max_value) * 100.0 %>
