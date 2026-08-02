@@ -46,8 +46,11 @@ class AuthorizationContextTest < ActiveSupport::TestCase
       AdminSuite.config.authorize = ->(actor:, action:, resource:, record:, controller:) { true }
     end
 
-    assert_match(/context:/, error.message)
-    assert_match(/controller:/, error.message)
+    # Assert on the COMPUTED diagnosis, not the message's fixed footer -- that
+    # footer explains the controller:/context: migration on every failure, so
+    # `assert_match(/controller:/)` alone would pass for any rejection at all.
+    assert_match(/Missing: \[:context\]/, error.message)
+    assert_match(/Unexpected: \[:controller\]/, error.message)
   ensure
     AdminSuite.config.authorize = nil
   end
@@ -74,7 +77,10 @@ class AuthorizationContextTest < ActiveSupport::TestCase
       AdminSuite.config.authorize = ->(controller:, **) { true }
     end
 
-    assert_match(/controller:/, error.message)
+    # The splat means nothing is missing; `controller:` being named is the
+    # whole defect, so assert exactly that rather than the shared footer.
+    assert_match(/Missing: \[\]/, error.message)
+    assert_match(/Unexpected: \[:controller\]/, error.message)
   ensure
     AdminSuite.config.authorize = nil
   end
@@ -91,7 +97,12 @@ class AuthorizationContextTest < ActiveSupport::TestCase
       AdminSuite.config.authorize = AuthorizationContextFixtures::OldArityCallable.new
     end
 
-    assert_match(/controller:/, error.message)
+    # This test's name claims the fallback VALIDATES rather than bypasses, so
+    # it must assert the guard actually read this object's `#call` signature.
+    # Matching the footer would also pass for a fallback that rejected every
+    # callable outright -- the opposite of validation.
+    assert_match(/Missing: \[:context\]/, error.message)
+    assert_match(/Unexpected: \[:controller\]/, error.message)
   ensure
     AdminSuite.config.authorize = nil
   end
