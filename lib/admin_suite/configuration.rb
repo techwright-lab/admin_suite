@@ -5,7 +5,6 @@ module AdminSuite
   class Configuration
     attr_accessor :authenticate,
       :current_actor,
-      :authorize,
       :auth_strategy,
       :auth_options,
       :allow_unauthenticated,
@@ -31,7 +30,45 @@ module AdminSuite
       :on_action_executed,
       :resolve_action_handler
 
-    attr_reader :portals
+    attr_reader :portals, :authorize
+
+    # The authorize hook's keywords are validated at assignment rather than
+    # at call time: a hook with the pre-0.6.0 `controller:` keyword would
+    # otherwise raise deep inside a request (or, worse, bind `context:` to
+    # nothing and silently mis-evaluate). Failing in the initializer puts
+    # the error where the mistake is.
+    REQUIRED_AUTHORIZE_KEYWORDS = %i[actor action resource record context].freeze
+
+    def authorize=(hook)
+      if hook
+        keywords = hook.parameters.filter_map { |type, name| name if %i[key keyreq].include?(type) }
+
+        # A `**` splat absorbs every keyword, so such a hook cannot be missing one --
+        # `->(**) {}` reports `[[:keyrest, :**]]` and no :key/:keyreq at all. Test
+        # doubles and coarse "deny everything" hooks are written this way; rejecting
+        # them would be a false positive.
+        accepts_rest = hook.parameters.any? { |type, _| type == :keyrest }
+
+        missing = accepts_rest ? [] : REQUIRED_AUTHORIZE_KEYWORDS - keywords
+        # The `extra` check still runs against explicitly named keywords even when a
+        # splat is present: `->(controller:, **)` is exactly the mistake this guard
+        # exists to catch, and the splat would otherwise hide it -- `controller:`
+        # binds to nil while `**` quietly swallows the real arguments, so the hook
+        # mis-evaluates instead of failing.
+        extra = keywords - REQUIRED_AUTHORIZE_KEYWORDS
+
+        unless missing.empty? && extra.empty?
+          raise ArgumentError, <<~MESSAGE
+            config.authorize must accept exactly (actor:, action:, resource:, record:, context:).
+            Missing: #{missing.inspect}. Unexpected: #{extra.inspect}.
+            As of admin_suite 0.6.0 the `controller:` keyword is replaced by `context:`,
+            which carries `surface` (:web or :mcp), `controller` (web only) and `request`.
+          MESSAGE
+        end
+      end
+
+      @authorize = hook
+    end
 
     # Records that the host explicitly assigned portals (even to `{}`), so
     # the engine's built-in defaults are never re-applied over explicit

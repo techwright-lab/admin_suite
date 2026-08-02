@@ -213,7 +213,7 @@ module AdminSuite
         action: AUTHORIZATION_VERBS.fetch(action_name),
         resource: resource_config,
         record: (defined?(@resource) ? @resource : nil),
-        controller: self
+        context: AdminSuite::AuthorizationContext.new(surface: :web, controller: self, request: request)
       )
       head :forbidden unless permitted
     end

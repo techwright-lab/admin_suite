@@ -28,7 +28,7 @@ AdminSuite.configure do |config|
 
   # Authorization hook — called for every resource request:
   # action is one of :read, :create, :update, :destroy, :execute.
-  # config.authorize = ->(actor:, action:, resource:, record:, controller:) { true }
+  # config.authorize = ->(actor:, action:, resource:, record:, context:) { true }
   config.authorize = nil
 
   # Optional sign-out action in the topbar.
