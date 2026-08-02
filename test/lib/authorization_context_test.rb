@@ -2,6 +2,29 @@
 
 require "test_helper"
 
+module AuthorizationContextFixtures
+  # A plain object implementing #call -- exactly the shape a host might write
+  # as an authorize adapter. Has no #parameters of its own; the writer must
+  # fall back to introspecting #call's method object.
+  class CorrectArityCallable
+    def call(actor:, action:, resource:, record:, context:)
+      true
+    end
+  end
+
+  class OldArityCallable
+    def call(actor:, action:, resource:, record:, controller:)
+      true
+    end
+  end
+
+  class SplatCallable
+    def call(**)
+      true
+    end
+  end
+end
+
 class AuthorizationContextTest < ActiveSupport::TestCase
   test "reports its surface" do
     web = AdminSuite::AuthorizationContext.new(surface: :web, controller: :ctrl)
@@ -52,6 +75,41 @@ class AuthorizationContextTest < ActiveSupport::TestCase
     end
 
     assert_match(/controller:/, error.message)
+  ensure
+    AdminSuite.config.authorize = nil
+  end
+
+  test "accepts a correct-arity callable object without #parameters" do
+    AdminSuite.config.authorize = AuthorizationContextFixtures::CorrectArityCallable.new
+    assert_respond_to AdminSuite.config.authorize, :call
+  ensure
+    AdminSuite.config.authorize = nil
+  end
+
+  test "rejects an old-arity callable object, proving the fallback validates rather than bypasses" do
+    error = assert_raises(ArgumentError) do
+      AdminSuite.config.authorize = AuthorizationContextFixtures::OldArityCallable.new
+    end
+
+    assert_match(/controller:/, error.message)
+  ensure
+    AdminSuite.config.authorize = nil
+  end
+
+  test "accepts a callable object whose #call takes a keyword splat" do
+    AdminSuite.config.authorize = AuthorizationContextFixtures::SplatCallable.new
+    assert_respond_to AdminSuite.config.authorize, :call
+  ensure
+    AdminSuite.config.authorize = nil
+  end
+
+  test "rejects a non-callable with an ArgumentError naming the problem" do
+    error = assert_raises(ArgumentError) do
+      AdminSuite.config.authorize = "nope"
+    end
+
+    assert_match(/callable/, error.message)
+    assert_match(/String/, error.message)
   ensure
     AdminSuite.config.authorize = nil
   end

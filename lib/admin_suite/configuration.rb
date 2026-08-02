@@ -41,13 +41,27 @@ module AdminSuite
 
     def authorize=(hook)
       if hook
-        keywords = hook.parameters.filter_map { |type, name| name if %i[key keyreq].include?(type) }
+        parameters =
+          if hook.respond_to?(:parameters)
+            hook.parameters
+          elsif hook.respond_to?(:call)
+            # A plain object implementing #call is a legitimate hook, and its
+            # signature is still introspectable -- one level down, on the
+            # method itself. Falling back here keeps the keyword guard working
+            # for callables instead of skipping validation for them.
+            hook.method(:call).parameters
+          else
+            raise ArgumentError,
+              "config.authorize must be callable (a lambda, proc, method, or an object responding to #call), got #{hook.class}."
+          end
+
+        keywords = parameters.filter_map { |type, name| name if %i[key keyreq].include?(type) }
 
         # A `**` splat absorbs every keyword, so such a hook cannot be missing one --
         # `->(**) {}` reports `[[:keyrest, :**]]` and no :key/:keyreq at all. Test
         # doubles and coarse "deny everything" hooks are written this way; rejecting
         # them would be a false positive.
-        accepts_rest = hook.parameters.any? { |type, _| type == :keyrest }
+        accepts_rest = parameters.any? { |type, _| type == :keyrest }
 
         missing = accepts_rest ? [] : REQUIRED_AUTHORIZE_KEYWORDS - keywords
         # The `extra` check still runs against explicitly named keywords even when a
