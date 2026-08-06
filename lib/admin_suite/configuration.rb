@@ -30,7 +30,9 @@ module AdminSuite
       :on_action_executed,
       :resolve_action_handler
 
-    attr_reader :portals, :authorize
+    McpConfig = Struct.new(:enabled, :max_page_size, keyword_init: true)
+
+    attr_reader :portals, :authorize, :mcp
 
     # The authorize hook's keywords are validated at assignment rather than
     # at call time: a hook with the pre-0.6.0 `controller:` keyword would
@@ -128,6 +130,7 @@ module AdminSuite
       @root_dashboard_loaded = false
       @on_action_executed = nil
       @resolve_action_handler = nil
+      @mcp = McpConfig.new(enabled: true, max_page_size: AdminSuite::Query::MAX_PAGE_SIZE)
     end
 
     # Sets the built-in default portals without marking portals as

@@ -23,6 +23,14 @@ require "action_dispatch/testing/integration"
 # Ensure the engine is loaded (and its initializers run).
 require "admin_suite"
 
+def with_authorize(hook)
+  previous = AdminSuite.config.authorize
+  AdminSuite.config.authorize = hook
+  yield
+ensure
+  AdminSuite.config.authorize = previous
+end
+
 # The dummy app is intentionally database-free, while the generic controller
 # supports Active Record hosts. Supply only the exception type its lookup path
 # rescues so show-page behavior can be exercised with an in-memory fixture.
