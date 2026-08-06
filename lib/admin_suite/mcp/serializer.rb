@@ -11,6 +11,17 @@ module AdminSuite
         end
       end
 
+      def self.show_payload(record, config)
+        sections = config.show_config&.sidebar_sections.to_a +
+          config.show_config&.main_sections.to_a
+
+        sections.each_with_object({}) do |section, payload|
+          Array(section.fields).each do |field|
+            payload[field] = value_for(record, field)
+          end
+        end
+      end
+
       def self.value_for(record, name)
         return nil unless record.respond_to?(name)
 

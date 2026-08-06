@@ -4,7 +4,9 @@ module AdminSuite
   module Mcp
     TOOLS = [
       AdminSuite::Mcp::Tools::DescribeResources,
-      AdminSuite::Mcp::Tools::ListRecords
+      AdminSuite::Mcp::Tools::ListRecords,
+      AdminSuite::Mcp::Tools::GetRecord,
+      AdminSuite::Mcp::Tools::Aggregate
     ].freeze
 
     # A fresh server is built for each request, so its advertised tool list is
