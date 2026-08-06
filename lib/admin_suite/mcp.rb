@@ -2,7 +2,10 @@
 
 module AdminSuite
   module Mcp
-    TOOLS = [AdminSuite::Mcp::Tools::DescribeResources].freeze
+    TOOLS = [
+      AdminSuite::Mcp::Tools::DescribeResources,
+      AdminSuite::Mcp::Tools::ListRecords
+    ].freeze
 
     # A fresh server is built for each request, so its advertised tool list is
     # derived from the current fail-closed authorization posture rather than
