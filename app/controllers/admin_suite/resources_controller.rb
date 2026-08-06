@@ -22,9 +22,10 @@ module AdminSuite
 
     # GET /:portal/:resource_name
     def index
-      scope = filtered_collection
+      query = AdminSuite::Query.new(resource_config: resource_config, params: params)
+      scope = query.scope
       @stats = calculate_stats(scope) if resource_config&.index_config&.stats_list&.any?
-      @pagy, @collection = paginate_collection(scope)
+      @pagy, @collection = pagy(scope, limit: query.per_page)
     end
 
     # GET /:portal/:resource_name/:id
@@ -279,80 +280,6 @@ module AdminSuite
 
     def collection
       @collection
-    end
-
-    def filtered_collection
-      return resource_class.all unless resource_config&.index_config
-
-      scope = Admin::Base::FilterBuilder.new(resource_config, params).apply(resource_class.all)
-      apply_index_includes(scope)
-    end
-
-    # Applies the index's `includes:` DSL option (see
-    # `Admin::Base::Resource::IndexConfig#includes`) to the filtered scope.
-    # Only when the scope actually responds to `#includes` -- the PORO
-    # `Relation` test doubles used throughout this gem's own test suite
-    # don't, and a host's own non-AR scope object may not either -- so this
-    # skips silently rather than raising. `.includes` itself can raise for
-    # a bad/renamed/typo'd association name once the scope is a real AR
-    # relation; that must degrade the index to an unoptimized-but-working
-    # page, not 500 it, so it's logged and swallowed the same way the
-    # chart panel's bad `type:`/`data` values are (see
-    # `app/views/admin_suite/panels/_chart.html.erb`).
-    #
-    # @param scope [Object] the filtered collection
-    # @return [Object] the scope, with associations eager-loaded when possible
-    def apply_index_includes(scope)
-      includes_list = resource_config.index_config.includes_list
-      return scope if includes_list.blank?
-      return scope unless scope.respond_to?(:includes)
-
-      scope.includes(*includes_list)
-    rescue StandardError => e
-      Rails.logger&.warn(
-        "AdminSuite: #{resource_class}'s index `includes(#{includes_list.inspect})` raised " \
-        "#{e.class}: #{e.message}; rendering the index without eager loading."
-      )
-      scope
-    end
-
-    # Max a request can push the index's per-page count to, regardless of
-    # what `per_page` the query string carries -- `per_page` is user-supplied
-    # (a plain query param), so this exists to stop `?per_page=999999` from
-    # turning the index into an unbounded query.
-    MAX_PER_PAGE = 100
-
-    def paginate_collection(scope)
-      dsl_per_page = resource_config&.index_config&.per_page || 25
-      # Pagy 9.x's vars key is `limit:`, not `items:` -- the pre-existing
-      # `items:` call silently did nothing (pagy fell through to its own
-      # `DEFAULT[:limit]` of 20), so every resource's `paginate(n)` DSL
-      # value was already being ignored before this task. Fixed here since
-      # this task's clamp is meaningless without it.
-      pagy(scope, limit: clamped_per_page(dsl_per_page))
-    end
-
-    # Resolves the effective per-page count for the index from the
-    # `per_page` query param, clamped to `MAX_PER_PAGE` and falling back to
-    # the DSL's `paginate(n)` value (`dsl_per_page`) whenever the param is
-    # absent or not a usable positive integer.
-    #
-    # `per_page` is the most directly attacker-influenceable input this
-    # phase adds, so every shape it can arrive in is handled without
-    # raising: missing (nil), non-numeric ("abc"), zero, negative, an
-    # array (`per_page[]=1`, which Rails hands back as a plain Array, not
-    # a String -- `Integer(Array)` raises `TypeError`), and absurdly large
-    # (clamped, never passed through to the query).
-    #
-    # @param dsl_per_page [Integer] the resource's `paginate(n)` value
-    # @return [Integer]
-    def clamped_per_page(dsl_per_page)
-      value = Integer(params[:per_page])
-      return dsl_per_page if value <= 0
-
-      value.clamp(..MAX_PER_PAGE)
-    rescue ArgumentError, TypeError
-      dsl_per_page
     end
 
     def calculate_stats(scope)
