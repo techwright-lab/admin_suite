@@ -12,7 +12,7 @@ module AdminSuite
       attr_reader :options
 
       def initialize(options = {})
-        @options = options
+        @options = options.symbolize_keys
       end
 
       # @param controller [ActionController::Base]

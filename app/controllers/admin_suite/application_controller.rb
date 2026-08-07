@@ -8,8 +8,8 @@ module AdminSuite
     # The engine authenticates via its own strategy layer instead, so it skips
     # the host filters named in `config.skip_host_before_actions`
     # (default: [:require_authentication], the Rails 8 authentication
-    # generator's filter). Evaluated at class load — changing the config
-    # requires a restart.
+    # generator's filter). Evaluated when this controller class loads; changes
+    # take effect on the next class load (or process boot when class caching).
     Array(AdminSuite.config.skip_host_before_actions).each do |filter|
       skip_before_action filter, raise: false
     end
@@ -51,6 +51,8 @@ module AdminSuite
       else
         head :forbidden
       end
+    rescue Auth::UnknownStrategyError => error
+      render plain: error.message, status: :forbidden
     end
 
     # Returns the actor for actions/auditing/authorization.

@@ -16,6 +16,15 @@ if ENV["COVERAGE"]
 end
 
 require_relative "dummy/config/environment"
+
+# Auth strategies are process-global. Tests that register temporary strategies
+# can restore a snapshot with this helper to avoid cross-file registry leakage.
+def with_auth_registry_snapshot
+  registry = AdminSuite::Auth.instance_variable_get(:@registry).dup
+  yield
+ensure
+  AdminSuite::Auth.instance_variable_set(:@registry, registry)
+end
 require "minitest/autorun"
 require "active_support/test_case"
 require "action_dispatch/testing/integration"
