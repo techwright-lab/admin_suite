@@ -23,8 +23,7 @@ module Admin
       model McpAuthorizationFixtures::Widget
       portal :ops
       section :observability
-
-      def self.mcp_enabled? = false
+      mcp false
     end
   end
 end

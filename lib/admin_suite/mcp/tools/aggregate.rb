@@ -16,18 +16,19 @@ module AdminSuite
         )
 
         def self.call(resource:, server_context:, q: nil, filters: {})
-          config = Authorization.authorize_resource!(
-            name: resource, actor: server_context[:actor], action: :read
-          )
-          return Authorization.denied_response if config.nil?
+          AdminSuite::Mcp.instrument(tool: "aggregate", resource: resource, actor: server_context[:actor]) do
+            config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read)
+            next [Authorization.denied_response, nil, false] if config.nil?
 
-          params = (filters || {}).merge(q: q).compact
-          scope = AdminSuite::Query.new(resource_config: config, params: params).scope
-          payload = { resource: resource, count: scope.count, stats: stats_for(config, scope) }
-          ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
-        rescue StandardError => e
-          Rails.logger&.warn("AdminSuite MCP aggregate failed: #{e.class}: #{e.message}")
-          Authorization.error_response("aggregate failed")
+            params = (filters || {}).merge(search: q).compact
+            scope = AdminSuite::Query.new(resource_config: config, params: params).scope
+            payload = { resource: resource, count: scope.count, stats: stats_for(config, scope) }
+            response = ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
+            [response, payload[:count], true]
+          rescue StandardError => e
+            Rails.logger&.warn("AdminSuite MCP aggregate failed: #{e.class}: #{e.message}")
+            [Authorization.error_response("aggregate failed"), nil, true]
+          end
         end
 
         def self.stats_for(config, scope)

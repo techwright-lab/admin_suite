@@ -12,19 +12,20 @@ module AdminSuite
         )
 
         def self.call(resource:, id:, server_context:)
-          config = Authorization.authorize_resource!(
-            name: resource, actor: server_context[:actor], action: :read
-          )
-          return Authorization.denied_response if config.nil?
+          AdminSuite::Mcp.instrument(tool: "get_record", resource: resource, actor: server_context[:actor]) do
+            config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read)
+            next [Authorization.denied_response, nil, false] if config.nil?
 
-          record = config.model_class.find_by(id: id)
-          return Authorization.denied_response if record.nil?
+            record = config.model_class.find_by(id: id)
+            next [Authorization.denied_response, nil, false] if record.nil?
 
-          payload = { resource: resource, id: id, fields: Serializer.show_payload(record, config) }
-          ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
-        rescue StandardError => e
-          Rails.logger&.warn("AdminSuite MCP get_record failed: #{e.class}: #{e.message}")
-          Authorization.error_response("get_record failed")
+            payload = { resource: resource, id: id, fields: Serializer.show_payload(record, config) }
+            response = ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
+            [response, 1, true]
+          rescue StandardError => e
+            Rails.logger&.warn("AdminSuite MCP get_record failed: #{e.class}: #{e.message}")
+            [Authorization.error_response("get_record failed"), nil, true]
+          end
         end
       end
     end

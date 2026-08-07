@@ -172,6 +172,15 @@ module Admin
           @read_only == true
         end
 
+        # Opts this resource out of the model-facing MCP surface.
+        def mcp(enabled)
+          @mcp_enabled = enabled
+        end
+
+        def mcp_enabled?
+          @mcp_enabled.nil? ? true : !!@mcp_enabled
+        end
+
         # Deprecated no-op; removal targeted at 0.6.0 (moved from the
         # originally-planned 0.5.0 -- pending the gleania/trust_growth host
         # migrations).

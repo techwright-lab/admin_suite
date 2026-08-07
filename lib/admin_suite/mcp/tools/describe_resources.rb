@@ -10,13 +10,17 @@ module AdminSuite
         input_schema(properties: {}, required: [])
 
         def self.call(server_context:)
-          return Authorization.denied_response if AdminSuite.config.authorize.nil?
-
-          payload = Authorization
-            .readable_resources(actor: server_context[:actor])
-            .map { |config| describe(config) }
-
-          ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
+          AdminSuite::Mcp.instrument(tool: "describe_resources", actor: server_context[:actor]) do
+            if AdminSuite.config.authorize.nil?
+              [Authorization.denied_response, nil, false]
+            else
+              payload = Authorization
+                .readable_resources(actor: server_context[:actor])
+                .map { |config| describe(config) }
+              response = ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
+              [response, payload.size, true]
+            end
+          end
         end
 
         def self.describe(config)

@@ -20,21 +20,24 @@ module AdminSuite
         )
 
         def self.call(resource:, server_context:, q: nil, filters: {}, sort: nil, direction: nil, page: 1, per_page: nil)
-          config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read)
-          return Authorization.denied_response unless config
+          AdminSuite::Mcp.instrument(tool: "list_records", resource: resource, actor: server_context[:actor]) do
+            config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read)
+            next [Authorization.denied_response, nil, false] unless config
 
-          query = build_query(config, filters, q:, sort:, direction:, per_page:)
-          payload = response_payload(resource, config, query, page)
-          ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
-        rescue StandardError => e
-          Rails.logger&.warn("AdminSuite MCP list_records failed: #{e.class}: #{e.message}")
-          Authorization.error_response("list_records failed")
+            query = build_query(config, filters, q:, sort:, direction:, per_page:)
+            payload = response_payload(resource, config, query, page)
+            response = ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
+            [response, payload[:rows].size, true]
+          rescue StandardError => e
+            Rails.logger&.warn("AdminSuite MCP list_records failed: #{e.class}: #{e.message}")
+            [Authorization.error_response("list_records failed"), nil, true]
+          end
         end
 
         def self.build_query(config, filters, **params)
           AdminSuite::Query.new(
             resource_config: config,
-            params: (filters || {}).merge(params).compact,
+            params: (filters || {}).merge(params.except(:q), search: params[:q]).compact,
             max_page_size: AdminSuite.config.mcp.max_page_size
           )
         end

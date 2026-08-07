@@ -22,5 +22,26 @@ module AdminSuite
         server_context: { actor: actor, request: request }
       )
     end
+
+    def self.instrument(tool:, resource: nil, actor: nil, action: :read)
+      payload = {
+        tool: tool,
+        resource: resource,
+        actor: actor.to_s.presence,
+        action: action,
+        allowed: false,
+        result_count: nil
+      }
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      ActiveSupport::Notifications.instrument("admin_suite.mcp.tool_call", payload) do
+        response, count, allowed = yield
+        payload[:allowed] = allowed
+        payload[:result_count] = count
+        response
+      ensure
+        payload[:duration_ms] = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round(2)
+      end
+    end
   end
 end
