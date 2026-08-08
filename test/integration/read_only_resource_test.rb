@@ -35,6 +35,10 @@ module ReadOnlyResourceFixtures
       new
     end
 
+    def self.where(id:)
+      id.filter_map { |value| find(value) }
+    end
+
     def to_param
       id.to_s
     end
@@ -65,6 +69,7 @@ module Admin
 
       actions do
         action :ping
+        bulk_action :ping
       end
     end
   end
@@ -125,6 +130,14 @@ module AdminSuite
     test "declared member actions remain allowed on read_only resources" do
       post "#{BASE_PATH}/1/execute_action/ping"
       refute_equal 404, response.status
+    end
+
+    test "declared bulk actions remain allowed on read_only resources" do
+      post "#{BASE_PATH}/bulk_action/ping", params: { ids: [ "1" ] }
+
+      assert_redirected_to BASE_PATH
+      follow_redirect!
+      assert_includes response.body, "Successfully processed 1 records"
     end
   end
 end

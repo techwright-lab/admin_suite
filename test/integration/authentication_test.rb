@@ -43,6 +43,16 @@ module AdminSuite
       end
     end
 
+    test "unknown auth strategy fails closed and lists registered strategies" do
+      with_config(allow_unauthenticated: false, auth_strategy: :typo) do
+        get ROOT
+
+        assert_response :forbidden
+        assert_includes response.body, "Unknown AdminSuite auth strategy :typo"
+        assert_includes response.body, "http_basic"
+      end
+    end
+
     test "legacy authenticate lambda still works" do
       denials = ->(controller) { controller.head :forbidden }
       with_config(allow_unauthenticated: false, auth_strategy: nil, authenticate: denials) do

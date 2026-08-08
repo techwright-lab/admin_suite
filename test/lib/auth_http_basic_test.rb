@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 raise "unset ADMIN_SUITE_USERNAME in test env" if ENV["ADMIN_SUITE_USERNAME"]
+raise "unset ADMIN_SUITE_PASSWORD in test env" if ENV["ADMIN_SUITE_PASSWORD"]
 
 require "test_helper"
 
@@ -53,6 +54,15 @@ module AdminSuite
 
       assert_nil strategy.authenticate!(controller)
       assert_equal :forbidden, controller.rendered_status
+    end
+
+    test "denies with 403 when password is blank" do
+      strategy = Auth::HttpBasic.new(username: "ravi", password: nil)
+      controller = ControllerDouble.new(given_username: "ravi", given_password: nil)
+
+      assert_nil strategy.authenticate!(controller)
+      assert_equal :forbidden, controller.rendered_status
+      refute controller.challenged
     end
 
     test "is registered as :http_basic" do
