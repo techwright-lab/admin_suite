@@ -66,6 +66,22 @@ module AdminSuite
       with_authorize(->(**) { false }) do
         get BASE
         assert_response :forbidden
+        refute_includes response.body, "Gadget one"
+      end
+    end
+
+    test "nil authorize result denies with 403 and does not disclose the record" do
+      with_authorize(->(**) { nil }) do
+        get "#{BASE}/1"
+        assert_response :forbidden
+        refute_includes response.body, "Gadget one"
+      end
+    end
+
+    test "nil authorize result cannot mutate" do
+      with_authorize(->(**) { nil }) do
+        delete "#{BASE}/1"
+        assert_response :forbidden
       end
     end
 

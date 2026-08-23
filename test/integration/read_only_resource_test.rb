@@ -47,7 +47,16 @@ module ReadOnlyResourceFixtures
       { "id" => id, "name" => name }
     end
 
+    def self.ping_calls
+      @ping_calls || 0
+    end
+
+    def self.ping_calls=(value)
+      @ping_calls = value
+    end
+
     def ping
+      self.class.ping_calls += 1
       true
     end
   end
@@ -75,9 +84,96 @@ module Admin
   end
 end
 
+module WritableResourceFixtures
+  class Widget
+    extend ActiveModel::Naming
+
+    attr_reader :id, :name
+
+    def initialize(id: 1, name: "Writable widget")
+      @id = id
+      @name = name
+    end
+
+    def self.all
+      ReadOnlyResourceFixtures::Relation.new([ new ])
+    end
+
+    def self.column_names
+      %w[id name]
+    end
+
+    def self.primary_key
+      "id"
+    end
+
+    def self.columns_hash
+      { "id" => Struct.new(:type).new(:integer) }
+    end
+
+    def self.find(id)
+      raise ActiveRecord::RecordNotFound unless id.to_s == "1"
+
+      new
+    end
+
+    def self.where(id:)
+      id.filter_map { |value| find(value) }
+    end
+
+    def self.ping_calls
+      @ping_calls || 0
+    end
+
+    def self.ping_calls=(value)
+      @ping_calls = value
+    end
+
+    def to_param
+      id.to_s
+    end
+
+    def attributes
+      { "id" => id, "name" => name }
+    end
+
+    def ping
+      self.class.ping_calls += 1
+      true
+    end
+  end
+end
+
+module Admin
+  module Resources
+    class WritableWidgetResource < Admin::Base::Resource
+      model WritableResourceFixtures::Widget
+      portal :ops
+      section :observability
+
+      index do
+        columns do
+          column :name
+        end
+      end
+
+      actions do
+        action :ping
+        bulk_action :ping
+      end
+    end
+  end
+end
+
 module AdminSuite
   class ReadOnlyResourceTest < ActionDispatch::IntegrationTest
     BASE_PATH = "/internal/admin_suite/ops/read_only_widgets"
+    WRITABLE_PATH = "/internal/admin_suite/ops/writable_widgets"
+
+    setup do
+      ReadOnlyResourceFixtures::Widget.ping_calls = 0
+      WritableResourceFixtures::Widget.ping_calls = 0
+    end
 
     test "direct built in mutation endpoints are rejected" do
       get "#{BASE_PATH}/new"
@@ -127,17 +223,34 @@ module AdminSuite
       assert_response :not_found
     end
 
-    test "declared member actions remain allowed on read_only resources" do
+    test "declared member actions are rejected on read_only resources" do
       post "#{BASE_PATH}/1/execute_action/ping"
-      refute_equal 404, response.status
+
+      assert_response :not_found
+      assert_equal 0, ReadOnlyResourceFixtures::Widget.ping_calls
     end
 
-    test "declared bulk actions remain allowed on read_only resources" do
+    test "declared bulk actions are rejected on read_only resources" do
       post "#{BASE_PATH}/bulk_action/ping", params: { ids: [ "1" ] }
 
-      assert_redirected_to BASE_PATH
+      assert_response :not_found
+      assert_equal 0, ReadOnlyResourceFixtures::Widget.ping_calls
+    end
+
+    test "declared member actions still execute on writable resources" do
+      post "#{WRITABLE_PATH}/1/execute_action/ping"
+
+      assert_redirected_to "#{WRITABLE_PATH}/1"
+      assert_equal 1, WritableResourceFixtures::Widget.ping_calls
+    end
+
+    test "declared bulk actions still execute on writable resources" do
+      post "#{WRITABLE_PATH}/bulk_action/ping", params: { ids: [ "1" ] }
+
+      assert_redirected_to WRITABLE_PATH
       follow_redirect!
       assert_includes response.body, "Successfully processed 1 records"
+      assert_equal 1, WritableResourceFixtures::Widget.ping_calls
     end
   end
 end

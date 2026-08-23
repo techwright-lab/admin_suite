@@ -26,8 +26,11 @@ AdminSuite.configure do |config|
   # provide one (legacy fallback):
   config.current_actor = ->(controller) { controller.respond_to?(:current_user) ? controller.current_user : nil }
 
-  # Authorization hook — called for every resource request:
+  # Authorization hook — called for every resource request.
+  # Signature: ->(actor:, action:, resource:, record:, controller:) { true }
   # action is one of :read, :create, :update, :destroy, :execute.
+  # nil hook: every authenticated request is allowed (auth remains the gate).
+  # Hook return of false or nil: 403 Forbidden (fail closed; no disclose/mutate).
   # config.authorize = ->(actor:, action:, resource:, record:, controller:) { true }
   config.authorize = nil
 

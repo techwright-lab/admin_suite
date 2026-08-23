@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed (BREAKING)
+
+- `read_only` resources now reject named `execute_action` and `bulk_action`
+  mutations (declared or not), the same way they already reject CRUD and
+  `toggle`. Those routes 404 and must not change the model. Writable
+  resources are unchanged.
+- `config.authorize` fail-closed contract is documented on the install
+  template: a hook return of `false` or `nil` is `403` with no disclose or
+  mutate. A `nil` hook still means every authenticated request is allowed.
+
 ## [0.5.0] - 2026-08-01
 
 ### Added
