@@ -113,4 +113,17 @@ class McpReleaseTest < ActionDispatch::IntegrationTest
       assert_response :method_not_allowed
     end
   end
+
+  test "forgery protection allows the JSON transport but rejects tokenless forms" do
+    previous = AdminSuite::McpController.allow_forgery_protection
+    AdminSuite::McpController.allow_forgery_protection = true
+    with_authorize(->(**) { true }) do
+      call_tool("list_records", resource: "mcp_release_widget")
+      assert_response :success
+      post "/internal/admin_suite/mcp", params: { method: "tools/list" }
+      assert_response :unprocessable_entity
+    end
+  ensure
+    AdminSuite::McpController.allow_forgery_protection = previous
+  end
 end

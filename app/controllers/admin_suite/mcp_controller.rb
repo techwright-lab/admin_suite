@@ -2,16 +2,14 @@
 
 module AdminSuite
   class McpController < ApplicationController
-    # JSON-RPC clients do not have a browser CSRF token. Authentication still
-    # runs through ApplicationController, and this endpoint is read-only.
-    skip_before_action :verify_authenticity_token, raise: false
+    before_action :validate_mcp_origin!, prepend: true
+    # Cross-origin browsers cannot send application/json without a CORS
+    # preflight; form-compatible content types still require a CSRF token.
+    protect_from_forgery with: :exception, unless: :mcp_json_request?
 
     def create
       return head :not_found unless AdminSuite.config.mcp.enabled
       return head :unauthorized unless admin_suite_actor
-      # Headless clients omit Origin. Browser clients must belong to this
-      # host; Rails' HostAuthorization middleware remains the Host gate.
-      return head :forbidden if request.origin && request.origin != request.base_url
 
       AdminSuite::DefinitionLoader.load!(:resources)
       server = AdminSuite::Mcp.server_for(actor: admin_suite_actor, request: request)
@@ -22,6 +20,16 @@ module AdminSuite
       self.status = status
       headers.each { |name, value| response.set_header(name, value) }
       self.response_body = body
+    end
+
+    private
+
+    def validate_mcp_origin!
+      head :forbidden if request.origin && request.origin != request.base_url
+    end
+
+    def mcp_json_request?
+      request.media_type == "application/json"
     end
   end
 end
