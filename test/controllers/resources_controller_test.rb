@@ -6,12 +6,7 @@ module AdminSuite
   class ResourcesControllerTest < ActiveSupport::TestCase
     class TestController < ResourcesController
       attr_writer :test_resource_config, :test_params
-      attr_reader :filter_calls, :paginated_scope
-
-      def initialize
-        super
-        @filter_calls = 0
-      end
+      attr_reader :paginated_scope, :pagy_limit
 
       def params
         @test_params ||= {}
@@ -23,18 +18,27 @@ module AdminSuite
         @test_resource_config
       end
 
-      def filtered_collection
-        @filter_calls += 1
-        { total: 37 }
-      end
-
-      def paginate_collection(scope)
+      def pagy(scope, limit:)
         @paginated_scope = scope
+        @pagy_limit = limit
         [ Object.new, :paginated ]
       end
     end
 
+    class StatsModel
+      class << self
+        attr_accessor :all_calls
+
+        def all
+          self.all_calls = all_calls.to_i + 1
+          { total: 37 }
+        end
+      end
+    end
+
     class StatsResource < Admin::Base::Resource
+      model StatsModel
+
       index do
         stats do
           stat :legacy, -> { 11 }
@@ -72,11 +76,13 @@ module AdminSuite
     test "index reuses one filtered unpaginated scope for stats and pagination" do
       controller = TestController.new
       controller.test_resource_config = StatsResource
+      StatsModel.all_calls = 0
 
       controller.index
 
-      assert_equal 1, controller.filter_calls
+      assert_equal 1, StatsModel.all_calls
       assert_equal({ total: 37 }, controller.paginated_scope)
+      assert_equal 25, controller.pagy_limit
       assert_equal 37, controller.instance_variable_get(:@stats).second[:value]
       assert_equal :paginated, controller.instance_variable_get(:@collection)
     end

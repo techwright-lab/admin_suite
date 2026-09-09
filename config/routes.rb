@@ -7,6 +7,10 @@ AdminSuite::Engine.routes.draw do
   get "docs(/)", to: "docs#index", as: :docs
   get "docs/*path", to: "docs#show", as: :doc, format: false
 
+  # Must precede the portal catch-all, which would otherwise treat "mcp" as
+  # a portal name.
+  post "mcp", to: "mcp#create", as: :mcp
+
   # Portal dashboards (e.g. /ops, /email). Accept optional trailing slash.
   get ":portal(/)", to: "portals#show", as: :portal
 

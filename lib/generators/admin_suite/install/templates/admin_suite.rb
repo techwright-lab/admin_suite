@@ -27,11 +27,11 @@ AdminSuite.configure do |config|
   config.current_actor = ->(controller) { controller.respond_to?(:current_user) ? controller.current_user : nil }
 
   # Authorization hook — called for every resource request.
-  # Signature: ->(actor:, action:, resource:, record:, controller:) { true }
+  # Signature: ->(actor:, action:, resource:, record:, context:) { true }
   # action is one of :read, :create, :update, :destroy, :execute.
-  # nil hook: every authenticated request is allowed (auth remains the gate).
-  # Hook return of false or nil: 403 Forbidden (fail closed; no disclose/mutate).
-  # config.authorize = ->(actor:, action:, resource:, record:, controller:) { true }
+  # nil hook: authenticated web requests are allowed; MCP serves no tools/data.
+  # Hook return of false or nil denies the request (no disclose/mutate).
+  # config.authorize = ->(actor:, action:, resource:, record:, context:) { actor&.admin? }
   config.authorize = nil
 
   # Optional sign-out action in the topbar.

@@ -9,6 +9,11 @@ end
 require "pagy"
 
 # Hard dependency, declared in the gemspec but not a direct Gemfile entry in
+# any host -- Bundler only auto-requires direct Gemfile dependencies, never a
+# gem's transitive runtime dependencies.
+require "mcp"
+
+# Hard dependency, declared in the gemspec but not a direct Gemfile entry in
 # any host -- Bundler's `Bundler.require` only auto-requires gems declared
 # directly in the Gemfile (or via `gemspec`'s own path entry), not a gem's
 # *transitive* runtime dependencies. Same reasoning as `pagy` above and
@@ -20,6 +25,15 @@ require "turbo-rails"
 require "admin_suite/version"
 require "admin_suite/deprecation"
 require "admin_suite/configuration"
+require "admin_suite/authorization_context"
+require "admin_suite/query"
+require "admin_suite/mcp/authorization"
+require "admin_suite/mcp/serializer"
+require "admin_suite/mcp/tools/describe_resources"
+require "admin_suite/mcp/tools/list_records"
+require "admin_suite/mcp/tools/get_record"
+require "admin_suite/mcp/tools/aggregate"
+require "admin_suite/mcp"
 require "admin_suite/markdown_renderer"
 require "admin_suite/theme_palette"
 require "admin_suite/portal_registry"
