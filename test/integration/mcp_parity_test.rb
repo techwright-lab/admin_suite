@@ -112,6 +112,13 @@ class McpParityTest < McpIntegrationTest
 
       assert_equal %w[2 3 1], ui_ids
       assert_equal ui_ids, mcp_ids
+
+      get PATH, params: { search: "alpha" }
+      search_ui_ids = css_select("tbody tr").map { |row| row["data-record-id"] }
+      search_mcp_ids = mcp_payload("list_records", {
+        resource: "mcp_parity_widget", q: "alpha"
+      }).fetch("rows").map { |row| row.fetch("id").to_s }
+      assert_equal search_ui_ids, search_mcp_ids
     end
   end
 
