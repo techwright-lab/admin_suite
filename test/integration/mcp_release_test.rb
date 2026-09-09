@@ -111,6 +111,8 @@ class McpReleaseTest < ActionDispatch::IntegrationTest
       assert_empty response.body
       get "/internal/admin_suite/mcp"
       assert_response :method_not_allowed
+      delete "/internal/admin_suite/mcp"
+      assert_response :method_not_allowed
     end
   end
 

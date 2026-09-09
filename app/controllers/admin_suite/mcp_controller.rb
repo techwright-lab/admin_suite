@@ -10,6 +10,7 @@ module AdminSuite
     def create
       return head :not_found unless AdminSuite.config.mcp.enabled
       return head :unauthorized unless admin_suite_actor
+      return head :method_not_allowed unless request.post?
 
       AdminSuite::DefinitionLoader.load!(:resources)
       server = AdminSuite::Mcp.server_for(actor: admin_suite_actor, request: request)

@@ -18,17 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their own renderer classes before upgrading. Existing registered host keys work.
 - MCP requires a real actor and an explicit `config.authorize` hook. A nil hook
   exposes no tools/data; authenticated web requests retain their existing behavior.
+- Default DSL page sizes above the configured cap are now capped on the web index too.
 
 ### Added
 - Operator MCP at `<mount>/mcp`, using the official SDK's stateless HTTP transport.
   Four read tools: `describe_resources`, `list_records`, `get_record`, `aggregate`.
-  Reads serialize declared fields only; association panels require explicit columns
-  and return bounded rows. No write tools, LLM calls or chat UI in this release.
+  Discovery includes portal, section, declared fields, and declared actions as
+  metadata (actions are not callable). Reads serialize declared fields only;
+  association panels require explicit columns and return bounded rows. No write
+  tools, LLM calls or chat UI in this release.
 - `:host_user` authentication strategy with a host-provided user resolver; shared
   actor normalization across surfaces. Existing HTTP Basic and SSO still work.
 - Resource DSL `mcp false` opt-out and `config.mcp.enabled` / `max_page_size` settings.
-- `admin_suite.mcp.tool_call` notifications with tool, resource, actor, action,
-  actor_type, actor_id, request_id, allowed, error, result_count and duration_ms. Hosts own request-log persistence.
+- `admin_suite.mcp.tool_call` notifications with tool, resource, action,
+  actor_type, actor_id, request_id, filters, q, allowed, error, result_count and
+  duration_ms. Hosts own request-log persistence.
 
 ### Fixed
 - MCP index serialization evaluates column content lambdas (matching the web
@@ -39,12 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Anonymous MCP calls are rejected even under the development escape hatch;
   `get_record` additionally checks record-level policy before serialization.
 - Foreign browser origins are rejected. Notifications return 202; unsupported
-  GET streams/session deletion return 405 via the SDK transport.
+  GET streams and session deletion return 405.
 
 ### Changed
 - Extracted `AdminSuite::Query`; the web index and MCP share filter/search/sort,
   eager-loading and page-size behavior, covered by parity/characterization tests.
-- Default DSL page sizes above the configured cap are now capped on the web index too.
 - Migration guide: `../_vault/products/admin_suite/docs/mcp.md`.
 
 ## [0.5.0] - 2026-08-01

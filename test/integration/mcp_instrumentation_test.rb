@@ -23,10 +23,10 @@ end
 
 class McpInstrumentationTest < McpIntegrationTest
   AuditActor = Struct.new(:id)
-  def call_tool
+  def call_tool(arguments = { resource: "mcp_instrumentation_widget" })
     post "/internal/admin_suite/mcp",
       params: { jsonrpc: "2.0", id: 1, method: "tools/call", params: {
-        name: "list_records", arguments: { resource: "mcp_instrumentation_widget" }
+        name: "list_records", arguments: arguments
       } }.to_json,
       headers: { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json, text/event-stream" }
   end
@@ -85,6 +85,22 @@ class McpInstrumentationTest < McpIntegrationTest
     assert_equal "audit-request-123", events.first.fetch(:request_id)
     assert_equal true, events.first.fetch(:error)
     assert_equal true, events.first.fetch(:allowed)
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+  end
+
+  test "the audit event carries the applied filter set" do
+    events = []
+    subscriber = ActiveSupport::Notifications.subscribe("admin_suite.mcp.tool_call") do |*args|
+      events << ActiveSupport::Notifications::Event.new(*args).payload
+    end
+
+    with_authorize(->(**) { true }) do
+      call_tool(resource: "mcp_instrumentation_widget", q: "alpha", filters: { state: "open" })
+    end
+
+    assert_equal "alpha", events.last.fetch(:q)
+    assert_equal({ state: "open" }, events.last.fetch(:filters))
   ensure
     ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
   end

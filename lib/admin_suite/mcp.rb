@@ -23,15 +23,16 @@ module AdminSuite
       )
     end
 
-    def self.instrument(tool:, resource: nil, actor: nil, action: :read, request: nil)
+    def self.instrument(tool:, resource: nil, actor: nil, action: :read, request: nil, filters: nil, q: nil)
       payload = {
         tool: tool,
         resource: resource,
-        actor: actor.to_s.presence,
         actor_type: actor&.class&.name,
         actor_id: actor.respond_to?(:id) ? actor.id.to_s : nil,
         request_id: request&.request_id,
         action: action,
+        filters: filters,
+        q: q,
         allowed: false,
         error: true,
         result_count: nil
