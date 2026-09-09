@@ -48,7 +48,6 @@ require "admin_suite/renderers/json_renderer"
 require "admin_suite/renderers/key_value_renderer"
 require "admin_suite/renderers/table_from_renderer"
 require "admin_suite/renderers/code_renderer"
-require "admin_suite/renderers/legacy_gleania"
 require "admin_suite/legacy_custom_renderer_procs"
 require "admin_suite/definition_loader"
 require "admin_suite/host_autoload_policy"
@@ -72,14 +71,6 @@ AdminSuite::RendererRegistry.register_default(:code, AdminSuite::Renderers::Code
 AdminSuite::RendererRegistry.register_default(:json_preview, AdminSuite::Renderers::JsonRenderer)
 AdminSuite::RendererRegistry.register_default(:code_preview, AdminSuite::Renderers::CodeRenderer)
 
-# Deprecated (removal targeted at 0.6.0, moved from the originally-planned
-# 0.5.0 -- both host migrations, gleania and trust_growth, are in flight):
-# the four Gleania-specific LLM chat-transcript renderers. See
-# `AdminSuite::Renderers::LegacyGleania` for details.
-AdminSuite::RendererRegistry.register_default(:prompt_template_preview, AdminSuite::Renderers::LegacyGleania::PromptTemplateRenderer)
-AdminSuite::RendererRegistry.register_default(:messages_preview, AdminSuite::Renderers::LegacyGleania::MessagesPreviewRenderer)
-AdminSuite::RendererRegistry.register_default(:tool_args_preview, AdminSuite::Renderers::LegacyGleania::ToolArgsRenderer)
-AdminSuite::RendererRegistry.register_default(:turn_messages_preview, AdminSuite::Renderers::LegacyGleania::TurnMessagesRenderer)
 
 module AdminSuite
   class << self

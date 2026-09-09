@@ -8,10 +8,20 @@ module AdminSuite
 
     def create
       return head :not_found unless AdminSuite.config.mcp.enabled
+      return head :unauthorized unless admin_suite_actor
+      # Headless clients omit Origin. Browser clients must belong to this
+      # host; Rails' HostAuthorization middleware remains the Host gate.
+      return head :forbidden if request.origin && request.origin != request.base_url
 
       AdminSuite::DefinitionLoader.load!(:resources)
       server = AdminSuite::Mcp.server_for(actor: admin_suite_actor, request: request)
-      render json: server.handle_json(request.body.read)
+      transport = ::MCP::Server::Transports::StreamableHTTPTransport.new(
+        server, stateless: true, allowed_hosts: [request.host]
+      )
+      status, headers, body = transport.handle_request(request)
+      self.status = status
+      headers.each { |name, value| response.set_header(name, value) }
+      self.response_body = body
     end
   end
 end

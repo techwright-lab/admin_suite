@@ -43,7 +43,7 @@ Gem::Specification.new do |spec|
   # `DEFAULT[:limit]` of 20), reintroducing the exact "paginate(n) ignored"
   # bug this range exists to fix; Pagy 10 reworked the backend API again.
   spec.add_dependency "pagy", ">= 9.0", "< 10"
-  spec.add_dependency "mcp", "~> 1.0"
+  spec.add_dependency "mcp", "~> 1.1"
   # Hard dependency, not previously declared: `turbo_frame_tag` (resource
   # views) and `format.turbo_stream`/`turbo_stream.replace`
   # (ResourcesController#toggle) both require it. See CHANGELOG.

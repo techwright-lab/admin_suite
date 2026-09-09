@@ -198,3 +198,12 @@ module Admin
     end
   end
 end
+
+# MCP never permits anonymous callers, including in the development escape hatch.
+class McpIntegrationTest < ActionDispatch::IntegrationTest
+  setup do
+    @previous_mcp_actor_resolver = AdminSuite.config.current_actor
+    AdminSuite.config.current_actor = ->(_) { "test-operator" }
+  end
+  teardown { AdminSuite.config.current_actor = @previous_mcp_actor_resolver }
+end

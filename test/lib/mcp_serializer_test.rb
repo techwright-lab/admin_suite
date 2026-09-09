@@ -28,4 +28,28 @@ class McpSerializerTest < ActiveSupport::TestCase
     assert_equal 1, row[:id]
     assert_nil row[:name]
   end
+
+  test "association panels return bounded rows containing only declared columns" do
+    show = Admin::Base::Resource::ShowConfig.new
+    show.panel :children, association: :children, columns: [:name], limit: 500
+    config = Struct.new(:show_config).new(show)
+    child = Struct.new(:name, :secret_token).new("Visible", "private")
+    record = Struct.new(:children).new(Array.new(150, child))
+
+    payload = AdminSuite::Mcp::Serializer.associations_payload(record, config, max_rows: 100)
+    assert_equal 100, payload.fetch(:children).fetch(:rows).size
+    assert_equal({ name: "Visible" }, payload.fetch(:children).fetch(:rows).first)
+    assert_equal 100, payload.fetch(:children).fetch(:applied_limit)
+    refute_includes JSON.generate(payload), "private"
+  end
+
+  test "association panels without declared columns do not serialize model attributes" do
+    show = Admin::Base::Resource::ShowConfig.new
+    show.panel :children, association: :children
+    config = Struct.new(:show_config).new(show)
+    record = Object.new
+    def record.children = raise("must not load an undeclared field set")
+
+    assert_empty AdminSuite::Mcp::Serializer.associations_payload(record, config, max_rows: 100)
+  end
 end

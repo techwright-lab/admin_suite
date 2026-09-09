@@ -11,6 +11,7 @@ across other products.
 - **Portals**: group resources by portal + section, optional per-portal dashboards
 - **Resources DSL**: index (columns/filters/stats), form fields, show panels/associations, actions
 - **Docs viewer**: renders `*.md` from your host app filesystem at `/docs`
+- **Admin MCP**: four read tools derived from resource definitions, under operator authentication and explicit authorization
 - **UI**: baseline CSS + engine Tailwind build; host overrides optional
 
 ## Documentation
@@ -43,15 +44,14 @@ bin/rails g admin_suite:install --mount-path=/internal/admin
 
 ### Secure it (recommended)
 
-Set `config.authenticate` so only authorized users can access AdminSuite:
+Resolve the host user and authorize admin access:
 
 ```ruby
 # config/initializers/admin_suite.rb
 AdminSuite.configure do |config|
-  config.authenticate = ->(controller) do
-    user = controller.respond_to?(:current_user) ? controller.current_user : nil
-    controller.head(:forbidden) unless user&.admin?
-  end
+  config.auth_strategy = :host_user
+  config.auth_options = { resolve: ->(controller) { controller.current_user } }
+  config.authorize = ->(actor:, action:, resource:, record:, context:) { actor&.admin? }
 end
 ```
 
@@ -60,15 +60,18 @@ Read more: `../_vault/products/admin_suite/docs/configuration.md`
 Set `config.authorize` to decide *what* an authenticated actor may do:
 
 ```ruby
-config.authorize = ->(actor:, action:, resource:, record:, controller:) {
+config.authorize = ->(actor:, action:, resource:, record:, context:) {
   # action is :read, :create, :update, :destroy, or :execute
   true
 }
 ```
 
 A `false` or `nil` return is `403` (fail closed). Leaving the hook `nil`
-keeps authentication as the only gate. Resources marked `read_only` reject
+keeps authentication as the only web gate; MCP serves no tools or data. Resources marked `read_only` reject
 CRUD, `toggle`, and named execute/bulk actions regardless of this hook.
+
+The MCP endpoint is `<mount>/mcp`. See
+`../_vault/products/admin_suite/docs/mcp.md` for setup, tool contracts and migration.
 
 ### Add portals (navigation metadata)
 

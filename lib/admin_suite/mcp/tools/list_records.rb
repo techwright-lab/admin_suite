@@ -21,7 +21,7 @@ module AdminSuite
 
         def self.call(resource:, server_context:, q: nil, filters: {}, sort: nil, direction: nil, page: 1, per_page: nil)
           AdminSuite::Mcp.instrument(tool: "list_records", resource: resource, actor: server_context[:actor]) do
-            config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read)
+            config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read, request: server_context[:request])
             next [Authorization.denied_response, nil, false] unless config
 
             query = build_query(config, filters, q:, sort:, direction:, per_page:)

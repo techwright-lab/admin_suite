@@ -10,6 +10,7 @@ AdminSuite::Engine.routes.draw do
   # Must precede the portal catch-all, which would otherwise treat "mcp" as
   # a portal name.
   post "mcp", to: "mcp#create", as: :mcp
+  match "mcp", to: "mcp#create", via: [:get, :delete]
 
   # Portal dashboards (e.g. /ops, /email). Accept optional trailing slash.
   get ":portal(/)", to: "portals#show", as: :portal

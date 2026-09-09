@@ -70,7 +70,7 @@ module Admin
   end
 end
 
-class McpParityTest < ActionDispatch::IntegrationTest
+class McpParityTest < McpIntegrationTest
   PATH = "/internal/admin_suite/ops/mcp_parity_widgets"
 
   def mcp_payload(tool, arguments)
@@ -78,7 +78,7 @@ class McpParityTest < ActionDispatch::IntegrationTest
       params: { jsonrpc: "2.0", id: 1, method: "tools/call", params: {
         name: tool, arguments: arguments
       } }.to_json,
-      headers: { "CONTENT_TYPE" => "application/json" }
+      headers: { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json, text/event-stream" }
     rpc = JSON.parse(response.body)
     JSON.parse(rpc.dig("result", "content", 0, "text"))
   end

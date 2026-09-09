@@ -22,6 +22,23 @@ module AdminSuite
         end
       end
 
+      def self.associations_payload(record, config, max_rows:)
+        sections = config.show_config&.sidebar_sections.to_a + config.show_config&.main_sections.to_a
+        sections.each_with_object({}) do |section, payload|
+          next if section.association.blank? || section.columns.blank?
+
+          limit = Integer(section.limit || section.per_page || max_rows).clamp(1..max_rows)
+          rows = record.public_send(section.association)
+          rows = rows.respond_to?(:limit) ? rows.limit(limit) : Array(rows).first(limit)
+          payload[section.name] = {
+            applied_limit: limit,
+            rows: rows.map do |row|
+              section.columns.to_h { |column| [column, value_for(row, column)] }
+            end
+          }
+        end
+      end
+
       def self.value_for(record, name)
         return nil unless record.respond_to?(name)
 

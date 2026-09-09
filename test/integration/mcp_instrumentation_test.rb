@@ -21,13 +21,13 @@ module Admin
   end
 end
 
-class McpInstrumentationTest < ActionDispatch::IntegrationTest
+class McpInstrumentationTest < McpIntegrationTest
   def call_tool
     post "/internal/admin_suite/mcp",
       params: { jsonrpc: "2.0", id: 1, method: "tools/call", params: {
         name: "list_records", arguments: { resource: "mcp_instrumentation_widget" }
       } }.to_json,
-      headers: { "CONTENT_TYPE" => "application/json" }
+      headers: { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json, text/event-stream" }
   end
 
   test "every tool call emits one complete event whether allowed or denied" do

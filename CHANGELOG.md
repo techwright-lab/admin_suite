@@ -5,17 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] - 2026-09-09
 
-### Changed (BREAKING)
+### Breaking
+- `read_only` resources now reject declared member and bulk actions as well as
+  CRUD and toggle routes (404, no model mutation).
+- Authorization hooks now accept `context:` instead of `controller:`. Use
+  `context.surface` (`:web` or `:mcp`), `context.controller` (web only), and
+  `context.request`. Old signatures fail at assignment with migration guidance.
+- Removed the deprecated `exportable` no-op and the four built-in Gleania
+  renderer implementations. Hosts must remove `exportable` calls and provide
+  their own renderer classes before upgrading. Existing registered host keys work.
+- MCP requires a real actor and an explicit `config.authorize` hook. A nil hook
+  exposes no tools/data; authenticated web requests retain their existing behavior.
 
-- `read_only` resources now reject named `execute_action` and `bulk_action`
-  mutations (declared or not), the same way they already reject CRUD and
-  `toggle`. Those routes 404 and must not change the model. Writable
-  resources are unchanged.
-- `config.authorize` fail-closed contract is documented on the install
-  template: a hook return of `false` or `nil` is `403` with no disclose or
-  mutate. A `nil` hook still means every authenticated request is allowed.
+### Added
+- Operator MCP at `<mount>/mcp`, using the official SDK's stateless HTTP transport.
+  Four read tools: `describe_resources`, `list_records`, `get_record`, `aggregate`.
+  Reads serialize declared fields only; association panels require explicit columns
+  and return bounded rows. No write tools, LLM calls or chat UI in this release.
+- `:host_user` authentication strategy with a host-provided user resolver; shared
+  actor normalization across surfaces. Existing HTTP Basic and SSO still work.
+- Resource DSL `mcp false` opt-out and `config.mcp.enabled` / `max_page_size` settings.
+- `admin_suite.mcp.tool_call` notifications with tool, resource, actor, action,
+  allowed, result_count and duration_ms. Hosts own request-log persistence.
+
+### Fixed
+- MCP/default pagination cannot bypass the configured cap by omitting `per_page`
+  or passing invalid/non-positive values. The response states the applied limit.
+- Anonymous MCP calls are rejected even under the development escape hatch;
+  `get_record` additionally checks record-level policy before serialization.
+- Foreign browser origins are rejected. Notifications return 202; unsupported
+  GET streams/session deletion return 405 via the SDK transport.
+
+### Changed
+- Extracted `AdminSuite::Query`; the web index and MCP share filter/search/sort,
+  eager-loading and page-size behavior, covered by parity/characterization tests.
+- Default DSL page sizes above the configured cap are now capped on the web index too.
+- Migration guide: `../_vault/products/admin_suite/docs/mcp.md`.
 
 ## [0.5.0] - 2026-08-01
 

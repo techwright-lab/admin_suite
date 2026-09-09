@@ -23,11 +23,11 @@ module Admin
   end
 end
 
-class McpAggregateTest < ActionDispatch::IntegrationTest
+class McpAggregateTest < McpIntegrationTest
   def call_tool(arguments)
     post "/internal/admin_suite/mcp",
       params: { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "aggregate", arguments: arguments } }.to_json,
-      headers: { "CONTENT_TYPE" => "application/json" }
+      headers: { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json, text/event-stream" }
     JSON.parse(response.body)
   end
 

@@ -51,7 +51,7 @@ module AdminSuite
     end
 
     def clamp(requested)
-      fallback = index_config&.per_page || 25
+      fallback = (index_config&.per_page || 25).clamp(1..@max_page_size)
       value = Integer(requested)
       return fallback if value <= 0
 

@@ -28,11 +28,11 @@ module Admin
   end
 end
 
-class McpAuthorizationTest < ActionDispatch::IntegrationTest
+class McpAuthorizationTest < McpIntegrationTest
   def rpc(method, params = {})
     post "/internal/admin_suite/mcp",
       params: { jsonrpc: "2.0", id: 1, method: method, params: params }.to_json,
-      headers: { "CONTENT_TYPE" => "application/json" }
+      headers: { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json, text/event-stream" }
     JSON.parse(response.body)
   end
 

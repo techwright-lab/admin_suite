@@ -11,11 +11,11 @@ module AdminSuite
 
         def self.call(server_context:)
           AdminSuite::Mcp.instrument(tool: "describe_resources", actor: server_context[:actor]) do
-            if AdminSuite.config.authorize.nil?
+            if AdminSuite.config.authorize.nil? || Auth.normalize_actor(server_context[:actor]).nil?
               [Authorization.denied_response, nil, false]
             else
               payload = Authorization
-                .readable_resources(actor: server_context[:actor])
+                .readable_resources(actor: server_context[:actor], request: server_context[:request])
                 .map { |config| describe(config) }
               response = ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
               [response, payload.size, true]

@@ -13,7 +13,7 @@ module AdminSuite
     # derived from the current fail-closed authorization posture rather than
     # cached across actors or requests.
     def self.server_for(actor:, request: nil)
-      tools = AdminSuite.config.authorize.nil? ? [] : TOOLS
+      tools = AdminSuite.config.authorize.nil? || Auth.normalize_actor(actor).nil? ? [] : TOOLS
 
       ::MCP::Server.new(
         name: "admin_suite",

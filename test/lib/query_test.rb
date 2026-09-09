@@ -54,6 +54,14 @@ class QueryTest < ActiveSupport::TestCase
     end
   end
 
+  test "the cap applies to DSL defaults as well as explicit page sizes" do
+    [nil, "", "bad", 0, -1, [], true, 5000].each do |value|
+      query = AdminSuite::Query.new(resource_config: config_with(per_page: 500),
+        params: { per_page: value }, max_page_size: 40)
+      assert_equal 40, query.per_page, "per_page=#{value.inspect}"
+    end
+  end
+
   test "a raising includes degrades to the unoptimized scope instead of raising" do
     relation = RaisingIncludesRelation.new([])
     Model.relation = relation
