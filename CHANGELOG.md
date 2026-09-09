@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   actor normalization across surfaces. Existing HTTP Basic and SSO still work.
 - Resource DSL `mcp false` opt-out and `config.mcp.enabled` / `max_page_size` settings.
 - `admin_suite.mcp.tool_call` notifications with tool, resource, actor, action,
-  allowed, result_count and duration_ms. Hosts own request-log persistence.
+  actor_type, actor_id, request_id, allowed, error, result_count and duration_ms. Hosts own request-log persistence.
 
 ### Fixed
 - MCP/default pagination cannot bypass the configured cap by omitting `per_page`

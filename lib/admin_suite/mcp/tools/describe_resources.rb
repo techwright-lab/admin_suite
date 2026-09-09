@@ -10,7 +10,7 @@ module AdminSuite
         input_schema(properties: {}, required: [])
 
         def self.call(server_context:)
-          AdminSuite::Mcp.instrument(tool: "describe_resources", actor: server_context[:actor]) do
+          AdminSuite::Mcp.instrument(tool: "describe_resources", actor: server_context[:actor], request: server_context[:request]) do
             if AdminSuite.config.authorize.nil? || Auth.normalize_actor(server_context[:actor]).nil?
               [Authorization.denied_response, nil, false]
             else

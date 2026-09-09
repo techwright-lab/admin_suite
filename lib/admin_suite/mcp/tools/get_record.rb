@@ -12,7 +12,7 @@ module AdminSuite
         )
 
         def self.call(resource:, id:, server_context:)
-          AdminSuite::Mcp.instrument(tool: "get_record", resource: resource, actor: server_context[:actor]) do
+          AdminSuite::Mcp.instrument(tool: "get_record", resource: resource, actor: server_context[:actor], request: server_context[:request]) do
             config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read, request: server_context[:request])
             next [Authorization.denied_response, nil, false] if config.nil?
 

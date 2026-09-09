@@ -23,13 +23,17 @@ module AdminSuite
       )
     end
 
-    def self.instrument(tool:, resource: nil, actor: nil, action: :read)
+    def self.instrument(tool:, resource: nil, actor: nil, action: :read, request: nil)
       payload = {
         tool: tool,
         resource: resource,
         actor: actor.to_s.presence,
+        actor_type: actor&.class&.name,
+        actor_id: actor.respond_to?(:id) ? actor.id.to_s : nil,
+        request_id: request&.request_id,
         action: action,
         allowed: false,
+        error: true,
         result_count: nil
       }
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -38,6 +42,7 @@ module AdminSuite
         response, count, allowed = yield
         payload[:allowed] = allowed
         payload[:result_count] = count
+        payload[:error] = response.error?
         response
       ensure
         payload[:duration_ms] = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round(2)

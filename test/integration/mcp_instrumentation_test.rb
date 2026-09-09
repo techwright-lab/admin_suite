@@ -22,6 +22,7 @@ module Admin
 end
 
 class McpInstrumentationTest < McpIntegrationTest
+  AuditActor = Struct.new(:id)
   def call_tool
     post "/internal/admin_suite/mcp",
       params: { jsonrpc: "2.0", id: 1, method: "tools/call", params: {
@@ -45,6 +46,27 @@ class McpInstrumentationTest < McpIntegrationTest
     assert events.all? { |event| event[:tool] == "list_records" }
     assert events.all? { |event| event[:action] == :read }
     assert events.all? { |event| event[:duration_ms].is_a?(Numeric) }
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+  end
+
+  test "audit metadata identifies the operator and distinguishes tool failures" do
+    actor = AuditActor.new(42)
+    request = Struct.new(:request_id).new("audit-request-123")
+    events = []
+    subscriber = ActiveSupport::Notifications.subscribe("admin_suite.mcp.tool_call") do |*args|
+      events << ActiveSupport::Notifications::Event.new(*args).payload
+    end
+
+    AdminSuite::Mcp.instrument(tool: "list_records", actor: actor, request: request) do
+      [MCP::Tool::Response.new([{ type: "text", text: "failed" }], error: true), nil, true]
+    end
+
+    assert_equal "42", events.first.fetch(:actor_id)
+    assert_equal actor.class.name, events.first.fetch(:actor_type)
+    assert_equal "audit-request-123", events.first.fetch(:request_id)
+    assert_equal true, events.first.fetch(:error)
+    assert_equal true, events.first.fetch(:allowed)
   ensure
     ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
   end
