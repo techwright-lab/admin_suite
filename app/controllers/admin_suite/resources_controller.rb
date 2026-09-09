@@ -6,7 +6,7 @@ module AdminSuite
     include Pagy::Frontend
 
     before_action :require_resource_config!
-    before_action :enforce_read_only!, only: %i[new create edit update destroy toggle]
+    before_action :enforce_read_only!, only: %i[new create edit update destroy toggle execute_action bulk_action]
     # `search` is excluded even though it can receive an `:id`-shaped query
     # param: unlike show/edit/update/destroy, a record has no business
     # participating in this action at all. Without this exclusion, a stray
@@ -372,6 +372,8 @@ module AdminSuite
     end
 
     def enforce_read_only!
+      # Declared member/bulk actions are mutations; read_only rejects them
+      # the same way as CRUD/toggle rather than advertising a write path.
       head :not_found if resource_config&.read_only?
     end
 

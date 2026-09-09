@@ -57,6 +57,19 @@ end
 
 Read more: `../_vault/products/admin_suite/docs/configuration.md`
 
+Set `config.authorize` to decide *what* an authenticated actor may do:
+
+```ruby
+config.authorize = ->(actor:, action:, resource:, record:, controller:) {
+  # action is :read, :create, :update, :destroy, or :execute
+  true
+}
+```
+
+A `false` or `nil` return is `403` (fail closed). Leaving the hook `nil`
+keeps authentication as the only gate. Resources marked `read_only` reject
+CRUD, `toggle`, and named execute/bulk actions regardless of this hook.
+
 ### Add portals (navigation metadata)
 
 ```ruby
