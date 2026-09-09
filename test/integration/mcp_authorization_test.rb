@@ -47,11 +47,17 @@ class McpAuthorizationTest < McpIntegrationTest
   end
 
   test "a nil authorize hook denies a direct call to every tool" do
-    with_authorize(nil) do
-      %w[describe_resources list_records get_record aggregate].each do |tool|
-        result = call_tool(tool, { resource: "mcp_authorization_widget", id: "1" })
+    ctx = { actor: "x" }
 
-        assert result["error"], "#{tool} must deny when config.authorize is nil"
+    with_authorize(nil) do
+      [
+        AdminSuite::Mcp::Tools::DescribeResources.call(server_context: ctx),
+        AdminSuite::Mcp::Tools::ListRecords.call(resource: "mcp_authorization_widget", server_context: ctx),
+        AdminSuite::Mcp::Tools::GetRecord.call(resource: "mcp_authorization_widget", id: "1", server_context: ctx),
+        AdminSuite::Mcp::Tools::Aggregate.call(resource: "mcp_authorization_widget", server_context: ctx)
+      ].each do |response|
+        assert response.error?, response.inspect
+        assert_equal AdminSuite::Mcp::Authorization::DENIED_MESSAGE, response.content.first[:text]
       end
     end
   end
