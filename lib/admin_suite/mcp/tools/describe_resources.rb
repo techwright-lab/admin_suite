@@ -17,7 +17,7 @@ module AdminSuite
               payload = Authorization
                 .readable_resources(actor: server_context[:actor], request: server_context[:request])
                 .map { |config| describe(config) }
-              response = ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
+              response = ::MCP::Tool::Response.new([{ type: "text", text: Serializer.dump(payload) }])
               [response, payload.size, true]
             end
           end

@@ -62,6 +62,19 @@ class QueryTest < ActiveSupport::TestCase
     end
   end
 
+  test "per_page remains a positive integer when max_page_size is below 1" do
+    [0, -5, nil].each do |cap|
+      query = AdminSuite::Query.new(
+        resource_config: config_with(per_page: 30),
+        params: { per_page: "10" },
+        max_page_size: cap
+      )
+
+      assert_kind_of Integer, query.per_page, "max_page_size=#{cap.inspect}"
+      assert_operator query.per_page, :>, 0, "max_page_size=#{cap.inspect}"
+    end
+  end
+
   test "a raising includes degrades to the unoptimized scope instead of raising" do
     relation = RaisingIncludesRelation.new([])
     Model.relation = relation

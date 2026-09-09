@@ -21,16 +21,18 @@ module AdminSuite
 
         def self.call(resource:, server_context:, q: nil, filters: {}, sort: nil, direction: nil, page: 1, per_page: nil)
           AdminSuite::Mcp.instrument(tool: "list_records", resource: resource, actor: server_context[:actor], request: server_context[:request]) do
+            allowed = false
             config = Authorization.authorize_resource!(name: resource, actor: server_context[:actor], action: :read, request: server_context[:request])
             next [Authorization.denied_response, nil, false] unless config
 
+            allowed = true
             query = build_query(config, filters, q:, sort:, direction:, per_page:)
             payload = response_payload(resource, config, query, page)
-            response = ::MCP::Tool::Response.new([{ type: "text", text: JSON.pretty_generate(payload) }])
+            response = ::MCP::Tool::Response.new([{ type: "text", text: Serializer.dump(payload) }])
             [response, payload[:rows].size, true]
           rescue StandardError => e
             Rails.logger&.warn("AdminSuite MCP list_records failed: #{e.class}: #{e.message}")
-            [Authorization.error_response("list_records failed"), nil, true]
+            [Authorization.error_response("list_records failed"), nil, allowed]
           end
         end
 

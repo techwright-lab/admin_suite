@@ -50,6 +50,24 @@ class McpInstrumentationTest < McpIntegrationTest
     ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
   end
 
+  test "a raise inside authorize_resource! is not logged as an authorized read" do
+    events = []
+    subscriber = ActiveSupport::Notifications.subscribe("admin_suite.mcp.tool_call") do |*args|
+      events << ActiveSupport::Notifications::Event.new(*args).payload
+    end
+
+    AdminSuite::Mcp::Authorization.stub(:authorize_resource!, proc { raise "boom" }) do
+      AdminSuite::Mcp::Tools::ListRecords.call(
+        resource: "mcp_instrumentation_widget",
+        server_context: { actor: "x" }
+      )
+    end
+
+    assert_equal false, events.last[:allowed]
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+  end
+
   test "audit metadata identifies the operator and distinguishes tool failures" do
     actor = AuditActor.new(42)
     request = Struct.new(:request_id).new("audit-request-123")

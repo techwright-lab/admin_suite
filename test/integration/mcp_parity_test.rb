@@ -32,14 +32,27 @@ module McpParityFixtures
     end
   end
 
-  class Widget
-    extend ActiveModel::Naming
-
+  class Application < ActiveRecord::Base
     attr_reader :id, :name
 
     def initialize(id:, name:)
       @id = id
       @name = name
+    end
+
+    def to_param = id.to_s
+  end
+
+  class Widget
+    extend ActiveModel::Naming
+
+    attr_reader :id, :name, :created_at, :application
+
+    def initialize(id:, name:, created_at: Time.utc(2026, 9, 10, 12, 0, 0), application: Application.new(id: 7, name: "Acme"))
+      @id = id
+      @name = name
+      @created_at = created_at
+      @application = application
     end
 
     ROWS = [new(id: 1, name: "Zulu"), new(id: 2, name: "Alpha"), new(id: 3, name: "Bravo")].freeze
@@ -64,6 +77,10 @@ module Admin
         columns do
           column :id
           column :name, sortable: true
+          column :listings_count, ->(_r) { 42 }
+          column :status, ->(_r) { "active" }, type: :label
+          column :created_at
+          column :application
         end
       end
     end
@@ -94,6 +111,24 @@ class McpParityTest < McpIntegrationTest
       }).fetch("rows").map { |row| row.fetch("id").to_s }
 
       assert_equal ui_ids, mcp_ids
+    end
+  end
+
+  test "lambda columns match the index cell and object fields serialize as primitives" do
+    with_authorize(->(**) { true }) do
+      get PATH
+      assert_response :success
+      cells = css_select("tbody tr[data-record-id='1'] td")
+      row = mcp_payload("list_records", { resource: "mcp_parity_widget" })
+        .fetch("rows").find { |item| item.fetch("id") == 1 }
+
+      assert_equal "42", cells[2].text.strip
+      assert_equal 42, row.fetch("listings_count")
+      assert_includes cells[3].text, "active"
+      assert_equal "active", row.fetch("status")
+      assert_equal Time.utc(2026, 9, 10, 12, 0, 0), Time.iso8601(row.fetch("created_at"))
+      assert_equal "Acme", row.fetch("application")
+      refute_match(/#<|0x[0-9a-f]+/i, row.fetch("application"))
     end
   end
 

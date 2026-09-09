@@ -7,6 +7,7 @@ module McpAuthorizationFixtures
     extend ActiveModel::Naming
 
     def self.all = ReadOnlyResourceFixtures::Relation.new([])
+    def self.find_by(id:) = new
   end
 end
 

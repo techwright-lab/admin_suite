@@ -52,4 +52,56 @@ class McpSerializerTest < ActiveSupport::TestCase
 
     assert_empty AdminSuite::Mcp::Serializer.associations_payload(record, config, max_rows: 100)
   end
+
+  test "a content lambda serializes the proc result, not a missing attribute" do
+    record = Struct.new(:id).new(1)
+    column = Admin::Base::Resource::ColumnDefinition.new(name: :listings_count, content: ->(_r) { 42 })
+    config = Config.new(Index.new([column]))
+
+    assert_equal 42, AdminSuite::Mcp::Serializer.index_row(record, config)[:listings_count]
+  end
+
+  test "a label lambda serializes the proc result" do
+    record = Struct.new(:id).new(1)
+    column = Admin::Base::Resource::ColumnDefinition.new(name: :status, content: ->(_r) { "active" }, type: :label)
+    config = Config.new(Index.new([column]))
+
+    assert_equal "active", AdminSuite::Mcp::Serializer.index_row(record, config)[:status]
+  end
+
+  test "declared times and associations serialize as parseable primitives, not heap dumps" do
+    created_at = Time.utc(2026, 9, 10, 12, 0, 0)
+    application = SerializerApplication.new(id: 7, name: "Acme")
+    record = Struct.new(:created_at, :application, :blob).new(created_at, application, SerializerOpaque.new)
+    config = Config.new(Index.new([Column.new(:created_at), Column.new(:application), Column.new(:blob)]))
+
+    row = AdminSuite::Mcp::Serializer.index_row(record, config)
+    text = AdminSuite::Mcp::Serializer.dump(row)
+
+    assert_equal "2026-09-10T12:00:00Z", row[:created_at]
+    assert_equal created_at, Time.iso8601(row[:created_at])
+    assert_equal "Acme", row[:application]
+    refute_match(/#<|0x[0-9a-f]+/i, text)
+  end
+
+  test "a missing association panel degrades that panel instead of raising" do
+    show = Admin::Base::Resource::ShowConfig.new
+    show.panel :children, association: :missing_kids, columns: [:name]
+    config = Struct.new(:show_config).new(show)
+
+    payload = AdminSuite::Mcp::Serializer.associations_payload(Object.new, config, max_rows: 100)
+
+    assert_equal [], payload.fetch(:children).fetch(:rows)
+  end
+
+  class SerializerApplication < ActiveRecord::Base
+    attr_reader :id, :name
+
+    def initialize(id:, name:)
+      @id = id
+      @name = name
+    end
+  end
+
+  class SerializerOpaque; end
 end

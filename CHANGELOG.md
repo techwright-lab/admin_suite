@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   actor_type, actor_id, request_id, allowed, error, result_count and duration_ms. Hosts own request-log persistence.
 
 ### Fixed
+- MCP index serialization evaluates column content lambdas (matching the web
+  index) and coerces times and association records to JSON primitives instead of
+  `to_s` heap addresses.
 - MCP/default pagination cannot bypass the configured cap by omitting `per_page`
   or passing invalid/non-positive values. The response states the applied limit.
 - Anonymous MCP calls are rejected even under the development escape hatch;

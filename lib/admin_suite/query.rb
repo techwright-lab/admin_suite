@@ -51,13 +51,21 @@ module AdminSuite
     end
 
     def clamp(requested)
-      fallback = (index_config&.per_page || 25).clamp(1..@max_page_size)
+      cap = page_cap
+      fallback = (index_config&.per_page || 25).clamp(1..cap)
       value = Integer(requested)
       return fallback if value <= 0
 
-      value.clamp(..@max_page_size)
+      value.clamp(..cap)
     rescue ArgumentError, TypeError
       fallback
+    end
+
+    def page_cap
+      cap = Integer(@max_page_size)
+      cap.positive? ? cap : MAX_PAGE_SIZE
+    rescue ArgumentError, TypeError
+      MAX_PAGE_SIZE
     end
   end
 end
