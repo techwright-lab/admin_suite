@@ -202,6 +202,7 @@
                   %>
                   <%= tag.tr class: "hover:bg-slate-50 cursor-pointer",
                       data: {
+                        record_id: record.to_param,
                         controller: "admin-suite--click-actions",
                         action: "click->admin-suite--click-actions#navigate",
                         "admin-suite--click-actions-url-value": show_path

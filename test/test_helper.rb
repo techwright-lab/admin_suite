@@ -32,6 +32,14 @@ require "action_dispatch/testing/integration"
 # Ensure the engine is loaded (and its initializers run).
 require "admin_suite"
 
+def with_authorize(hook)
+  previous = AdminSuite.config.authorize
+  AdminSuite.config.authorize = hook
+  yield
+ensure
+  AdminSuite.config.authorize = previous
+end
+
 # The dummy app is intentionally database-free, while the generic controller
 # supports Active Record hosts. Supply only the exception type its lookup path
 # rescues so show-page behavior can be exercised with an in-memory fixture.
@@ -189,4 +197,13 @@ module Admin
       section :observability
     end
   end
+end
+
+# MCP never permits anonymous callers, including in the development escape hatch.
+class McpIntegrationTest < ActionDispatch::IntegrationTest
+  setup do
+    @previous_mcp_actor_resolver = AdminSuite.config.current_actor
+    AdminSuite.config.current_actor = ->(_) { "test-operator" }
+  end
+  teardown { AdminSuite.config.current_actor = @previous_mcp_actor_resolver }
 end

@@ -85,10 +85,10 @@ module AdminSuite
       end
     end
 
-    test "authorize receives actor, mapped action, resource, record, controller" do
+    test "authorize receives actor, mapped action, resource, record, context" do
       captured = nil
-      hook = lambda do |actor:, action:, resource:, record:, controller:|
-        captured = { action: action, resource: resource, record: record }
+      hook = lambda do |actor:, action:, resource:, record:, context:|
+        captured = { action: action, resource: resource, record: record, context: context }
         true
       end
 
@@ -99,6 +99,7 @@ module AdminSuite
       assert_equal :read, captured[:action]
       assert_equal Admin::Resources::AuthzGadgetResource, captured[:resource]
       assert_instance_of AuthzFixtures::Gadget, captured[:record]
+      assert_equal :web, captured[:context].surface
     end
 
     test "destroy maps to :destroy" do

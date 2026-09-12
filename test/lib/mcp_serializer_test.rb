@@ -1,0 +1,107 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+class McpSerializerTest < ActiveSupport::TestCase
+  Column = Data.define(:name)
+  Index = Data.define(:columns_list)
+  Config = Data.define(:index_config)
+
+  test "emits only the resource's declared columns" do
+    record = Struct.new(:id, :name, :secret_token).new(1, "Widget", "sh-hh")
+    config = Config.new(Index.new([Column.new(:id), Column.new(:name)]))
+
+    row = AdminSuite::Mcp::Serializer.index_row(record, config)
+
+    assert_equal %w[id name], row.keys.map(&:to_s).sort
+    refute_includes row.keys.map(&:to_s), "secret_token"
+  end
+
+  test "a raising accessor degrades that cell, not the row" do
+    record = Object.new
+    def record.id = 1
+    def record.name = raise("boom")
+    config = Config.new(Index.new([Column.new(:id), Column.new(:name)]))
+
+    row = AdminSuite::Mcp::Serializer.index_row(record, config)
+
+    assert_equal 1, row[:id]
+    assert_nil row[:name]
+  end
+
+  test "association panels return bounded rows containing only declared columns" do
+    show = Admin::Base::Resource::ShowConfig.new
+    show.panel :children, association: :children, columns: [:name], limit: 500
+    config = Struct.new(:show_config).new(show)
+    child = Struct.new(:name, :secret_token).new("Visible", "private")
+    record = Struct.new(:children).new(Array.new(150, child))
+
+    payload = AdminSuite::Mcp::Serializer.associations_payload(record, config, max_rows: 100)
+    assert_equal 100, payload.fetch(:children).fetch(:rows).size
+    assert_equal({ name: "Visible" }, payload.fetch(:children).fetch(:rows).first)
+    assert_equal 100, payload.fetch(:children).fetch(:applied_limit)
+    refute_includes JSON.generate(payload), "private"
+  end
+
+  test "association panels without declared columns do not serialize model attributes" do
+    show = Admin::Base::Resource::ShowConfig.new
+    show.panel :children, association: :children
+    config = Struct.new(:show_config).new(show)
+    record = Object.new
+    def record.children = raise("must not load an undeclared field set")
+
+    assert_empty AdminSuite::Mcp::Serializer.associations_payload(record, config, max_rows: 100)
+  end
+
+  test "a content lambda serializes the proc result, not a missing attribute" do
+    record = Struct.new(:id).new(1)
+    column = Admin::Base::Resource::ColumnDefinition.new(name: :listings_count, content: ->(_r) { 42 })
+    config = Config.new(Index.new([column]))
+
+    assert_equal 42, AdminSuite::Mcp::Serializer.index_row(record, config)[:listings_count]
+  end
+
+  test "a label lambda serializes the proc result" do
+    record = Struct.new(:id).new(1)
+    column = Admin::Base::Resource::ColumnDefinition.new(name: :status, content: ->(_r) { "active" }, type: :label)
+    config = Config.new(Index.new([column]))
+
+    assert_equal "active", AdminSuite::Mcp::Serializer.index_row(record, config)[:status]
+  end
+
+  test "declared times and associations serialize as parseable primitives, not heap dumps" do
+    created_at = Time.utc(2026, 9, 10, 12, 0, 0)
+    application = SerializerApplication.new(id: 7, name: "Acme")
+    record = Struct.new(:created_at, :application, :blob).new(created_at, application, SerializerOpaque.new)
+    config = Config.new(Index.new([Column.new(:created_at), Column.new(:application), Column.new(:blob)]))
+
+    row = AdminSuite::Mcp::Serializer.index_row(record, config)
+    text = AdminSuite::Mcp::Serializer.dump(row)
+
+    assert_equal "2026-09-10T12:00:00Z", row[:created_at]
+    assert_equal created_at, Time.iso8601(row[:created_at])
+    assert_equal "Acme", row[:application]
+    refute_match(/#<|0x[0-9a-f]+/i, text)
+  end
+
+  test "a missing association panel degrades that panel instead of raising" do
+    show = Admin::Base::Resource::ShowConfig.new
+    show.panel :children, association: :missing_kids, columns: [:name]
+    config = Struct.new(:show_config).new(show)
+
+    payload = AdminSuite::Mcp::Serializer.associations_payload(Object.new, config, max_rows: 100)
+
+    assert_equal [], payload.fetch(:children).fetch(:rows)
+  end
+
+  class SerializerApplication < ActiveRecord::Base
+    attr_reader :id, :name
+
+    def initialize(id:, name:)
+      @id = id
+      @name = name
+    end
+  end
+
+  class SerializerOpaque; end
+end

@@ -10,3 +10,10 @@
 /test/dummy/storage/
 admin_suite-*.gem
 /.bundle/
+
+# Agent scratch: git worktrees created per-phase, and subagent-driven-development
+# ledgers/briefs/review diffs. Never part of the gem — `spec.files` is an
+# allowlist, so these could not ship, but an `add -A` from the repo root would
+# otherwise commit an entire nested worktree.
+/.claude/
+/.superpowers/

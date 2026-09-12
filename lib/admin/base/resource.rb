@@ -41,11 +41,6 @@ module Admin
     class Resource
       extend AdminSuite::Deprecation
 
-      EXPORTABLE_DEPRECATION_MESSAGE_FORMAT =
-        "AdminSuite: %<resource>s calls `exportable`, which is a deprecated " \
-        "no-op and will be removed in 0.6.0. It never actually implemented " \
-        "export in any released version — safe to delete the call."
-
       class << self
         # Model configuration
         attr_reader :model_class, :portal_name, :section_name, :nav_label, :nav_icon, :nav_order
@@ -172,30 +167,13 @@ module Admin
           @read_only == true
         end
 
-        # Deprecated no-op; removal targeted at 0.6.0 (moved from the
-        # originally-planned 0.5.0 -- pending the gleania/trust_growth host
-        # migrations).
-        #
-        # `exportable` was write-only in every prior release -- it never had
-        # a reader and never drove any export behavior -- but hosts still
-        # call it from resource-definition bodies (gleania: 30 files;
-        # trust_growth: 1). A real removal would raise `NoMethodError` at
-        # definition-load time, and in production `DefinitionLoader` logs
-        # and swallows that, so the resource just silently vanishes from the
-        # admin. Kept as a no-op instead, so those files keep loading.
-        #
-        # Deliberately does not restore `@export_formats` or any reader --
-        # only the harmless no-op comes back.
-        #
-        # @param _formats [Array<Symbol>] ignored
-        # @return [void]
-        def exportable(*_formats)
-          # `warn_once`, `warn_once_sink` and `reset_deprecation_notices!`
-          # come from `AdminSuite::Deprecation`, extended above. Keyed on the
-          # resource class itself, so each resource warns independently (and
-          # only once) rather than one call anywhere silencing every other
-          # resource's first call.
-          warn_once(name, format(EXPORTABLE_DEPRECATION_MESSAGE_FORMAT, resource: name))
+        # Opts this resource out of the model-facing MCP surface.
+        def mcp(enabled)
+          @mcp_enabled = enabled
+        end
+
+        def mcp_enabled?
+          @mcp_enabled.nil? ? true : !!@mcp_enabled
         end
 
         # Returns the resource name derived from class name

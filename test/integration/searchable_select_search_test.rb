@@ -263,10 +263,10 @@ module AdminSuite
       assert_response :forbidden
     end
 
-    test "authorize hook receives action: :read, the resource, a nil record, and the controller" do
+    test "authorize hook receives action: :read, the resource, a nil record, and the context" do
       captured = nil
-      hook = lambda do |actor:, action:, resource:, record:, controller:|
-        captured = { action: action, resource: resource, record: record, controller: controller.class }
+      hook = lambda do |actor:, action:, resource:, record:, context:|
+        captured = { action: action, resource: resource, record: record, context: context }
         true
       end
 
@@ -275,7 +275,8 @@ module AdminSuite
       assert_equal :read, captured[:action]
       assert_equal Admin::Resources::SearchableSelectCompanyResource, captured[:resource]
       assert_nil captured[:record]
-      assert_equal AdminSuite::ResourcesController, captured[:controller]
+      assert_equal :web, captured[:context].surface
+      assert_equal AdminSuite::ResourcesController, captured[:context].controller.class
     end
 
     test "a stray ?id= is never loaded and never reaches authorize's record:" do
