@@ -28,7 +28,7 @@ See `../_vault/products/admin_suite/docs/development.md` for detailed informatio
 ### CI Checks
 
 All pull requests must pass the following checks before merging:
-- **Tests**: Automated test suite runs on Ruby 3.2 and 3.3
+- **Tests**: Automated test suite runs on the latest available patch releases of Ruby 3.2, 3.3, 3.4, and 4.0
 - **Coverage**: Code coverage is automatically generated and uploaded to Codecov
 - **Code Review**: At least one maintainer approval required
 
