@@ -15,9 +15,19 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment: release
+    if: >-
+      ${{ github.repository == 'techwright-lab/admin_suite' && (
+        (github.event_name == 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push' &&
+         github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository) ||
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      ) }}
     permissions:
       contents: write
+      id-token: write
     
     steps:
       - uses: actions/checkout@v4
@@ -70,22 +80,14 @@ jobs:
             echo "Version $CURRENT_VERSION is new"
           fi
       
+      - name: Configure RubyGems trusted publishing
+        if: steps.version_check.outputs.should_publish == 'true'
+        uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
+
       - name: Publish to RubyGems
         if: steps.version_check.outputs.should_publish == 'true'
-        env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
         run: |
-          # Setup credentials file and ensure cleanup on exit
-          mkdir -p ~/.gem
-          trap 'rm -f ~/.gem/credentials' EXIT
-          
-          cat << EOF > ~/.gem/credentials
-          ---
-          :rubygems_api_key: ${GEM_HOST_API_KEY}
-          EOF
-          chmod 0600 ~/.gem/credentials
-          
-          gem push admin_suite-${{ steps.version_check.outputs.current_version }}.gem
+          gem push admin_suite-${{ steps.version_check.outputs.current_version }}.gem --host https://rubygems.org
       
       - name: Create Git tag
         run: |

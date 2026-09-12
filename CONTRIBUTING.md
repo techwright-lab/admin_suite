@@ -28,7 +28,7 @@ See `../_vault/products/admin_suite/docs/development.md` for detailed informatio
 ### CI Checks
 
 All pull requests must pass the following checks before merging:
-- **Tests**: Automated test suite runs on Ruby 3.2 and 3.3
+- **Tests**: Automated test suite runs on the latest available patch releases of Ruby 3.2, 3.3, 3.4, and 4.0
 - **Coverage**: Code coverage is automatically generated and uploaded to Codecov
 - **Code Review**: At least one maintainer approval required
 
@@ -40,10 +40,15 @@ See `../_vault/products/admin_suite/docs/releasing.md` for information on how re
 
 Releases are automated via GitHub Actions when changes are merged to `main` with a version bump.
 
-### Required Secrets for Maintainers
+### Publishing Setup for Maintainers
 
-The repository requires the following secrets to be configured:
-- **`RUBYGEMS_API_KEY`**: Required for automated gem publishing to RubyGems
+RubyGems Trusted Publishing authenticates GitHub Actions with short-lived OIDC
+credentials; no `RUBYGEMS_API_KEY` secret is needed. The gem's trusted publisher
+must match `techwright-lab/admin_suite`, workflow `publish.yml`, and environment
+`release`. Restrict the GitHub `release` environment to the `main` branch.
+See the canonical releasing guide linked above for setup and verification.
+
+Optional repository secret:
 - **`CODECOV_TOKEN`**: Optional, for uploading code coverage reports to Codecov (workflow continues without it)
 
 ## Questions?
