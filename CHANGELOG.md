@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-09-12
+
+### Fixed
+- Automated gem publishing now uses RubyGems Trusted Publishing (GitHub Actions
+  OIDC) instead of a long-lived API key that required an interactive MFA code.
+- Publishing is restricted to successful CI for main-branch pushes from this
+  repository, or manual dispatch on main, using the protected `release` environment.
+
+### Upgrade notes
+- Includes the changes listed under 0.6.0 below, which was not published to
+  RubyGems. Upgrading from 0.5.0 requires the 0.6.0 host authentication,
+  authorization, and renderer migrations.
+
 ## [0.6.0] - 2026-09-09
 
 ### Breaking
