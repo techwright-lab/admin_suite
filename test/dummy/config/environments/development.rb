@@ -31,14 +31,17 @@ Rails.application.configure do
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
-  # Raise an error on page load if there are pending migrations.
-  config.active_record.migration_error = :page_load
+  # The dummy app can run without the Active Record railtie.
+  if config.respond_to?(:active_record)
+    # Raise an error on page load if there are pending migrations.
+    config.active_record.migration_error = :page_load
 
-  # Highlight code that triggered database queries in logs.
-  config.active_record.verbose_query_logs = true
+    # Highlight code that triggered database queries in logs.
+    config.active_record.verbose_query_logs = true
 
-  # Append comments with runtime information tags to SQL queries in logs.
-  config.active_record.query_log_tags_enabled = true
+    # Append comments with runtime information tags to SQL queries in logs.
+    config.active_record.query_log_tags_enabled = true
+  end
 
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
