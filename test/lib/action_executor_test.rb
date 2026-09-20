@@ -2,6 +2,8 @@
 
 require "test_helper"
 require "tmpdir"
+require "open3"
+require "rbconfig"
 
 module Admin
   module Base
@@ -96,16 +98,22 @@ module Admin
       end
 
       test "load_action_handlers_for_admin_suite returns early when AdminSuite is not defined" do
-        # Temporarily undefine AdminSuite to test early return
-        admin_suite_defined = defined?(AdminSuite)
+        # Bundler evaluates the gemspec and defines AdminSuite::VERSION.
+        # Bypass its RUBYOPT preload in this dependency-free subprocess.
+        script = <<~RUBY
+          require_relative "lib/admin/base/action_executor"
+          abort "AdminSuite unexpectedly loaded" if defined?(AdminSuite)
+          executor = Admin::Base::ActionExecutor.new(nil, :test, nil)
+          result = executor.send(:load_action_handlers_for_admin_suite!)
+          abort "Expected early return" unless result.nil?
+          abort "Handlers marked loaded" if Admin::Base::ActionExecutor.handlers_loaded
+        RUBY
+        stdout, stderr, status = Open3.capture3(
+          { "RUBYOPT" => nil }, RbConfig.ruby, "--disable-gems", "-e", script,
+          chdir: File.expand_path("../..", __dir__)
+        )
 
-        skip "Cannot test AdminSuite undefined condition when AdminSuite is required" if admin_suite_defined
-
-        resource_class = Struct.new(:resource_name).new("test")
-        executor = ActionExecutor.new(resource_class, :test, nil)
-
-        # This should return early without error
-        assert_nil executor.send(:load_action_handlers_for_admin_suite!)
+        assert status.success?, "Isolated executor failed:\n#{stdout}#{stderr}"
       end
 
       test "load_action_handlers_for_admin_suite handles empty action_globs gracefully" do
