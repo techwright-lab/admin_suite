@@ -1,0 +1,4 @@
+# Reviewed baseline at 4f5d43b20e7a60aa4e58635fdcb2ab7fa81fd2bf plus this adoption.
+# 0 fingerprints. Do not refresh in CI. bin/archspec-baseline rejects stale ids.
+---
+violations: []
