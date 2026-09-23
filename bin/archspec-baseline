@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Rejects stale archspec_todo.yml ids. archspec 1.1.0 subtracts recorded
+# violations but does not fail when an id no longer matches. New violations
+# still fail `bin/archspec check`. Together the two commands cap the baseline
+# at the reviewed fingerprint set. Does not boot Rails, the database, or the
+# network, and never rewrites the todo.
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __dir__)
+
+require "rubygems"
+require "bundler/setup"
+require "archspec"
+require "yaml"
+
+def load_architecture(config_path)
+  abort "archspec-baseline: no #{config_path} found" unless File.exist?(config_path)
+
+  absolute = File.expand_path(config_path)
+  definition = ArchSpec::Definition.new
+  definition.base_dir = File.dirname(absolute)
+  definition.extend(ArchSpec::DSL::Context)
+  definition.instance_eval(File.read(absolute), absolute)
+  root = definition.absolute_root
+  todo_path = definition.todo_path && File.expand_path(definition.todo_path, root)
+  [ definition, root, todo_path ]
+end
+
+config = ARGV.fetch(0, "Archspec.rb")
+definition, root, todo_path = load_architecture(config)
+abort "archspec-baseline: no todo configured in #{config}" unless todo_path
+abort "archspec-baseline: missing #{todo_path}" unless File.exist?(todo_path)
+
+graph = ArchSpec::Analyzer.analyze(definition, root: root)
+current = ArchSpec::Evaluator.evaluate(definition, graph, todo: ArchSpec::Todo.empty(root: root))
+current_ids = current.to_set { |diagnostic| diagnostic.fingerprint(root: root) }
+
+document = YAML.safe_load_file(todo_path, permitted_classes: [], aliases: false) || {}
+unless document.is_a?(Hash) && (document["violations"].nil? || document["violations"].is_a?(Array))
+  abort "archspec-baseline: invalid todo file #{todo_path}"
+end
+
+ids = Array(document["violations"]).map.with_index do |entry, index|
+  id = entry.is_a?(Hash) ? entry["id"] : entry
+  id = id.to_s if id.is_a?(Integer)
+  abort "archspec-baseline: violation #{index + 1} has no id" unless id.is_a?(String) && !id.empty?
+
+  id
+end
+
+duplicates = ids.tally.select { |_id, count| count > 1 }.keys
+stale = ids.reject { |id| current_ids.include?(id) }
+
+if duplicates.any? || stale.any?
+  warn "archspec-baseline: baseline is not the current fingerprint set"
+  duplicates.each { |id| warn "  duplicate #{id}" }
+  stale.each { |id| warn "  stale #{id}" }
+  abort "archspec-baseline: #{stale.size} stale, #{duplicates.size} duplicate"
+end
+
+warn "archspec-baseline: #{ids.size} fingerprints, none stale" if ENV["ARCHSPEC_BASELINE_VERBOSE"]
