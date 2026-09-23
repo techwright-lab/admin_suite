@@ -6,8 +6,6 @@ gemspec
 group :development, :test do
   # Provides the asset pipeline used by the engine/dummy app.
   gem "propshaft"
-
-  # Architecture linter — rules in Archspec.rb. Dev/test only, not a runtime dependency.
   gem "archspec", "1.1.0", require: false
 end
 

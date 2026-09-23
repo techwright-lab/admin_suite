@@ -1,11 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Rejects stale archspec_todo.yml ids. archspec 1.1.0 subtracts recorded
-# violations but does not fail when an id no longer matches. New violations
-# still fail `bin/archspec check`. Together the two commands cap the baseline
-# at the reviewed fingerprint set. Does not boot Rails, the database, or the
-# network, and never rewrites the todo.
+# archspec 1.1.0 subtracts recorded violations but does not fail stale ids.
+# Reject those ids. Never rewrite the todo.
 
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __dir__)
 

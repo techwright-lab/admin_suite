@@ -1,25 +1,6 @@
-# Architecture spec for the engine, its namespace, and the test dummy.
-# Enforced by `bin/archspec check` and `bin/archspec-baseline` (bin/ci + the
-# hosted CI architecture job). Accepted legacy violations live in
-# archspec_todo.yml. Refresh only deliberately via
-# `bin/archspec check --update-todo`. Neither CI path passes that flag.
-# Checks do not boot Rails, the database, or the network.
-#
-# Enabled rules:
-# - architecture :rails over engine controllers/helpers and the dummy app's
-#   controllers, helpers, and models. Mailers, jobs, and services are declared
-#   so the preset applies if those directories appear.
-# - preset :ruby_conventions.
-# - Engine library code may not depend on controllers, helpers, or dummy models.
-# - MCP tools, UI renderers, and AdminSuite::Query may not persist.
-# - Dummy models may not depend on controllers or helpers (rails preset).
-#
-# Justified exceptions:
-# - No BaseService, agent, or Ai::Client rule. This engine has none.
-# - test/ fixtures and test/dummy/test are not in the scan. Dummy app code is
-#   included because it is the engine's Rails host, not a fixture.
-# - Generators may reference the engine; they may not depend on controllers
-#   or dummy models.
+# No BaseService, agent, or Ai::Client rule: this engine has none.
+# test/ and test/dummy/test stay out of the scan; dummy app code is the host, not a fixture.
+# Generators may reference the engine; they may not depend on controllers or dummy models.
 
 todo "archspec_todo.yml"
 
@@ -51,10 +32,13 @@ jobs.cannot_use :controllers, :helpers
 engine.cannot_use :controllers, :helpers, :models
 mcp.cannot_use :controllers, :helpers, :models
 ui.cannot_use :controllers, :helpers, :models
-queries.cannot_use :controllers, :helpers, :models
+queries.cannot_use :controllers, :helpers, :models, :mcp
 legacy_admin.cannot_use :controllers, :helpers, :models
 generators.cannot_use :controllers, :models
 
+mcp.cannot_call :save, :save!, :update, :update!, :destroy, :destroy!,
+  :create, :create!, :upsert, :upsert_all, :delete_all, :update_all,
+  :insert_all, :touch, receiver: :any
 ui.cannot_call :save, :save!, :update, :update!, :destroy, :destroy!,
   :create, :create!, :upsert, :upsert_all, :delete_all, :update_all,
   :insert_all, :touch, receiver: :any
