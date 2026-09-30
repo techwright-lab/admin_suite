@@ -2,6 +2,8 @@
 
 Start with `README.md` for the repository entry point.
 
+Architecture boundaries are `bin/archspec check` and `bin/archspec-baseline` (`Archspec.rb`). Do not grow `archspec_todo.yml`. The hosted `architecture` job runs both commands. Checks do not boot Rails.
+
 ## Product documentation (normative)
 
 - Canonical AdminSuite docs live in `../_vault/products/admin_suite/docs/` in the TechWright workspace.

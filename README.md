@@ -20,6 +20,10 @@ Canonical AdminSuite documentation lives in the TechWright vault at
 `../_vault/products/admin_suite/docs/`. This repo intentionally has no root
 `docs/` tree or docs symlink.
 
+## Architecture check
+
+`bin/archspec check` and `bin/archspec-baseline` enforce engine, namespace, and dummy-app boundaries in `Archspec.rb`. They do not boot Rails. Do not grow `archspec_todo.yml`.
+
 ## Quickstart
 
 Add the gem:

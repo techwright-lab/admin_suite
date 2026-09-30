@@ -6,6 +6,7 @@ gemspec
 group :development, :test do
   # Provides the asset pipeline used by the engine/dummy app.
   gem "propshaft"
+  gem "archspec", "1.1.0", require: false
 end
 
 group :test do

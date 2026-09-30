@@ -32,6 +32,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Dependency check/install.
 step "Setup: Bundle check" bundle check
 
+# Architecture boundaries. Unconditional: a missing binstub or config fails the run.
+step "Architecture: ArchSpec" bin/archspec check
+step "Architecture: baseline cap" bin/archspec-baseline
+
 # Tests: matches GitHub CI for this engine.
 step "Tests: Rake" env COVERAGE=true bundle exec rake test
 
