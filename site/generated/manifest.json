@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "exporter_sha256": "74d97632b2da7cc5615a665b6482f86719d833dccd19d96c5772f6a678aa8252",
+  "config_sha256": "407f6866cdeccda84a25e120bd7297b113ae2cb9a76ce95333adfa94c8126935",
+  "source_revision": "2e89dd351e9c966aeac37970ada0e413a3d7fe9f",
+  "source_root": "products/admin_suite/docs",
+  "files": {
+    "index.md": {
+      "source_sha256": "a8a793f6a9326d9030aa9f4d3fac895996c1142eb2ea89bc56be15b424d88a88",
+      "output_sha256": "253119ad9fb9f105a0163ee42f0c3ad9bf4f5d06d89a0f457cb46d3815f740e3"
+    },
+    "installation.md": {
+      "source_sha256": "639a1bdb260e3174cf3bcea2964952983cf0c3cd53493db1562937570053c94d",
+      "output_sha256": "a2030ada46d8a31110a1c65085dc7a5ed73c3ac572e8f5d5ea42f317bc692355"
+    },
+    "configuration.md": {
+      "source_sha256": "fdb995faf4ba096228d188458cfa72322241a0956eb7dbcb30b01e33b0d10fc0",
+      "output_sha256": "ab359650eac6e28834eaedaddca77e043906c176b804727a612c113587bc2134"
+    },
+    "authentication.md": {
+      "source_sha256": "466dfaabf260eb99363c9e234b99b972cad2e7c871a8a1b44d9d3f318097544e",
+      "output_sha256": "0adfede6f9a38507dab47ac10857e1b1a277d31d9fbd95c5143eec63934cc03b"
+    },
+    "portals.md": {
+      "source_sha256": "b6fe5e006c51853e4eb69adea47d09449f69d9a433641c5ed9ee206a17e59208",
+      "output_sha256": "b28fed411521bd978e4d371a62b8c6dd5b5eb4db9b26c2ed9fe6391155fe4bbb"
+    },
+    "resources.md": {
+      "source_sha256": "9672022744ad6ca0e21573283b6ca24059085f29ed140a9762a79f3074ba0987",
+      "output_sha256": "ccf8387ee4c3a31a8df29194c916dda5d823e9b074feda455e194c9604979a1d"
+    },
+    "fields.md": {
+      "source_sha256": "dc45d711d25ecc3c40b0a20d0d7fd5ba37b9992831cbc1388a503dd9ea763699",
+      "output_sha256": "a3b7bbc3690c8a331c52fa3d7a9b27a30a19604c1c2c7aefefc3a9bdaa5f007c"
+    },
+    "renderers.md": {
+      "source_sha256": "8ed0b26516801e353c7ef9c5711e1685f8e6581eb4ec6cd6eaed7dae1d8e8526",
+      "output_sha256": "7ca1c36b24d91bc66c04b4fd4c1485847c07476822edb7ceaa82f3535a5b8f5d"
+    },
+    "charts.md": {
+      "source_sha256": "d28fc61bff32020db06766c12648fce518f54514677e647537facc5b77fb26e6",
+      "output_sha256": "dcc2f77acc8e0944289db139d07b0bba4dc452c34ddf8ecde715e44f5951246a"
+    },
+    "actions.md": {
+      "source_sha256": "1e57d9f7036d4199baa8790ed1405ec833294755098c850a84de9173e754fa5b",
+      "output_sha256": "cd2d6c6099f6ebbc49729653b3aca1951638ff4f68cc0f15b4e172b038caf056"
+    },
+    "mcp.md": {
+      "source_sha256": "b4ee7c7cee35d504fd490bebfa7869650f6aabb4e06b53b7db295dcd814c1071",
+      "output_sha256": "475cdc6bb834af6bc4aef2a7eef328a469f0026e3adcf8bcc2b9c866ec8ce07b"
+    },
+    "theming.md": {
+      "source_sha256": "be67f91ca25edf74226a0a97c5297eca358c7fe930401d717134c4da95ecccff",
+      "output_sha256": "524dc0c0262ebbe109a81e7a6e45d2d4b18dca0e58dc862042a6755c841ca231"
+    },
+    "docs_viewer.md": {
+      "source_sha256": "504b8830cf25680fce67de9fc98d5b76dd64259b4200e363c4579cf7eba0a80a",
+      "output_sha256": "a6d23aa17c7a4a5493ea593d12a6d60bcf0bc06d3449af0caf5eff5f8db96286"
+    },
+    "troubleshooting.md": {
+      "source_sha256": "f763cd42a5549a4361a849086c71fff015aa264148d2e6a9f04b155d31ca1c4b",
+      "output_sha256": "d2686af99ad78a06460c7b9b550ad804319c73e340ec15cb576646f51ab20973"
+    },
+    "development.md": {
+      "source_sha256": "c3c4465886437cc97535e3612e65536310a858ecbf3a8ac61e41f057687b343b",
+      "output_sha256": "5ab675cd819a3d4795a9580225fb3f9aa47c8194f1b6b903b5602462aa419f50"
+    },
+    "releasing.md": {
+      "source_sha256": "2ec469f6d1d5cd56d32d1f6d5732b4609fb8941878af001c699e8efe1cd1b6fd",
+      "output_sha256": "06d6ea127447c97f00bf590dc35941173edf5f04be1e60c46399de19106f7f70"
+    },
+    "docs-publication.md": {
+      "source_sha256": "1de3a5ace4d9af0f3fec4a1d8ac6d8be486b9090cec83c220fb6614783af695a",
+      "output_sha256": "8c42d9dc1b42e5bc29fae63bfb7142b0bfa31f82f92f27cd16ae1fc84e7fe033"
+    }
+  }
+}

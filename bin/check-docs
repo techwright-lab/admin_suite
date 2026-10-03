@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+
+require "json"
+require "nokogiri"
+require "pathname"
+require "uri"
+require "yaml"
+require_relative "../lib/admin_suite/version"
+
+site = Pathname.new(ARGV.fetch(0, "site/_site")).expand_path
+config = YAML.safe_load_file(File.expand_path("../site/_config.yml", __dir__))
+origin = config.fetch("url")
+baseurl = config.fetch("baseurl")
+failures = []
+pages = site.glob("**/*.html").to_h { |path| [ path, Nokogiri::HTML5(path.read) ] }
+abort "No built documentation pages found in #{site}" if pages.empty?
+publication = YAML.safe_load_file(File.expand_path("../site/publication.yml", __dir__))
+expected_pages = publication.fetch("pages").map { |page| site.join(page.fetch("permalink").delete_prefix("/"), "index.html") }.sort
+failures << "Built pages do not match the publication allowlist" unless pages.keys.sort == expected_pages
+
+check_url = lambda do |reference, source|
+  current = "#{origin}#{baseurl}/#{source.relative_path_from(site)}"
+  uri = URI.join(current, reference)
+  next unless uri.host == URI(origin).host
+
+  path = URI::DEFAULT_PARSER.unescape(uri.path)
+  unless path == baseurl || path.start_with?("#{baseurl}/")
+    failures << "#{source}: link escapes the project base URL: #{reference}"
+    next
+  end
+  target = site.join(path.delete_prefix(baseurl).delete_prefix("/")).cleanpath
+  target = target.join("index.html") if target.directory?
+  unless target.to_s.start_with?("#{site}/") && target.file?
+    failures << "#{source}: missing local target: #{reference}"
+    next
+  end
+  if uri.fragment && !uri.fragment.empty? && pages.key?(target)
+    fragment = URI::DEFAULT_PARSER.unescape(uri.fragment)
+    failures << "#{source}: missing anchor: #{reference}" unless pages[target].css("[id]").any? { |node| node["id"] == fragment }
+  end
+rescue URI::InvalidURIError => error
+  failures << "#{source}: invalid URL #{reference.inspect}: #{error.message}"
+end
+
+pages.each do |path, document|
+  failures << "#{path}: missing page title" if document.at_css("title")&.text.to_s.strip.empty?
+  failures << "#{path}: missing main content" unless document.at_css("main h1")
+  failures << "#{path}: missing search input" unless document.at_css("#search-input")
+  failures << "#{path}: incorrect release version" unless document.at_css(".docs-version")&.text&.include?("AdminSuite #{AdminSuite::VERSION}")
+  failures << "#{path}: missing dark color scheme" unless document.at_css('meta[name="color-scheme"]')&.[]("content") == "dark"
+  document.css("a[href], link[href], img[src], script[src]").each do |element|
+    reference = element["href"] || element["src"]
+    check_url.call(reference, path) unless reference.to_s.empty?
+  end
+end
+
+search_path = site.join("assets/js/search-data.json")
+if search_path.file?
+  entries = JSON.parse(search_path.read).values
+  failures << "Search index is empty" if entries.empty?
+  entries.each { |entry| check_url.call(entry.fetch("url"), site.join("index.html")) }
+  pages.each_key do |path|
+    expected = "#{origin}#{baseurl}/#{path.relative_path_from(site).to_s.delete_suffix("index.html")}"
+    failures << "#{path}: absent from search index" unless entries.any? { |entry| URI.join(origin, entry.fetch("url")).to_s.split("#").first == expected }
+  end
+else
+  failures << "Missing search index: #{search_path}"
+end
+
+%w[Gemfile Gemfile.lock _config.yml publication.yml generated/manifest.json].each do |filename|
+  failures << "Build input was published: #{filename}" if site.join(filename).exist?
+end
+abort failures.join("\n") unless failures.empty?
+puts "Checked #{pages.length} documentation pages, local links, assets, anchors, and search entries."

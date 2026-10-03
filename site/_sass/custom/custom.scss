@@ -1,0 +1,18 @@
+:root { color-scheme: dark; }
+
+.site-title { font-weight: 650; letter-spacing: -0.04em; }
+.main-content { line-height: 1.7; }
+.main-content h1 { letter-spacing: -0.04em; }
+.main-content h2 { letter-spacing: -0.025em; }
+.site-footer { color: #b3c0d4; }
+.site-nav .nav-list-link.active { box-shadow: inset 3px 0 #91baff; }
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid #91baff;
+  outline-offset: 3px;
+}
+.search-input::placeholder { color: #b3c0d4; }
+.docs-version { color: #b3c0d4; font-size: 0.75rem; letter-spacing: 0.02em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+}
