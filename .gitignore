@@ -10,6 +10,11 @@
 /test/dummy/storage/
 admin_suite-*.gem
 /.bundle/
+/site/_site/
+/site/.jekyll-cache/
+/site/.sass-cache/
+/site/.bundle/
+/site/vendor/
 
 # Agent scratch: git worktrees created per-phase, and subagent-driven-development
 # ledgers/briefs/review diffs. Never part of the gem — `spec.files` is an

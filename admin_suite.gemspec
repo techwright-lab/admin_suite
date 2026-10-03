@@ -10,13 +10,12 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Reusable admin suite engine"
   spec.description = "A Rails engine providing a declarative resource DSL and a Hotwire/Tailwind admin UI."
-  # TODO: set to the new GitHub repo URL before publishing.
   spec.homepage = "https://github.com/techwright-lab/admin_suite"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2"
 
   spec.metadata["rubygems_mfa_required"] = "true"
-  # Optional, but recommended once the repo exists:
+  spec.metadata["documentation_uri"] = "https://techwright-lab.github.io/admin_suite/"
   spec.metadata["source_code_uri"] = spec.homepage
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/CHANGELOG.md"
 

@@ -19,6 +19,11 @@ See `../_vault/products/admin_suite/docs/development.md` for detailed informatio
 
 ## Pull Requests
 
+For the public Jekyll site, edit the canonical vault sources and regenerate the
+publication snapshot; do not hand-edit `site/generated/`. See
+`../_vault/products/admin_suite/docs/docs-publication.md` or the
+[published workflow](https://techwright-lab.github.io/admin_suite/docs-publication/).
+
 1. Create a feature branch from `main`
 2. Make your changes
 3. Add or update tests as needed

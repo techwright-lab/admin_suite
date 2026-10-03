@@ -16,9 +16,17 @@ across other products.
 
 ## Documentation
 
+[Read the documentation](https://techwright-lab.github.io/admin_suite/) —
+[Installation](https://techwright-lab.github.io/admin_suite/installation/),
+[Resources](https://techwright-lab.github.io/admin_suite/resources/), and
+[Admin MCP](https://techwright-lab.github.io/admin_suite/mcp/).
+
 Canonical AdminSuite documentation lives in the TechWright vault at
 `../_vault/products/admin_suite/docs/`. This repo intentionally has no root
-`docs/` tree or docs symlink.
+`docs/` tree or docs symlink. The Jekyll site in `site/` publishes a generated,
+allowlisted snapshot. See the [publication guide](https://techwright-lab.github.io/admin_suite/docs-publication/)
+or its canonical source, `../_vault/products/admin_suite/docs/docs-publication.md`,
+for export, drift checks, local preview, and GitHub Pages setup.
 
 ## Architecture check
 
@@ -59,7 +67,7 @@ AdminSuite.configure do |config|
 end
 ```
 
-Read more: `../_vault/products/admin_suite/docs/configuration.md`
+Read more: [Configuration](https://techwright-lab.github.io/admin_suite/configuration/).
 
 Set `config.authorize` to decide *what* an authenticated actor may do:
 
@@ -75,7 +83,7 @@ keeps authentication as the only web gate; MCP serves no tools or data. Resource
 CRUD, `toggle`, and named execute/bulk actions regardless of this hook.
 
 The MCP endpoint is `<mount>/mcp`. See
-`../_vault/products/admin_suite/docs/mcp.md` for setup, tool contracts and migration.
+[Admin MCP](https://techwright-lab.github.io/admin_suite/mcp/) for setup, tool contracts and migration.
 
 ### Add portals (navigation metadata)
 
@@ -88,7 +96,7 @@ AdminSuite.configure do |config|
 end
 ```
 
-Read more: `../_vault/products/admin_suite/docs/portals.md`
+Read more: [Portals & dashboards](https://techwright-lab.github.io/admin_suite/portals/).
 
 ### Add a resource
 
@@ -127,7 +135,7 @@ module Admin
 end
 ```
 
-Read more: `../_vault/products/admin_suite/docs/resources.md` and `../_vault/products/admin_suite/docs/fields.md`
+Read more: [Resources](https://techwright-lab.github.io/admin_suite/resources/) and [Fields](https://techwright-lab.github.io/admin_suite/fields/).
 
 ### Add docs (optional)
 
@@ -137,7 +145,7 @@ Then visit:
 
 - `/internal/admin/docs`
 
-Read more: `../_vault/products/admin_suite/docs/docs_viewer.md`
+Read more: [Docs viewer](https://techwright-lab.github.io/admin_suite/docs-viewer/).
 
 ## Contributing
 
@@ -146,4 +154,3 @@ See:
 - `CONTRIBUTING.md`
 - `../_vault/products/admin_suite/docs/development.md`
 - `../_vault/products/admin_suite/docs/releasing.md`
-

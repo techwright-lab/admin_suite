@@ -1,0 +1,29 @@
+title: AdminSuite
+description: A resource-driven admin interface for Rails. Configure resources, dashboards, authentication, and operator MCP.
+url: https://techwright-lab.github.io
+baseurl: /admin_suite
+theme: just-the-docs
+color_scheme: admin-dark
+permalink: pretty
+search_enabled: true
+heading_anchors: true
+enable_copy_code_button: true
+search:
+  heading_level: 3
+  previews: 3
+  focus_shortcut_key: k
+aux_links:
+  GitHub:
+    - https://github.com/techwright-lab/admin_suite
+  RubyGems:
+    - https://rubygems.org/gems/admin_suite
+gh_edit_link: false
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - publication.yml
+  - generated/manifest.json
+  - vendor
+  - .bundle
+  - .jekyll-cache
+  - _site

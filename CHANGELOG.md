@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-04
+
+### Added
+- Public Jekyll documentation with a dark Just the Docs theme, responsive
+  navigation, full-text search, and versioned gem metadata.
+- GitHub Pages build and deployment workflow with rendered link, asset, anchor,
+  and search checks. Pull requests validate without deploying.
+- Deterministic, allowlisted publication export from canonical vault docs with
+  source revision tracking, content hashes, and export drift checks.
+
 ## [0.6.2] - 2026-10-03
 
 ### Fixed

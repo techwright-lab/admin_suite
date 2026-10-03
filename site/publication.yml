@@ -1,0 +1,54 @@
+# Explicit public-source allowlist, relative to the canonical vault docs root.
+# Content is edited in the vault and exported with bin/export-docs.
+pages:
+  - source: index.md
+    title: Overview
+    permalink: /
+  - source: installation.md
+    title: Installation
+    permalink: /installation/
+  - source: configuration.md
+    title: Configuration
+    permalink: /configuration/
+  - source: authentication.md
+    title: Authentication & authorization
+    permalink: /authentication/
+  - source: portals.md
+    title: Portals & dashboards
+    permalink: /portals/
+  - source: resources.md
+    title: Resources
+    permalink: /resources/
+  - source: fields.md
+    title: Fields
+    permalink: /fields/
+  - source: renderers.md
+    title: Renderers
+    permalink: /renderers/
+  - source: charts.md
+    title: Charts
+    permalink: /charts/
+  - source: actions.md
+    title: Actions
+    permalink: /actions/
+  - source: mcp.md
+    title: Admin MCP
+    permalink: /mcp/
+  - source: theming.md
+    title: Theming & assets
+    permalink: /theming/
+  - source: docs_viewer.md
+    title: Docs viewer
+    permalink: /docs-viewer/
+  - source: troubleshooting.md
+    title: Troubleshooting
+    permalink: /troubleshooting/
+  - source: development.md
+    title: Development
+    permalink: /development/
+  - source: releasing.md
+    title: Releasing
+    permalink: /releasing/
+  - source: docs-publication.md
+    title: Publishing the docs
+    permalink: /docs-publication/
