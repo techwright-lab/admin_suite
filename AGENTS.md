@@ -4,6 +4,23 @@ Start with `README.md` for the repository entry point.
 
 Architecture boundaries are `bin/archspec check` and `bin/archspec-baseline` (`Archspec.rb`). Do not grow `archspec_todo.yml`. The hosted `architecture` job runs both commands. Checks do not boot Rails.
 
+## Agent skills
+
+### Issue tracker
+
+Track work in Paperclip (TechWright Labs, TEC), not GitHub Issues.
+Before tracker operations, read `../_vault/products/admin_suite/docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels.
+Before triage, read `../_vault/products/admin_suite/docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context glossary and ADRs live in the vault.
+Before exploring code, read `../_vault/products/admin_suite/docs/agents/domain.md`.
+
 ## Product documentation (normative)
 
 - Canonical AdminSuite docs live in `../_vault/products/admin_suite/docs/` in the TechWright workspace.
