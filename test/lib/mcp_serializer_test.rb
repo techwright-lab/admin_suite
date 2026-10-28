@@ -9,7 +9,7 @@ class McpSerializerTest < ActiveSupport::TestCase
 
   test "emits only the resource's declared columns" do
     record = Struct.new(:id, :name, :secret_token).new(1, "Widget", "sh-hh")
-    config = Config.new(Index.new([Column.new(:id), Column.new(:name)]))
+    config = Config.new(Index.new([ Column.new(:id), Column.new(:name) ]))
 
     row = AdminSuite::Mcp::Serializer.index_row(record, config)
 
@@ -21,7 +21,7 @@ class McpSerializerTest < ActiveSupport::TestCase
     record = Object.new
     def record.id = 1
     def record.name = raise("boom")
-    config = Config.new(Index.new([Column.new(:id), Column.new(:name)]))
+    config = Config.new(Index.new([ Column.new(:id), Column.new(:name) ]))
 
     row = AdminSuite::Mcp::Serializer.index_row(record, config)
 
@@ -31,7 +31,7 @@ class McpSerializerTest < ActiveSupport::TestCase
 
   test "association panels return bounded rows containing only declared columns" do
     show = Admin::Base::Resource::ShowConfig.new
-    show.panel :children, association: :children, columns: [:name], limit: 500
+    show.panel :children, association: :children, columns: [ :name ], limit: 500
     config = Struct.new(:show_config).new(show)
     child = Struct.new(:name, :secret_token).new("Visible", "private")
     record = Struct.new(:children).new(Array.new(150, child))
@@ -56,7 +56,7 @@ class McpSerializerTest < ActiveSupport::TestCase
   test "a content lambda serializes the proc result, not a missing attribute" do
     record = Struct.new(:id).new(1)
     column = Admin::Base::Resource::ColumnDefinition.new(name: :listings_count, content: ->(_r) { 42 })
-    config = Config.new(Index.new([column]))
+    config = Config.new(Index.new([ column ]))
 
     assert_equal 42, AdminSuite::Mcp::Serializer.index_row(record, config)[:listings_count]
   end
@@ -64,7 +64,7 @@ class McpSerializerTest < ActiveSupport::TestCase
   test "a label lambda serializes the proc result" do
     record = Struct.new(:id).new(1)
     column = Admin::Base::Resource::ColumnDefinition.new(name: :status, content: ->(_r) { "active" }, type: :label)
-    config = Config.new(Index.new([column]))
+    config = Config.new(Index.new([ column ]))
 
     assert_equal "active", AdminSuite::Mcp::Serializer.index_row(record, config)[:status]
   end
@@ -73,7 +73,7 @@ class McpSerializerTest < ActiveSupport::TestCase
     created_at = Time.utc(2026, 9, 10, 12, 0, 0)
     application = SerializerApplication.new(id: 7, name: "Acme")
     record = Struct.new(:created_at, :application, :blob).new(created_at, application, SerializerOpaque.new)
-    config = Config.new(Index.new([Column.new(:created_at), Column.new(:application), Column.new(:blob)]))
+    config = Config.new(Index.new([ Column.new(:created_at), Column.new(:application), Column.new(:blob) ]))
 
     row = AdminSuite::Mcp::Serializer.index_row(record, config)
     text = AdminSuite::Mcp::Serializer.dump(row)
@@ -86,7 +86,7 @@ class McpSerializerTest < ActiveSupport::TestCase
 
   test "a missing association panel degrades that panel instead of raising" do
     show = Admin::Base::Resource::ShowConfig.new
-    show.panel :children, association: :missing_kids, columns: [:name]
+    show.panel :children, association: :missing_kids, columns: [ :name ]
     config = Struct.new(:show_config).new(show)
 
     payload = AdminSuite::Mcp::Serializer.associations_payload(Object.new, config, max_rows: 100)

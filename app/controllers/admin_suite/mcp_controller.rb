@@ -15,7 +15,7 @@ module AdminSuite
       AdminSuite::DefinitionLoader.load!(:resources)
       server = AdminSuite::Mcp.server_for(actor: admin_suite_actor, request: request)
       transport = ::MCP::Server::Transports::StreamableHTTPTransport.new(
-        server, stateless: true, allowed_hosts: [request.host]
+        server, stateless: true, allowed_hosts: [ request.host ]
       )
       status, headers, body = transport.handle_request(request)
       self.status = status

@@ -1,0 +1,25 @@
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
+Lint/DuplicateMethods:
+  Enabled: true
+Lint/DuplicateCaseCondition:
+  Enabled: true
+Lint/DuplicateElsifCondition:
+  Enabled: true
+Lint/DuplicateHashKey:
+  Enabled: true
+Lint/DuplicateMagicComment:
+  Enabled: true
+Lint/DuplicateMatchPattern:
+  Enabled: true
+Lint/DuplicateRegexpCharacterClassElement:
+  Enabled: true
+Lint/DuplicateRequire:
+  Enabled: true
+Lint/DuplicateRescueException:
+  Enabled: true
+Lint/DuplicateSetElement:
+  Enabled: true
+Lint/DuplicateBranch:
+  Enabled: false
