@@ -32,6 +32,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Dependency check/install.
 step "Setup: Bundle check" bundle check
 
+step "Lint: RuboCop" bin/rubocop
+
 # Architecture boundaries. Unconditional: a missing binstub or config fails the run.
 step "Architecture: ArchSpec" bin/archspec check
 step "Architecture: baseline cap" bin/archspec-baseline

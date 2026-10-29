@@ -99,7 +99,7 @@ module AdminSuite
 
     test "the index stats markup comes from the shared stat partial" do
       source = AdminSuite::Engine.root.join("app/views/admin_suite/resources/index.html.erb").read
-      refute_includes source, 'text-<%= color %>-600'
+      refute_includes source, "text-<%= color %>-600"
       assert_includes source, "admin_suite/panels/stat"
     end
 

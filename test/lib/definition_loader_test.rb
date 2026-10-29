@@ -189,7 +189,7 @@ module AdminSuite
           with_globs(:portals, []) do
             with_globs(:dashboards, []) do
               with_globs(:actions, []) do
-                AdminSuite.portal(:reset_for_new_request_test) {}
+                AdminSuite.portal(:reset_for_new_request_test) { }
                 AdminSuite::DefinitionLoader.load!(:resources)
                 Admin::Base::ActionExecutor.handlers_loaded = true
                 AdminSuite.config.root_dashboard_loaded = true

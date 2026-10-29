@@ -104,7 +104,7 @@ module AdminSuite
         assert bars, "expected the bars wrapper"
         assert_equal "height: 192px;", bars["style"], "bars wrapper must carry the default definite chart height"
         assert_equal 2, bars.css(".h-full").size
-        assert_equal ["height: 2%", "height: 100%"], bars.css(".h-full > div").map { |bar| bar["style"] }
+        assert_equal [ "height: 2%", "height: 100%" ], bars.css(".h-full > div").map { |bar| bar["style"] }
         assert_includes chart.text, "Jul 30"
         assert_includes chart.text, "Thursday"
       end

@@ -60,7 +60,7 @@ module AdminSuite
         glob_key: :resource_globs,
         reset: -> { Admin::Base::Resource.reset_registry! },
         loaded?: -> { Admin::Base::Resource.registered_resources.any? },
-        mark_loaded!: -> {},
+        mark_loaded!: -> { },
         # Resource registration happens *only* via `Class#inherited`
         # (lib/admin/base/resource.rb), which fires on class *creation* and
         # never on reopening an already-defined class. Resetting the
@@ -87,7 +87,7 @@ module AdminSuite
         glob_key: :portal_globs,
         reset: -> { AdminSuite::PortalRegistry.reset! },
         loaded?: -> { AdminSuite::PortalRegistry.all.any? },
-        mark_loaded!: -> {},
+        mark_loaded!: -> { },
         dev_resettable: true
       },
       dashboards: {

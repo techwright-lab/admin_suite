@@ -14,7 +14,7 @@ module McpListRecordsFixtures
       @secret_token = secret_token
     end
 
-    def self.all = ReadOnlyResourceFixtures::Relation.new([new])
+    def self.all = ReadOnlyResourceFixtures::Relation.new([ new ])
   end
 end
 

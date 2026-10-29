@@ -30,11 +30,11 @@ module AdminSuite
         end
 
         def denied_response
-          ::MCP::Tool::Response.new([{ type: "text", text: DENIED_MESSAGE }], error: true)
+          ::MCP::Tool::Response.new([ { type: "text", text: DENIED_MESSAGE } ], error: true)
         end
 
         def error_response(message)
-          ::MCP::Tool::Response.new([{ type: "text", text: message }], error: true)
+          ::MCP::Tool::Response.new([ { type: "text", text: message } ], error: true)
         end
 
         private
