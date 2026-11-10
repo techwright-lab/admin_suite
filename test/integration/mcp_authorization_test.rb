@@ -66,7 +66,7 @@ class McpAuthorizationTest < McpIntegrationTest
   test "the authorize hook receives an mcp surface and a read action" do
     seen = []
     hook = lambda do |action:, record:, context:, **|
-      seen << [action, context.surface, record]
+      seen << [ action, context.surface, record ]
       true
     end
 
@@ -74,7 +74,7 @@ class McpAuthorizationTest < McpIntegrationTest
       call_tool("list_records", { resource: "mcp_authorization_widget" })
     end
 
-    assert_includes seen, [:read, :mcp, nil]
+    assert_includes seen, [ :read, :mcp, nil ]
   end
 
   test "describe_resources omits resources the hook denies" do

@@ -73,7 +73,7 @@ module AdminSuite
 
     test "current_actor is consulted at most once per request on the legacy path" do
       calls = 0
-      passes = ->(_controller) {}
+      passes = ->(_controller) { }
       counting_actor = lambda { |_controller|
         calls += 1
         nil
@@ -88,7 +88,7 @@ module AdminSuite
     end
 
     test "legacy authenticate lambda passes but a raising current_actor lambda is rescued to nil" do
-      passes = ->(_controller) {}
+      passes = ->(_controller) { }
       raising_actor = ->(_controller) { raise "boom" }
 
       with_config(allow_unauthenticated: false, auth_strategy: nil, authenticate: passes,

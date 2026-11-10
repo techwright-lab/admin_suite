@@ -19,7 +19,7 @@ module McpReleaseFixtures
 
   class Widget
     extend ActiveModel::Naming
-    def self.all = Relation.new([Record.new(1, "open"), Record.new(2, "closed")])
+    def self.all = Relation.new([ Record.new(1, "open"), Record.new(2, "closed") ])
     def self.find_by(id:) = all.find { |row| row.id.to_s == id.to_s }
   end
 end
@@ -59,7 +59,7 @@ class McpReleaseTest < ActionDispatch::IntegrationTest
     with_authorize(->(**) { true }) do
       result = call_tool("list_records", resource: "mcp_release_widget", filters: { state: "open" })
       payload = JSON.parse(result.dig("result", "content", 0, "text"))
-      assert_equal [1], payload.fetch("rows").map { |row| row.fetch("id") }
+      assert_equal [ 1 ], payload.fetch("rows").map { |row| row.fetch("id") }
       assert_equal 100, payload.fetch("applied_per_page")
       result = call_tool("aggregate", resource: "mcp_release_widget", filters: { state: "closed" })
       assert_equal 1, JSON.parse(result.dig("result", "content", 0, "text")).fetch("count")
@@ -92,7 +92,7 @@ class McpReleaseTest < ActionDispatch::IntegrationTest
 
   test "MCP rejects foreign origins while allowing same-origin and headless clients" do
     with_authorize(->(**) { true }) do
-      ["https://attacker.example", "null", ""].each do |origin|
+      [ "https://attacker.example", "null", "" ].each do |origin|
         post "/internal/admin_suite/mcp", params: { jsonrpc: "2.0", id: 1, method: "tools/list" }.to_json,
           headers: { "CONTENT_TYPE" => "application/json", "HTTP_ACCEPT" => "application/json, text/event-stream", "HTTP_ORIGIN" => origin }
         assert_response :forbidden

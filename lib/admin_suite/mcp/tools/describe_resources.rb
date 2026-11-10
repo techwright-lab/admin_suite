@@ -13,18 +13,18 @@ module AdminSuite
           AdminSuite::Mcp.instrument(tool: "describe_resources", actor: server_context[:actor], request: server_context[:request]) do
             allowed = false
             if AdminSuite.config.authorize.nil? || Auth.normalize_actor(server_context[:actor]).nil?
-              [Authorization.denied_response, nil, false]
+              [ Authorization.denied_response, nil, false ]
             else
               allowed = true
               payload = Authorization
                 .readable_resources(actor: server_context[:actor], request: server_context[:request])
                 .map { |config| describe(config) }
-              response = ::MCP::Tool::Response.new([{ type: "text", text: Serializer.dump(payload) }])
-              [response, payload.size, true]
+              response = ::MCP::Tool::Response.new([ { type: "text", text: Serializer.dump(payload) } ])
+              [ response, payload.size, true ]
             end
           rescue StandardError => e
             Rails.logger&.warn("AdminSuite MCP describe_resources failed: #{e.class}: #{e.message}")
-            [Authorization.error_response("describe_resources failed"), nil, allowed]
+            [ Authorization.error_response("describe_resources failed"), nil, allowed ]
           end
         end
 

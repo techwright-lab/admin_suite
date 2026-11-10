@@ -47,7 +47,7 @@ class QueryTest < ActiveSupport::TestCase
   end
 
   test "per_page falls back for junk and non-positive values" do
-    ["abc", "0", "-5", nil, "", [], true].each do |value|
+    [ "abc", "0", "-5", nil, "", [], true ].each do |value|
       query = AdminSuite::Query.new(resource_config: config_with(per_page: 30), params: { per_page: value })
 
       assert_equal 30, query.per_page, "per_page: #{value.inspect} must fall back to the DSL value"
@@ -55,7 +55,7 @@ class QueryTest < ActiveSupport::TestCase
   end
 
   test "the cap applies to DSL defaults as well as explicit page sizes" do
-    [nil, "", "bad", 0, -1, [], true, 5000].each do |value|
+    [ nil, "", "bad", 0, -1, [], true, 5000 ].each do |value|
       query = AdminSuite::Query.new(resource_config: config_with(per_page: 500),
         params: { per_page: value }, max_page_size: 40)
       assert_equal 40, query.per_page, "per_page=#{value.inspect}"
@@ -63,7 +63,7 @@ class QueryTest < ActiveSupport::TestCase
   end
 
   test "per_page remains a positive integer when max_page_size is below 1" do
-    [0, -5, nil].each do |cap|
+    [ 0, -5, nil ].each do |cap|
       query = AdminSuite::Query.new(
         resource_config: config_with(per_page: 30),
         params: { per_page: "10" },
@@ -78,7 +78,7 @@ class QueryTest < ActiveSupport::TestCase
   test "a raising includes degrades to the unoptimized scope instead of raising" do
     relation = RaisingIncludesRelation.new([])
     Model.relation = relation
-    query = AdminSuite::Query.new(resource_config: config_with(per_page: 25, includes: [:nope]), params: {})
+    query = AdminSuite::Query.new(resource_config: config_with(per_page: 25, includes: [ :nope ]), params: {})
 
     assert_same relation, query.scope
   end

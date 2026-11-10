@@ -3,6 +3,10 @@ source "https://rubygems.org"
 # Declare runtime dependencies in the gemspec.
 gemspec
 
+group :development do
+  gem "rubocop-rails-omakase", require: false
+end
+
 group :development, :test do
   # Provides the asset pipeline used by the engine/dummy app.
   gem "propshaft"

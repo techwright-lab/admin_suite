@@ -161,8 +161,6 @@ module Admin
 
         handler_name = "#{resource_class.resource_name.camelize}#{action.name.to_s.camelize}Action"
         "Admin::Actions::#{handler_name}".constantize
-      rescue NameError
-        nil
       end
 
       def execute_handler(handler_class, target, params)

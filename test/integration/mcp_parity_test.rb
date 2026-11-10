@@ -55,7 +55,7 @@ module McpParityFixtures
       @application = application
     end
 
-    ROWS = [new(id: 1, name: "Zulu"), new(id: 2, name: "Alpha"), new(id: 3, name: "Bravo")].freeze
+    ROWS = [ new(id: 1, name: "Zulu"), new(id: 2, name: "Alpha"), new(id: 3, name: "Bravo") ].freeze
 
     def self.all = Relation.new(ROWS)
     def self.column_names = %w[id name]

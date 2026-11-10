@@ -6,7 +6,7 @@ module McpAggregateFixtures
   class Widget
     extend ActiveModel::Naming
 
-    def self.all = ReadOnlyResourceFixtures::Relation.new([new, new])
+    def self.all = ReadOnlyResourceFixtures::Relation.new([ new, new ])
   end
 end
 

@@ -42,7 +42,7 @@ class McpInstrumentationTest < McpIntegrationTest
       resource: "mcp_instrumentation_widget", server_context: { actor: nil }
     ) }
 
-    assert_equal [true, false], events.map { |event| event[:allowed] }
+    assert_equal [ true, false ], events.map { |event| event[:allowed] }
     assert events.all? { |event| event[:tool] == "list_records" }
     assert events.all? { |event| event[:action] == :read }
     assert events.all? { |event| event[:duration_ms].is_a?(Numeric) }
@@ -77,7 +77,7 @@ class McpInstrumentationTest < McpIntegrationTest
     end
 
     AdminSuite::Mcp.instrument(tool: "list_records", actor: actor, request: request) do
-      [MCP::Tool::Response.new([{ type: "text", text: "failed" }], error: true), nil, true]
+      [ MCP::Tool::Response.new([ { type: "text", text: "failed" } ], error: true), nil, true ]
     end
 
     assert_equal "42", events.first.fetch(:actor_id)

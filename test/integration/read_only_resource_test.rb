@@ -219,7 +219,7 @@ module AdminSuite
     end
 
     test "undeclared bulk_action names respond 404" do
-      post "#{BASE_PATH}/bulk_action/nonexistent_bulk", params: { ids: ["1"] }
+      post "#{BASE_PATH}/bulk_action/nonexistent_bulk", params: { ids: [ "1" ] }
       assert_response :not_found
     end
 
