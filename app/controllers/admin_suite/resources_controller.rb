@@ -396,6 +396,13 @@ module AdminSuite
         return record if record
       end
 
+      # prefixed_ids defines `find_by_prefix_id` on every model; only a
+      # model that called `has_prefix_id` has a `_prefix_id` to decode with.
+      if klass.try(:_prefix_id)
+        record = klass.find_by_prefix_id(id)
+        return record if record
+      end
+
       raise ActiveRecord::RecordNotFound
     end
 
